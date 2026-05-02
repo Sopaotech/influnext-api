@@ -199,7 +199,8 @@ export default function CompanyDashboard() {
                         )}
                       </TableCell>
                     </TableRow>
-                  ))}
+                  );
+                })}
                 </TableBody>
               </Table>
             </div>
