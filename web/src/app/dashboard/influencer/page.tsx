@@ -10,8 +10,9 @@ import { InfluScoreCard } from '@/components/influ-score-card';
 import Link from 'next/link';
 
 export default function InfluencerDashboard() {
-  const [error, setError] = useState('');
-  const [mission, setMission] = useState<{ dailyMission: string, missionCompleted: boolean } | null>(null);
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [mission, setMission] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [completingMission, setCompletingMission] = useState(false);
 
