@@ -32,7 +32,7 @@ export function Logo({ size = 'md', href = '/', className = '' }: LogoProps) {
           <stop offset="100%" stopColor="#C4BEFF" />
         </linearGradient>
         <filter id="x-glow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="4" result="blur" />
+          <feGaussianBlur stdDeviation="3" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
@@ -40,49 +40,44 @@ export function Logo({ size = 'md', href = '/', className = '' }: LogoProps) {
         </filter>
       </defs>
 
-      {/* Texto base: INFLUNE T */}
+      {/* Texto base: INFLUNE T (Branco para o Dark Mode Premium) */}
       <text 
         x="0" 
         y="48" 
-        fontFamily="system-ui, -apple-system, sans-serif" 
+        fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
         fontWeight="900" 
         fontSize="52" 
         fill="#FFFFFF" 
-        letterSpacing="-0.04em"
+        letterSpacing="-0.02em"
       >
-        INFLUNE<tspan dx="50">T</tspan>
+        INFLUNE<tspan dx="60">T</tspan>
       </text>
 
-      {/* X com Seta Integrada - Usando Paths exatos */}
-      <g filter="url(#x-glow)" transform="translate(232, 8)">
-        {/* Perna Principal Diag. \ */}
-        <path 
-          d="M 5,5 L 35,45" 
+      {/* X com Seta Sólida Integrada (Exatamente igual à imagem enviada) */}
+      <g filter="url(#x-glow)" transform="translate(238, 10)">
+        
+        {/* Perna Secundária \ (Topo Esquerda -> Baixo Direita) */}
+        <line 
+          x1="0" y1="0" 
+          x2="32" y2="40" 
           stroke="url(#x-gradient)" 
-          strokeWidth="7" 
-          strokeLinecap="round" 
+          strokeWidth="10" 
+          strokeLinecap="butt" 
         />
-        {/* Perna Secundária Diag. / com corte no topo */}
-        <path 
-          d="M 5,45 L 28,15" 
+        
+        {/* Perna Principal / com Seta (Baixo Esquerda -> Topo Direita) */}
+        <line 
+          x1="-2" y1="40" 
+          x2="38" y2="-6" 
           stroke="url(#x-gradient)" 
-          strokeWidth="7" 
-          strokeLinecap="round" 
+          strokeWidth="10" 
+          strokeLinecap="butt" 
         />
-        {/* Seta (Arrow ↗) unida à ponta direita superior */}
-        <path 
-          d="M 22,-2 L 42,-2 L 42,18" 
-          stroke="url(#x-gradient)" 
-          strokeWidth="6" 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-          fill="none" 
-        />
-        <path 
-          d="M 28,15 L 42,-2" 
-          stroke="url(#x-gradient)" 
-          strokeWidth="6" 
-          strokeLinecap="round" 
+        
+        {/* Cabeça da Seta (Triângulo sólido perfeito apontando para cima/direita) */}
+        <polygon 
+          points="26,-15 50,-18 43,6" 
+          fill="#C4BEFF" 
         />
       </g>
     </svg>

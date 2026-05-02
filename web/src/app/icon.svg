@@ -20,34 +20,30 @@
   <!-- Fundo dark premium -->
   <rect width="64" height="64" rx="16" fill="url(#bg)"/>
 
-  <!-- Símbolo X centralizado -->
-  <g filter="url(#x-glow)" transform="translate(12, 12)">
-    <path 
-      d="M 5,5 L 35,35" 
+  <!-- Símbolo X centralizado igual à logo -->
+  <g filter="url(#x-glow)" transform="translate(14, 16)">
+    <!-- Perna Secundária \ -->
+    <line 
+      x1="0" y1="0" 
+      x2="32" y2="36" 
       stroke="url(#x-gradient)" 
-      stroke-width="6" 
-      stroke-linecap="round" 
+      stroke-width="9" 
+      stroke-linecap="butt" 
     />
-    <path 
-      d="M 5,35 L 25,15" 
+    
+    <!-- Perna Principal / -->
+    <line 
+      x1="-2" y1="36" 
+      x2="38" y2="-6" 
       stroke="url(#x-gradient)" 
-      stroke-width="6" 
-      stroke-linecap="round" 
+      stroke-width="9" 
+      stroke-linecap="butt" 
     />
-    <!-- Seta (Arrow ↗) -->
-    <path 
-      d="M 22,0 L 40,0 L 40,18" 
-      stroke="url(#x-gradient)" 
-      stroke-width="5" 
-      stroke-linecap="round" 
-      stroke-linejoin="round" 
-      fill="none" 
-    />
-    <path 
-      d="M 25,15 L 40,0" 
-      stroke="url(#x-gradient)" 
-      stroke-width="5" 
-      stroke-linecap="round" 
+    
+    <!-- Cabeça da Seta (Triângulo sólido) -->
+    <polygon 
+      points="26,-15 50,-18 43,6" 
+      fill="#C4BEFF" 
     />
   </g>
 </svg>
