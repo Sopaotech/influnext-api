@@ -1,0 +1,28 @@
+import { Router } from 'express';
+import authRoutes from './auth.routes';
+import integrationRoutes from './integration.routes';
+import taskRoutes from './task.routes';
+import contractRoutes from './contract.routes';
+import deliverableRoutes from './deliverable.routes';
+import dashboardRoutes from './dashboard.routes';
+import adminRoutes from './admin.routes';
+import publicRoutes from './public.routes';
+import influencerRoutes from './influencer.routes';
+import aiRoutes from './ai.routes';
+import paymentRoutes from './payment.routes';
+
+const routes = Router();
+routes.get('/health', (req, res) => res.json({ status: 'OK' }));
+routes.use('/auth', authRoutes);
+routes.use('/integrations', integrationRoutes);
+routes.use('/tasks', taskRoutes);
+routes.use('/contracts', contractRoutes);
+routes.use('/deliverables', deliverableRoutes);
+routes.use('/dashboard', dashboardRoutes);
+routes.use('/admin', adminRoutes);
+routes.use('/p', publicRoutes);
+routes.use('/influencers', influencerRoutes);
+routes.use('/ai', aiRoutes);
+routes.use('/payments', paymentRoutes);
+
+export { routes };
