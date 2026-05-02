@@ -284,7 +284,6 @@ export default function AIWorkspacePage() {
 
           </div>
         </div>
-        </div>
       ) : (
         <div className="bg-zinc-950 border border-zinc-800 border-dashed p-24 rounded-lg text-center space-y-4">
           <Loader2 className="w-8 h-8 text-zinc-800 animate-spin mx-auto" />

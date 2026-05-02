@@ -1,3 +1,4 @@
+"use client";
 import React, { useEffect, useState } from 'react';
 import { api, DashboardData } from '@/lib/api';
 import Cookies from 'js-cookie';

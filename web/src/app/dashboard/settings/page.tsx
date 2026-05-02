@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+
 import { toast } from 'sonner';
 import { User, Camera, AtSign, Tag, FileText, Shield } from 'lucide-react';
 
@@ -101,11 +101,11 @@ export default function SettingsPage() {
 
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase text-zinc-500 flex items-center gap-2"><FileText size={10}/> Bio Profissional</label>
-            <Textarea 
+            <textarea 
               value={profile.bio || ''} 
               onChange={e => setProfile({...profile, bio: e.target.value})}
               placeholder="Conte para as marcas quem você é..."
-              className="bg-zinc-900 border-zinc-800 min-h-[100px]"
+              className="flex min-h-[80px] w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm ring-offset-zinc-950 placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-800 bg-zinc-900 border-zinc-800 min-h-[100px]"
             />
           </div>
         </section>
