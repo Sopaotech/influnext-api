@@ -2,7 +2,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 
 // Centralização da URL da API: Prioridade para o .env da Vercel/Railway
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/v1';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.influnext.com.br/v1';
 
 export const api = axios.create({
   baseURL: API_URL,
