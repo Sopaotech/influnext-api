@@ -545,5 +545,6 @@ export default function SignupClient() {
           </div>
         </div>
       </div>
+    </div>
   );
 }

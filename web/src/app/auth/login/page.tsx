@@ -175,7 +175,9 @@ export default function LoginPage() {
                 Voltar ao início
               </Link>
             </div>
+          </div>
         </div>
       </div>
+    </div>
   );
 }
