@@ -48,13 +48,13 @@ export class PaymentController {
       if (event.type === 'order.paid') {
         const contractId = event.data.metadata?.contractId; // O ideal é passar no metadata
         if (contractId) {
-           await prisma.contract.update({
-             where: { id: contractId },
-             data: { status: 'IN_PROGRESS' } // Dinheiro em Escrow pending_release
-           });
-           
-           console.log(`[Webhook] Contrato ${contractId} pago! Split garantido.`);
-           // Plim Notification lógica aqui...
+          await prisma.contract.update({
+            where: { id: contractId },
+            data: { status: 'IN_PROGRESS' } // Dinheiro em Escrow pending_release
+          });
+
+          console.log(`[Webhook] Contrato ${contractId} pago! Split garantido.`);
+          // Plim Notification lógica aqui...
         }
       }
 
