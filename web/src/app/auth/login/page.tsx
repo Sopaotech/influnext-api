@@ -66,26 +66,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#080810] flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background atmosphere */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-purple-700/10 blur-[140px]" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-violet-600/8 blur-[120px]" />
-        {/* Subtle grid */}
-        <div className="absolute inset-0 opacity-[0.022]" style={{
-          backgroundImage: 'linear-gradient(rgba(192,132,252,1) 1px, transparent 1px), linear-gradient(90deg, rgba(192,132,252,1) 1px, transparent 1px)',
-          backgroundSize: '72px 72px',
-        }} />
+    <div className="w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="text-center">
+        <Logo size="lg" href="/" className="justify-center" />
+        <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.25em] text-zinc-600">
+          Plataforma de Marketing de Influência
+        </p>
       </div>
 
-      <div className="w-full max-w-[400px] z-10 space-y-8">
-        {/* Logo */}
-        <div className="text-center">
-          <Logo size="lg" href="/" className="justify-center" />
-          <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.25em] text-zinc-600">
-            Plataforma de Marketing de Influência
-          </p>
-        </div>
 
         {/* Card */}
         <div className="relative">
