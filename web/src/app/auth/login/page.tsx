@@ -169,13 +169,14 @@ export default function LoginPage() {
 
             <div className="pt-1 border-t border-white/[0.05] flex items-center justify-between">
               <Link href="/auth/signup" className="text-xs text-zinc-600 hover:text-purple-400 transition-colors font-semibold">
-                Criar conta grátis →
+                Criar conta gratis
               </Link>
               <Link href="/" className="text-xs text-zinc-700 hover:text-zinc-500 transition-colors">
-                Voltar ao início
+                Voltar ao inicio
               </Link>
             </div>
           </div>
+        </div>
       </div>
     );
 }

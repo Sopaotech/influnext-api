@@ -417,13 +417,13 @@ export default function SignupClient() {
                         <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                         Configurando...
                       </span>
-                    ) : 'Iniciar meu Workspace ↗'}
+                    ) : 'Iniciar meu Workspace'}
                   </button>
                 </div>
               </form>
             )}
 
-            {/* ─── STEP 2: Company Interview ───────────────────────────────── */}
+            {/* STEP 2: Company Interview */}
             {step === 2 && !isInfluencer && (
               <form onSubmit={handleStep2Submit} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div>
@@ -516,7 +516,7 @@ export default function SignupClient() {
                     onClick={() => setStep(1)}
                     className="px-5 py-3 border border-white/[0.08] text-zinc-500 rounded-xl text-sm font-bold hover:bg-white/[0.04] hover:text-zinc-300 transition-all"
                   >
-                    ← Voltar
+                    Voltar
                   </button>
                   <button
                     type="submit"
@@ -528,7 +528,7 @@ export default function SignupClient() {
                         <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                         Configurando...
                       </span>
-                    ) : 'Acessar Marketplace →'}
+                    ) : 'Acessar Marketplace'}
                   </button>
                 </div>
               </form>
@@ -545,5 +545,5 @@ export default function SignupClient() {
           </div>
         </div>
       </div>
-  );
+    );
 }
