@@ -41,6 +41,11 @@ model InfluencerProfile {
   missionCompleted  Boolean   @default(false)
   lastMissionUpdate DateTime?
   lastLoginAt       DateTime  @default(now())
+
+  // Hiper-Localismo
+  city              String?
+  state             String?
+  bio               String?
   
   insights        String?  // SQLite não suporta Json, usaremos String (JSON stringified)
   topPosts        String?  // SQLite não suporta Json, usaremos String (JSON stringified)

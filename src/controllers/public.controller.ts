@@ -17,6 +17,11 @@ export const getPublicProfile = async (req: Request, res: Response): Promise<voi
         influScore: true,
         scoreClass: true,
         verifiedMetrics: true,
+        niche: true,
+        // Hiper-Localismo: exibido no perfil público
+        city: true,
+        state: true,
+        bio: true,
         // Buscamos apenas o último snapshot de métricas auditadas
         metricsHistory: {
           take: 1,

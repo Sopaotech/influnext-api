@@ -11,7 +11,10 @@ export const metadata: Metadata = {
   title: "InfluNext — Marketplace de Influência",
   description: "Conecte marcas e influenciadores com contratos inteligentes e pagamentos seguros via Escrow.",
   icons: {
-    icon: "/icon.svg",
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: '/icon.svg',
   }
 };
 

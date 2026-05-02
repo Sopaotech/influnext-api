@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Cookies from 'js-cookie';
 import { Home, FileText, CheckSquare, Settings, LogOut, Menu, X, BrainCircuit, Sparkles, ShieldCheck } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
+import { Logo } from '@/components/Logo';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -39,9 +40,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       
       {/* Mobile Header (Hamburger) */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[#06040f] border-b border-[#1e1430] z-50 flex items-center justify-between px-4">
-        <div className="font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 text-lg tracking-tighter">
-          IX
-        </div>
+        <Logo size="sm" href="/" />
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-zinc-400">
           {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
@@ -54,8 +53,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         <div className="p-4">
-          <div className="hidden md:flex items-center gap-2 font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 text-xl tracking-tighter mb-8 px-2">
-            InfluNext
+          <div className="hidden md:flex items-center mb-8 px-2">
+            <Logo size="sm" href="/" />
           </div>
           
           <nav className="space-y-1">

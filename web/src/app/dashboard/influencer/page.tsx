@@ -10,7 +10,8 @@ import { InfluScoreCard } from '@/components/influ-score-card';
 import Link from 'next/link';
 
 export default function InfluencerDashboard() {
-  const [data, setData] = useState<DashboardData | null>(null);
+  const [data, setData] = useState<any | null>(null);
+  const [kpis, setKpis] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mission, setMission] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -20,11 +21,15 @@ export default function InfluencerDashboard() {
     const fetchDashboard = async () => {
       try {
         const [dashRes, missionRes] = await Promise.all([
-          api.get<DashboardData>('/dashboard/influencer'),
+          api.get<any>('/dashboard/influencer'),
           api.get('/influencers/mission')
         ]);
         setData(dashRes.data);
-        setMission(missionRes.data);
+        setKpis(dashRes.data.kpis);
+        setMission(dashRes.data.profile?.dailyMission ? {
+          dailyMission: dashRes.data.profile.dailyMission,
+          missionCompleted: dashRes.data.profile.missionCompleted
+        } : missionRes.data);
       } catch (err: any) {
         setError('Falha ao conectar com o servidor.');
       } finally {
@@ -68,6 +73,8 @@ export default function InfluencerDashboard() {
   const latestMetrics = data?.metricsHistory?.[0] || null;
   const activeContracts = data?.contracts || [];
   const pendingTasks = data?.tasks || [];
+  const escrowBalance = kpis?.escrowBalance ?? 0;
+  const pendingMissionsCount = kpis?.pendingMissionsCount ?? 0;
 
   return (
     <div className="flex flex-col min-h-screen relative pb-20 md:pb-24">
@@ -113,10 +120,19 @@ export default function InfluencerDashboard() {
 
         {/* Metrics Grid: 2x2 Mobile, 4x1 Desktop */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
-          <MetricCard title="Seguidores" value={latestMetrics?.followers} icon={Users} change={12} />
-          <MetricCard title="Engajamento" value={latestMetrics ? `${latestMetrics.engagementRate}%` : null} icon={Activity} change={-2} />
-          <MetricCard title="Alcance" value={latestMetrics?.reachLast30Days} icon={Target} />
-          <MetricCard title="Impressões" value={latestMetrics?.avgViews} icon={Eye} />
+          <MetricCard title="Seguidores" value={latestMetrics?.followers ?? kpis?.latestFollowers} icon={Users} change={12} />
+          <MetricCard title="Engajamento" value={latestMetrics ? `${latestMetrics.engagementRate}%` : (kpis?.latestEngagement ? `${kpis.latestEngagement}%` : null)} icon={Activity} change={-2} />
+          <MetricCard title="Missões Pendentes" value={pendingMissionsCount} icon={CheckSquare} />
+          {/* Saldo em Escrow: KPI motivacional */}
+          <div className="bg-[#100c1e] border border-emerald-500/20 rounded-2xl p-4 flex flex-col justify-between shadow-[0_0_15px_-5px_rgba(52,211,153,0.15)]">
+            <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Saldo em Escrow</span>
+            <div>
+              <p className="text-xl font-black text-emerald-400">
+                R$ {escrowBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </p>
+              <p className="text-[9px] text-zinc-600 mt-1">Conclua os projetos para liberar</p>
+            </div>
+          </div>
         </section>
 
         {/* Chart Section Placeholder */}
@@ -194,7 +210,7 @@ export default function InfluencerDashboard() {
         <div className="flex items-center gap-4">
           <div className="text-right">
              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block">InfluScore</span>
-             <span className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">{data?.influScore || 0}</span>
+             <span className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">{kpis?.influScore ?? data?.profile?.influScore ?? 0}</span>
           </div>
           <div className="bg-gradient-to-tr from-purple-600 to-pink-500 p-2 rounded-xl shadow-[0_0_15px_-5px_rgba(168,85,247,0.5)]">
              <Trophy className="w-5 h-5 text-white" />
