@@ -8,15 +8,14 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
     const profile = await prisma.influencerProfile.findUnique({
       where: { userId },
       include: {
-        // Contratos ativos (não concluídos) — base do Saldo em Escrow
+        user: { select: { onboardingCompleted: true, subscriptionStatus: true, trialEndsAt: true } },
         contracts: {
           where: { escrowStatus: { in: ['IN_PROGRESS', 'PENDING_PAYMENT', 'UNDER_REVIEW'] } },
           select: { id: true, title: true, budget: true, escrowStatus: true, createdAt: true }
         },
-        // Último snapshot de métricas para o InfluScore
         metricsHistory: { take: 1, orderBy: { capturedAt: 'desc' } },
-        // Tarefas pendentes para o KPI de Missões
-        tasks: { where: { isDone: false }, orderBy: { scheduledDate: 'asc' } }
+        tasks: { where: { isDone: false }, orderBy: { scheduledDate: 'asc' } },
+        trendVault: { where: { expiresAt: { gte: new Date() } }, orderBy: { createdAt: 'desc' } }
       }
     });
 
@@ -50,14 +49,16 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
       kpis: {
         influScore: profile.influScore,
         scoreClass: profile.scoreClass,
-        escrowBalance,             // Saldo retido — incentiva conclusão
+        escrowBalance,
         activeContractsCount,
         pendingMissionsCount,
         latestFollowers: profile.metricsHistory?.[0]?.followers ?? null,
         latestEngagement: profile.metricsHistory?.[0]?.engagementRate ?? null,
       },
+      userState: profile.user,
       contracts: profile.contracts,
       tasks: profile.tasks,
+      trendVault: profile.trendVault,
       metricsHistory: profile.metricsHistory,
     });
   } catch (error) {
@@ -79,10 +80,18 @@ export const getCompanyDashboard = async (req: Request, res: Response): Promise<
     const company = await prisma.companyProfile.findUnique({
       where: { userId },
       include: {
+        user: { select: { onboardingCompleted: true, subscriptionStatus: true, trialEndsAt: true } },
         contracts: {
           include: {
             deliverables: true,
-            influencer: { select: { handle: true, niche: true, influScore: true } }
+            influencer: { 
+              select: { 
+                handle: true, 
+                niche: true, 
+                influScore: true,
+                metricsHistory: { take: 1, orderBy: { capturedAt: 'desc' }, select: { capturedAt: true } }
+              } 
+            }
           }
         }
       }
@@ -104,7 +113,7 @@ export const getCompanyDashboard = async (req: Request, res: Response): Promise<
         .reduce((sum, c) => sum + Number(c.budget), 0),
     };
 
-    res.json({ stats, contracts: company.contracts });
+    res.json({ stats, userState: company.user, contracts: company.contracts });
   } catch (error) {
     console.error('[DASHBOARD] Erro ao carregar company:', error);
     res.status(500).json({ error: 'Erro ao carregar dashboard.' });

@@ -139,7 +139,12 @@ export default function SignupClient() {
 
       setStep(2);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao criar conta.');
+      console.error('[SIGNUP STEP 1 ERROR]', err, 'API_URL:', process.env.NEXT_PUBLIC_API_URL);
+      let msg = err.response?.data?.error;
+      if (!msg && err.response?.data?.errors) {
+        msg = Object.values(err.response.data.errors).flat().join(' | ');
+      }
+      setError(msg || err.message || 'Erro de conexão com o servidor.');
     } finally {
       setIsLoading(false);
     }
@@ -173,7 +178,12 @@ export default function SignupClient() {
         router.push('/dashboard/company');
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao salvar perfil.');
+      console.error('[SIGNUP STEP 2 ERROR]', err, 'API_URL:', process.env.NEXT_PUBLIC_API_URL);
+      let msg = err.response?.data?.error;
+      if (!msg && err.response?.data?.errors) {
+        msg = Object.values(err.response.data.errors).flat().join(' | ');
+      }
+      setError(msg || err.message || 'Erro de conexão com o servidor.');
     } finally {
       setIsLoading(false);
     }
@@ -184,7 +194,7 @@ export default function SignupClient() {
   const labelClass = "block text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5";
 
   return (
-    <div className="min-h-screen bg-[#080810] text-white flex flex-col items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[#0D0820] text-white flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-[-15%] left-[-5%] w-[500px] h-[500px] rounded-full bg-purple-700/10 blur-[130px]" />
@@ -313,56 +323,65 @@ export default function SignupClient() {
               </form>
             )}
 
-            {/* ─── STEP 2: Influencer Interview ────────────────────────────── */}
+            {/* ─── STEP 2: Influencer Interview (Chat de Consultoria) ─── */}
             {step === 2 && isInfluencer && (
-              <form onSubmit={handleStep2Submit} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div>
-                  <label className={labelClass}>Nicho Principal *</label>
-                  <select value={niche} onChange={(e) => setNiche(e.target.value)} required className={selectClass}>
-                    <option value="" className="bg-zinc-900">Selecione seu nicho...</option>
-                    {INFLUENCER_NICHES.map(n => (
-                      <option key={n} value={n} className="bg-zinc-900">{n}</option>
-                    ))}
-                  </select>
+              <form onSubmit={handleStep2Submit} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                
+                {/* AI Consultant Message */}
+                <div className="bg-[#1a1040] text-purple-200 p-4 rounded-2xl rounded-tl-sm text-xs border border-purple-500/20 shadow-md">
+                  <p className="font-bold mb-1 flex items-center gap-2 text-purple-300">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    Mentor InfluNext
+                  </p>
+                  <p>Fala! Pra configurar seu negócio, preciso saber: Qual seu foco principal e nicho de atuação?</p>
                 </div>
 
-                <div>
-                  <label className={labelClass}>Anos de Carreira como Creator</label>
-                  <div className="space-y-2">
-                    <input
-                      type="range"
-                      min={0}
-                      max={20}
-                      value={yearsOfCareer}
-                      onChange={(e) => setYearsOfCareer(Number(e.target.value))}
-                      className="w-full accent-purple-500"
-                    />
-                    <div className="flex justify-between text-[10px] text-zinc-600 font-bold">
-                      <span>Iniciante</span>
-                      <span className="text-purple-400 font-black">
-                        {yearsOfCareer === 0 ? 'Estou começando' : `${yearsOfCareer} ano${yearsOfCareer !== 1 ? 's' : ''}`}
-                      </span>
-                      <span>20+ anos</span>
+                {/* User Reply Area */}
+                <div className="bg-purple-600/10 border border-purple-500/20 p-4 rounded-2xl rounded-tr-sm text-sm ml-auto w-[90%] space-y-4">
+                  <div>
+                    <label className={labelClass}>Meu Nicho é:</label>
+                    <select value={niche} onChange={(e) => setNiche(e.target.value)} required className={selectClass}>
+                      <option value="" className="bg-zinc-900">Selecione...</option>
+                      {INFLUENCER_NICHES.map(n => (
+                        <option key={n} value={n} className="bg-zinc-900">{n}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className={labelClass}>Estou nessa jornada há:</label>
+                    <div className="space-y-2">
+                      <input
+                        type="range"
+                        min={0}
+                        max={20}
+                        value={yearsOfCareer}
+                        onChange={(e) => setYearsOfCareer(Number(e.target.value))}
+                        className="w-full accent-purple-500"
+                      />
+                      <div className="flex justify-between text-[10px] text-purple-300 font-bold">
+                        <span>{yearsOfCareer === 0 ? 'Começando' : `${yearsOfCareer} anos`}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div>
-                  <label className={labelClass}>Objetivo Principal *</label>
-                  <div className="grid grid-cols-1 gap-2">
-                    {CAREER_GOALS.map(g => (
-                      <label key={g.value} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${goal === g.value ? 'border-purple-500/50 bg-purple-500/8 text-purple-300' : 'border-white/[0.06] bg-white/[0.02] text-zinc-500 hover:border-white/[0.12] hover:text-zinc-300'}`}>
-                        <input
-                          type="radio"
-                          name="goal"
-                          value={g.value}
-                          checked={goal === g.value}
-                          onChange={() => setGoal(g.value)}
-                          className="accent-purple-500"
-                        />
-                        <span className="text-xs font-semibold">{g.label}</span>
-                      </label>
-                    ))}
+                  <div>
+                    <label className={labelClass}>E meu grande objetivo é:</label>
+                    <div className="grid grid-cols-1 gap-2">
+                      {CAREER_GOALS.map(g => (
+                        <label key={g.value} className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${goal === g.value ? 'border-purple-500/50 bg-purple-500/20 text-white' : 'border-purple-500/10 bg-black/20 text-purple-200 hover:border-purple-500/30'}`}>
+                          <input
+                            type="radio"
+                            name="goal"
+                            value={g.value}
+                            checked={goal === g.value}
+                            onChange={() => setGoal(g.value)}
+                            className="accent-purple-500 hidden"
+                          />
+                          <span className="text-xs font-bold">{g.label}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 </div>
 

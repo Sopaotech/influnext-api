@@ -11,7 +11,7 @@ import { TwoFactorService } from '../services/twoFactor.service';
 const signupSchema = z.object({
   email:    z.string().email({ message: 'E-mail inválido.' }),
   password: z.string().min(8, { message: 'Senha deve ter ao menos 8 caracteres.' }),
-  role:     z.nativeEnum(UserRole),
+  role:     z.enum(['ADMIN', 'INFLUENCER', 'COMPANY'], { required_error: 'Role inválida.' }),
 });
 
 const loginSchema = z.object({
@@ -118,6 +118,34 @@ export const completeProfile = async (req: Request, res: Response): Promise<void
         },
       });
 
+      // Seta Onboarding como concluído e define os 15 dias de Trial agnóstico
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          onboardingCompleted: true,
+          subscriptionStatus: 'TRIAL',
+          trialEndsAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
+        }
+      });
+
+      // Cria uma métrica mock inicial para liberar o AIService
+      await prisma.metricSnapshot.create({
+        data: {
+          influencerId: profile.id,
+          provider: 'INITIAL_MOCK',
+          followers: 0,
+          engagementRate: 0,
+          reachLast30Days: 0,
+          avgViews: 0,
+          integrityHash: 'mock_initial_hash'
+        }
+      });
+
+      // Executa motor IA de forma assíncrona para não prender o request
+      import('../services/ai.service').then(({ AIService }) => {
+        AIService.generateWeeklyAnalysis(profile.id).catch(err => console.error('[AUTH] AI Background Error:', err));
+      });
+
       res.status(201).json({ message: 'Perfil de influenciador criado com sucesso!', profile });
 
     } else if (role === 'COMPANY') {
@@ -156,6 +184,16 @@ export const completeProfile = async (req: Request, res: Response): Promise<void
           employeeCount:  parsed.data.employeeCount,
           campaignBudget: parsed.data.campaignBudget,
         },
+      });
+
+      // Seta Onboarding como concluído e define os 15 dias de Trial agnóstico
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          onboardingCompleted: true,
+          subscriptionStatus: 'TRIAL',
+          trialEndsAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
+        }
       });
 
       res.status(201).json({ message: 'Perfil empresarial criado com sucesso!', profile });

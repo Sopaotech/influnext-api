@@ -220,6 +220,24 @@ export class AIService {
       });
     }
 
+    // Salvar Tarefas Sugeridas para execução imediata no Dashboard
+    if (strategyResult.suggestedTasks && strategyResult.suggestedTasks.length > 0) {
+      await prisma.task.createMany({
+        data: strategyResult.suggestedTasks.map((task: any) => {
+          const scheduledDate = new Date();
+          scheduledDate.setDate(scheduledDate.getDate() + (task.daysFromNow || 0));
+          return {
+            influencerId,
+            title: task.title,
+            description: task.description,
+            fromAI: true,
+            isDone: false,
+            scheduledDate
+          };
+        })
+      });
+    }
+
     // Disparar Notificação Proativa via BullMQ
     await addNotificationJob(
       influencer.userId, 

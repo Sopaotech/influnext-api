@@ -18,6 +18,19 @@ export default function CompanyDashboard() {
       setIsLoading(true);
       const res = await api.get<CompanyDashboardResponse>('/dashboard/company');
       setData(res.data);
+
+      const userState = (res.data as any).userState;
+      if (userState) {
+        if (!userState.onboardingCompleted) {
+          window.location.href = '/auth/login';
+          return;
+        }
+        if (userState.subscriptionStatus === 'INACTIVE' || 
+           (userState.subscriptionStatus === 'TRIAL' && new Date() > new Date(userState.trialEndsAt))) {
+          // window.location.href = '/dashboard/billing/locked';
+          console.warn('TRIAL EXPIRED');
+        }
+      }
     } catch (err: any) {
       setError('Falha ao carregar os dados do painel da empresa.');
     } finally {
@@ -140,10 +153,22 @@ export default function CompanyDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {contracts.map((contract) => (
-                    <TableRow key={contract.id} className="border-b-zinc-800/30 hover:bg-zinc-800/40 transition-colors">
-                      <TableCell className="font-bold text-purple-400 py-4">@{contract.influencer.handle}</TableCell>
-                      <TableCell className="text-zinc-200 py-4 font-medium">{contract.title}</TableCell>
+                  {contracts.map((contract: any) => {
+                    const lastCapture = contract.influencer.metricsHistory?.[0]?.capturedAt;
+                    const isOutdated = lastCapture ? (new Date().getTime() - new Date(lastCapture).getTime() > 24 * 60 * 60 * 1000) : true;
+                    return (
+                      <TableRow key={contract.id} className="border-b-zinc-800/30 hover:bg-zinc-800/40 transition-colors">
+                        <TableCell className="font-bold text-purple-400 py-4">
+                          <div className="flex flex-col gap-1">
+                            <span>@{contract.influencer.handle}</span>
+                            {isOutdated && (
+                              <span className="inline-flex w-max items-center gap-1 text-[9px] font-black uppercase bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded border border-red-500/20">
+                                <AlertCircle className="w-2.5 h-2.5" /> Métricas desatualizadas
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-zinc-200 py-4 font-medium">{contract.title}</TableCell>
                       <TableCell className="text-emerald-400 font-bold py-4">${Number(contract.budget).toLocaleString('pt-BR')}</TableCell>
                       <TableCell className="py-4">
                         <span className={`inline-flex items-center px-2.5 py-1.5 rounded-md text-[10px] font-bold tracking-widest

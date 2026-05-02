@@ -19,8 +19,15 @@ interface Contract {
 interface Task {
   id: string;
   title: string;
-  dueDate: string;
+  scheduledDate: string;
   isDone: boolean;
+  fromAI: boolean;
+}
+
+interface Trend {
+  id: string;
+  title: string;
+  videoUrl: string;
 }
 
 export default function InfluencerDashboard() {
@@ -44,6 +51,25 @@ export default function InfluencerDashboard() {
           dailyMission: dashRes.data.profile.dailyMission,
           missionCompleted: dashRes.data.profile.missionCompleted
         } : missionRes.data);
+
+        // Validação do Estado de Assinatura (Trial 15 dias)
+        const userState = dashRes.data.userState;
+        if (userState) {
+          if (!userState.onboardingCompleted) {
+            window.location.href = '/auth/login';
+            return;
+          }
+          if (userState.subscriptionStatus === 'INACTIVE' || 
+             (userState.subscriptionStatus === 'TRIAL' && new Date() > new Date(userState.trialEndsAt))) {
+            toast.error('Seu período de Trial de 15 dias acabou. Por favor, reative sua assinatura.');
+            // Simulando redirecionamento para página de billing
+            setTimeout(() => {
+              // window.location.href = '/dashboard/billing/locked';
+              toast.info('Redirecionando para a página de Pagamento... (Mock)');
+            }, 2000);
+          }
+        }
+
       } catch (err: any) {
         setError('Falha ao conectar com o servidor.');
       } finally {
@@ -87,6 +113,7 @@ export default function InfluencerDashboard() {
   const latestMetrics = data?.metricsHistory?.[0] || null;
   const activeContracts = data?.contracts || [];
   const pendingTasks = data?.tasks || [];
+  const activeTrends = data?.trendVault || [];
   const escrowBalance = kpis?.escrowBalance ?? 0;
   const pendingMissionsCount = kpis?.pendingMissionsCount ?? 0;
 
@@ -163,6 +190,29 @@ export default function InfluencerDashboard() {
         </section>
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Trends Section (New) */}
+          <div className="md:col-span-3 bg-gradient-to-r from-purple-900/20 to-transparent border border-purple-500/20 rounded-2xl p-5 space-y-4">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-purple-300 flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5" /> Trend Vault AI
+            </h3>
+            {activeTrends.length === 0 ? (
+               <div className="text-[10px] text-zinc-600 font-bold py-4 italic">Nenhuma trend no radar.</div>
+            ) : (
+               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                 {activeTrends.slice(0, 3).map((trend: Trend) => (
+                   <div key={trend.id} className="p-3 bg-[#0d0820] border border-purple-500/20 rounded-xl">
+                      <span className="text-[11px] font-bold text-zinc-300 block mb-2">{trend.title}</span>
+                      <a href={trend.videoUrl} target="_blank" className="text-[9px] font-black uppercase text-purple-400 hover:text-purple-300 flex items-center gap-1">
+                        Ver Referência <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                   </div>
+                 ))}
+               </div>
+            )}
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Contracts Section */}
           <div className="md:col-span-1 bg-[#100c1e] border border-[#1e1430] rounded-2xl p-5 space-y-4">
             <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
@@ -195,8 +245,11 @@ export default function InfluencerDashboard() {
                   <TableBody>
                     {pendingTasks.map((t: Task) => (
                       <TableRow key={t.id} className="border-b-[#1e1430] hover:bg-[#151025]">
-                        <TableCell className="text-[11px] font-bold py-4">{t.title}</TableCell>
-                        <TableCell className="text-[10px] text-zinc-500 text-right">{new Date(t.dueDate).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-[11px] font-bold py-4 flex items-center gap-2">
+                          {t.title}
+                          {t.fromAI && <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 text-[8px] rounded uppercase">IA</span>}
+                        </TableCell>
+                        <TableCell className="text-[10px] text-zinc-500 text-right">{t.scheduledDate ? new Date(t.scheduledDate).toLocaleDateString() : 'Sem data'}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

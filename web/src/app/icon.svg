@@ -1,32 +1,53 @@
-<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="bg_grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#1a0a2e"/>
-      <stop offset="100%" stop-color="#0d0620"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0D0820"/>
+      <stop offset="100%" stop-color="#1a1040"/>
     </linearGradient>
-    <linearGradient id="letter_grad" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#c084fc"/>
-      <stop offset="100%" stop-color="#a855f7"/>
+    <linearGradient id="x-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#534AB7" />
+      <stop offset="100%" stop-color="#C4BEFF" />
     </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+    <filter id="x-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
       <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
       </feMerge>
     </filter>
   </defs>
-  <rect width="32" height="32" rx="8" fill="url(#bg_grad)"/>
-  <rect width="32" height="32" rx="8" fill="#c084fc" fill-opacity="0.08"/>
-  <text
-    x="16"
-    y="22.5"
-    font-family="system-ui, -apple-system, sans-serif"
-    font-weight="900"
-    font-size="16"
-    text-anchor="middle"
-    fill="url(#letter_grad)"
-    filter="url(#glow)"
-    letter-spacing="-1"
-  >IN</text>
+
+  <!-- Fundo dark premium -->
+  <rect width="64" height="64" rx="16" fill="url(#bg)"/>
+
+  <!-- Símbolo X centralizado -->
+  <g filter="url(#x-glow)" transform="translate(12, 12)">
+    <path 
+      d="M 5,5 L 35,35" 
+      stroke="url(#x-gradient)" 
+      stroke-width="6" 
+      stroke-linecap="round" 
+    />
+    <path 
+      d="M 5,35 L 25,15" 
+      stroke="url(#x-gradient)" 
+      stroke-width="6" 
+      stroke-linecap="round" 
+    />
+    <!-- Seta (Arrow ↗) -->
+    <path 
+      d="M 22,0 L 40,0 L 40,18" 
+      stroke="url(#x-gradient)" 
+      stroke-width="5" 
+      stroke-linecap="round" 
+      stroke-linejoin="round" 
+      fill="none" 
+    />
+    <path 
+      d="M 25,15 L 40,0" 
+      stroke="url(#x-gradient)" 
+      stroke-width="5" 
+      stroke-linecap="round" 
+    />
+  </g>
 </svg>
