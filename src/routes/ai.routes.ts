@@ -46,4 +46,32 @@ router.get('/latest', authenticate, async (req: Request, res: Response): Promise
   }
 });
 
+// Interagir com o Mentor IA
+router.post('/chat', authenticate, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const { message } = req.body;
+
+    if (!message) {
+      res.status(400).json({ error: 'Mensagem é obrigatória.' });
+      return;
+    }
+
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+    const profile = await prisma.influencerProfile.findUnique({ where: { userId }, select: { id: true } });
+
+    if (!profile) {
+      res.status(404).json({ error: 'Apenas influenciadores têm acesso ao mentor.' });
+      return;
+    }
+
+    const reply = await AIService.chatWithMentor(profile.id, message);
+    res.json({ reply });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Erro no chat com Mentor.';
+    res.status(500).json({ error: errorMsg });
+  }
+});
+
 export default router;

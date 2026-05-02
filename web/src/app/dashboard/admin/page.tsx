@@ -143,8 +143,10 @@ export default function AdminDashboard() {
            <div className="space-y-3">
               {data?.metrics.totalUsers.map((u, idx) => (
                 <div key={idx} className="flex items-center justify-between p-4 bg-zinc-950 border border-zinc-800 rounded-2xl group hover:border-purple-500/30 transition-all">
-                   <div className="flex flex-col">
-                      <span className="text-[10px] font-black uppercase text-zinc-500 tracking-tight">{u.role}</span>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black uppercase text-zinc-500 tracking-tight">
+                        {u.role === 'INFLUENCER' ? 'Influenciador' : u.role === 'COMPANY' ? 'Empresa' : u.role === 'ADMIN' ? 'Administrador' : u.role}
+                      </span>
                       <span className="text-[9px] font-bold text-zinc-700 uppercase tracking-widest">Total Registrado</span>
                    </div>
                    <span className="text-2xl font-black text-zinc-50 group-hover:text-purple-400 transition-colors">{u._count._all}</span>

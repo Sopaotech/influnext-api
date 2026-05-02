@@ -292,4 +292,39 @@ export class AIService {
 
     return analysis;
   }
+
+  /**
+   * Conversa em tempo real com o Mentor IA do InfluNext.
+   */
+  static async chatWithMentor(influencerId: string, message: string): Promise<string> {
+    const apiKey = process.env.GEMINI_API_KEY;
+    
+    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
+      return `Como Mentor InfluNext (Modo Offline), recebi sua mensagem: "${message}". Configure a GEMINI_API_KEY no backend para ativar a inteligência avançada.`;
+    }
+
+    try {
+      const influencer = await prisma.influencerProfile.findUnique({
+        where: { id: influencerId },
+        select: { handle: true, niche: true, influScore: true }
+      });
+
+      if (!influencer) throw new Error('Influenciador não encontrado.');
+
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+      const prompt = `Você é o Mentor InfluNext, um consultor de carreira brutalmente honesto, focado em performance, conversão e dados para influenciadores digitais.
+O usuário @${influencer.handle} atua no nicho de ${influencer.niche} e possui um InfluScore de ${influencer.influScore}/100.
+O influenciador perguntou: "${message}".
+Responda de forma direta, tática e acionável. Não use jargões motivacionais vazios. Fale como um expert de mercado dark premium.`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return response.text();
+    } catch (error) {
+      console.error('[AI CHAT] Erro ao conectar ao Gemini:', error);
+      throw new Error('O Mentor está indisponível no momento.');
+    }
+  }
 }

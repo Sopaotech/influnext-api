@@ -26,6 +26,9 @@ export default function AIWorkspacePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCreatingTasks, setIsCreatingTasks] = useState(false);
+  const [chatMessages, setChatMessages] = useState<{role: 'user' | 'mentor', text: string}[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatting, setIsChatting] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -91,6 +94,25 @@ export default function AIWorkspacePage() {
       toast.error('Erro ao converter ideia.');
     } finally {
       setIsCreatingTasks(false);
+    }
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim() || isChatting) return;
+
+    const userMessage = chatInput.trim();
+    setChatInput('');
+    setChatMessages(prev => [...prev, { role: 'user', text: userMessage }]);
+    setIsChatting(true);
+
+    try {
+      const res = await api.post('/ai/chat', { message: userMessage });
+      setChatMessages(prev => [...prev, { role: 'mentor', text: res.data.reply }]);
+    } catch (err) {
+      toast.error('O Mentor está ocupado processando dados no momento.');
+    } finally {
+      setIsChatting(false);
     }
   };
 
@@ -163,6 +185,57 @@ export default function AIWorkspacePage() {
                   {isCreatingTasks ? '>> AGENDANDO...' : '>> ATACAR_AGORA'}
                 </Button>
               </div>
+            </section>
+
+            {/* Chat com Mentor Interativo */}
+            <section className="bg-zinc-950 border border-zinc-800 p-6 rounded-lg relative flex flex-col h-[400px]">
+              <div className="flex items-center gap-2 mb-4 text-purple-400 text-[10px] font-black uppercase tracking-widest border-b border-zinc-900 pb-4">
+                 <Terminal className="w-4 h-4" /> Mentor InfluNext // Chat Direto
+              </div>
+              
+              <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+                {chatMessages.length === 0 ? (
+                  <div className="text-zinc-600 text-[10px] uppercase font-bold italic h-full flex items-center justify-center">
+                    Aguardando input do Influenciador...
+                  </div>
+                ) : (
+                  chatMessages.map((msg, idx) => (
+                    <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[80%] p-3 rounded-xl text-xs leading-relaxed border ${
+                        msg.role === 'user' 
+                          ? 'bg-purple-600/20 border-purple-500/30 text-zinc-100 rounded-tr-sm' 
+                          : 'bg-zinc-900 border-zinc-800 text-zinc-300 rounded-tl-sm'
+                      }`}>
+                        {msg.text}
+                      </div>
+                    </div>
+                  ))
+                )}
+                {isChatting && (
+                  <div className="flex justify-start">
+                    <div className="bg-zinc-900 border border-zinc-800 text-zinc-500 p-3 rounded-xl rounded-tl-sm text-xs flex items-center gap-2">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Mentor analisando dados...
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <form onSubmit={handleSendMessage} className="mt-4 flex gap-2 pt-4 border-t border-zinc-900">
+                <input 
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Minha campanha flopou, o que eu ajusto hoje?"
+                  className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2 text-xs text-zinc-200 focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-zinc-700 font-sans"
+                />
+                <Button 
+                  type="submit"
+                  disabled={isChatting || !chatInput.trim()}
+                  className="bg-purple-600 hover:bg-purple-500 text-white px-6 font-black text-[10px] uppercase tracking-widest rounded-lg"
+                >
+                  Enviar
+                </Button>
+              </form>
             </section>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

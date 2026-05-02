@@ -13,6 +13,15 @@ export default function CompanyDashboard() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
+  const statusMap: Record<string, string> = {
+    IN_PROGRESS: 'Em Andamento',
+    PENDING_PAYMENT: 'Aguardando Pagamento',
+    UNDER_REVIEW: 'Em Análise',
+    COMPLETED: 'Concluído',
+    DISPUTE: 'Em Disputa',
+    DRAFT: 'Rascunho'
+  };
+
   const fetchDashboard = async () => {
     try {
       setIsLoading(true);
@@ -137,8 +146,20 @@ export default function CompanyDashboard() {
           </h2>
           
           {contracts.length === 0 ? (
-            <div className="text-zinc-500 text-sm py-4 text-center">
-              Você ainda não propôs nenhum contrato na plataforma.
+            <div className="flex flex-col items-center justify-center py-12 text-center bg-zinc-950/50 rounded-xl border border-zinc-800/50">
+              <div className="w-16 h-16 bg-purple-500/10 rounded-full flex items-center justify-center mb-4 border border-purple-500/20">
+                <FileText className="w-8 h-8 text-purple-400" />
+              </div>
+              <h3 className="text-zinc-200 text-lg font-bold mb-2">Sua esteira está vazia</h3>
+              <p className="text-zinc-500 text-sm max-w-md mb-6">
+                Descubra influenciadores de alta conversão validados por dados reais. Negocie e escale os seus resultados.
+              </p>
+              <Link 
+                href="/dashboard/marketplace"
+                className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-black uppercase text-xs tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(147,51,234,0.4)]"
+              >
+                Procurar Influenciadores Agora
+              </Link>
             </div>
           ) : (
             <div className="rounded-xl border border-zinc-800/50 overflow-hidden bg-zinc-950/50 flex-1">
@@ -176,7 +197,7 @@ export default function CompanyDashboard() {
                             contract.escrowStatus === 'DISPUTE' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
                             'bg-zinc-800/80 text-zinc-300 border border-zinc-700'}`}
                         >
-                          {contract.escrowStatus}
+                          {statusMap[contract.escrowStatus] || contract.escrowStatus}
                         </span>
                       </TableCell>
                       <TableCell className="text-right py-4">
