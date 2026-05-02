@@ -33,5 +33,6 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // A raiz '/' NÃO está no matcher — usuários não logados sempre veem a Landing Page
   matcher: ['/dashboard/:path*', '/auth/:path*'],
 };
