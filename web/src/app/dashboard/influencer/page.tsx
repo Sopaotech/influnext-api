@@ -47,7 +47,7 @@ export default function InfluencerDashboard() {
     setCompletingMission(true);
     try {
       await api.post('/influencers/mission/complete');
-      setMission(prev => prev ? { ...prev, missionCompleted: true } : null);
+      setMission((prev: any) => prev ? { ...prev, missionCompleted: true } : null);
       toast.success('✦ Missão Concluída! +5 pts InfluScore');
     } catch (err) {
       toast.error('Erro ao completar missão');
