@@ -1,7 +1,8 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
+  "buildCommand": "cd web && npm run build",
+  "outputDirectory": "web/.next",
   "framework": "nextjs",
+  "installCommand": "cd web && npm install",
   "redirects": [
     {
       "source": "/(.*)",
