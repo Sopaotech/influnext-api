@@ -236,7 +236,9 @@ export default function MarketplacePage() {
                     {inf.handle.charAt(0).toUpperCase()}
                   </div>
                   {inf.verifiedMetrics && (
-                    <Shield className="w-4 h-4 text-emerald-400" title="Métricas verificadas" />
+                    <span title="Métricas verificadas">
+                      <Shield className="w-4 h-4 text-emerald-400" />
+                    </span>
                   )}
                 </div>
 
