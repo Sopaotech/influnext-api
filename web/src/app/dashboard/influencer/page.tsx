@@ -9,6 +9,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { InfluScoreCard } from '@/components/influ-score-card';
 import Link from 'next/link';
 
+interface Contract {
+  id: string;
+  title: string;
+  budget: number | string;
+  escrowStatus: string;
+}
+
+interface Task {
+  id: string;
+  title: string;
+  dueDate: string;
+  isDone: boolean;
+}
+
 export default function InfluencerDashboard() {
   const [data, setData] = useState<any | null>(null);
   const [kpis, setKpis] = useState<any | null>(null);
@@ -158,7 +172,7 @@ export default function InfluencerDashboard() {
               <div className="text-[10px] text-zinc-600 font-bold py-10 text-center">Nenhum contrato ativo.</div>
             ) : (
               <div className="space-y-3">
-                {activeContracts.slice(0, 3).map(c => (
+                {activeContracts.slice(0, 3).map((c: Contract) => (
                   <div key={c.id} className="p-3 bg-[#080810] rounded-xl border border-[#1e1430] flex justify-between items-center">
                     <span className="text-[11px] font-bold text-zinc-300 truncate pr-2">{c.title}</span>
                     <span className="text-emerald-400 font-black text-xs">${Number(c.budget)}</span>
@@ -179,7 +193,7 @@ export default function InfluencerDashboard() {
               ) : (
                 <Table>
                   <TableBody>
-                    {pendingTasks.map(t => (
+                    {pendingTasks.map((t: Task) => (
                       <TableRow key={t.id} className="border-b-[#1e1430] hover:bg-[#151025]">
                         <TableCell className="text-[11px] font-bold py-4">{t.title}</TableCell>
                         <TableCell className="text-[10px] text-zinc-500 text-right">{new Date(t.dueDate).toLocaleDateString()}</TableCell>
