@@ -1,27 +1,54 @@
 import { prisma } from '../lib/prisma';
 import { MissionService } from '../services/mission.service';
+import { Request, Response } from 'express';
 import { z } from 'zod';
 
 export const searchInfluencers = async (req: Request, res: Response): Promise<void> => {
   try {
-    const q = req.query.q as string;
-    if (!q || q.length < 2) {
-      res.json([]);
-      return;
+    const q        = req.query.q        as string | undefined;
+    const city     = req.query.city     as string | undefined;
+    const state    = req.query.state    as string | undefined;
+    const niche    = req.query.niche    as string | undefined;
+    const minScore = req.query.minScore ? parseInt(req.query.minScore as string, 10) : undefined;
+
+    // Must have at least one filter or return all (for marketplace initial load)
+    const where: any = {};
+
+    if (q && q.length >= 1) {
+      where.handle = { contains: q };
+    }
+
+    if (city) {
+      where.city = { contains: city };
+    }
+
+    if (state && state.length === 2) {
+      where.state = { equals: state.toUpperCase() };
+    }
+
+    if (niche && niche !== 'Todos') {
+      where.niche = { contains: niche };
+    }
+
+    if (minScore !== undefined && !isNaN(minScore)) {
+      where.influScore = { gte: minScore };
     }
 
     const influencers = await prisma.influencerProfile.findMany({
-      where: {
-        handle: {
-          contains: q
-        }
-      },
+      where,
       select: {
-        id: true,
-        handle: true,
-        verifiedMetrics: true
+        id:              true,
+        handle:          true,
+        niche:           true,
+        city:            true,
+        state:           true,
+        influScore:      true,
+        scoreClass:      true,
+        verifiedMetrics: true,
+        profileImageUrl: true,
       },
-      take: 10
+      orderBy: { influScore: 'desc' },
+      take: 50,
     });
 
     res.json(influencers);
@@ -33,12 +60,14 @@ export const searchInfluencers = async (req: Request, res: Response): Promise<vo
 
 export const updateProfile = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    const userId = (req as any).user!.id;
     const schema = z.object({
-      handle: z.string().optional(),
-      niche: z.string().optional(),
+      handle:         z.string().optional(),
+      niche:          z.string().optional(),
       profileImageUrl: z.string().url().optional(),
-      bio: z.string().optional(),
+      bio:            z.string().optional(),
+      city:           z.string().optional(),
+      state:          z.string().max(2).optional(),
     });
 
     const parsed = schema.safeParse(req.body);
@@ -60,7 +89,7 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
 
 export const getMyMission = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    const userId = (req as any).user!.id;
     const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
     if (!influencer) {
       res.status(404).json({ error: "Perfil não encontrado." });
@@ -70,7 +99,7 @@ export const getMyMission = async (req: Request, res: Response): Promise<void> =
     const profile = await MissionService.assignDailyMission(influencer.id);
     res.json({
       dailyMission: profile?.dailyMission,
-      missionCompleted: profile?.missionCompleted
+      missionCompleted: profile?.missionCompleted,
     });
   } catch (error) {
     res.status(500).json({ error: "Erro ao carregar missão." });
@@ -79,7 +108,7 @@ export const getMyMission = async (req: Request, res: Response): Promise<void> =
 
 export const completeMission = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    const userId = (req as any).user!.id;
     const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
     if (!influencer) {
       res.status(404).json({ error: "Perfil não encontrado." });

@@ -1,11 +1,32 @@
 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="paint0_linear" x1="16" y1="4" x2="16" y2="28" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#7C3AED"/>
-      <stop offset="1" stop-color="#C026D3"/>
+    <linearGradient id="bg_grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1a0a2e"/>
+      <stop offset="100%" stop-color="#0d0620"/>
     </linearGradient>
+    <linearGradient id="letter_grad" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
-  <rect x="4" y="16" width="6" height="12" rx="1" fill="url(#paint0_linear)"/>
-  <rect x="13" y="10" width="6" height="18" rx="1" fill="url(#paint0_linear)"/>
-  <rect x="22" y="4" width="6" height="24" rx="1" fill="url(#paint0_linear)"/>
+  <rect width="32" height="32" rx="8" fill="url(#bg_grad)"/>
+  <rect width="32" height="32" rx="8" fill="#c084fc" fill-opacity="0.08"/>
+  <text
+    x="16"
+    y="22.5"
+    font-family="system-ui, -apple-system, sans-serif"
+    font-weight="900"
+    font-size="16"
+    text-anchor="middle"
+    fill="url(#letter_grad)"
+    filter="url(#glow)"
+    letter-spacing="-1"
+  >IN</text>
 </svg>

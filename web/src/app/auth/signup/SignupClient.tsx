@@ -2,253 +2,536 @@
 
 import React, { useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
+import Cookies from 'js-cookie';
+import Link from 'next/link';
 import { Logo } from '@/components/Logo';
+import { Check } from 'lucide-react';
 
-const NICHES = [
-  'Fitness', 'Tech', 'Lifestyle', 'Moda', 'Gastronomia',
-  'Gamer', 'Artista', 'Modelo', 'Esportes', 'Business', 'Finance'
+// ─── Constants ─────────────────────────────────────────────────────────────────
+
+const INFLUENCER_NICHES = [
+  'Moda & Estilo', 'Fitness & Saúde', 'Gastronomia', 'Tech & Gadgets',
+  'Gamer', 'Música', 'Arte & Design', 'Lifestyle', 'Viagem',
+  'Finanças', 'Educação', 'Humor & Entretenimento', 'Esportes',
+  'Beleza & Skincare', 'Negócios & Empreendedorismo', 'Família & Maternidade',
 ];
+
+const CAREER_GOALS = [
+  { value: 'close_contracts', label: 'Fechar contratos com marcas' },
+  { value: 'grow_audience', label: 'Crescer minha audiência' },
+  { value: 'monetize', label: 'Monetizar meu conteúdo' },
+  { value: 'build_brand', label: 'Construir minha marca pessoal' },
+];
+
+const COMPANY_SEGMENTS = [
+  'Moda & Vestuário', 'Tecnologia', 'Alimentação & Bebidas', 'Saúde & Bem-estar',
+  'Beleza & Cosméticos', 'Viagem & Turismo', 'Educação', 'Finanças',
+  'Games & Entretenimento', 'Casa & Decoração', 'Esportes', 'Automotivo', 'Outro',
+];
+
+const EMPLOYEE_RANGES = [
+  { value: '1-10', label: '1 – 10 funcionários (Micro)' },
+  { value: '11-50', label: '11 – 50 funcionários (Pequena)' },
+  { value: '51-200', label: '51 – 200 funcionários (Média)' },
+  { value: '200+', label: '200+ funcionários (Grande)' },
+];
+
+const BUDGET_RANGES = [
+  { value: 'até_5k', label: 'Até R$ 5.000 / campanha' },
+  { value: '5k_20k', label: 'R$ 5.000 – R$ 20.000' },
+  { value: '20k_100k', label: 'R$ 20.000 – R$ 100.000' },
+  { value: '100k+', label: 'Acima de R$ 100.000' },
+];
+
+// ─── Stepper ───────────────────────────────────────────────────────────────────
+
+function Stepper({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) {
+  return (
+    <div className="flex items-center gap-2 justify-center mb-8">
+      {Array.from({ length: totalSteps }).map((_, i) => {
+        const stepNum = i + 1;
+        const isDone = stepNum < currentStep;
+        const isActive = stepNum === currentStep;
+        return (
+          <React.Fragment key={i}>
+            <div className={`
+              w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-black border transition-all duration-300
+              ${isDone ? 'bg-purple-600 border-purple-600 text-white shadow-[0_0_12px_rgba(192,132,252,0.4)]'
+                : isActive ? 'bg-transparent border-purple-500 text-purple-400 shadow-[0_0_12px_rgba(192,132,252,0.2)]'
+                : 'bg-transparent border-zinc-800 text-zinc-700'}
+            `}>
+              {isDone ? <Check className="w-3.5 h-3.5" /> : stepNum}
+            </div>
+            {i < totalSteps - 1 && (
+              <div className={`flex-1 h-px max-w-[40px] transition-all duration-500 ${isDone ? 'bg-purple-600' : 'bg-zinc-800'}`} />
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function SignupClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const typeParam = searchParams.get('type') || 'influencer';
-  
+
   const [userType, setUserType] = useState(typeParam);
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    name: '',
-    handle: '',
-    city: '',
-    niche: '',
-    goal: '',
-    companyName: '',
-    region: '',
-    profileType: '',
-  });
-
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const isInfluencer = userType === 'influencer';
 
-  // Validação do step 1
-  const step1Valid = isInfluencer
-    ? formData.name.trim() !== '' && formData.handle.trim() !== '' && formData.city.trim() !== ''
-    : formData.companyName.trim() !== '' && formData.city.trim() !== '';
+  // Step 1: Credentials
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
-  // Validação do step 2
-  const step2Valid = isInfluencer
-    ? formData.niche !== '' && formData.goal.trim() !== ''
-    : formData.profileType !== '';
+  // Step 2: Influencer
+  const [niche, setNiche] = useState('');
+  const [yearsOfCareer, setYearsOfCareer] = useState(0);
+  const [goal, setGoal] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
 
-  const handleNext = () => {
-    if (step === 1) {
+  // Step 2: Company
+  const [companyName, setCompanyName] = useState('');
+  const [companyCity, setCompanyCity] = useState('');
+  const [companyState, setCompanyState] = useState('');
+  const [segment, setSegment] = useState('');
+  const [employeeCount, setEmployeeCount] = useState('');
+  const [campaignBudget, setCampaignBudget] = useState('');
+
+  const cookieOptions: Cookies.CookieAttributes = {
+    expires: 7,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN || undefined,
+  };
+
+  const step1Valid = email.trim() !== '' && password.length >= 8 && password === confirmPassword;
+  const step2InfluencerValid = niche !== '' && (city.trim() !== '' || true); // city optional
+  const step2CompanyValid = companyName.trim().length >= 2;
+
+  // ─── Step 1: Register user ─────────────────────────────────────────────────
+
+  const handleStep1Submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      setError('As senhas não coincidem.');
+      return;
+    }
+    setError('');
+    setIsLoading(true);
+    try {
+      const role = isInfluencer ? 'INFLUENCER' : 'COMPANY';
+      const res = await api.post<any>('/auth/signup', { email, password, role });
+
+      // Signup only creates User; we need to login to get a token for step 2
+      // Immediately login to get the JWT
+      const loginRes = await api.post<any>('/auth/login', { email, password });
+      Cookies.set('influnext_token', loginRes.data.token, cookieOptions);
+      Cookies.set('influnext_role', loginRes.data.user.role, cookieOptions);
+
       setStep(2);
-    } else {
-      document.cookie = `plim_welcome=true; path=/; max-age=60`;
-      document.cookie = `user_name=${encodeURIComponent(formData.name || formData.companyName)}; path=/; max-age=60`;
-      const destination = isInfluencer ? '/dashboard/influencer' : '/dashboard/company';
-      router.push(destination);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Erro ao criar conta.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // ─── Step 2: Complete profile ──────────────────────────────────────────────
+
+  const handleStep2Submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+    try {
+      if (isInfluencer) {
+        await api.post('/auth/complete-profile', {
+          niche,
+          yearsOfCareer,
+          goal,
+          city,
+          state,
+        });
+        router.push('/dashboard/influencer');
+      } else {
+        await api.post('/auth/complete-profile', {
+          companyName,
+          city: companyCity,
+          state: companyState,
+          segment,
+          employeeCount,
+          campaignBudget,
+        });
+        router.push('/dashboard/company');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Erro ao salvar perfil.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const inputClass = "w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:border-purple-500/40 focus:bg-white/[0.06] transition-all";
+  const selectClass = "w-full bg-[#0d0b18] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-purple-500/40 transition-all appearance-none";
+  const labelClass = "block text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5";
+
   return (
-    <div className="min-h-screen bg-[#050508] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-950/30 via-transparent to-pink-950/10" />
-      <div className="absolute top-0 left-1/3 w-96 h-96 bg-purple-600/10 rounded-full blur-[120px]" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-600/10 rounded-full blur-[120px]" />
+    <div className="min-h-screen bg-[#080810] text-white flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-[-15%] left-[-5%] w-[500px] h-[500px] rounded-full bg-purple-700/10 blur-[130px]" />
+        <div className="absolute bottom-[-15%] right-[-5%] w-[450px] h-[450px] rounded-full bg-violet-600/8 blur-[110px]" />
+        <div className="absolute inset-0 opacity-[0.02]" style={{
+          backgroundImage: 'linear-gradient(rgba(192,132,252,1) 1px, transparent 1px), linear-gradient(90deg, rgba(192,132,252,1) 1px, transparent 1px)',
+          backgroundSize: '72px 72px',
+        }} />
+      </div>
 
-      <div className="w-full max-w-md z-10">
+      <div className="w-full max-w-[440px] z-10 space-y-6">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <Logo size="md" href="/" />
-        </div>
-
-        {/* Toggle de tipo */}
-        <div className="flex gap-1 mb-6 p-1 bg-white/5 border border-white/10 rounded-xl w-max mx-auto">
-          <button
-            onClick={() => { setUserType('influencer'); setStep(1); }}
-            className={`px-5 py-2 text-xs font-bold rounded-lg transition-all ${isInfluencer ? 'bg-purple-600 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
-          >
-            Influencer
-          </button>
-          <button
-            onClick={() => { setUserType('company'); setStep(1); }}
-            className={`px-5 py-2 text-xs font-bold rounded-lg transition-all ${!isInfluencer ? 'bg-blue-600 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
-          >
-            Marca / Empresa
-          </button>
+        <div className="text-center">
+          <Logo size="lg" href="/" className="justify-center" />
         </div>
 
         {/* Card */}
         <div className="relative">
-          <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-br from-purple-500/20 via-transparent to-pink-500/10" />
-          <div className="relative bg-white/[0.03] backdrop-blur-xl rounded-2xl p-8 shadow-[0_40px_60px_rgba(0,0,0,0.5)] space-y-6">
+          <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-b from-purple-500/20 via-purple-500/5 to-transparent" />
+          <div className="relative bg-[#0d0b18]/80 backdrop-blur-xl rounded-2xl p-8 shadow-[0_32px_64px_rgba(0,0,0,0.7)] border border-white/[0.04] space-y-6">
 
-            {/* Header com mensagem da IA */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-xs text-purple-300 font-bold uppercase tracking-widest">
-                <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-                {isInfluencer ? 'Workspace✦' : 'Marketplace Seguro'} — Passo {step}/2
-              </div>
-              <div className="bg-purple-950/40 border border-purple-500/20 p-4 rounded-xl">
-                <p className="text-sm text-purple-200/80 leading-relaxed">
-                  <span className="font-black text-purple-400 mr-1">IA ↗</span>
-                  {step === 1
-                    ? isInfluencer
-                      ? 'Vamos montar seu perfil. Preciso do seu nome, arroba e de onde você é para conectar com as marcas certas.'
-                      : 'Bem-vindo ao ambiente seguro. Me diga quem é sua empresa e onde quer encontrar talentos.'
-                    : isInfluencer
-                      ? 'Última etapa! Qual o seu nicho e o que você quer conquistar este ano?'
-                      : 'Qual perfil de influenciador você está buscando?'
-                  }
-                </p>
-              </div>
+            {/* Header */}
+            <div>
+              <Stepper currentStep={step} totalSteps={2} />
+
+              {step === 1 && (
+                <>
+                  <div className="flex gap-1 p-1 bg-white/[0.04] border border-white/[0.06] rounded-xl mb-4 w-max mx-auto">
+                    <button
+                      type="button"
+                      onClick={() => setUserType('influencer')}
+                      className={`px-5 py-2 text-[11px] font-black rounded-lg tracking-wider uppercase transition-all ${isInfluencer ? 'bg-purple-600 text-white shadow-[0_0_16px_rgba(192,132,252,0.3)]' : 'text-zinc-600 hover:text-zinc-400'}`}
+                    >
+                      Influencer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUserType('company')}
+                      className={`px-5 py-2 text-[11px] font-black rounded-lg tracking-wider uppercase transition-all ${!isInfluencer ? 'bg-blue-600 text-white shadow-[0_0_16px_rgba(59,130,246,0.3)]' : 'text-zinc-600 hover:text-zinc-400'}`}
+                    >
+                      Empresa
+                    </button>
+                  </div>
+                  <div className="text-center space-y-0.5">
+                    <h1 className="text-xl font-black text-white tracking-tight">Criar conta</h1>
+                    <p className="text-zinc-600 text-xs">Passo 1 de 2 — Credenciais de acesso</p>
+                  </div>
+                </>
+              )}
+
+              {step === 2 && (
+                <div className="text-center space-y-0.5">
+                  <h1 className="text-xl font-black text-white tracking-tight">
+                    {isInfluencer ? 'Entrevista de Carreira' : 'Perfil da Empresa'}
+                  </h1>
+                  <p className="text-zinc-600 text-xs">
+                    Passo 2 de 2 — {isInfluencer ? 'Vamos conhecer sua trajetória' : 'Nos conte sobre sua empresa'}
+                  </p>
+                </div>
+              )}
             </div>
 
-            {/* Step 1 */}
-            {step === 1 && (
-              <div className="space-y-4">
-                {isInfluencer ? (
-                  <>
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] text-zinc-500 font-bold uppercase tracking-wider">
-                        Nome Completo *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Seu nome real"
-                        value={formData.name}
-                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-purple-500/50"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] text-zinc-500 font-bold uppercase tracking-wider">
-                        @ Instagram / TikTok *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="@seuhandle"
-                        value={formData.handle}
-                        onChange={e => setFormData({ ...formData, handle: e.target.value })}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-purple-500/50"
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] text-zinc-500 font-bold uppercase tracking-wider">
-                      Nome da Empresa *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Razão social ou nome fantasia"
-                      value={formData.companyName}
-                      onChange={e => setFormData({ ...formData, companyName: e.target.value })}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-purple-500/50"
-                    />
-                  </div>
-                )}
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] text-zinc-500 font-bold uppercase tracking-wider">
-                    📍 Localidade (Cidade/UF) *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ex: São Paulo, SP"
-                    value={formData.city}
-                    onChange={e => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-purple-500/50"
-                  />
-                </div>
-
-                <button
-                  onClick={handleNext}
-                  disabled={!step1Valid}
-                  className="w-full bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-3 rounded-xl transition-all shadow-[0_0_20px_rgba(168,85,247,0.2)] disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
-                >
-                  Continuar →
-                </button>
+            {error && (
+              <div className="bg-red-500/8 border border-red-500/25 text-red-400 p-3 rounded-xl text-xs text-center font-semibold">
+                {error}
               </div>
             )}
 
-            {/* Step 2 */}
-            {step === 2 && (
-              <div className="space-y-4">
-                {isInfluencer ? (
-                  <>
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] text-zinc-500 font-bold uppercase tracking-wider">
-                        Nicho Principal *
-                      </label>
-                      <select
-                        required
-                        value={formData.niche}
-                        onChange={e => setFormData({ ...formData, niche: e.target.value })}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-purple-500/50"
-                      >
-                        <option value="" className="bg-zinc-900">Selecione seu nicho...</option>
-                        {NICHES.map(n => (
-                          <option key={n} value={n} className="bg-zinc-900">{n}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] text-zinc-500 font-bold uppercase tracking-wider">
-                        Maior objetivo este ano *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Ex: Fechar 5 contratos fixos"
-                        value={formData.goal}
-                        onChange={e => setFormData({ ...formData, goal: e.target.value })}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-purple-500/50"
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] text-zinc-500 font-bold uppercase tracking-wider">
-                      Perfil que busca *
-                    </label>
-                    <select
-                      required
-                      value={formData.profileType}
-                      onChange={e => setFormData({ ...formData, profileType: e.target.value })}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-purple-500/50"
-                    >
-                      <option value="" className="bg-zinc-900">Selecione...</option>
-                      <option value="nano" className="bg-zinc-900">Nano (até 10k) — Comércio local</option>
-                      <option value="micro" className="bg-zinc-900">Micro (10k–50k) — Autoridade regional</option>
-                      <option value="mid" className="bg-zinc-900">Mid-tier (50k–200k) — Escala nacional</option>
-                    </select>
-                  </div>
-                )}
+            {/* ─── STEP 1: Credentials ─────────────────────────────────────── */}
+            {step === 1 && (
+              <form onSubmit={handleStep1Submit} className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div>
+                  <label className={labelClass}>E-mail</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="seu@email.com"
+                    className={inputClass}
+                  />
+                </div>
 
-                <div className="flex gap-3">
+                <div>
+                  <label className={labelClass}>Senha</label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    placeholder="Mínimo 8 caracteres"
+                    className={inputClass}
+                  />
+                  {password.length > 0 && password.length < 8 && (
+                    <p className="text-amber-500/80 text-[10px] mt-1 font-semibold">Pelo menos 8 caracteres</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className={labelClass}>Confirmar Senha</label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    placeholder="Repita a senha"
+                    className={`${inputClass} ${confirmPassword.length > 0 && confirmPassword !== password ? 'border-red-500/40' : ''}`}
+                  />
+                  {confirmPassword.length > 0 && confirmPassword !== password && (
+                    <p className="text-red-400 text-[10px] mt-1 font-semibold">As senhas não coincidem</p>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={!step1Valid || isLoading}
+                  className="w-full h-12 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 disabled:opacity-30 text-white font-bold rounded-xl shadow-[0_0_24px_rgba(192,132,252,0.15)] hover:shadow-[0_0_32px_rgba(192,132,252,0.3)] transition-all duration-300 text-sm"
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                      Criando conta...
+                    </span>
+                  ) : 'Continuar →'}
+                </button>
+              </form>
+            )}
+
+            {/* ─── STEP 2: Influencer Interview ────────────────────────────── */}
+            {step === 2 && isInfluencer && (
+              <form onSubmit={handleStep2Submit} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div>
+                  <label className={labelClass}>Nicho Principal *</label>
+                  <select value={niche} onChange={(e) => setNiche(e.target.value)} required className={selectClass}>
+                    <option value="" className="bg-zinc-900">Selecione seu nicho...</option>
+                    {INFLUENCER_NICHES.map(n => (
+                      <option key={n} value={n} className="bg-zinc-900">{n}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className={labelClass}>Anos de Carreira como Creator</label>
+                  <div className="space-y-2">
+                    <input
+                      type="range"
+                      min={0}
+                      max={20}
+                      value={yearsOfCareer}
+                      onChange={(e) => setYearsOfCareer(Number(e.target.value))}
+                      className="w-full accent-purple-500"
+                    />
+                    <div className="flex justify-between text-[10px] text-zinc-600 font-bold">
+                      <span>Iniciante</span>
+                      <span className="text-purple-400 font-black">
+                        {yearsOfCareer === 0 ? 'Estou começando' : `${yearsOfCareer} ano${yearsOfCareer !== 1 ? 's' : ''}`}
+                      </span>
+                      <span>20+ anos</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className={labelClass}>Objetivo Principal *</label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {CAREER_GOALS.map(g => (
+                      <label key={g.value} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${goal === g.value ? 'border-purple-500/50 bg-purple-500/8 text-purple-300' : 'border-white/[0.06] bg-white/[0.02] text-zinc-500 hover:border-white/[0.12] hover:text-zinc-300'}`}>
+                        <input
+                          type="radio"
+                          name="goal"
+                          value={g.value}
+                          checked={goal === g.value}
+                          onChange={() => setGoal(g.value)}
+                          className="accent-purple-500"
+                        />
+                        <span className="text-xs font-semibold">{g.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>Cidade</label>
+                    <input
+                      type="text"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      placeholder="São Paulo"
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>UF</label>
+                    <input
+                      type="text"
+                      value={state}
+                      onChange={(e) => setState(e.target.value.toUpperCase().slice(0, 2))}
+                      placeholder="SP"
+                      maxLength={2}
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
                   <button
+                    type="button"
                     onClick={() => setStep(1)}
-                    className="px-4 py-3 border border-white/10 text-zinc-400 rounded-xl text-sm font-bold hover:bg-white/5 transition-colors"
+                    className="px-5 py-3 border border-white/[0.08] text-zinc-500 rounded-xl text-sm font-bold hover:bg-white/[0.04] hover:text-zinc-300 transition-all"
                   >
                     ← Voltar
                   </button>
                   <button
-                    onClick={handleNext}
-                    disabled={!step2Valid}
-                    className={`flex-1 font-bold py-3 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed ${isInfluencer
-                      ? 'bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-pink-500 shadow-[0_0_20px_rgba(168,85,247,0.2)]'
-                      : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-cyan-500'
-                    } text-white`}
+                    type="submit"
+                    disabled={!step2InfluencerValid || isLoading}
+                    className="flex-1 h-12 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 disabled:opacity-30 text-white font-bold rounded-xl transition-all text-sm"
                   >
-                    {isInfluencer ? 'Iniciar Império ↗' : 'Acessar Marketplace →'}
+                    {isLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                        Configurando...
+                      </span>
+                    ) : 'Iniciar meu Workspace ↗'}
                   </button>
                 </div>
-              </div>
+              </form>
+            )}
+
+            {/* ─── STEP 2: Company Interview ───────────────────────────────── */}
+            {step === 2 && !isInfluencer && (
+              <form onSubmit={handleStep2Submit} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div>
+                  <label className={labelClass}>Nome da Empresa *</label>
+                  <input
+                    type="text"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    required
+                    placeholder="Razão social ou nome fantasia"
+                    className={inputClass}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>Cidade</label>
+                    <input
+                      type="text"
+                      value={companyCity}
+                      onChange={(e) => setCompanyCity(e.target.value)}
+                      placeholder="São Paulo"
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>UF</label>
+                    <input
+                      type="text"
+                      value={companyState}
+                      onChange={(e) => setCompanyState(e.target.value.toUpperCase().slice(0, 2))}
+                      placeholder="SP"
+                      maxLength={2}
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className={labelClass}>Segmento de Atuação</label>
+                  <select value={segment} onChange={(e) => setSegment(e.target.value)} className={selectClass}>
+                    <option value="" className="bg-zinc-900">Selecione o segmento...</option>
+                    {COMPANY_SEGMENTS.map(s => (
+                      <option key={s} value={s} className="bg-zinc-900">{s}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className={labelClass}>Tamanho da Empresa</label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {EMPLOYEE_RANGES.map(r => (
+                      <label key={r.value} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${employeeCount === r.value ? 'border-blue-500/50 bg-blue-500/8 text-blue-300' : 'border-white/[0.06] bg-white/[0.02] text-zinc-500 hover:border-white/[0.12] hover:text-zinc-300'}`}>
+                        <input
+                          type="radio"
+                          name="employees"
+                          value={r.value}
+                          checked={employeeCount === r.value}
+                          onChange={() => setEmployeeCount(r.value)}
+                          className="accent-blue-500"
+                        />
+                        <span className="text-xs font-semibold">{r.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className={labelClass}>Budget para Campanhas</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {BUDGET_RANGES.map(b => (
+                      <label key={b.value} className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all text-center justify-center ${campaignBudget === b.value ? 'border-emerald-500/50 bg-emerald-500/8 text-emerald-300' : 'border-white/[0.06] bg-white/[0.02] text-zinc-500 hover:border-white/[0.12] hover:text-zinc-300'}`}>
+                        <input
+                          type="radio"
+                          name="budget"
+                          value={b.value}
+                          checked={campaignBudget === b.value}
+                          onChange={() => setCampaignBudget(b.value)}
+                          className="sr-only"
+                        />
+                        <span className="text-[10px] font-bold">{b.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="px-5 py-3 border border-white/[0.08] text-zinc-500 rounded-xl text-sm font-bold hover:bg-white/[0.04] hover:text-zinc-300 transition-all"
+                  >
+                    ← Voltar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!step2CompanyValid || isLoading}
+                    className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-cyan-500 disabled:opacity-30 text-white font-bold rounded-xl transition-all text-sm"
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                        Configurando...
+                      </span>
+                    ) : 'Acessar Marketplace →'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {step === 1 && (
+              <p className="text-center text-xs text-zinc-700">
+                Já tem conta?{' '}
+                <Link href="/auth/login" className="text-purple-500 hover:text-purple-400 font-semibold transition-colors">
+                  Entrar
+                </Link>
+              </p>
             )}
           </div>
         </div>

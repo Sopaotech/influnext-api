@@ -8,8 +8,8 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "InfluNext — Marketplace de Influência",
-  description: "Conecte marcas e influenciadores com contratos inteligentes e pagamentos seguros via Escrow.",
+  title: "INFLUNEXT — Plataforma de Marketing de Influência",
+  description: "Workspace com IA para influenciadores e Marketplace com Escrow seguro para marcas. A plataforma de influência mais avançada do Brasil.",
   icons: {
     icon: [
       { url: '/icon.svg', type: 'image/svg+xml' },

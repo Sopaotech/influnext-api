@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import Cookies from 'js-cookie';
-import { Home, FileText, CheckSquare, Settings, LogOut, Menu, X, BrainCircuit, Sparkles, ShieldCheck } from 'lucide-react';
+import { Home, FileText, Settings, LogOut, Menu, X, Sparkles, ShieldCheck, Store } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
 import { Logo } from '@/components/Logo';
 
@@ -29,10 +29,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navItems = [
     { name: 'Dashboard', href: '/dashboard/influencer', icon: Home },
     { name: 'Workspace', href: '/dashboard/workspace', icon: Sparkles, special: true },
+    { name: 'Marketplace', href: '/dashboard/marketplace', icon: Store },
     { name: 'Contratos', href: '/dashboard/contracts', icon: FileText },
-    { name: 'Comunidade', href: '#', icon: Home, disabled: true },
     { name: 'Ajustes', href: '/dashboard/settings', icon: Settings },
-    { name: 'Ajuda', href: '#', icon: Home },
   ];
 
   return (

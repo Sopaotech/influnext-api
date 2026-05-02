@@ -67,6 +67,109 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+// ─── Complete Profile (Etapa 2 do Onboarding) ─────────────────────────────────
+
+export const completeProfile = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user!.id;
+    const role = (req as any).user!.role;
+
+    if (role === 'INFLUENCER') {
+      const schema = z.object({
+        niche:        z.string().min(1, 'Nicho obrigatório.'),
+        yearsOfCareer: z.number().int().min(0).max(50).optional(),
+        goal:         z.string().optional(),
+        city:         z.string().optional(),
+        state:        z.string().max(2).optional(),
+      });
+
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ errors: parsed.error.flatten().fieldErrors });
+        return;
+      }
+
+      // Perfil já existe?
+      const existing = await prisma.influencerProfile.findUnique({ where: { userId } });
+      if (existing) {
+        res.status(200).json({ message: 'Perfil já configurado.', profile: existing });
+        return;
+      }
+
+      // Gerar handle único a partir do e-mail
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+      const baseHandle = user!.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
+      const suffix = Math.floor(1000 + Math.random() * 9000);
+      const handle = `${baseHandle}${suffix}`;
+
+      const bioText = [
+        parsed.data.goal ? `Objetivo: ${parsed.data.goal}` : null,
+        parsed.data.yearsOfCareer !== undefined ? `Experiência: ${parsed.data.yearsOfCareer} ano(s)` : null,
+      ].filter(Boolean).join(' | ');
+
+      const profile = await prisma.influencerProfile.create({
+        data: {
+          userId,
+          handle,
+          niche: parsed.data.niche,
+          city:  parsed.data.city,
+          state: parsed.data.state,
+          bio:   bioText || undefined,
+        },
+      });
+
+      res.status(201).json({ message: 'Perfil de influenciador criado com sucesso!', profile });
+
+    } else if (role === 'COMPANY') {
+      const schema = z.object({
+        companyName:    z.string().min(2, 'Nome da empresa obrigatório.'),
+        city:           z.string().optional(),
+        state:          z.string().max(2).optional(),
+        segment:        z.string().optional(),
+        employeeCount:  z.string().optional(),
+        campaignBudget: z.string().optional(),
+      });
+
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ errors: parsed.error.flatten().fieldErrors });
+        return;
+      }
+
+      const existing = await prisma.companyProfile.findUnique({ where: { userId } });
+      if (existing) {
+        res.status(200).json({ message: 'Perfil já configurado.', profile: existing });
+        return;
+      }
+
+      // taxId provisório — empresa atualizará via settings
+      const taxId = `TEMP-${userId.substring(0, 8).toUpperCase()}`;
+
+      const profile = await prisma.companyProfile.create({
+        data: {
+          userId,
+          companyName:    parsed.data.companyName,
+          taxId,
+          city:           parsed.data.city,
+          state:          parsed.data.state,
+          segment:        parsed.data.segment,
+          employeeCount:  parsed.data.employeeCount,
+          campaignBudget: parsed.data.campaignBudget,
+        },
+      });
+
+      res.status(201).json({ message: 'Perfil empresarial criado com sucesso!', profile });
+
+    } else {
+      res.status(400).json({ error: 'Role não suportada para criação de perfil.' });
+    }
+  } catch (error) {
+    console.error('[AUTH COMPLETE PROFILE ERROR]:', error);
+    res.status(500).json({ error: 'Erro ao criar perfil.' });
+  }
+};
+
+
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const parsed = loginSchema.safeParse(req.body);
