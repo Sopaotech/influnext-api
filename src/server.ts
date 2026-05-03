@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { routes } from './routes';
-import './workers/notification.worker';
+// import './workers/notification.worker';
 
 dotenv.config();
 
