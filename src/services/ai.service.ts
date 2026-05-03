@@ -33,7 +33,8 @@ export class AIService {
         trendingNow: {
            audios: ["Espresso", "Birds of a Feather"],
            topics: ["Productivity", "Minimalism"]
-        }
+        },
+        videoReferences: []
       };
     }
 
