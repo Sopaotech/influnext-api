@@ -25,7 +25,9 @@
     "jsonwebtoken": "^9.0.2",
     "otplib": "^13.4.0",
     "qrcode": "^1.5.4",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "prisma": "^5.10.0",
+    "typescript": "^5.3.3"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
@@ -34,9 +36,7 @@
     "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^20.11.20",
     "@types/qrcode": "^1.5.6",
-    "prisma": "^5.10.0",
-    "ts-node-dev": "^2.0.0",
-    "typescript": "^5.3.3"
+    "ts-node-dev": "^2.0.0"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
