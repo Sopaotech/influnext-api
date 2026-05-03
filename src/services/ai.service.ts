@@ -14,7 +14,7 @@ export class AIService {
   /**
    * Gera uma estratégia de carreira real usando Gemini AI.
    */
-  static async generateCareerStrategy(influencer: any, metrics: MetricSnapshot): Promise<{ mentorGreeting: string; trends: any[]; suggestedTasks: any[]; videoInspirations: any[]; trendingNow: any }> {
+  static async generateCareerStrategy(influencer: any, metrics: MetricSnapshot): Promise<{ mentorGreeting: string; trends: any[]; suggestedTasks: any[]; videoInspirations: any[]; trendingNow: any; videoReferences: any[] }> {
     const apiKey = process.env.GEMINI_API_KEY;
     
     if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
