@@ -139,12 +139,12 @@ export default function SignupClient() {
 
       setStep(2);
     } catch (err: any) {
-      console.error('[SIGNUP STEP 1 ERROR]', err, 'API_URL:', process.env.NEXT_PUBLIC_API_URL);
       let msg = err.response?.data?.error;
       if (!msg && err.response?.data?.errors) {
         msg = Object.values(err.response.data.errors).flat().join(' | ');
       }
-      setError(msg || err.message || 'Erro de conexão com o servidor.');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://influnext-api-production.up.railway.app/v1';
+      setError(`${msg || err.message || 'Erro de conexão'} (URL: ${apiUrl})`);
     } finally {
       setIsLoading(false);
     }
@@ -178,12 +178,12 @@ export default function SignupClient() {
         router.push('/dashboard/company');
       }
     } catch (err: any) {
-      console.error('[SIGNUP STEP 2 ERROR]', err, 'API_URL:', process.env.NEXT_PUBLIC_API_URL);
       let msg = err.response?.data?.error;
       if (!msg && err.response?.data?.errors) {
         msg = Object.values(err.response.data.errors).flat().join(' | ');
       }
-      setError(msg || err.message || 'Erro de conexão com o servidor.');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://influnext-api-production.up.railway.app/v1';
+      setError(`${msg || err.message || 'Erro de conexão'} (URL: ${apiUrl})`);
     } finally {
       setIsLoading(false);
     }
