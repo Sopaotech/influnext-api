@@ -6,10 +6,12 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "dev:web": "cd web && npm run dev",
     "dev:api": "cd src && npx ts-node server.ts",
+    "build": "npx prisma generate && tsc -p tsconfig.json",
     "build:api": "tsc -p tsconfig.json",
     "build:web": "cd web && npm run build",
+    "start": "node dist/server.js",
     "prisma:generate": "npx prisma generate",
-    "deploy:prod": "npm run prisma:generate && npm run build:api && npm run build:web",
+    "deploy:prod": "npm run build && npm run build:web",
     "seed": "npx ts-node prisma/seed.ts"
   },
   "dependencies": {
