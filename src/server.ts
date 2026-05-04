@@ -36,7 +36,7 @@ app.use(express.json());
 // Todas as suas rotas começarão com /v1
 app.use('/v1', routes);
 
-const PORT = process.env.PORT || 4000;
+const PORT = 4000;
 
 app.listen(PORT, () => {
   console.log(`🚀 INFLUNEXT ONLINE: Port ${PORT}`);
