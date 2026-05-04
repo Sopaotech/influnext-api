@@ -289,16 +289,6 @@ export default function LandingPageClient() {
             </div>
           </div>
         </section>
-
-                   className="w-full py-4 bg-white text-[#080810] font-black rounded-2xl hover:bg-zinc-200 transition-all flex items-center justify-center gap-2"
-                 >
-                   COMEÇAR AGORA <ArrowRight className="w-4 h-4" />
-                 </Link>
-                 <p className="text-[10px] text-zinc-600 font-bold uppercase">Teste grátis por 7 dias — Cancele quando quiser</p>
-              </div>
-           </div>
-        </section>
-
         {/* ── CTA FINAL ──────────────────────────────────────────────────────── */}
         <section className="w-full max-w-7xl mx-auto px-6 lg:px-12 pb-28 z-10">
           <div className="relative rounded-3xl overflow-hidden">
