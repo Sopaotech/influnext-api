@@ -1,7 +1,17 @@
 'use client';
 
-import { CheckCircle2, Crown, Zap, ShieldCheck, Rocket, BarChart3, Clock } from 'lucide-react';
+import { 
+  CheckCircle2, 
+  Crown, 
+  Zap, 
+  ShieldCheck, 
+  Rocket, 
+  BarChart3, 
+  Clock, 
+  Target 
+} from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const BENEFITS = [
   {
@@ -36,14 +46,14 @@ const BENEFITS = [
   }
 ];
 
-import { Target } from 'lucide-react';
-
 export default function SubscriptionPage() {
+  const router = useRouter();
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-3xl font-black text-white tracking-tighter">UPGRADE PARA O PLANO PRO</h1>
+          <h1 className="text-3xl font-black text-white tracking-tighter uppercase">Upgrade para o Plano Pro</h1>
           <p className="text-zinc-500 font-medium">Desbloqueie todo o poder da InfluNext e escale sua carreira.</p>
         </div>
         <div className="px-4 py-2 bg-purple-500/10 border border-purple-500/20 rounded-full">
