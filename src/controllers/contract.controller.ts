@@ -3,6 +3,7 @@ import { UserRole } from '../types/roles';
 import { prisma } from '../lib/prisma';
 import { z } from 'zod';
 import { addNotificationJob } from '../queues/notification.queue';
+import { BriefingService } from '../services/briefing.service';
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -17,6 +18,7 @@ const deliverableSchema = z.object({
 const createContractSchema = z.object({
   influencerId: z.string().uuid('ID do influenciador inválido.'),
   title: z.string().min(1, 'O título é obrigatório.'),
+  briefing: z.string().min(10, 'O briefing deve ter pelo menos 10 caracteres.').optional(),
   budget: z.coerce.number().positive('O budget deve ser um número positivo.'),
   deliverables: z.array(deliverableSchema).min(1, 'Pelo menos um entregável é obrigatório.'),
 });
@@ -43,7 +45,14 @@ export const createContract = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const { influencerId, title, budget, deliverables } = parsed.data;
+    const { influencerId, title, budget, deliverables, briefing } = parsed.data;
+
+    // ─── Geração de Roteiro IA (O Cérebro) ──────────────────────────────────
+    let aiScript = null;
+    if (briefing) {
+      aiScript = await BriefingService.generateSmartScript(influencerId, briefing);
+    }
+    // ────────────────────────────────────────────────────────────────────────
 
     // ─── Cálculo do Take Rate (10%) ─────────────────────────────────────────
     const platformFee = budget * PLATFORM_TAKE_RATE;
@@ -62,6 +71,8 @@ export const createContract = async (req: Request, res: Response): Promise<void>
           companyId: company.id,
           influencerId,
           title,
+          briefing,
+          aiScript,
           budget,
           platformFee,
           netAmount,
@@ -239,5 +250,48 @@ export const releasePayment = async (req: Request, res: Response): Promise<void>
     } else {
       res.status(500).json({ error: "Erro ao liberar o pagamento." });
     }
+  }
+};
+
+export const getMyContracts = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+
+    let contracts;
+
+    if (userRole === UserRole.INFLUENCER) {
+      const profile = await prisma.influencerProfile.findUnique({ where: { userId } });
+      if (!profile) {
+        res.status(404).json({ error: "Perfil não encontrado." });
+        return;
+      }
+      contracts = await prisma.contract.findMany({
+        where: { influencerId: profile.id },
+        include: { company: true, deliverables: true },
+        orderBy: { createdAt: 'desc' }
+      });
+    } else if (userRole === UserRole.COMPANY) {
+      const profile = await prisma.companyProfile.findUnique({ where: { userId } });
+      if (!profile) {
+        res.status(404).json({ error: "Perfil não encontrado." });
+        return;
+      }
+      contracts = await prisma.contract.findMany({
+        where: { companyId: profile.id },
+        include: { influencer: true, deliverables: true },
+        orderBy: { createdAt: 'desc' }
+      });
+    } else if (userRole === UserRole.ADMIN) {
+      contracts = await prisma.contract.findMany({
+        include: { influencer: true, company: true, deliverables: true },
+        orderBy: { createdAt: 'desc' }
+      });
+    }
+
+    res.json(contracts);
+  } catch (error) {
+    console.error('[CONTRACT] Erro ao buscar contratos:', error);
+    res.status(500).json({ error: "Erro ao buscar contratos." });
   }
 };

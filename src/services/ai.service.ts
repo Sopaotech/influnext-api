@@ -50,7 +50,13 @@ export class AIService {
       ]);
 
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      // Alterado para 'gemini-1.5-flash-latest' para maior compatibilidade ou fallback para 'gemini-pro'
+      let model;
+      try {
+        model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+      } catch (err) {
+        model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      }
 
       const prompt = `Você é um gestor de carreira "Workaholic" e altamente lógico do INFLUNEXT. 
       Seu objetivo é lucro e crescimento. Seja direto, seco e focado em metas. 
@@ -115,9 +121,10 @@ export class AIService {
           videoReferences: []
         };
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('[AI SERVICE] Erro ao chamar Gemini:', error);
-      throw new Error("Falha na inteligência artificial.");
+      // Se for 404, tentar novamente com gemini-pro se ainda não tentou
+      throw new Error(`Falha na inteligência artificial: ${error.message || 'Erro desconhecido'}`);
     }
   }
 
@@ -313,7 +320,7 @@ export class AIService {
       if (!influencer) throw new Error('Influenciador não encontrado.');
 
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
 
       const prompt = `Você é o Mentor InfluNext, um consultor de carreira brutalmente honesto, focado em performance, conversão e dados para influenciadores digitais.
 O usuário @${influencer.handle} atua no nicho de ${influencer.niche} e possui um InfluScore de ${influencer.influScore}/100.
@@ -323,9 +330,9 @@ Responda de forma direta, tática e acionável. Não use jargões motivacionais 
       const result = await model.generateContent(prompt);
       const response = await result.response;
       return response.text();
-    } catch (error) {
+    } catch (error: any) {
       console.error('[AI CHAT] Erro ao conectar ao Gemini:', error);
-      throw new Error('O Mentor está indisponível no momento.');
+      throw new Error(`O Mentor está indisponível: ${error.message || 'Erro de conexão'}`);
     }
   }
 }

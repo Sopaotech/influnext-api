@@ -1,6 +1,6 @@
 import { MetricCard } from '@/components/MetricCard';
 import { InfluScoreCard } from '@/components/influ-score-card';
-import { Users, Target, Activity, Eye, ShieldCheck, Music, Tv, ArrowRight, Zap, Trophy, Link as LinkIcon } from 'lucide-react';
+import { Users, Target, Activity, Eye, ShieldCheck, Music, Tv, ArrowRight, Zap, Trophy, Link as LinkIcon, DollarSign } from 'lucide-react';
 import { Metadata, Viewport } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -140,6 +140,30 @@ export default async function PublicProfile(props: { params: Promise<{ handle: s
                        </div>
                        <ArrowRight className="w-4 h-4 text-zinc-700 group-hover:text-purple-400 group-hover:translate-x-1 transition-all" />
                     </a>
+                 ))}
+              </div>
+           </section>
+        )}
+
+        {/* Rate Card Section */}
+        {profile.rateCards && profile.rateCards.length > 0 && (
+           <section className="space-y-4 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-600">
+              <div className="flex items-center justify-between">
+                 <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Tabela de Preços Sugerida</h3>
+                 <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                 {profile.rateCards.map((rate: any, idx: number) => (
+                    <div key={idx} className="p-4 bg-zinc-900/30 border border-zinc-800/50 rounded-2xl flex justify-between items-center group hover:border-emerald-500/30 transition-all">
+                       <div className="space-y-0.5">
+                          <p className="text-[10px] font-black text-zinc-100 uppercase tracking-tight">{rate.serviceName}</p>
+                          <p className="text-[9px] text-zinc-500 font-medium">{rate.description || 'Entrega padrão garantida via Escrow'}</p>
+                       </div>
+                       <div className="text-right">
+                          <p className="text-sm font-black text-emerald-400">R$ {rate.price.toLocaleString('pt-BR')}</p>
+                          <p className="text-[8px] font-black text-zinc-600 uppercase tracking-tighter">Budget Base</p>
+                       </div>
+                    </div>
                  ))}
               </div>
            </section>

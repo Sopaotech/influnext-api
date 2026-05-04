@@ -31,6 +31,7 @@ model User {
   influencer    InfluencerProfile?
   company       CompanyProfile?
   notifications Notification[]
+  supportTickets SupportTicket[]
 }
 
 model InfluencerProfile {
@@ -64,6 +65,7 @@ model InfluencerProfile {
   contracts       Contract[]
   aiAnalyses      AIAnalysis[]
   trendVault      TrendReference[]
+  rateCards       RateCard[]
 }
 
 model TrendReference {
@@ -96,11 +98,15 @@ model CompanyProfile {
 model SocialPlatform {
   id              String   @id @default(uuid())
   influencerId    String
-  platformName    String   
+  platformName    String   // "INSTAGRAM" | "TIKTOK" | "YOUTUBE"
   platformId      String   
+  username        String?
+  profilePicture  String?
+  followersCount  Int      @default(0)
   accessToken     String   
   refreshToken    String?  
   expiresAt       DateTime?
+  isActive        Boolean  @default(true)
   
   influencer      InfluencerProfile @relation(fields: [influencerId], references: [id])
   @@unique([influencerId, platformName])
@@ -126,6 +132,8 @@ model Contract {
   companyId       String
   influencerId    String
   title           String
+  briefing        String?   // Briefing enviado pela marca
+  aiScript        String?   // Roteiro/Estratégia sugerida pela IA
   budget          Float
   platformFee     Float?
   netAmount       Float?
@@ -179,6 +187,25 @@ model Task {
   @@index([influencerId, scheduledDate])
 }
 
+model RateCard {
+  id              String   @id @default(uuid())
+  influencerId    String
+  serviceName     String   // ex: "3x Stories", "Reels", "Post Fixo"
+  price           Float
+  currency        String   @default("BRL")
+  description     String?
+  
+  influencer      InfluencerProfile @relation(fields: [influencerId], references: [id])
+}
+
+model AdminStrategy {
+  id              String   @id @default(uuid())
+  strategyTitle   String
+  content         String   // Estratégia gerada pela IA para o Alexsandro
+  targetMetric    String   // ex: "CAC", "Churn", "User Growth"
+  generatedAt     DateTime @default(now())
+}
+
 model AIAnalysis {
   id              String   @id @default(uuid())
   influencerId    String
@@ -188,4 +215,23 @@ model AIAnalysis {
 
   influencer      InfluencerProfile @relation(fields: [influencerId], references: [id])
   @@index([influencerId, generatedAt])
+}
+
+model SupportTicket {
+  id          String   @id @default(uuid())
+  userId      String
+  subject     String
+  message     String
+  status      String   @default("OPEN") // "OPEN" | "IN_PROGRESS" | "CLOSED"
+  category    String   // "BUG" | "SUPPORT" | "FEATURE"
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model PageView {
+  id          String   @id @default(uuid())
+  path        String
+  userAgent   String?
+  ip          String?
+  createdAt   DateTime @default(now())
 }

@@ -121,3 +121,58 @@ export const completeMission = async (req: Request, res: Response): Promise<void
     res.status(500).json({ error: "Erro ao completar missão." });
   }
 };
+
+export const getRateCard = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const influencer = await prisma.influencerProfile.findUnique({
+      where: { userId },
+      include: { rateCards: true }
+    });
+    if (!influencer) {
+      res.status(404).json({ error: "Perfil não encontrado." });
+      return;
+    }
+    res.json(influencer.rateCards);
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao buscar tabela de preços." });
+  }
+};
+
+export const updateRateCard = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
+    if (!influencer) {
+      res.status(404).json({ error: "Perfil não encontrado." });
+      return;
+    }
+
+    const schema = z.array(z.object({
+      serviceName: z.string(),
+      price: z.number(),
+      description: z.string().optional()
+    }));
+
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Dados inválidos." });
+      return;
+    }
+
+    // Resetar e recriar para simplificar o MVP (ou fazer update/upsert individual)
+    await prisma.$transaction([
+      prisma.rateCard.deleteMany({ where: { influencerId: influencer.id } }),
+      prisma.rateCard.createMany({
+        data: parsed.data.map(item => ({
+          influencerId: influencer.id,
+          ...item
+        }))
+      })
+    ]);
+
+    res.json({ message: "Tabela de preços atualizada!" });
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao atualizar tabela de preços." });
+  }
+};

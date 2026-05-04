@@ -290,6 +290,52 @@ export default function LandingPageClient() {
           </div>
         </section>
 
+        {/* ── PRICING ────────────────────────────────────────────────────────── */}
+        <section className="w-full max-w-7xl mx-auto px-6 lg:px-12 pb-24 z-10">
+           <div className="text-center mb-12 space-y-2">
+              <p className="text-purple-400 text-[11px] font-black uppercase tracking-[0.25em]">Investimento</p>
+              <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">Um plano simples para escala global</h2>
+           </div>
+
+           <div className="max-w-md mx-auto relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+              <div className="relative bg-[#100c1e] border border-purple-500/30 rounded-3xl p-10 flex flex-col items-center text-center space-y-8">
+                 <div className="space-y-1">
+                    <span className="text-zinc-500 text-xs font-black uppercase tracking-widest">Plano InfluNext Pro</span>
+                    <div className="flex items-baseline gap-1 justify-center">
+                       <span className="text-2xl font-black text-zinc-400">R$</span>
+                       <span className="text-6xl font-black text-white tracking-tighter">97</span>
+                       <span className="text-xl font-bold text-zinc-500">/mês</span>
+                    </div>
+                 </div>
+
+                 <ul className="w-full space-y-4 text-left">
+                    {[
+                      'Media Kit Dinâmico (Sempre Atualizado)',
+                      'Acesso ao Marketplace de Marcas',
+                      'Contratos e Pagamentos via Escrow Seguro',
+                      'Roteiros e Briefings Gerados por IA',
+                      'Agenda de Carreira Inteligente',
+                      'Suporte Prioritário 24/7'
+                    ].map(benefit => (
+                      <li key={benefit} className="flex items-center gap-3">
+                         <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                         <span className="text-sm text-zinc-300 font-medium">{benefit}</span>
+                      </li>
+                    ))}
+                 </ul>
+
+                 <Link
+                   href="/auth/signup?type=influencer"
+                   className="w-full py-4 bg-white text-[#080810] font-black rounded-2xl hover:bg-zinc-200 transition-all flex items-center justify-center gap-2"
+                 >
+                   COMEÇAR AGORA <ArrowRight className="w-4 h-4" />
+                 </Link>
+                 <p className="text-[10px] text-zinc-600 font-bold uppercase">Teste grátis por 7 dias — Cancele quando quiser</p>
+              </div>
+           </div>
+        </section>
+
         {/* ── CTA FINAL ──────────────────────────────────────────────────────── */}
         <section className="w-full max-w-7xl mx-auto px-6 lg:px-12 pb-28 z-10">
           <div className="relative rounded-3xl overflow-hidden">

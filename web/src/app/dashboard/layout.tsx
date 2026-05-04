@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import Cookies from 'js-cookie';
-import { Home, FileText, Settings, LogOut, Menu, X, Sparkles, ShieldCheck, Store } from 'lucide-react';
+import { Home, FileText, Settings, LogOut, Menu, X, Sparkles, ShieldCheck, Store, LifeBuoy } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
 import { Logo } from '@/components/Logo';
 
@@ -14,8 +14,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
-    Cookies.remove('influnext_token');
-    Cookies.remove('influnext_role');
+    Cookies.remove('influnext_token', { path: '/' });
+    Cookies.remove('influnext_role', { path: '/' });
     router.push('/auth/login');
   };
 
@@ -30,7 +30,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'Dashboard', href: '/dashboard/influencer', icon: Home },
     { name: 'Workspace', href: '/dashboard/workspace', icon: Sparkles, special: true },
     { name: 'Marketplace', href: '/dashboard/marketplace', icon: Store },
+    { name: 'Media Kit', href: '/dashboard/settings', icon: ShieldCheck }, 
     { name: 'Contratos', href: '/dashboard/contracts', icon: FileText },
+    { name: 'Suporte', href: '/dashboard/support', icon: LifeBuoy },
+    ...(isAdmin ? [{ name: 'Admin', href: '/dashboard/admin', icon: ShieldCheck }] : []),
     { name: 'Ajustes', href: '/dashboard/settings', icon: Settings },
   ];
 
@@ -94,7 +97,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <p className="text-[10px] font-black text-purple-300 uppercase tracking-widest">Plano Free</p>
                 <p className="text-xs text-zinc-400 font-medium">0/3 Trends gerados</p>
              </div>
-             <button className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-black rounded-lg transition-colors">
+             <button 
+               onClick={() => router.push('/dashboard/settings')}
+               className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-black rounded-lg transition-colors"
+             >
                 EVOLUIR PARA PRO
              </button>
           </div>
@@ -112,12 +118,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <main className="flex-1 w-full h-screen pt-14 md:pt-0 overflow-y-auto bg-[#080810]">
         <div className="min-h-full">
           {isAdmin && (
-            <div className="bg-purple-600/10 border-b border-purple-500/20 px-6 py-2 flex items-center justify-center gap-2">
+            <Link href="/dashboard/admin" className="block bg-purple-600/10 hover:bg-purple-600/20 transition-colors border-b border-purple-500/20 px-6 py-2 flex items-center justify-center gap-2">
                <ShieldCheck className="w-4 h-4 text-purple-400" />
                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-300">
                  ⚡ CONSOLE DO FUNDADOR: MONITORAMENTO DE MERCADO ATIVO
                </span>
-            </div>
+            </Link>
           )}
           {children}
         </div>

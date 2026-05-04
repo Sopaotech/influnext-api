@@ -12,9 +12,11 @@ export default function SettingsPage() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [rateCards, setRateCards] = useState<any[]>([]);
 
   useEffect(() => {
     fetchProfile();
+    fetchRateCard();
   }, []);
 
   const fetchProfile = async () => {
@@ -28,17 +30,31 @@ export default function SettingsPage() {
     }
   };
 
+  const fetchRateCard = async () => {
+    try {
+      const res = await api.get('/influencers/rate-card');
+      setRateCards(res.data);
+    } catch (err) {
+      console.error('Erro ao buscar rate card:', err);
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
+      // Salvar Perfil
       await api.patch('/influencers/profile', {
         handle: profile.handle,
         niche: profile.niche,
         profileImageUrl: profile.profileImageUrl,
         bio: profile.bio
       });
-      toast.success('Perfil atualizado com sucesso!');
+
+      // Salvar Tabela de Preços
+      await api.post('/influencers/rate-card', rateCards);
+
+      toast.success('Alterações salvas com sucesso!');
     } catch (err) {
       toast.error('Erro ao salvar alterações');
     } finally {
@@ -108,6 +124,73 @@ export default function SettingsPage() {
               className="flex min-h-[80px] w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm ring-offset-zinc-950 placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-800 bg-zinc-900 border-zinc-800 min-h-[100px]"
             />
           </div>
+        </section>
+
+        {/* Tabela de Preços (Rate Card) */}
+        <section className="bg-zinc-950 border border-zinc-800 rounded-2xl p-8 space-y-6">
+           <div className="flex items-center justify-between">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Tabela de Preços (Rate Card)</h3>
+              <button 
+                type="button"
+                onClick={() => setRateCards([...rateCards, { serviceName: '', price: 0, description: '' }])}
+                className="text-[10px] font-black text-purple-400 hover:text-purple-300 transition-colors uppercase tracking-widest"
+              >
+                 + Adicionar Item
+              </button>
+           </div>
+
+           <div className="space-y-4">
+              {rateCards.map((rate, idx) => (
+                <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-zinc-900/50 rounded-xl border border-zinc-800 group relative">
+                   <div className="md:col-span-1">
+                      <Input 
+                        placeholder="Ex: Reels"
+                        value={rate.serviceName}
+                        onChange={e => {
+                           const newCards = [...rateCards];
+                           newCards[idx].serviceName = e.target.value;
+                           setRateCards(newCards);
+                        }}
+                        className="bg-zinc-950 border-zinc-800 text-[10px] font-black uppercase"
+                      />
+                   </div>
+                   <div className="md:col-span-1">
+                      <Input 
+                        type="number"
+                        placeholder="Preço (R$)"
+                        value={rate.price}
+                        onChange={e => {
+                           const newCards = [...rateCards];
+                           newCards[idx].price = Number(e.target.value);
+                           setRateCards(newCards);
+                        }}
+                        className="bg-zinc-950 border-zinc-800 text-[10px] font-black"
+                      />
+                   </div>
+                   <div className="md:col-span-1 flex items-center gap-2">
+                      <Input 
+                        placeholder="Descrição curta"
+                        value={rate.description}
+                        onChange={e => {
+                           const newCards = [...rateCards];
+                           newCards[idx].description = e.target.value;
+                           setRateCards(newCards);
+                        }}
+                        className="bg-zinc-950 border-zinc-800 text-[10px]"
+                      />
+                      <button 
+                        onClick={() => setRateCards(rateCards.filter((_, i) => i !== idx))}
+                        className="p-2 text-zinc-700 hover:text-red-400 transition-colors"
+                      >
+                         <Shield size={14} className="rotate-45" />
+                      </button>
+                   </div>
+                </div>
+              ))}
+              {rateCards.length === 0 && (
+                <p className="text-center py-10 text-[9px] text-zinc-700 font-bold uppercase tracking-widest border-2 border-dashed border-zinc-900 rounded-xl">Nenhum serviço configurado</p>
+              )}
+           </div>
         </section>
 
         <Button 

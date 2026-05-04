@@ -1,59 +1,86 @@
 import { Request, Response } from 'express';
-import { UserRole } from '../types/roles';
 import { prisma } from '../lib/prisma';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-export const getGlobalStats = async (req: Request, res: Response): Promise<void> => {
+export const getGrowthStrategy = async (req: Request, res: Response): Promise<void> => {
   try {
-    const now = new Date();
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      res.status(500).json({ error: "Gemini API Key não configurada." });
+      return;
+    }
 
-    const [
-      userStats,
-      totalVolume,
-      revenueStats,
-      newUsersCount,
-      contractStats,
-      activeDisputes
-    ] = await Promise.all([
-      // Distribuição de usuários por role
+    // Buscar dados reais do sistema para alimentar a IA do Alexsandro
+    const [totalUsers, totalContracts, totalRevenue] = await Promise.all([
+      prisma.user.count(),
+      prisma.contract.count(),
+      prisma.contract.aggregate({ _sum: { platformFee: true } })
+    ]);
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+
+    const prompt = `Você é um consultor de crescimento de SaaS (Growth Hacker) especializado no mercado brasileiro.
+    Você está ajudando o Alexsandro, o fundador do InfluNext, a escalar sua plataforma.
+    
+    DADOS ATUAIS DO INFLUNEXT:
+    - Total de Usuários: ${totalUsers}
+    - Total de Contratos: ${totalContracts}
+    - Receita da Plataforma (Taxas): R$ ${totalRevenue._sum.platformFee || 0}
+
+    TAREFA:
+    1. Analise o momento atual.
+    2. Sugira 3 estratégias práticas para aquisição de usuários (Tráfego Pago, Parcerias, Viralidade).
+    3. Sugira uma melhoria no produto para aumentar o LTV (Lifetime Value).
+    4. Dê um conselho de "Guerra" para dominar o mercado de influenciadores no Brasil.
+
+    Responda em tom executivo, motivador e focado em lucro. Use Markdown.`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const strategyContent = response.text();
+
+    // Salvar no histórico
+    const strategy = await prisma.adminStrategy.create({
+      data: {
+        strategyTitle: `Plano de Guerra - ${new Date().toLocaleDateString()}`,
+        content: strategyContent,
+        targetMetric: 'User Acquisition'
+      }
+    });
+
+    res.json(strategy);
+  } catch (error) {
+    console.error('[ADMIN STRATEGY] Erro:', error);
+    res.status(500).json({ error: "Erro ao gerar estratégia de crescimento." });
+  }
+};
+
+export const getAdminStats = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const [totalUsers, userBreakdown, totalContracts, marketplaceHealth, totalRevenue, totalViews] = await Promise.all([
+      prisma.user.count(),
       prisma.user.groupBy({ by: ['role'], _count: { _all: true } }),
-      
-      // GMV (Gross Merchandise Value)
-      prisma.contract.aggregate({ _sum: { budget: true } }),
-      
-      // Revenue (Platform Fees) de contratos ativos ou concluídos
-      prisma.contract.aggregate({ 
-        where: { escrowStatus: { in: ['IN_PROGRESS', 'COMPLETED'] } },
-        _sum: { platformFee: true } 
-      }),
-
-      // Novos usuários nos últimos 7 dias
-      prisma.user.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
-
-      // Saúde do Marketplace (Contagem por Status)
+      prisma.contract.count(),
       prisma.contract.groupBy({ by: ['escrowStatus'], _count: { _all: true } }),
-
-      // Disputas Ativas
-      prisma.contract.findMany({ 
-        where: { escrowStatus: 'DISPUTE' }, 
-        include: { company: true, influencer: true } 
-      })
+      prisma.contract.aggregate({ _sum: { platformFee: true, budget: true } }),
+      prisma.pageView.count()
     ]);
 
     res.json({
       metrics: {
-        totalUsers: userStats,
-        gmv: totalVolume._sum.budget || 0,
-        revenue: revenueStats._sum.platformFee || 0,
-        newUsersLast7Days: newUsersCount,
-        marketplaceHealth: contractStats,
+        totalUsers: userBreakdown,
+        totalContracts,
+        marketplaceHealth,
+        revenue: totalRevenue._sum.platformFee || 0,
+        gmv: totalRevenue._sum.budget || 0,
+        pageViews: totalViews
       },
-      disputes: activeDisputes,
-      status: "SYSTEM_HEALTHY",
-      serverTime: now.toISOString()
+      status: 'OK',
+      serverTime: new Date().toISOString()
     });
   } catch (error) {
-    console.error('[ADMIN] Erro ao carregar estatísticas:', error);
-    res.status(500).json({ error: "Erro ao carregar estatísticas do sistema." });
+    console.error('[ADMIN STATS] Erro:', error);
+    res.status(500).json({ error: "Erro ao buscar estatísticas do admin." });
   }
 };

@@ -3,29 +3,15 @@ import IORedis from 'ioredis';
 
 const connection = new IORedis(process.env.REDIS_URL || 'redis://localhost:6379', {
   maxRetriesPerRequest: null,
-  retryStrategy: (times) => {
-    // Se falhar mais de 3 vezes, para de tentar por um tempo para não inundar o log
-    if (times > 3) return null; 
-    return Math.min(times * 100, 3000);
-  }
+  lazyConnect: true,
+  retryStrategy: (times) => Math.min(times * 5000, 60000)
 });
 
-connection.on('error', (err) => {
-  console.warn('[WORKER] Redis não disponível. Notificações em background desativadas.');
-});
-
-connection.on('ready', () => {
-  console.log('[WORKER] Redis Connected com sucesso!');
-});
+// Silenciar logs de erro de conexão
+connection.on('error', () => {});
 
 export const notificationWorker = new Worker('notifications', async (job) => {
   const { userId, message, type } = job.data;
-  
-  // Aqui no futuro integraremos com SendGrid, Mailtrap ou Firebase
-  console.log(`[JOB - ${type}] Enviando notificação para User ${userId}: ${message}`);
-  
-  // Simula latência de rede de e-mail
-  await new Promise(res => setTimeout(res, 500));
-  
+  console.log(`[NOTIFICAÇÃO] User ${userId}: ${message}`);
   return { success: true };
 }, { connection });

@@ -31,7 +31,10 @@ app.use(cors({
   credentials: true
 }));
 
+import { trackPageView } from './middlewares/analytics.middleware';
+
 app.use(express.json());
+app.use(trackPageView);
 
 // Todas as suas rotas começarão com /v1
 app.use('/v1', routes);

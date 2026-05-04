@@ -166,7 +166,7 @@ export default function InfluencerDashboard() {
           <MetricCard title="Missões Pendentes" value={pendingMissionsCount} icon={CheckSquare} />
           {/* Saldo em Escrow: KPI motivacional */}
           <div className="bg-[#100c1e] border border-emerald-500/20 rounded-2xl p-4 flex flex-col justify-between shadow-[0_0_15px_-5px_rgba(52,211,153,0.15)]">
-            <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Saldo em Escrow</span>
+            <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Receita Gerada</span>
             <div>
               <p className="text-xl font-black text-emerald-400">
                 R$ {escrowBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}

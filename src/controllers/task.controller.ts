@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { addPostAnalysisJob } from '../queues/post-analyzer.queue';
+import { CalendarService } from '../services/calendar.service';
 
 const prisma = new PrismaClient();
 
@@ -48,6 +49,15 @@ export const createTask = async (req: Request, res: Response): Promise<void> => 
         scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
       },
     });
+
+    // Sincronizar com Google Calendar (Background)
+    if (task.scheduledDate) {
+      CalendarService.syncTaskToCalendar(userId, {
+        title: task.title,
+        description: task.description,
+        scheduledDate: task.scheduledDate
+      });
+    }
 
     res.status(201).json(task);
   } catch {
@@ -122,6 +132,14 @@ export const createAITasks = async (req: Request, res: Response): Promise<void> 
             fromAI: true,
           }
         });
+
+        // Sincronizar com Google Calendar (Background)
+        CalendarService.syncTaskToCalendar(userId, {
+          title: task.title,
+          description: task.description,
+          scheduledDate: task.scheduledDate
+        });
+
         createdTasks.push(task);
       }
     }

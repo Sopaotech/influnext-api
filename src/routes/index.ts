@@ -11,6 +11,7 @@ import influencerRoutes from './influencer.routes';
 import aiRoutes from './ai.routes';
 import paymentRoutes from './payment.routes';
 import webhookRoutes from './webhook.routes';
+import supportRoutes from './support.routes';
 
 const routes = Router();
 routes.get('/health', (req, res) => res.json({ status: 'OK' }));
@@ -26,5 +27,6 @@ routes.use('/influencers', influencerRoutes);
 routes.use('/ai', aiRoutes);
 routes.use('/payments', paymentRoutes);
 routes.use('/webhooks', webhookRoutes);
+routes.use('/support', supportRoutes);
 
 export { routes };
