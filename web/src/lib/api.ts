@@ -2,7 +2,14 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 
 // Centralização da URL da API: Prioridade para o .env da Vercel/Railway
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://influnext-api-production.up.railway.app/v1';
+let baseApiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://influnext-api-production.up.railway.app/v1';
+
+// Garantir que a URL termine com /v1 para evitar erros de rota
+if (!baseApiUrl.endsWith('/v1')) {
+  baseApiUrl = baseApiUrl.endsWith('/') ? `${baseApiUrl}v1` : `${baseApiUrl}/v1`;
+}
+
+const API_URL = baseApiUrl;
 
 export const api = axios.create({
   baseURL: API_URL,
