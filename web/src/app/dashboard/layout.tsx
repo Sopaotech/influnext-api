@@ -32,6 +32,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'Marketplace', href: '/dashboard/marketplace', icon: Store },
     { name: 'Media Kit', href: '/dashboard/settings', icon: ShieldCheck }, 
     { name: 'Contratos', href: '/dashboard/contracts', icon: FileText },
+    { name: 'Plano Pro', href: '/dashboard/subscription', icon: Crown, highlight: true },
     { name: 'Suporte', href: '/dashboard/support', icon: LifeBuoy },
     ...(isAdmin ? [{ name: 'Admin', href: '/dashboard/admin', icon: ShieldCheck }] : []),
     { name: 'Ajustes', href: '/dashboard/settings', icon: Settings },
@@ -63,6 +64,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               const isWorkspace = item.special;
+              const isHighlight = (item as any).highlight;
               
               return (
                 <Link
@@ -70,20 +72,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`
-                    flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all group
+                    flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all duration-300 group
                     ${isActive 
                       ? (isWorkspace ? 'bg-gradient-to-r from-purple-600/20 to-pink-600/20 text-pink-400 border border-pink-500/30 shadow-[0_0_15px_-5px_rgba(219,39,119,0.3)]' : 'bg-[#1e1430] text-purple-400 border border-purple-500/20') 
                       : 'text-zinc-500 hover:text-zinc-200 hover:bg-[#100c1e] border border-transparent'}
+                    ${isHighlight ? 'border border-purple-500/20 bg-gradient-to-r from-purple-500/5 to-transparent' : ''}
                   `}
                 >
                   {isWorkspace ? (
                     <Sparkles className={`w-4 h-4 ${isActive ? 'text-pink-400' : 'text-zinc-600'}`} />
                   ) : (
-                    <item.icon className={`w-4 h-4 ${isActive ? 'text-purple-400' : 'text-zinc-600'}`} />
+                    <item.icon className={`w-4 h-4 ${isActive || isHighlight ? 'text-purple-400' : 'text-zinc-600'}`} />
                   )}
-                  <span className={`text-[11px] font-bold tracking-tight ${isActive ? 'opacity-100' : 'opacity-80'}`}>
+                  <span className={`text-[11px] font-bold tracking-tight ${isActive || isHighlight ? 'opacity-100' : 'opacity-80'}`}>
                     {item.name}
                     {isWorkspace && isActive && <span className="ml-1 text-[10px]">✦</span>}
+                    {isHighlight && <span className="ml-2 text-[8px] bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded uppercase font-black tracking-tighter">Pro</span>}
                   </span>
                 </Link>
               );
@@ -98,7 +102,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <p className="text-xs text-zinc-400 font-medium">0/3 Trends gerados</p>
              </div>
              <button 
-               onClick={() => router.push('/dashboard/settings')}
+               onClick={() => router.push('/dashboard/subscription')}
                className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-black rounded-lg transition-colors"
              >
                 EVOLUIR PARA PRO
