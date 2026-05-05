@@ -17,9 +17,9 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
         metricsHistory: { take: 30, orderBy: { capturedAt: 'desc' } },
         tasks: { where: { isDone: false }, orderBy: { scheduledDate: 'asc' } },
         trendVault: { where: { expiresAt: { gte: new Date() } }, orderBy: { createdAt: 'desc' } },
-        aIAnalyses: { take: 1, orderBy: { generatedAt: 'desc' } }
+        aiAnalyses: { take: 1, orderBy: { generatedAt: 'desc' } }
       }
-    }) as any;
+    });
 
     if (!profile) {
       res.status(404).json({ error: 'Dashboard não encontrada.' });
@@ -36,14 +36,14 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
 
     // KPI: Saldo em Escrow (soma dos contratos IN_PROGRESS)
     const escrowBalance = profile.contracts
-      .filter(c => c.escrowStatus === 'IN_PROGRESS')
-      .reduce((sum, c) => sum + Number(c.budget), 0);
+      .filter((c: any) => c.escrowStatus === 'IN_PROGRESS')
+      .reduce((sum: number, c: any) => sum + Number(c.budget), 0);
 
     // KPI: Contratos ativos (qualquer status não concluído)
     const activeContractsCount = profile.contracts.length;
 
     // KPI: Missões pendentes
-    const pendingMissionsCount = profile.tasks.filter(t => !t.isDone).length;
+    const pendingMissionsCount = profile.tasks.filter((t: any) => !t.isDone).length;
 
     res.json({
       profile: {
@@ -71,7 +71,7 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
       tasks: profile.tasks,
       trendVault: profile.trendVault,
       metricsHistory: profile.metricsHistory,
-      analysis: profile.aIAnalyses[0] || null,
+      analysis: profile.aiAnalyses[0] || null,
     });
   } catch (error) {
     console.error('[DASHBOARD] Erro ao carregar:', error);
@@ -107,7 +107,7 @@ export const getCompanyDashboard = async (req: Request, res: Response): Promise<
           }
         }
       }
-    }) as any;
+    });
 
     if (!company) {
       res.status(404).json({ error: 'Perfil não encontrado.' });
@@ -115,14 +115,14 @@ export const getCompanyDashboard = async (req: Request, res: Response): Promise<
     }
 
     const stats = {
-      totalInvested: company.contracts.reduce((sum, c) => sum + Number(c.budget), 0),
-      activeContracts: company.contracts.filter(c => c.escrowStatus !== 'COMPLETED').length,
+      totalInvested: company.contracts.reduce((sum: number, c: any) => sum + Number(c.budget), 0),
+      activeContracts: company.contracts.filter((c: any) => c.escrowStatus !== 'COMPLETED').length,
       pendingReviews: company.contracts
-        .flatMap(c => c.deliverables)
-        .filter(d => d.status === 'UNDER_REVIEW').length,
+        .flatMap((c: any) => c.deliverables)
+        .filter((d: any) => d.status === 'UNDER_REVIEW').length,
       escrowHeld: company.contracts
-        .filter(c => c.escrowStatus === 'IN_PROGRESS')
-        .reduce((sum, c) => sum + Number(c.budget), 0),
+        .filter((c: any) => c.escrowStatus === 'IN_PROGRESS')
+        .reduce((sum: number, c: any) => sum + Number(c.budget), 0),
     };
 
     res.json({ stats, userState: company.user, contracts: company.contracts });
