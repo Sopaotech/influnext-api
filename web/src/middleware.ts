@@ -18,6 +18,9 @@ export function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith('/dashboard/company') && role !== 'COMPANY') {
+    // Permitir acesso ao formulário de contrato para fins de demonstração, mesmo se for influencer
+    if (pathname.includes('new-contract')) return NextResponse.next();
+    
     if (role === 'INFLUENCER') return NextResponse.redirect(new URL('/dashboard/influencer', request.url));
     if (role === 'ADMIN') return NextResponse.redirect(new URL('/admin/stats', request.url));
   }

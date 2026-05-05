@@ -176,16 +176,85 @@ export default function InfluencerDashboard() {
           </div>
         </section>
 
-        {/* Chart Section Placeholder */}
-        <section className="bg-[#100c1e] border border-[#1e1430] rounded-2xl p-6 relative overflow-hidden">
-          <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-6">Crescimento Histórico</h3>
-          <div className="h-[120px] md:h-[300px] w-full flex flex-col items-center justify-center space-y-3">
-             <div className="w-full max-w-md h-24 opacity-10 flex items-center justify-center">
-                <svg className="w-full h-full text-purple-500" viewBox="0 0 400 100">
-                  <path d="M0,50 Q50,20 100,50 T200,50 T300,50 T400,50" fill="none" stroke="currentColor" strokeWidth="2" />
-                </svg>
-             </div>
-             <p className="text-[10px] font-bold text-zinc-500 italic">Coletando seus primeiros dados de audiência...</p>
+        {/* Chart Section: Audience Growth */}
+        <section className="bg-[#100c1e] border border-[#1e1430] rounded-2xl p-6 relative overflow-hidden group">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Crescimento Histórico (Seguidores)</h3>
+            <div className="flex items-center gap-2">
+               <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+               <span className="text-[9px] font-black text-purple-400 uppercase">Live Data</span>
+            </div>
+          </div>
+          
+          <div className="h-[200px] md:h-[300px] w-full relative">
+            {data?.metricsHistory?.length > 1 ? (
+              <svg className="w-full h-full overflow-visible" viewBox="0 0 1000 300" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#a855f7" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                
+                {/* Grid Lines */}
+                {[0, 1, 2, 3].map((i) => (
+                  <line key={i} x1="0" y1={i * 100} x2="1000" y2={i * 100} stroke="#1e1430" strokeWidth="1" strokeDasharray="4 4" />
+                ))}
+
+                {/* The Path */}
+                {(() => {
+                  const history = [...data.metricsHistory].reverse();
+                  const min = Math.min(...history.map((m: any) => m.followers));
+                  const max = Math.max(...history.map((m: any) => m.followers));
+                  const range = max - min || 1;
+                  const points = history.map((m: any, i: number) => {
+                    const x = (i / (history.length - 1)) * 1000;
+                    const y = 300 - ((m.followers - min) / range) * 250 - 25;
+                    return `${x},${y}`;
+                  }).join(' ');
+
+                  return (
+                    <>
+                      <path
+                        d={`M 0,300 L ${points} L 1000,300 Z`}
+                        fill="url(#chartGradient)"
+                        className="transition-all duration-1000"
+                      />
+                      <polyline
+                        fill="none"
+                        stroke="#a855f7"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        points={points}
+                        className="drop-shadow-[0_0_8px_rgba(168,85,247,0.5)] transition-all duration-1000"
+                      />
+                      {/* Dots */}
+                      {history.map((m: any, i: number) => {
+                        const x = (i / (history.length - 1)) * 1000;
+                        const y = 300 - ((m.followers - min) / range) * 250 - 25;
+                        return (
+                          <circle key={i} cx={x} cy={y} r="4" fill="#a855f7" className="cursor-pointer hover:r-6 transition-all" />
+                        );
+                      })}
+                    </>
+                  );
+                })()}
+              </svg>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full space-y-3 opacity-20">
+                 <svg className="w-full max-w-md h-24 text-purple-500" viewBox="0 0 400 100">
+                    <path d="M0,50 Q50,20 100,50 T200,50 T300,50 T400,50" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
+                 </svg>
+                 <p className="text-[10px] font-bold text-zinc-500 italic">Coletando seus primeiros dados de audiência...</p>
+              </div>
+            )}
+          </div>
+          
+          <div className="mt-4 flex justify-between text-[8px] font-black text-zinc-700 uppercase tracking-widest">
+             <span>Há 30 dias</span>
+             <span>Projeção Semanal: +12%</span>
+             <span>Hoje</span>
           </div>
         </section>
 

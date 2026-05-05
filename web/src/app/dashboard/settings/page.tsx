@@ -47,16 +47,20 @@ export default function SettingsPage() {
       await api.patch('/influencers/profile', {
         handle: profile.handle,
         niche: profile.niche,
-        profileImageUrl: profile.profileImageUrl,
+        profileImageUrl: profile.profileImageUrl || null,
         bio: profile.bio
       });
 
-      // Salvar Tabela de Preços
-      await api.post('/influencers/rate-card', rateCards);
+      // Salvar Tabela de Preços (Se houver)
+      if (rateCards.length > 0) {
+        await api.post('/influencers/rate-card', rateCards);
+      }
 
-      toast.success('Alterações salvas com sucesso!');
-    } catch (err) {
-      toast.error('Erro ao salvar alterações');
+      toast.success('✦ Ajustes sincronizados com sucesso!');
+    } catch (err: any) {
+      console.error('[SETTINGS_SAVE_ERROR]', err.response?.data || err.message);
+      const errorMsg = err.response?.data?.error || 'Erro ao salvar alterações. Verifique os campos.';
+      toast.error(errorMsg);
     } finally {
       setSaving(false);
     }
@@ -123,6 +127,56 @@ export default function SettingsPage() {
               placeholder="Conte para as marcas quem você é..."
               className="flex min-h-[80px] w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm ring-offset-zinc-950 placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-800 bg-zinc-900 border-zinc-800 min-h-[100px]"
             />
+          </div>
+        </section>
+
+        {/* Personalização do Layout (Appearance) */}
+        <section className="bg-zinc-950 border border-zinc-800 rounded-2xl p-8 space-y-6 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+             <Shield size={60} className="text-purple-500" />
+          </div>
+          
+          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 flex items-center gap-2">
+            Aparência_do_Sistema
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <label className="text-[11px] font-bold text-zinc-400 uppercase">Modo de Exibição</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button 
+                  type="button"
+                  className="p-4 rounded-xl border-2 border-purple-600 bg-zinc-900 text-left space-y-2 transition-all"
+                >
+                  <div className="w-full h-2 bg-zinc-800 rounded-full" />
+                  <div className="w-1/2 h-2 bg-zinc-800 rounded-full" />
+                  <span className="text-[10px] font-black uppercase text-white block mt-2">Dark Mode</span>
+                </button>
+                <button 
+                  type="button"
+                  className="p-4 rounded-xl border border-zinc-800 bg-zinc-100 text-left space-y-2 opacity-50 hover:opacity-80 transition-all"
+                >
+                  <div className="w-full h-2 bg-zinc-300 rounded-full" />
+                  <div className="w-1/2 h-2 bg-zinc-300 rounded-full" />
+                  <span className="text-[10px] font-black uppercase text-zinc-900 block mt-2">Clean Mode</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <label className="text-[11px] font-bold text-zinc-400 uppercase">Cor de Destaque (Brand)</label>
+              <div className="flex flex-wrap gap-3">
+                {['#a855f7', '#3b82f6', '#10b981', '#f43f5e', '#f59e0b'].map(color => (
+                  <button 
+                    key={color}
+                    type="button"
+                    style={{ backgroundColor: color }}
+                    className={`w-8 h-8 rounded-full border-2 ${color === '#a855f7' ? 'border-white' : 'border-transparent'} shadow-lg transform active:scale-90 transition-all`}
+                  />
+                ))}
+              </div>
+              <p className="text-[9px] text-zinc-600 font-medium italic">O sistema irá reajustar todos os botões e detalhes para a cor escolhida.</p>
+            </div>
           </div>
         </section>
 

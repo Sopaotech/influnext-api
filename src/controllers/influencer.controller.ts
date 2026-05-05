@@ -64,7 +64,7 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
     const schema = z.object({
       handle:         z.string().optional(),
       niche:          z.string().optional(),
-      profileImageUrl: z.string().url().optional(),
+      profileImageUrl: z.string().nullable().optional(),
       bio:            z.string().optional(),
       city:           z.string().optional(),
       state:          z.string().max(2).optional(),

@@ -128,8 +128,18 @@ export default function AIWorkspacePage() {
   return (
     <div className="p-4 md:p-10 max-w-7xl mx-auto space-y-8 font-mono animate-in fade-in duration-500">
       
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 p-6 bg-zinc-950 border border-zinc-800 rounded-lg shadow-[0_0_15px_-5px_rgba(139,92,246,0.3)]">
-        <div className="space-y-1">
+      <div className="space-y-2">
+        <h2 className="text-3xl font-black text-white tracking-tighter">
+          Bom dia, <span className="text-purple-500 italic">Campeão</span>! 🚀
+        </h2>
+        <p className="text-zinc-500 text-xs font-bold uppercase tracking-[0.2em]">
+          Bora pra +1 dia. Aqui está o seu foco estratégico de hoje.
+        </p>
+      </div>
+
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 p-6 bg-zinc-950 border border-zinc-800 rounded-lg shadow-[0_0_15px_-5px_rgba(139,92,246,0.3)] relative overflow-hidden group">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="space-y-1 relative z-10">
           <div className="flex items-center gap-2 text-purple-400 font-black text-[10px] tracking-widest uppercase">
             <Terminal className="w-4 h-4" />
             Core Terminal v2.0
@@ -137,15 +147,22 @@ export default function AIWorkspacePage() {
           <h1 className="text-2xl font-black text-zinc-50 tracking-tighter flex items-center gap-2">
             Workspace_<span className="text-purple-500 italic">Estratégico</span>
           </h1>
-          <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
-            Modo Workaholic Ativado // Foco em Conversão
-          </p>
+          <div className="flex gap-4 mt-2">
+            <div className="flex items-center gap-2 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
+               <Zap className="w-3 h-3 text-emerald-500" />
+               <span className="text-[9px] text-emerald-500 font-black uppercase">Foco: Conversão</span>
+            </div>
+            <div className="flex items-center gap-2 bg-purple-500/10 px-2 py-1 rounded border border-purple-500/20">
+               <Activity className="w-3 h-3 text-purple-500" />
+               <span className="text-[9px] text-purple-500 font-black uppercase">Clima: Alta Performance</span>
+            </div>
+          </div>
         </div>
         
         <Button 
           onClick={generateNewAnalysis}
           disabled={isGenerating}
-          className="bg-zinc-900 border border-zinc-800 hover:border-purple-500 text-zinc-400 hover:text-white h-10 px-6 rounded-md transition-all text-[10px] font-black uppercase tracking-widest"
+          className="bg-zinc-900 border border-zinc-800 hover:border-purple-500 text-zinc-400 hover:text-white h-10 px-6 rounded-md transition-all text-[10px] font-black uppercase tracking-widest relative z-10"
         >
           {isGenerating ? '>> PROCESSANDO...' : '>> ATUALIZAR_DADOS'}
         </Button>

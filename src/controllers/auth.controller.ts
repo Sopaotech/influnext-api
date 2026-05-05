@@ -361,38 +361,13 @@ export const setup2FA = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-export const confirm2FASetup = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const userId = req.user!.id;
-    const { code } = z.object({ code: z.string().length(6) }).parse(req.body);
-
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user?.twoFactorSecret) {
-      res.status(400).json({ error: 'Inicie a configuração 2FA primeiro.' });
-      return;
-    }
-
-    const isValid = TwoFactorService.verifyToken(user.twoFactorSecret, code);
-    if (!isValid) {
-      res.status(400).json({ error: 'Código inválido. Tente novamente.' });
-      return;
-    }
-
-    await prisma.user.update({ where: { id: userId }, data: { twoFactorEnabled: true } });
-    res.json({ message: '2FA ativado com sucesso! Sua conta está protegida.' });
-  } catch (error) {
-    console.error('[AUTH CONFIRM2FA ERROR]:', error);
-    res.status(500).json({ error: 'Erro ao confirmar 2FA.' });
-  }
-};
-
 export const simulateDemo = async (req: Request, res: Response): Promise<void> => {
   try {
     const demoEmail = 'demo@influnext.com';
     let user = await prisma.user.findUnique({ where: { email: demoEmail } });
 
     if (!user) {
-      const passwordHash = await bcrypt.hash('demo1234', 12);
+      const passwordHash = await bcrypt.hash('demo123', 12);
       user = await prisma.user.create({
         data: {
           email: demoEmail,
@@ -417,70 +392,150 @@ export const simulateDemo = async (req: Request, res: Response): Promise<void> =
           bio: 'Perfil de demonstração para o Influnext. Especialista em gadgets e futuro.',
           influScore: 85,
           scoreClass: 'GOLD',
+          dailyMission: 'Postar 3 stories sobre produtividade',
         },
       });
     }
 
-    // Limpar e recriar dados mockados para a simulação ficar "fresca"
+    // 1. Limpar dados antigos para garantir consistência
     await prisma.task.deleteMany({ where: { influencerId: profile.id } });
     await prisma.metricSnapshot.deleteMany({ where: { influencerId: profile.id } });
+    await prisma.trendReference.deleteMany({ where: { influencerId: profile.id } });
+    await prisma.contract.deleteMany({ where: { influencerId: profile.id } });
+    await prisma.supportTicket.deleteMany({ where: { userId: user.id } });
+    await prisma.notification.deleteMany({ where: { userId: user.id } });
 
-    // Criar Tasks para o mês atual (Calendário)
+    // 2. Criar Empresa Mock para Contratos
+    let demoCompany = await prisma.companyProfile.findFirst({ where: { companyName: 'TechGlobal Inc' } });
+    if (!demoCompany) {
+      const companyUser = await prisma.user.create({
+        data: {
+          email: 'brands@techglobal.com',
+          passwordHash: 'dummy',
+          role: 'COMPANY',
+          onboardingCompleted: true
+        }
+      });
+      demoCompany = await prisma.companyProfile.create({
+        data: {
+          userId: companyUser.id,
+          companyName: 'TechGlobal Inc',
+          taxId: 'DEMO-TAX-001',
+          segment: 'Tecnologia'
+        }
+      });
+    }
+
     const now = new Date();
-    const tasksData = [
-      { title: 'Postar Reels: Review iPhone 15', days: -2, done: true },
-      { title: 'Story: Bastidores do Setup', days: 0, done: false },
-      { title: 'Post Fixo: Dicas de Produtividade', days: 2, done: false },
-      { title: 'Editar vídeo: Unboxing Teclado Mecânico', days: 1, done: false },
-      { title: 'Live: Perguntas e Respostas', days: 5, done: false },
-      { title: 'Reunião com Marca: TechWorld', days: -1, done: true },
-    ];
 
+    // 3. Gerar Histórico de Métricas (Gráfico de 30 dias)
+    const metricSnapshots = [];
+    for (let i = 20; i >= 0; i--) {
+      const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      metricSnapshots.push({
+        influencerId: profile.id,
+        provider: 'INSTAGRAM',
+        followers: 12000 + (20 - i) * 50 + Math.floor(Math.random() * 20),
+        engagementRate: 4.5 + Math.random(),
+        reachLast30Days: 40000 + (20 - i) * 500,
+        avgViews: 2000 + (20 - i) * 30,
+        integrityHash: `hash_${i}`,
+        capturedAt: date,
+      });
+    }
+    await prisma.metricSnapshot.createMany({ data: metricSnapshots });
+
+    // 4. Criar Tasks do Calendário
+    const tasksData = [
+      { title: 'Revisão iPhone 15 Pro', days: -2, done: true, ai: true },
+      { title: 'Story: Unboxing Headset XYZ', days: 0, done: false, ai: true },
+      { title: 'Post: O futuro da IA em 2026', days: 2, done: false, ai: true },
+      { title: 'Live: Setup Gamer 2026', days: 5, done: false, ai: true },
+    ];
     for (const t of tasksData) {
-      const scheduledDate = new Date();
-      scheduledDate.setDate(now.getDate() + t.days);
+      const date = new Date();
+      date.setDate(now.getDate() + t.days);
       await prisma.task.create({
         data: {
           influencerId: profile.id,
           title: t.title,
-          scheduledDate,
+          scheduledDate: date,
           isDone: t.done,
-          fromAI: true,
-        },
+          fromAI: t.ai,
+        }
       });
     }
 
-    // Criar métricas mockadas
-    await prisma.metricSnapshot.create({
-      data: {
-        influencerId: profile.id,
-        provider: 'INSTAGRAM',
-        followers: 12500,
-        engagementRate: 4.8,
-        reachLast30Days: 45000,
-        avgViews: 2200,
-        integrityHash: 'demo_hash_1',
-        capturedAt: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
-      },
+    // 5. Trend Vault (Workspace)
+    await prisma.trendReference.createMany({
+      data: [
+        { influencerId: profile.id, title: 'ASMR Tech Unboxing', videoUrl: '#', niche: 'Tecnologia', expiresAt: new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000) },
+        { influencerId: profile.id, title: 'AI Automation Workflow', videoUrl: '#', niche: 'Inovação', expiresAt: new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000) },
+      ]
     });
 
-    await prisma.metricSnapshot.create({
+    // 6. Contratos Mock
+    await prisma.contract.create({
       data: {
         influencerId: profile.id,
-        provider: 'INSTAGRAM',
-        followers: 12850,
-        engagementRate: 5.2,
-        reachLast30Days: 48000,
-        avgViews: 2400,
-        integrityHash: 'demo_hash_2',
-        capturedAt: now,
-      },
+        companyId: demoCompany.id,
+        title: 'Campanha Black Friday 2025',
+        budget: 5000,
+        escrowStatus: 'COMPLETED',
+        briefing: 'Divulgação de cupons exclusivos nos stories.'
+      }
+    });
+    await prisma.contract.create({
+      data: {
+        influencerId: profile.id,
+        companyId: demoCompany.id,
+        title: 'Lançamento App TechFlow',
+        budget: 2500,
+        escrowStatus: 'IN_PROGRESS',
+        briefing: '1 Reels + 3 Stories apresentando o app.'
+      }
+    });
+
+    // 7. Suporte e Notificações
+    await prisma.supportTicket.create({
+      data: { userId: user.id, subject: 'Dúvida sobre Pagamento', message: 'Como funciona o repasse do escrow?', category: 'SUPPORT', status: 'OPEN' }
+    });
+    await prisma.notification.createMany({
+      data: [
+        { userId: user.id, message: 'Seu perfil atingiu o Score GOLD! Parabéns.', type: 'SYSTEM' },
+        { userId: user.id, message: 'Nova proposta de contrato de TechGlobal Inc.', type: 'CONTRACT' }
+      ]
+    });
+
+    // 8. Análise de IA (Workspace)
+    await prisma.aIAnalysis.create({
+      data: {
+        influencerId: profile.id,
+        analysisText: "Sua audiência está reagindo muito bem a conteúdos de produtividade com IA. Foque em Reels curtos (até 30s) mostrando seu setup. O 'Tech ASMR' está em alta no seu nicho.",
+        recommendations: JSON.stringify({
+          trends: [
+            { videoType: 'Tech Review Fast', duration: '30s', music: 'Phonk/Cyberpunk' },
+            { videoType: 'Setup Tour v2', duration: '60s', music: 'Lo-fi Beats' }
+          ],
+          suggestedTasks: [
+            { title: 'Gravar Review Headset', daysFromNow: 1 },
+            { title: 'Postar Trends do Mês', daysFromNow: 2 }
+          ],
+          videoInspirations: [
+            { title: 'Minimalist Desk Setup', hook: 'Como eu organizo meu dia...', platform: 'INSTAGRAM' }
+          ],
+          trendingNow: {
+            audios: ['Cyberpunk 2077 Theme', 'Lo-fi Productivity'],
+            topics: ['AI agents', 'Setup Gamer', 'Apple Vision Pro']
+          }
+        })
+      }
     });
 
     const token = signFullToken(user as any);
 
     res.status(200).json({
-      message: 'Simulação iniciada!',
+      message: 'Simulação iniciada com sucesso!',
       token,
       user: { id: user.id, email: user.email, role: user.role },
     });

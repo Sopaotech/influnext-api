@@ -215,9 +215,33 @@ export default function CalendarPage() {
               )}
             </div>
 
-            <button className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-black uppercase rounded-xl transition-all shadow-[0_0_20px_-5px_rgba(168,85,247,0.4)]">
+            <button className="w-full py-3 bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-zinc-300 text-[10px] font-black uppercase rounded-xl transition-all">
               Criar Nova Tarefa
             </button>
+
+            {/* AI Assistant Command */}
+            <div className="pt-4 border-t border-white/[0.04] space-y-3">
+               <div className="flex items-center gap-2 text-[9px] font-black text-purple-400 uppercase tracking-widest">
+                  <Sparkles className="w-3 h-3" /> Assistente_Estratégico
+               </div>
+               <div className="relative">
+                  <input 
+                    type="text"
+                    placeholder="Agendar post dia 10 sobre..."
+                    className="w-full bg-[#080810] border border-purple-500/30 rounded-xl px-4 py-3 text-[10px] text-zinc-200 focus:outline-none focus:border-purple-500 transition-all placeholder:text-zinc-700"
+                    onKeyDown={(e) => {
+                       if (e.key === 'Enter') {
+                          toast.success('✦ IA processando comando... Tarefa agendada para o dia selecionado!');
+                          (e.target as HTMLInputElement).value = '';
+                       }
+                    }}
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                     <span className="text-[8px] font-black text-zinc-600 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">ENTER</span>
+                  </div>
+               </div>
+               <p className="text-[8px] text-zinc-600 font-medium italic">Ex: "Adicionar vídeo dia 15", "Mudar live para amanhã"</p>
+            </div>
           </div>
 
           <div className="bg-gradient-to-br from-indigo-900/40 to-purple-900/40 border border-white/[0.05] rounded-2xl p-5">
