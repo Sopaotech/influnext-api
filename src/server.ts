@@ -19,6 +19,7 @@ app.use(cors({
     
     const isAllowed = ALLOWED_ORIGINS.includes(origin) || 
                      origin.endsWith('.vercel.app') ||
+                     origin === 'https://influnext-api.vercel.app' ||
                      origin.includes('localhost');
 
     if (isAllowed) {
