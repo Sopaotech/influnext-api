@@ -353,6 +353,8 @@ Responda apenas com o texto do briefing, formatado em Markdown simples.`;
       console.error('[AI BRIEFING] Erro:', error);
       return `Falha ao gerar briefing automático. Por favor, preencha manualmente as diretrizes para a campanha ${campaignTitle}.`;
     }
+  }
+
   /**
    * Interpreta comandos em linguagem natural e retorna uma intenção estruturada.
    */

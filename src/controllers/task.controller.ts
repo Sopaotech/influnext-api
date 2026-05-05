@@ -193,6 +193,8 @@ export const processAICommand = async (req: Request, res: Response): Promise<voi
     res.status(500).json({ error: 'Erro ao processar comando de IA.' });
   }
 };
+
+export const completeTask = async (req: Request, res: Response): Promise<void> => {
   try {
     const { taskId } = req.params;
     const { proofUrl } = req.body;
