@@ -117,7 +117,6 @@ export default function AdminDashboard() {
           title="Faturamento Bruto" 
           value={formatCurrency(data?.metrics?.revenue || 0)} 
           icon={TrendingUp}
-          highlightColor="#fbbf24"
         />
         <MetricCard 
           title="Volume GMV" 
