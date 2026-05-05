@@ -182,7 +182,7 @@ export class PaymentController {
   static async webhook(req: Request, res: Response) {
     const sig = req.headers['stripe-signature'] as string;
 
-    let event: Stripe.Event;
+    let event: any;
 
     try {
       // É necessário o raw body para validar a assinatura
@@ -198,7 +198,7 @@ export class PaymentController {
 
       switch (event.type) {
         case 'checkout.session.completed': {
-          const session = event.data.object as Stripe.Checkout.Session;
+          const session = event.data.object as any;
           if (session.mode === 'subscription') {
             const userId = session.metadata?.userId;
             const planId = session.metadata?.planId;
@@ -226,7 +226,7 @@ export class PaymentController {
         }
 
         case 'payment_intent.succeeded': {
-          const intent = event.data.object as Stripe.PaymentIntent;
+          const intent = event.data.object as any;
           const contractId = intent.metadata.contractId;
 
           if (contractId) {
@@ -240,7 +240,7 @@ export class PaymentController {
         }
 
         case 'customer.subscription.deleted': {
-          const subscription = event.data.object as Stripe.Subscription;
+          const subscription = event.data.object as any;
           const dbSub = await prisma.subscription.findUnique({
             where: { externalId: subscription.id }
           });

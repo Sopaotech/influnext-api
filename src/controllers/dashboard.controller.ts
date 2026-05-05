@@ -19,7 +19,7 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
         trendVault: { where: { expiresAt: { gte: new Date() } }, orderBy: { createdAt: 'desc' } },
         aIAnalyses: { take: 1, orderBy: { generatedAt: 'desc' } }
       }
-    });
+    }) as any;
 
     if (!profile) {
       res.status(404).json({ error: 'Dashboard não encontrada.' });
@@ -107,7 +107,7 @@ export const getCompanyDashboard = async (req: Request, res: Response): Promise<
           }
         }
       }
-    });
+    }) as any;
 
     if (!company) {
       res.status(404).json({ error: 'Perfil não encontrado.' });

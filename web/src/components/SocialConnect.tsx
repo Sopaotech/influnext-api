@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { Instagram, Youtube, Music2, Plus, CheckCircle2 } from 'lucide-react';
+import { Plus, CheckCircle2 } from 'lucide-react';
 
 interface SocialAccount {
   platform: 'instagram' | 'tiktok' | 'youtube';
