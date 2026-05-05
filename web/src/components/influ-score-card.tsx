@@ -58,39 +58,39 @@ export function InfluScoreCard({ score }: InfluScoreCardProps) {
 
   return (
     <div className={`
-      relative overflow-hidden rounded-3xl p-6 border bg-gradient-to-br ${config.bg} ${config.border} shadow-2xl ${config.glow}
-      flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-700
+      relative overflow-hidden rounded-3xl p-5 md:p-6 border bg-gradient-to-br ${config.bg} ${config.border} shadow-2xl ${config.glow}
+      flex flex-col gap-4 md:gap-6 animate-in fade-in zoom-in-95 duration-700
     `}>
       {/* Premium Decorative elements */}
       <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-white/5 to-transparent blur-3xl -mr-10 -mt-10 rounded-full" />
       
       <div className="flex items-start justify-between z-10">
-        <div className="flex items-center gap-4">
-          <div className={`p-4 rounded-2xl bg-white/5 border border-white/10 ${config.icon} shadow-inner`}>
-            {tier === 'ELITE' ? <Sparkles className="w-8 h-8" /> : <Trophy className="w-8 h-8" />}
+        <div className="flex items-center gap-3 md:gap-4">
+          <div className={`p-3 md:p-4 rounded-2xl bg-white/5 border border-white/10 ${config.icon} shadow-inner`}>
+            {tier === 'ELITE' ? <Sparkles className="w-6 h-6 md:w-8 md:h-8" /> : <Trophy className="w-6 h-6 md:w-8 md:h-8" />}
           </div>
           <div>
-            <div className="flex items-center gap-2 mb-1">
-               <span className="text-[10px] font-black tracking-[0.2em] uppercase text-zinc-500">Classificação Atual</span>
+            <div className="flex items-center gap-2 mb-0.5 md:mb-1">
+               <span className="text-[9px] md:text-[10px] font-black tracking-[0.2em] uppercase text-zinc-500">Classificação Atual</span>
                {tier === 'ELITE' && (
                  <div className="bg-purple-500/10 px-2 py-0.5 rounded-full flex items-center gap-1 border border-purple-500/20">
-                    <Zap className="w-2.5 h-2.5 text-purple-400" />
-                    <span className="text-[8px] font-black text-purple-300 uppercase">Top 1%</span>
+                    <Zap className="w-2 h-2 md:w-2.5 md:h-2.5 text-purple-400" />
+                    <span className="text-[7px] md:text-[8px] font-black text-purple-300 uppercase">Top 1%</span>
                  </div>
                )}
             </div>
             <div className="flex items-center gap-2">
-              <span className={`text-3xl font-black tracking-tighter ${tier === 'ELITE' ? 'text-white' : 'text-zinc-100'}`}>
+              <span className={`text-2xl md:text-3xl font-black tracking-tighter ${tier === 'ELITE' ? 'text-white' : 'text-zinc-100'}`}>
                 {tier}
               </span>
-              <ShieldCheck className="w-5 h-5 text-emerald-400/80" />
+              <ShieldCheck className="w-4 h-4 md:w-5 md:h-5 text-emerald-400/80" />
             </div>
           </div>
         </div>
 
         <div className="text-right">
           <div className="relative inline-block">
-             <div className={`text-5xl font-black tracking-tighter ${tier === 'ELITE' ? 'text-transparent bg-clip-text bg-gradient-to-br from-white to-purple-400' : 'text-white'}`}>
+             <div className={`text-4xl md:text-5xl font-black tracking-tighter ${tier === 'ELITE' ? 'text-transparent bg-clip-text bg-gradient-to-br from-white to-purple-400' : 'text-white'}`}>
                {score}
              </div>
              <div className="absolute -top-1 -right-4">

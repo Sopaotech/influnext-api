@@ -31,6 +31,7 @@ model User {
   onboardingCompleted Boolean @default(false)
   subscriptionStatus  String  @default("TRIAL") // "TRIAL" | "ACTIVE" | "INACTIVE"
   trialEndsAt         DateTime?
+  stripeCustomerId    String?   @unique // ID do cliente na Stripe
   
   subscriptions Subscription[]
   influencer    InfluencerProfile?

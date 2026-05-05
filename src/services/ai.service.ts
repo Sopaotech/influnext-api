@@ -177,7 +177,24 @@ export class AIService {
 
     const latestMetrics = influencer.metricsHistory[0];
     
-    if (!latestMetrics) throw new Error("Métricas insuficientes para análise.");
+    if (!latestMetrics) {
+      // Retornar uma análise "Placeholder" para incentivar a conexão de contas
+      return await prisma.aIAnalysis.create({
+        data: {
+          influencerId,
+          analysisText: `✦ Bem-vindo(a), @${influencer.handle}! Sua IA de carreira está pronta, mas precisamos de dados. Conecte seu Instagram ou TikTok para que eu possa analisar seu engajamento e gerar sua primeira estratégia real.`,
+          recommendations: JSON.stringify({
+            trends: [],
+            suggestedTasks: [
+              { title: "Vincular Instagram", description: "Necessário para análise de métricas", daysFromNow: 0 },
+              { title: "Vincular TikTok", description: "Necessário para tendências de vídeo", daysFromNow: 0 }
+            ],
+            videoInspirations: [],
+            trendingNow: { audios: [], topics: [] }
+          })
+        }
+      });
+    }
 
     const strategyResult = await this.generateCareerStrategy(influencer, latestMetrics);
 

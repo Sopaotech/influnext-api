@@ -48,6 +48,27 @@ const BENEFITS = [
 
 export default function SubscriptionPage() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const handleSubscribe = async () => {
+    try {
+      setIsLoading(true);
+      const { api } = await import('@/lib/api');
+      
+      const res = await api.post('/payments/create-subscription', {
+        planId: 'plan_pro_influencer_1'
+      });
+
+      if (res.data.url) {
+        window.location.href = res.data.url;
+      }
+    } catch (err) {
+      console.error('Erro ao iniciar checkout:', err);
+      alert('Não foi possível iniciar o checkout. Tente novamente mais tarde.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700">
@@ -96,8 +117,12 @@ export default function SubscriptionPage() {
               </div>
             </div>
 
-            <button className="w-full py-5 bg-white text-[#080810] font-black rounded-2xl hover:bg-zinc-200 transition-all shadow-[0_0_30px_rgba(255,255,255,0.1)] active:scale-95 flex items-center justify-center gap-2">
-              ASSINAR AGORA <CheckCircle2 className="w-5 h-5" />
+            <button 
+              onClick={handleSubscribe}
+              disabled={isLoading}
+              className="w-full py-5 bg-white text-[#080810] font-black rounded-2xl hover:bg-zinc-200 transition-all shadow-[0_0_30px_rgba(255,255,255,0.1)] active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? 'CARREGANDO...' : 'ASSINAR AGORA'} <CheckCircle2 className="w-5 h-5" />
             </button>
 
             <div className="space-y-4 pt-4 border-t border-white/5 w-full">

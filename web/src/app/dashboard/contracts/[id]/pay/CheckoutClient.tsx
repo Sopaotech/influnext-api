@@ -1,38 +1,29 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 export default function CheckoutClient({ contractId }: { contractId: string }) {
-  const [pixCode, setPixCode] = useState<string | null>(null);
-  const [status, setStatus] = useState<'pending' | 'paid'>('pending');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleGeneratePix = async () => {
-    // Simula requisição para /v1/payments/create-order
-    setPixCode('00020126360014br.gov.bcb.pix0114+5511999999999520400005303986540510.005802BR5915INFLUNEXT SA6009SAO PAULO62070503***6304');
-    
-    // Inicia Polling para verificar status real no backend
-    const interval = setInterval(async () => {
-       try {
-         // Aqui faremos fetch GET /v1/contracts/:contractId para checar o escrowStatus
-         // Se escrowStatus === 'IN_PROGRESS', setStatus('paid')
-       } catch (e) {}
-    }, 5000);
-    
-    // Limpeza do intervalo ao desmontar (opcional aqui mas boa prática)
-    return () => clearInterval(interval);
+  const handlePay = async () => {
+    try {
+      setIsLoading(true);
+      const { api } = await import('@/lib/api');
+      
+      const res = await api.post('/payments/create-order', {
+        contractId
+      });
+
+      if (res.data.url) {
+        window.location.href = res.data.url;
+      }
+    } catch (err) {
+      console.error('Erro ao iniciar pagamento:', err);
+      alert('Não foi possível iniciar o pagamento. Tente novamente mais tarde.');
+    } finally {
+      setIsLoading(false);
+    }
   };
-
-  if (status === 'paid') {
-    return (
-      <div className="flex flex-col items-center justify-center p-12 bg-[#11111a] rounded-xl border border-green-500/30 text-center animate-in fade-in zoom-in duration-500">
-        <div className="w-16 h-16 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mb-6">
-          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-        </div>
-        <h2 className="text-3xl font-black text-white mb-2">Pagamento Confirmado!</h2>
-        <p className="text-zinc-400">O valor está protegido no Escrow. O influenciador já foi notificado ("Plim!") para iniciar o projeto.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-2xl mx-auto bg-[#11111a] rounded-2xl border border-white/10 p-8 shadow-2xl">
@@ -46,23 +37,19 @@ export default function CheckoutClient({ contractId }: { contractId: string }) {
         </div>
       </div>
 
-      {!pixCode ? (
-        <button onClick={handleGeneratePix} className="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-zinc-200 transition-colors">
-          Pagar via PIX (Instantâneo)
+      <div className="space-y-4">
+        <button 
+          onClick={handlePay} 
+          disabled={isLoading}
+          className="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+        >
+          {isLoading ? 'PROCESSANDO...' : 'PAGAR AGORA (CARTÃO OU PIX)'}
         </button>
-      ) : (
-        <div className="flex flex-col items-center p-6 bg-[#080810] rounded-xl border border-white/5">
-            <div className="w-full h-full bg-zinc-200 flex flex-col items-center justify-center text-xs text-black font-bold text-center p-4">
-              <div className="w-32 h-32 border-4 border-black mb-2 opacity-10" />
-              AGUARDANDO PAGAMENTO
-            </div>
-          <p className="text-sm text-zinc-400 mb-4 text-center">Escaneie o QR Code ou copie a chave abaixo. Aguardando pagamento...</p>
-          <div className="flex w-full gap-2">
-             <input type="text" readOnly value={pixCode} className="flex-1 bg-[#11111a] border border-white/10 rounded-lg px-4 text-sm text-zinc-400" />
-             <button className="bg-purple-600 px-4 py-2 rounded-lg font-bold">Copiar</button>
-          </div>
-        </div>
-      )}
+        
+        <p className="text-[10px] text-center text-zinc-500 font-bold uppercase tracking-widest">
+          Pagamento processado com segurança via Stripe
+        </p>
+      </div>
     </div>
   );
 }

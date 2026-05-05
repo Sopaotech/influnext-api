@@ -4,13 +4,13 @@ import { authenticate } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-// Rota protegida para criar a intenção de pagamento de contrato
-router.post('/create-order', authenticate, PaymentController.createOrder);
+// Rota protegida para criar a sessão de checkout de contrato (Escrow)
+router.post('/create-order', authenticate, PaymentController.createContractCheckoutSession);
 
-// Rota protegida para criar assinatura de mensalidade
-router.post('/create-subscription', authenticate, PaymentController.createSubscription);
+// Rota protegida para criar sessão de checkout de mensalidade (Assinaturas)
+router.post('/create-subscription', authenticate, PaymentController.createCheckoutSession);
 
-// Rota pública para receber o webhook do Pagar.me
+// Rota pública para receber o webhook da Stripe
 router.post('/webhook', PaymentController.webhook);
 
 export default router;

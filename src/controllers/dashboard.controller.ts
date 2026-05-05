@@ -16,7 +16,8 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
         },
         metricsHistory: { take: 30, orderBy: { capturedAt: 'desc' } },
         tasks: { where: { isDone: false }, orderBy: { scheduledDate: 'asc' } },
-        trendVault: { where: { expiresAt: { gte: new Date() } }, orderBy: { createdAt: 'desc' } }
+        trendVault: { where: { expiresAt: { gte: new Date() } }, orderBy: { createdAt: 'desc' } },
+        aIAnalyses: { take: 1, orderBy: { generatedAt: 'desc' } }
       }
     });
 
@@ -70,6 +71,7 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
       tasks: profile.tasks,
       trendVault: profile.trendVault,
       metricsHistory: profile.metricsHistory,
+      analysis: profile.aIAnalyses[0] || null,
     });
   } catch (error) {
     console.error('[DASHBOARD] Erro ao carregar:', error);

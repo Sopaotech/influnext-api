@@ -22,6 +22,8 @@ interface Trend {
   videoUrl: string;
 }
 
+import { SocialConnect } from '@/components/SocialConnect';
+
 export default function InfluencerDashboard() {
   const [data, setData] = useState<any | null>(null);
   const [kpis, setKpis] = useState<any | null>(null);
@@ -82,13 +84,13 @@ export default function InfluencerDashboard() {
 
   if (isLoading) {
     return (
-      <div className="p-10 space-y-10 animate-pulse">
+      <div className="p-6 md:p-10 space-y-6 md:space-y-10 animate-pulse">
         <div className="h-12 w-64 bg-white/5 rounded-2xl" />
-        <div className="grid grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {[1,2,3,4].map(i => <div key={i} className="h-32 bg-white/5 rounded-3xl" />)}
         </div>
-        <div className="grid grid-cols-3 gap-8">
-           <div className="col-span-2 h-80 bg-white/5 rounded-3xl" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+           <div className="lg:col-span-2 h-80 bg-white/5 rounded-3xl" />
            <div className="h-80 bg-white/5 rounded-3xl" />
         </div>
       </div>
@@ -107,8 +109,8 @@ export default function InfluencerDashboard() {
       
       {/* Daily Mission Banner - Premium Floating */}
       {mission && !mission.missionCompleted && (
-        <div className="mx-8 mt-6 p-1 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-emerald-500/5 to-transparent border border-emerald-500/20 backdrop-blur-xl animate-in slide-in-from-top-4 duration-700">
-           <div className="px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="mx-4 md:mx-8 mt-4 md:mt-6 p-1 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-emerald-500/5 to-transparent border border-emerald-500/20 backdrop-blur-xl animate-in slide-in-from-top-4 duration-700">
+           <div className="px-4 md:px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                  <div className="p-2 bg-emerald-500/10 rounded-lg">
                     <Zap className="w-4 h-4 text-emerald-400 animate-pulse" />
@@ -121,7 +123,7 @@ export default function InfluencerDashboard() {
               <button 
                 onClick={handleCompleteMission}
                 disabled={completingMission}
-                className="group px-8 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-xl active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                className="w-full md:w-auto group px-8 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {completingMission ? 'PROCESSANDO...' : (
                   <>CONCLUIR AGORA <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" /></>
@@ -131,16 +133,16 @@ export default function InfluencerDashboard() {
         </div>
       )}
 
-      <div className="p-6 md:p-10 space-y-10 flex-1 max-w-7xl mx-auto w-full">
+      <div className="p-4 md:p-10 space-y-6 md:space-y-10 flex-1 max-w-7xl mx-auto w-full">
         
         {/* Pro Max Header */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-white/[0.03] pb-10">
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/[0.03] pb-8 md:pb-10">
           <div className="space-y-2">
             <div className="flex items-center gap-2 mb-2">
                <div className="h-1 w-8 bg-purple-600 rounded-full" />
                <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.4em]">Console_InfluNext_v2.6</span>
             </div>
-            <h1 className="text-5xl font-black text-white tracking-tighter leading-[0.9]">
+            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter leading-[0.9]">
               {(() => {
                 const hour = new Date().getHours();
                 return hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
@@ -149,17 +151,47 @@ export default function InfluencerDashboard() {
           </div>
 
           <div className="flex items-center gap-4">
-             <div className="bg-[#0d0b1a] border border-white/[0.05] px-6 py-4 rounded-[1.5rem] flex flex-col items-end group hover:border-emerald-500/30 transition-all duration-500">
+             <div className="w-full md:w-auto bg-[#0d0b1a] border border-white/[0.05] px-6 py-4 rounded-[1.5rem] flex flex-col items-center md:items-end group hover:border-emerald-500/30 transition-all duration-500">
                 <div className="flex items-center gap-2 mb-1">
                    <Wallet className="w-3.5 h-3.5 text-zinc-600 group-hover:text-emerald-400 transition-colors" />
                    <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Saldo Protegido</span>
                 </div>
-                <span className="text-2xl font-black text-emerald-400 tracking-tighter">
+                <span className="text-xl md:text-2xl font-black text-emerald-400 tracking-tighter">
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(escrowBalance)}
                 </span>
              </div>
           </div>
         </header>
+
+        {/* Social Connection Section - NEW */}
+        <SocialConnect />
+
+        {/* AI Strategy Insight - NEW */}
+        {data?.analysis && (
+          <section className="relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-emerald-600 rounded-[2.5rem] blur opacity-10 group-hover:opacity-20 transition duration-1000"></div>
+            <div className="relative bg-[#0d0b1a] border border-purple-500/20 rounded-[2.5rem] p-8 md:p-10">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-purple-500/10 rounded-lg">
+                  <Sparkles className="w-5 h-5 text-purple-400 animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-purple-500">Inteligência_Estratégica</h3>
+                  <p className="text-xs font-bold text-zinc-400">Direcionamento do seu Mentor IA</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <p className="text-lg md:text-2xl font-bold text-white leading-tight tracking-tight italic">
+                  "{data.analysis.analysisText}"
+                </p>
+                <div className="flex items-center gap-2 pt-4 opacity-50">
+                   <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                   <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Análise baseada em tendências globais e seu perfil</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Core KPIs & InfluScore Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

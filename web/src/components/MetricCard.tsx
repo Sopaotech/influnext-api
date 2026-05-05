@@ -23,7 +23,7 @@ export function MetricCard({
   const isPositive = change && change > 0;
   
   return (
-    <div className="group relative overflow-hidden rounded-[2rem] bg-[#0d0b1a] border border-white/[0.05] p-6 hover:border-purple-500/30 transition-all duration-500 hover:shadow-[0_20px_50px_-20px_rgba(139,92,246,0.15)]">
+    <div className="group relative overflow-hidden rounded-[2rem] bg-[#0d0b1a] border border-white/[0.05] p-4 md:p-6 hover:border-purple-500/30 transition-all duration-500 hover:shadow-[0_20px_50px_-20px_rgba(139,92,246,0.15)]">
       {/* Decorative background element */}
       <div className="absolute -right-4 -top-4 w-24 h-24 bg-purple-500/5 blur-2xl rounded-full group-hover:bg-purple-500/10 transition-colors duration-500" />
       
@@ -49,7 +49,7 @@ export function MetricCard({
           <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">
             {title}
           </p>
-          <h4 className="text-3xl font-black text-white tracking-tighter group-hover:text-purple-100 transition-colors">
+          <h4 className="text-2xl md:text-3xl font-black text-white tracking-tighter group-hover:text-purple-100 transition-colors">
             {value}
           </h4>
         </div>

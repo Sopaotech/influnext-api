@@ -34,6 +34,9 @@ app.use(cors({
 
 import { trackPageView } from './middlewares/analytics.middleware';
 
+// Middleware especial para Webhook da Stripe (precisa do raw body para validar assinatura)
+app.use('/v1/payments/webhook', express.raw({ type: 'application/json' }));
+
 app.use(express.json());
 app.use(trackPageView);
 

@@ -48,8 +48,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (    <div className="min-h-screen bg-[#050508] flex text-white font-sans selection:bg-purple-500/30 overflow-hidden">
       
       {/* Mobile Header (Hamburger) */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#050508]/80 backdrop-blur-xl border-b border-white/[0.04] z-50 flex items-center justify-between px-6">
-        <Logo size="sm" href="/" />
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#050508]/80 backdrop-blur-xl border-b border-white/[0.04] z-[100] flex items-center justify-between px-6">
+        <Logo size="sm" href="/dashboard/influencer" />
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-zinc-400 p-2 hover:bg-white/[0.05] rounded-lg transition-colors">
           {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
@@ -57,13 +57,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Sidebar - Desktop (180px) & Mobile Overlay */}
       <aside className={`
-        fixed md:static top-16 md:top-0 left-0 z-40 h-[calc(100vh-4rem)] md:h-screen w-[180px]
+        fixed md:static top-16 md:top-0 left-0 z-[90] h-[calc(100vh-4rem)] md:h-screen w-[180px]
         bg-[#050508] border-r border-white/[0.04] flex flex-col justify-between transition-transform duration-300
-        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        ${isMobileMenuOpen ? 'translate-x-0 shadow-[20px_0_50px_rgba(0,0,0,0.5)]' : '-translate-x-full md:translate-x-0'}
       `}>
         <div className="p-6">
           <div className="hidden md:flex items-center mb-10 px-2">
-            <Logo size="sm" href="/" />
+            <Logo size="sm" href="/dashboard/influencer" />
           </div>
           
           <nav className="space-y-1.5">
@@ -101,7 +101,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
         
         <div className="p-6 border-t border-white/[0.04] space-y-6">
-          <div className="relative group cursor-pointer" onClick={() => router.push('/dashboard/subscription')}>
+          <div className="relative group cursor-pointer" onClick={() => {
+            setIsMobileMenuOpen(false);
+            router.push('/dashboard/subscription');
+          }}>
             <div className="absolute -inset-[1px] bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500" />
             <div className="relative bg-[#0d0b18] border border-white/[0.08] p-4 rounded-2xl space-y-3">
                <div className="space-y-1">
@@ -115,7 +118,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
           <button 
-            onClick={handleLogout} 
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              handleLogout();
+            }} 
             className="w-full flex items-center gap-3 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 hover:text-rose-500 transition-all group"
           >
             <LogOut className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
@@ -125,7 +131,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 w-full h-screen pt-14 md:pt-0 overflow-y-auto bg-[#050508]">
+      <main className="flex-1 w-full h-screen pt-16 md:pt-0 overflow-y-auto bg-[#050508]">
         <div className="min-h-full">
           {isAdmin && (
             <Link href="/dashboard/admin" className="block bg-purple-600/10 hover:bg-purple-600/20 transition-colors border-b border-purple-500/20 px-6 py-2 flex items-center justify-center gap-2">

@@ -1,267 +1,271 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
-import crypto from 'crypto';
+import { stripe } from '../lib/stripe';
+import Stripe from 'stripe';
 
-const PAGARME_WEBHOOK_SECRET = process.env.PAGARME_WEBHOOK_SECRET || 'sandbox_secret_dev';
-
-/**
- * Valida a assinatura do Webhook do Pagar.me
- * Pagar.me envia: X-Hub-Signature header com HMAC-SHA256
- */
-function validateWebhookSignature(payload: string, signature: string | undefined): boolean {
-  if (!signature) return false;
-  
-  // Em modo Sandbox/Dev, bypass da assinatura se secret não configurado
-  if (PAGARME_WEBHOOK_SECRET === 'sandbox_secret_dev') {
-    console.warn('[WEBHOOK] ⚠️  Modo Sandbox: validação de assinatura desativada.');
-    return true;
-  }
-
-  const expected = crypto
-    .createHmac('sha256', PAGARME_WEBHOOK_SECRET)
-    .update(payload)
-    .digest('hex');
-
-  // Comparação segura (constant-time) para evitar timing attacks
-  try {
-    return crypto.timingSafeEqual(
-      Buffer.from(`sha256=${expected}`),
-      Buffer.from(signature)
-    );
-  } catch {
-    return false;
-  }
-}
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 
 export class PaymentController {
   /**
-   * POST /v1/payments/create-order
-   * Cria um pedido de pagamento PIX com split 90/10 (Sandbox)
+   * POST /v1/payments/create-checkout-session
+   * Cria uma sessão de checkout para assinatura do plano PRO
    */
-  static async createOrder(req: Request, res: Response) {
+  static async createCheckoutSession(req: Request, res: Response) {
     try {
-      const { contractId, method = 'pix' } = req.body;
+      const userId = req.user!.id;
+      const { planId } = req.body;
 
-      if (!contractId) {
-        return res.status(400).json({ error: 'contractId é obrigatório' });
+      if (!planId) return res.status(400).json({ error: 'planId é obrigatório' });
+
+      const plan = await prisma.plan.findUnique({ where: { id: planId } });
+      if (!plan || !plan.externalId) {
+        return res.status(404).json({ error: 'Plano não encontrado ou sem ID da Stripe' });
       }
+
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+
+      // Garante que o usuário tem um Customer ID na Stripe
+      let stripeCustomerId = user.stripeCustomerId;
+      if (!stripeCustomerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          metadata: { userId: user.id }
+        });
+        stripeCustomerId = customer.id;
+        await prisma.user.update({
+          where: { id: userId },
+          data: { stripeCustomerId }
+        });
+      }
+
+      // Cria a sessão de checkout
+      const session = await stripe.checkout.sessions.create({
+        customer: stripeCustomerId,
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: plan.externalId, // O externalId deve ser o Price ID da Stripe
+            quantity: 1,
+          },
+        ],
+        mode: 'subscription',
+        success_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/subscription`,
+        metadata: {
+          userId: user.id,
+          planId: plan.id
+        }
+      });
+
+      return res.json({ url: session.url });
+    } catch (error) {
+      console.error('[STRIPE] Erro ao criar checkout session:', error);
+      return res.status(500).json({ error: 'Erro ao processar pagamento' });
+    }
+  }
+
+  /**
+   * POST /v1/payments/create-contract-checkout
+   * Cria uma sessão de checkout para pagamento de contrato (Escrow)
+   */
+  static async createContractCheckoutSession(req: Request, res: Response) {
+    try {
+      const { contractId } = req.body;
+
+      if (!contractId) return res.status(400).json({ error: 'contractId é obrigatório' });
 
       const contract = await prisma.contract.findUnique({
         where: { id: contractId },
-        include: {
-          company: true,
-          influencer: { include: { user: { select: { email: true } } } }
-        }
+        include: { company: { include: { user: true } } }
       });
 
       if (!contract) return res.status(404).json({ error: 'Contrato não encontrado' });
-      if (contract.escrowStatus !== 'DRAFT' && contract.escrowStatus !== 'PENDING_PAYMENT') {
-        return res.status(400).json({ error: 'Contrato já foi pago ou está em processamento.' });
-      }
 
-      const amount = Number(contract.budget);
-      const platformFee = Math.round(amount * 0.10 * 100) / 100; // 10%
-      const influencerAmount = Math.round(amount * 0.90 * 100) / 100; // 90%
+      // Valor em centavos
+      const amount = Math.round(contract.budget * 100);
 
-      // Sandbox: retorna mock estruturado igual à API real do Pagar.me v5
-      const orderId = `or_${Date.now().toString(36)}`;
-      const sandboxResponse = {
-        id: orderId,
-        status: 'pending',
-        sandbox: true,
-        amount_in_cents: Math.round(amount * 100),
-        payment_method: method,
-        pix: {
-          qr_code: `00020126580014br.gov.bcb.pix0136${orderId}5204000053039865406${Math.round(amount * 100)}5802BR5915INFLUNEXT SA6009SAO PAULO62070503***6304ABCD`,
-          qr_code_url: `https://api.pagar.me/sandbox/qr/${orderId}`,
-          expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 min
-        },
-        split: [
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card', 'pix'],
+        line_items: [
           {
-            recipient_id: 're_influnext_platform',
-            amount: Math.round(platformFee * 100),
-            type: 'flat',
-            description: 'Taxa da plataforma (10%)'
+            price_data: {
+              currency: 'brl',
+              product_data: {
+                name: `Contrato: ${contract.title}`,
+                description: `Pagamento em Escrow para InfluNext`,
+              },
+              unit_amount: amount,
+            },
+            quantity: 1,
           },
-          {
-            recipient_id: 're_mock_influencer_123',
-            amount: Math.round(influencerAmount * 100),
-            type: 'flat',
-            description: 'Repasse ao influenciador (90%)'
-          }
         ],
-        metadata: { contractId }
-      };
-
-      // Atualizar contrato para PENDING_PAYMENT com o txId externo
-      await prisma.contract.update({
-        where: { id: contractId },
-        data: {
-          escrowStatus: 'PENDING_PAYMENT',
-          externalTxId: orderId,
-          platformFee,
-          netAmount: influencerAmount,
+        mode: 'payment',
+        success_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/contracts/${contractId}?payment=success`,
+        cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/contracts/${contractId}/pay`,
+        metadata: {
+          contractId: contract.id,
+          type: 'contract_escrow'
         }
       });
 
-      return res.json(sandboxResponse);
+      // Atualizar contrato com o ID da sessão
+      await prisma.contract.update({
+        where: { id: contractId },
+        data: {
+          externalTxId: session.id,
+          escrowStatus: 'PENDING_PAYMENT'
+        }
+      });
+
+      return res.json({ url: session.url });
     } catch (error) {
-      console.error('[PAYMENT] Erro ao criar order:', error);
+      console.error('[STRIPE] Erro ao criar contract checkout session:', error);
       return res.status(500).json({ error: 'Erro ao gerar pagamento' });
     }
   }
 
   /**
-   * POST /v1/payments/create-subscription
-   * Assina o usuário em um plano recorrente
+   * POST /v1/payments/create-payment-intent
+   * Cria um PaymentIntent para contratos (Escrow)
    */
-  static async createSubscription(req: Request, res: Response) {
+  static async createPaymentIntent(req: Request, res: Response) {
     try {
-      const userId = req.user!.id;
-      const { planId, cardToken } = req.body;
+      const { contractId } = req.body;
 
-      if (!planId) return res.status(400).json({ error: 'planId é obrigatório' });
+      if (!contractId) return res.status(400).json({ error: 'contractId é obrigatório' });
 
-      const plan = await prisma.plan.findUnique({ where: { id: planId } });
-      if (!plan) return res.status(404).json({ error: 'Plano não encontrado' });
+      const contract = await prisma.contract.findUnique({
+        where: { id: contractId },
+        include: { company: { include: { user: true } } }
+      });
 
-      const user = await prisma.user.findUnique({ where: { id: userId } });
-      if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+      if (!contract) return res.status(404).json({ error: 'Contrato não encontrado' });
 
-      // Sandbox: Mock de assinatura do Pagar.me
-      const subscriptionId = `sub_${Date.now().toString(36)}`;
-      
-      const newSubscription = await prisma.subscription.create({
+      // Valor em centavos
+      const amount = Math.round(contract.budget * 100);
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount,
+        currency: 'brl',
+        payment_method_types: ['card', 'pix'],
+        metadata: {
+          contractId: contract.id,
+          type: 'contract_escrow'
+        },
+        description: `Pagamento de Escrow: ${contract.title}`
+      });
+
+      // Atualizar contrato com o ID da transação externa
+      await prisma.contract.update({
+        where: { id: contractId },
         data: {
-          userId,
-          planId,
-          externalId: subscriptionId,
-          status: 'active',
-          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 dias
+          externalTxId: paymentIntent.id,
+          escrowStatus: 'PENDING_PAYMENT'
         }
       });
 
-      // Atualiza status do usuário
-      await prisma.user.update({
-        where: { id: userId },
-        data: { subscriptionStatus: 'ACTIVE' }
-      });
-
-      return res.status(201).json({
-        message: 'Assinatura criada com sucesso!',
-        subscription: newSubscription
+      return res.json({
+        clientSecret: paymentIntent.client_secret,
+        id: paymentIntent.id
       });
     } catch (error) {
-      console.error('[PAYMENT] Erro ao criar assinatura:', error);
-      return res.status(500).json({ error: 'Erro ao processar assinatura' });
+      console.error('[STRIPE] Erro ao criar PaymentIntent:', error);
+      return res.status(500).json({ error: 'Erro ao gerar pagamento' });
     }
   }
 
   /**
    * POST /v1/payments/webhook
-   * Recebe notificações do Pagar.me com validação de assinatura HMAC-SHA256
+   * Handler de eventos da Stripe
    */
   static async webhook(req: Request, res: Response) {
-    // Validação de assinatura — blindagem contra requisições falsas
-    const rawBody = JSON.stringify(req.body);
-    const signature = req.headers['x-hub-signature'] as string | undefined;
+    const sig = req.headers['stripe-signature'] as string;
 
-    if (!validateWebhookSignature(rawBody, signature)) {
-      console.error('[WEBHOOK] ❌ Assinatura inválida — requisição rejeitada.');
-      return res.status(401).json({ error: 'Assinatura inválida' });
+    let event: Stripe.Event;
+
+    try {
+      // É necessário o raw body para validar a assinatura
+      // No Express, isso geralmente requer um middleware específico (express.raw)
+      event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
+    } catch (err: any) {
+      console.error(`[STRIPE WEBHOOK] ❌ Erro de assinatura: ${err.message}`);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
     try {
-      const event = req.body;
-      console.log(`[WEBHOOK] Evento recebido: ${event.type}`);
+      console.log(`[STRIPE WEBHOOK] Evento recebido: ${event.type}`);
 
-      // Evento de Assinatura Paga
-      if (event.type === 'subscription.paid') {
-        const externalId = event.data?.id;
-        const subscription = await prisma.subscription.findUnique({
-          where: { externalId },
-          include: { user: true }
-        });
+      switch (event.type) {
+        case 'checkout.session.completed': {
+          const session = event.data.object as Stripe.Checkout.Session;
+          if (session.mode === 'subscription') {
+            const userId = session.metadata?.userId;
+            const planId = session.metadata?.planId;
+            const externalSubscriptionId = session.subscription as string;
 
-        if (subscription) {
-          await prisma.user.update({
-            where: { id: subscription.userId },
-            data: { subscriptionStatus: 'ACTIVE' }
-          });
-          
-          await prisma.subscription.update({
-            where: { id: subscription.id },
-            data: { 
-              status: 'active',
-              currentPeriodEnd: new Date(event.data.current_period_end)
+            if (userId && planId) {
+              await prisma.subscription.create({
+                data: {
+                  userId,
+                  planId,
+                  externalId: externalSubscriptionId,
+                  status: 'active',
+                  currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Aproximado, o ideal é ler do subscription.updated
+                }
+              });
+
+              await prisma.user.update({
+                where: { id: userId },
+                data: { subscriptionStatus: 'ACTIVE' }
+              });
+              console.log(`[STRIPE] ✅ Assinatura ativada para usuário ${userId}`);
             }
-          });
-          console.log(`[WEBHOOK] ✅ Assinatura ${externalId} paga. Usuário ${subscription.userId} ATIVADO.`);
+          }
+          break;
         }
+
+        case 'payment_intent.succeeded': {
+          const intent = event.data.object as Stripe.PaymentIntent;
+          const contractId = intent.metadata.contractId;
+
+          if (contractId) {
+            await prisma.contract.update({
+              where: { id: contractId },
+              data: { escrowStatus: 'IN_PROGRESS' }
+            });
+            console.log(`[STRIPE] ✅ Contrato ${contractId} pago. Escrow IN_PROGRESS.`);
+          }
+          break;
+        }
+
+        case 'customer.subscription.deleted': {
+          const subscription = event.data.object as Stripe.Subscription;
+          const dbSub = await prisma.subscription.findUnique({
+            where: { externalId: subscription.id }
+          });
+
+          if (dbSub) {
+            await prisma.user.update({
+              where: { id: dbSub.userId },
+              data: { subscriptionStatus: 'INACTIVE' }
+            });
+            await prisma.subscription.update({
+              where: { id: dbSub.id },
+              data: { status: 'canceled' }
+            });
+            console.log(`[STRIPE] ⚠️ Assinatura ${subscription.id} cancelada.`);
+          }
+          break;
+        }
+
+        // Adicionar outros casos conforme necessário (past_due, invoice.paid, etc)
       }
 
-      // Evento de Assinatura Cancelada/Inadimplente
-      if (event.type === 'subscription.canceled' || event.type === 'subscription.past_due') {
-        const externalId = event.data?.id;
-        const subscription = await prisma.subscription.findUnique({ where: { externalId } });
-
-        if (subscription) {
-          await prisma.user.update({
-            where: { id: subscription.userId },
-            data: { subscriptionStatus: 'INACTIVE' }
-          });
-          
-          await prisma.subscription.update({
-            where: { id: subscription.id },
-            data: { status: 'canceled' }
-          });
-          console.log(`[WEBHOOK] ⚠️ Assinatura ${externalId} suspensa. Usuário ${subscription.userId} INATIVADO.`);
-        }
-      }
-
-      if (event.type === 'order.paid') {
-        const contractId = event.data?.metadata?.contractId;
-
-        if (!contractId) {
-          console.warn('[WEBHOOK] order.paid sem contractId no metadata.');
-          return res.status(200).send('OK'); // Responde 200 para não retentar
-        }
-
-        // Idempotência: verifica se já processou este evento
-        const contract = await prisma.contract.findUnique({ where: { id: contractId } });
-        if (!contract) {
-          console.warn(`[WEBHOOK] Contrato ${contractId} não encontrado.`);
-          return res.status(200).send('OK');
-        }
-        if (contract.escrowStatus === 'IN_PROGRESS' || contract.escrowStatus === 'COMPLETED') {
-          console.log(`[WEBHOOK] Contrato ${contractId} já processado. Idempotência aplicada.`);
-          return res.status(200).send('OK');
-        }
-
-        // Atualizar para IN_PROGRESS (dinheiro em Escrow)
-        await prisma.contract.update({
-          where: { id: contractId },
-          data: { escrowStatus: 'IN_PROGRESS' }
-        });
-
-        console.log(`[WEBHOOK] ✅ Contrato ${contractId} → IN_PROGRESS. Escrow ativado. Split 90/10 garantido.`);
-      }
-
-      if (event.type === 'order.payment_failed') {
-        const contractId = event.data?.metadata?.contractId;
-        if (contractId) {
-          await prisma.contract.update({
-            where: { id: contractId },
-            data: { escrowStatus: 'DRAFT' } // Volta ao rascunho para nova tentativa
-          });
-          console.log(`[WEBHOOK] ⚠️ Pagamento falhou. Contrato ${contractId} voltou para DRAFT.`);
-        }
-      }
-
-      return res.status(200).send('OK');
+      return res.json({ received: true });
     } catch (error) {
-      console.error('[WEBHOOK] Erro interno:', error);
-      return res.status(500).send('Internal Error');
+      console.error('[STRIPE WEBHOOK] Erro ao processar evento:', error);
+      return res.status(500).json({ error: 'Erro interno no webhook' });
     }
   }
 }
