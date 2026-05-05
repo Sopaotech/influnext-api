@@ -4,7 +4,7 @@ import { api, DashboardData } from '@/lib/api';
 import Cookies from 'js-cookie';
 import { toast } from 'sonner';
 import { MetricCard } from '@/components/MetricCard';
-import { Users, Activity, Target, Eye, AlertCircle, ExternalLink, CheckSquare, Sparkles, Zap } from 'lucide-react';
+import { Users, Activity, Target, Eye, AlertCircle, ExternalLink, CheckSquare, Sparkles, Zap, Trophy } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { InfluScoreCard } from '@/components/influ-score-card';
 import Link from 'next/link';
@@ -289,5 +289,4 @@ export default function InfluencerDashboard() {
   );
 }
 
-// Mock Trophy Icon
-import { Trophy } from 'lucide-react';
+// Fim da página

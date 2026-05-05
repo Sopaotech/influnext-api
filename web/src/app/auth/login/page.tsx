@@ -6,6 +6,7 @@ import { api, LoginResponse } from '@/lib/api';
 import Cookies from 'js-cookie';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
+import { Sparkles } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
