@@ -234,6 +234,7 @@ export default function SignupClient() {
                 </>
               )}
 
+              {step === 2 && (
                 <div className="text-center space-y-0.5">
                   <Stepper currentStep={step} totalSteps={3} />
                   <h1 className="text-xl font-black text-white tracking-tight">
