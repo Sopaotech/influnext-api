@@ -459,16 +459,16 @@ export const simulateDemo = async (req: Request, res: Response): Promise<void> =
 
     // 3. Gerar Histórico de Métricas (Gráfico de 30 dias)
     const metricSnapshots = [];
-    for (let i = 20; i >= 0; i--) {
+    for (let i = 30; i >= 0; i--) {
       const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
       metricSnapshots.push({
         influencerId: profile.id,
         provider: 'INSTAGRAM',
-        followers: 12000 + (20 - i) * 50 + Math.floor(Math.random() * 20),
-        engagementRate: 4.5 + Math.random(),
-        reachLast30Days: 40000 + (20 - i) * 500,
-        avgViews: 2000 + (20 - i) * 30,
-        integrityHash: `hash_${i}`,
+        followers: 12500 + (30 - i) * 80 + Math.floor(Math.random() * 50),
+        engagementRate: 4.8 + Math.random() * 0.5,
+        reachLast30Days: 45000 + (30 - i) * 600,
+        avgViews: 2500 + (30 - i) * 45,
+        integrityHash: `hash_s_${i}`,
         capturedAt: date,
       });
     }

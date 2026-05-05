@@ -176,15 +176,17 @@ export default function InfluencerDashboard() {
           </div>
         </section>
 
-        {/* Chart Section: Audience Growth */}
-        <section className="bg-[#100c1e] border border-[#1e1430] rounded-2xl p-6 relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Crescimento Histórico (Seguidores)</h3>
-            <div className="flex items-center gap-2">
-               <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
-               <span className="text-[9px] font-black text-purple-400 uppercase">Live Data</span>
-            </div>
-          </div>
+        {/* Chart Section: Audience Growth & Active Scroll */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <section className="bg-[#100c1e] border border-[#1e1430] rounded-2xl p-6 relative overflow-hidden group h-full">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Crescimento Histórico (Seguidores)</h3>
+                <div className="flex items-center gap-2">
+                   <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+                   <span className="text-[9px] font-black text-purple-400 uppercase">Live Data</span>
+                </div>
+              </div>
           
           <div className="h-[200px] md:h-[300px] w-full relative">
             {data?.metricsHistory?.length > 1 ? (
@@ -257,6 +259,37 @@ export default function InfluencerDashboard() {
              <span>Hoje</span>
           </div>
         </section>
+      </div>
+
+      {/* Scroll Ativo Sidebar */}
+      <div className="space-y-6">
+        <section className="bg-[#100c1e] border border-[#1e1430] rounded-2xl p-6 h-full">
+           <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-6 flex items-center gap-2">
+             <Activity size={14} className="text-emerald-500" /> Scroll_Ativo
+           </h3>
+           <div className="space-y-4">
+             {[
+               { time: '2 min', type: 'VIEW', desc: 'Marca visualizou seu perfil.' },
+               { time: '1h', type: 'CONTRACT', desc: 'Proposta recebida: TechGlobal.' },
+               { time: '3h', type: 'SYSTEM', desc: 'Score GOLD atingido!' },
+               { time: '5h', type: 'TASK', desc: 'Tarefa concluída com sucesso.' },
+               { time: '12h', type: 'VIEW', desc: 'Sua trend subiu no radar.' },
+             ].map((act, i) => (
+               <div key={i} className="flex items-start justify-between group cursor-default">
+                 <div className="flex gap-3">
+                   <div className={`mt-1 w-1.5 h-1.5 rounded-full ${act.type === 'VIEW' ? 'bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]' : act.type === 'CONTRACT' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-blue-500'}`} />
+                   <p className="text-[11px] text-zinc-400 group-hover:text-zinc-200 transition-colors">{act.desc}</p>
+                 </div>
+                 <span className="text-[9px] text-zinc-700 font-black">{act.time}</span>
+               </div>
+             ))}
+           </div>
+           <div className="mt-8 p-4 bg-purple-500/5 border border-purple-500/10 rounded-xl">
+              <p className="text-[9px] text-purple-400 font-bold leading-relaxed italic">"Sua performance em Reels subiu 12% na última hora. Mantenha o ritmo."</p>
+           </div>
+        </section>
+      </div>
+    </div>
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Trends Section (New) */}
