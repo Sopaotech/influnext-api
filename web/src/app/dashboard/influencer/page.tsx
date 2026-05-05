@@ -158,23 +158,39 @@ export default function InfluencerDashboard() {
           </div>
         </header>
 
-        {/* Onboarding Checklist - New */}
-        {!data?.profile?.onboardingCompleted && (
-          <section className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-4">Checklist de Decolagem</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                { label: 'Conectar Social Data', done: !!data?.metricsHistory?.length },
-                { label: 'Configurar Rate Card', done: false },
-                { label: 'Validar Identidade', done: true },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3 bg-zinc-950/50 p-3 rounded-xl border border-zinc-800/50">
-                  <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${item.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-zinc-700'}`}>
-                    {item.done && <CheckSquare size={10} />}
-                  </div>
-                  <span className={`text-[11px] font-bold ${item.done ? 'text-zinc-400 line-through' : 'text-zinc-200'}`}>{item.label}</span>
+        {/* Profile Progress - Dynamic */}
+        {data?.profile?.profileProgress < 100 && (
+          <section className="bg-[#130f24] border border-purple-500/10 rounded-2xl p-6 relative overflow-hidden group transition-all hover:border-purple-500/30">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
+              <Sparkles className="w-12 h-12 text-purple-400" />
+            </div>
+            
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative">
+              <div className="space-y-1.5 flex-1 text-center md:text-left">
+                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-purple-400">Poder de Influência: {data?.profile?.profileProgress}%</h3>
+                <h2 className="text-xl font-bold text-white tracking-tight">Complete seu perfil para ser visto por marcas premium</h2>
+                <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">Faltam apenas alguns passos para você entrar no radar das grandes campanhas.</p>
+              </div>
+
+              <div className="w-full md:w-64 space-y-3">
+                <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                  <div 
+                    className="h-full bg-gradient-to-r from-purple-600 to-violet-500 transition-all duration-1000 ease-out"
+                    style={{ width: `${data?.profile?.profileProgress}%` }}
+                  />
                 </div>
-              ))}
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Invisível</span>
+                  <span className="text-[9px] font-black text-purple-400 uppercase tracking-widest">Elite Radar</span>
+                </div>
+              </div>
+
+              <Link 
+                href="/dashboard/settings" 
+                className="px-6 py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-black uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(168,85,247,0.2)]"
+              >
+                Completar Agora
+              </Link>
             </div>
           </section>
         )}

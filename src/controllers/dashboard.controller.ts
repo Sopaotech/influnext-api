@@ -9,6 +9,7 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
       where: { userId },
       include: {
         user: { select: { onboardingCompleted: true, subscriptionStatus: true, trialEndsAt: true } },
+        platforms: true,
         contracts: {
           where: { escrowStatus: { in: ['IN_PROGRESS', 'PENDING_PAYMENT', 'UNDER_REVIEW'] } },
           select: { id: true, title: true, budget: true, escrowStatus: true, createdAt: true }
@@ -23,6 +24,14 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
       res.status(404).json({ error: 'Dashboard não encontrada.' });
       return;
     }
+
+    // Cálculo de Progresso de Perfil (Fase 1 do Roadmap)
+    let progress = 0;
+    if (profile.niche) progress += 20;
+    if (profile.city)  progress += 20;
+    if (profile.state) progress += 20;
+    if (profile.bio)   progress += 20;
+    if (profile.platforms.length > 0) progress += 20;
 
     // KPI: Saldo em Escrow (soma dos contratos IN_PROGRESS)
     const escrowBalance = profile.contracts
@@ -45,6 +54,7 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
         scoreClass: profile.scoreClass,
         dailyMission: profile.dailyMission,
         missionCompleted: profile.missionCompleted,
+        profileProgress: progress,
       },
       kpis: {
         influScore: profile.influScore,
