@@ -334,5 +334,39 @@ Responda de forma direta, tática e acionável. Não use jargões motivacionais 
       console.error('[AI CHAT] Erro ao conectar ao Gemini:', error);
       throw new Error(`O Mentor está indisponível: ${error.message || 'Erro de conexão'}`);
     }
+  /**
+   * Gera um briefing profissional para uma campanha.
+   */
+  static async generateCampaignBriefing(influencerHandle: string, campaignTitle: string): Promise<string> {
+    const apiKey = process.env.GEMINI_API_KEY;
+    
+    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
+      return `[MOCK BRIEFING] Campanha: ${campaignTitle}. Objetivo: Aumentar conversão e autoridade. Deliverables: Conforme acordado. Foco em autenticidade.`;
+    }
+
+    try {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+
+      const prompt = `Você é um Especialista em Marketing de Influência do INFLUNEXT.
+Sua tarefa é gerar um BRIEFING TÉCNICO E CRIATIVO para uma marca que deseja contratar o influenciador @${influencerHandle}.
+Título da Campanha: "${campaignTitle}".
+
+REGRAS DO BRIEFING:
+1. Seja direto, profissional e focado em ROI.
+2. Defina o tom de voz ideal para o criador.
+3. Sugira 3 pontos-chave que NÃO podem faltar na menção à marca.
+4. Defina diretrizes visuais rápidas (iluminação, cenário, hook inicial).
+5. O texto deve ser pronto para ser enviado ao criador.
+
+Responda apenas com o texto do briefing, formatado em Markdown simples.`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return response.text();
+    } catch (error: any) {
+      console.error('[AI BRIEFING] Erro:', error);
+      return `Falha ao gerar briefing automático. Por favor, preencha manualmente as diretrizes para a campanha ${campaignTitle}.`;
+    }
   }
 }

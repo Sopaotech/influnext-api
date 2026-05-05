@@ -6,7 +6,9 @@ import { MetricCard } from '@/components/MetricCard';
 import { DollarSign, FileText, AlertCircle } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DeliverableReviewCard } from '@/components/deliverable-review-card';
+import { EscrowTimeline } from '@/components/EscrowTimeline';
 import Link from 'next/link';
+import { CheckCircle } from 'lucide-react';
 
 export default function CompanyDashboard() {
   const [data, setData] = useState<CompanyDashboardResponse | null>(null);
@@ -192,13 +194,12 @@ export default function CompanyDashboard() {
                         <TableCell className="text-zinc-200 py-4 font-medium">{contract.title}</TableCell>
                       <TableCell className="text-emerald-400 font-bold py-4">${Number(contract.budget).toLocaleString('pt-BR')}</TableCell>
                       <TableCell className="py-4">
-                        <span className={`inline-flex items-center px-2.5 py-1.5 rounded-md text-[10px] font-bold tracking-widest
-                          ${contract.escrowStatus === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 
-                            contract.escrowStatus === 'DISPUTE' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
-                            'bg-zinc-800/80 text-zinc-300 border border-zinc-700'}`}
-                        >
-                          {statusMap[contract.escrowStatus] || contract.escrowStatus}
-                        </span>
+                        <div className="flex items-center gap-3">
+                          <EscrowTimeline status={contract.escrowStatus} />
+                          <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-tighter">
+                            {statusMap[contract.escrowStatus] || contract.escrowStatus}
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell className="text-right py-4">
                         {contract.escrowStatus === 'DRAFT' && (
@@ -232,6 +233,3 @@ export default function CompanyDashboard() {
     </div>
   );
 }
-
-// Dummy import para o CheckCircle e FileText fallback
-import { CheckCircle } from 'lucide-react';

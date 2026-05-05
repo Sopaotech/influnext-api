@@ -1,13 +1,33 @@
 @import "tailwindcss";
 
 :root {
-  --background: 8 8 16;
-  --foreground: 232 224 245;
+  --background: 10 10 12;
+  --foreground: 240 240 245;
+  --primary: 168 85 247;
+  --muted: 20 20 25;
+  --border: 30 30 40;
 }
 
 body {
-  background: #080810;
-  color: #e8e0f5;
+  background-color: rgb(var(--background));
+  color: rgb(var(--foreground));
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar minimalista */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 @view-transition {
@@ -17,6 +37,6 @@ body {
 ::view-transition-group(*),
 ::view-transition-old(*),
 ::view-transition-new(*) {
-  animation-duration: 0.25s;
-  animation-timing-function: cubic-bezier(0.19, 1, 0.22, 1);
+  animation-duration: 0.3s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }

@@ -529,7 +529,30 @@ export const simulateDemo = async (req: Request, res: Response): Promise<void> =
       ]
     });
 
-    // 7. Suporte e Notificações
+    // 7. Conectar Contas Sociais Mock (Instagram e TikTok)
+    await prisma.socialAccount.deleteMany({ where: { influencerId: profile.id } });
+    await prisma.socialAccount.createMany({
+      data: [
+        { 
+          influencerId: profile.id, 
+          provider: 'INSTAGRAM', 
+          username: 'influ_demo_oficial', 
+          externalId: 'ig_123', 
+          accessToken: 'mock_token',
+          isPrimary: true
+        },
+        { 
+          influencerId: profile.id, 
+          provider: 'TIKTOK', 
+          username: 'influ_demo_tiktok', 
+          externalId: 'tt_456', 
+          accessToken: 'mock_token',
+          isPrimary: false
+        }
+      ]
+    });
+
+    // 8. Suporte e Notificações
     await prisma.supportTicket.create({
       data: { userId: user.id, subject: 'Dúvida sobre Pagamento', message: 'Como funciona o repasse do escrow?', category: 'SUPPORT', status: 'OPEN' }
     });

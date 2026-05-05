@@ -145,17 +145,34 @@ export default function LoginPage() {
                   </div>
 
                   <button
-                    type="submit"
-                    disabled={isLoading || !email || !password}
-                    className="w-full h-12 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 disabled:from-purple-900 disabled:to-violet-900 disabled:text-zinc-600 text-white font-bold rounded-xl shadow-[0_0_24px_rgba(192,132,252,0.2)] hover:shadow-[0_0_32px_rgba(192,132,252,0.35)] transition-all duration-300 text-sm"
-                  >
-                    {isLoading ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                        Autenticando...
-                      </span>
-                    ) : 'Entrar'}
-                  </button>
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-12 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 disabled:opacity-50 text-white font-bold rounded-xl shadow-[0_0_24px_rgba(192,132,252,0.15)] hover:shadow-[0_0_32px_rgba(192,132,252,0.3)] transition-all duration-300 text-sm"
+              >
+                {isLoading ? 'Entrando...' : 'Acessar Workspace →'}
+              </button>
+
+              <div className="pt-4 border-t border-white/[0.04]">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const loadingToast = toast.loading('Injetando dados de demonstração...');
+                    try {
+                      const res = await api.post('/auth/simulate');
+                      Cookies.set('influnext_token', res.data.token, { expires: 7 });
+                      toast.dismiss(loadingToast);
+                      toast.success('✦ Demonstração Ativada!');
+                      window.location.href = '/dashboard/influencer';
+                    } catch (err) {
+                      toast.dismiss(loadingToast);
+                      toast.error('Erro ao iniciar simulação.');
+                    }
+                  }}
+                  className="w-full py-3 bg-zinc-900/50 hover:bg-zinc-900 border border-zinc-800 rounded-xl text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-purple-400 transition-all"
+                >
+                  Modo Demonstração (Simular Dados)
+                </button>
+              </div>
                 </form>
 
                 <div className="relative py-4">

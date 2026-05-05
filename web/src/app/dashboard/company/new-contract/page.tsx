@@ -18,7 +18,8 @@ const formSchema = z.object({
     title: z.string().min(3, 'O título do entregável é obrigatório.'),
     type: z.string().min(1, 'O tipo é obrigatório.'),
     dueDate: z.string().min(1, 'A data é obrigatória.')
-  })).min(1, 'Adicione pelo menos um entregável.')
+  })).min(1, 'Adicione pelo menos um entregável.'),
+  briefing: z.string().min(10, 'O briefing deve ser detalhado.')
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -35,6 +36,7 @@ export default function NewContractPage() {
     defaultValues: {
       title: '',
       budget: 0,
+      briefing: '',
       deliverables: [{ title: '', type: 'REEL', dueDate: '' }]
     }
   });
@@ -167,13 +169,48 @@ export default function NewContractPage() {
             <div className="space-y-2">
               <label className="text-sm font-bold text-zinc-300">Orçamento em Escrow (BRL R$)</label>
               <input 
-                type="number"
                 {...register('budget')} 
+                type="number"
                 placeholder="Ex: 5000"
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3.5 text-emerald-400 font-extrabold focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all shadow-inner text-lg"
               />
               {errors.budget && <p className="text-red-400 text-xs font-medium mt-1">{errors.budget.message}</p>}
             </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-bold text-zinc-300">Briefing e Diretrizes</label>
+              <button 
+                type="button"
+                onClick={async () => {
+                  if (!selectedInfluencer) return toast.error('Selecione um influenciador primeiro.');
+                  const loadingToast = toast.loading('IA está elaborando seu briefing...');
+                  try {
+                    const res = await api.post('/ai/generate-briefing', {
+                      influencerHandle: selectedInfluencer.handle,
+                      campaignTitle: control._formValues.title || 'Campanha de Marketing'
+                    });
+                    setValue('briefing', res.data.briefing, { shouldValidate: true });
+                    toast.dismiss(loadingToast);
+                    toast.success('✦ Briefing gerado com sucesso!');
+                  } catch (err) {
+                    toast.dismiss(loadingToast);
+                    toast.error('Falha ao gerar briefing via IA.');
+                  }
+                }}
+                className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-purple-400 hover:text-purple-300 bg-purple-500/10 px-3 py-1.5 rounded-lg border border-purple-500/20 transition-all"
+              >
+                <Sparkles className="w-3 h-3" /> Mágica IA
+              </button>
+            </div>
+            <textarea 
+              {...register('briefing')}
+              rows={5}
+              placeholder="Descreva o que o influenciador deve fazer, mencionar e os objetivos da campanha..."
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3.5 text-zinc-300 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all shadow-inner leading-relaxed"
+            />
+            {errors.briefing && <p className="text-red-400 text-xs font-medium mt-1">{errors.briefing.message}</p>}
           </div>
         </section>
 

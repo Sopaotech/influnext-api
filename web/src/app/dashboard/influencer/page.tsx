@@ -7,6 +7,7 @@ import { MetricCard } from '@/components/MetricCard';
 import { Users, Activity, Target, Eye, AlertCircle, ExternalLink, CheckSquare, Sparkles, Zap, Trophy } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { InfluScoreCard } from '@/components/influ-score-card';
+import { EscrowTimeline } from '@/components/EscrowTimeline';
 import Link from 'next/link';
 
 interface Contract {
@@ -118,60 +119,82 @@ export default function InfluencerDashboard() {
   const pendingMissionsCount = kpis?.pendingMissionsCount ?? 0;
 
   return (
-    <div className="flex flex-col min-h-screen relative pb-20 md:pb-24">
+    <div className="flex flex-col min-h-screen relative pb-10">
       
-      {/* Daily Mission Banner */}
+      {/* Daily Mission Banner - Refined */}
       {mission && !mission.missionCompleted && (
-        <div className="bg-gradient-to-r from-purple-900/40 to-pink-900/40 border-b border-purple-500/20 px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-full duration-700">
+        <div className="bg-emerald-500/10 border-b border-emerald-500/10 px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
            <div className="flex items-center gap-3">
-              <Zap className="w-4 h-4 text-yellow-400 animate-pulse" />
-              <p className="text-[10px] md:text-xs font-black uppercase tracking-widest text-[#e8e0f5]">
-                 Missão de Hoje: <span className="text-purple-300">{mission.dailyMission}</span>
-                 <span className="ml-3 text-emerald-400 font-bold">+5 PTS INFULSCORE</span>
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
+                 Foco Estratégico: <span className="text-zinc-200">{mission.dailyMission}</span>
               </p>
            </div>
            <button 
              onClick={handleCompleteMission}
              disabled={completingMission}
-             className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-[#080810] text-[9px] font-black uppercase rounded-full transition-all active:scale-95 disabled:opacity-50"
+             className="px-4 py-1.5 bg-zinc-100 hover:bg-white text-black text-[9px] font-black uppercase rounded-lg transition-all active:scale-95 disabled:opacity-50"
            >
-             {completingMission ? 'Validando...' : 'Marcar como Feita'}
+             {completingMission ? 'Verificando...' : 'Concluir Agora'}
            </button>
         </div>
       )}
 
       <div className="p-4 md:p-8 space-y-8 flex-1 max-w-7xl mx-auto w-full">
         
-        {/* Header Section */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Header Section - Clean */}
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-zinc-800/50 pb-8">
           <div>
-            <h1 className="text-2xl md:text-3xl font-black text-[#e8e0f5] tracking-tighter">
-              Performance <span className="text-purple-500">Hub</span>
+            <h1 className="text-3xl font-black text-white tracking-tighter">
+              {(() => {
+                const hour = new Date().getHours();
+                const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+                return `${greeting}, ${data?.handle?.split(/[0-9]/)[0] || 'Campeão'}`;
+              })()} 🚀
             </h1>
-            <p className="text-zinc-500 text-xs font-bold">Resumo da sua audiência em tempo real.</p>
+            <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1">
+              Foco estratégico de hoje: <span className="text-purple-400">Escalar sua autoridade</span>
+            </p>
           </div>
-          <Link 
-            href={`/p/${data?.handle}`} 
-            target="_blank"
-            className="inline-flex items-center justify-center gap-2 bg-[#100c1e] border border-[#1e1430] hover:border-purple-500/50 text-[#e8e0f5] px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
-          >
-            Public Media Kit <ExternalLink className="w-3 h-3" />
           </Link>
         </header>
 
-        {/* Metrics Grid: 2x2 Mobile, 4x1 Desktop */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
-          <MetricCard title="Seguidores" value={latestMetrics?.followers ?? kpis?.latestFollowers} icon={Users} change={12} />
-          <MetricCard title="Engajamento" value={latestMetrics ? `${latestMetrics.engagementRate}%` : (kpis?.latestEngagement ? `${kpis.latestEngagement}%` : null)} icon={Activity} change={-2} />
-          <MetricCard title="Missões Pendentes" value={pendingMissionsCount} icon={CheckSquare} />
-          {/* Saldo em Escrow: KPI motivacional */}
-          <div className="bg-[#100c1e] border border-emerald-500/20 rounded-2xl p-4 flex flex-col justify-between shadow-[0_0_15px_-5px_rgba(52,211,153,0.15)]">
-            <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Receita Gerada</span>
-            <div>
-              <p className="text-xl font-black text-emerald-400">
+        {/* Onboarding Checklist - New */}
+        {!data?.profile?.onboardingCompleted && (
+          <section className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-4">Checklist de Decolagem</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { label: 'Conectar Social Data', done: !!data?.metricsHistory?.length },
+                { label: 'Configurar Rate Card', done: false },
+                { label: 'Validar Identidade', done: true },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3 bg-zinc-950/50 p-3 rounded-xl border border-zinc-800/50">
+                  <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${item.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-zinc-700'}`}>
+                    {item.done && <CheckSquare size={10} />}
+                  </div>
+                  <span className={`text-[11px] font-bold ${item.done ? 'text-zinc-400 line-through' : 'text-zinc-200'}`}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Metrics Grid */}
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          <MetricCard title="Seguidores" value={latestMetrics?.followers ?? kpis?.latestFollowers} icon={Users} />
+          <MetricCard title="Engajamento" value={latestMetrics ? `${latestMetrics.engagementRate}%` : (kpis?.latestEngagement ? `${kpis.latestEngagement}%` : null)} icon={Activity} />
+          <MetricCard title="Missões" value={pendingMissionsCount} icon={CheckSquare} />
+          
+          <div className="bg-zinc-900/40 border border-emerald-500/10 rounded-2xl p-5 flex flex-col justify-between group hover:border-emerald-500/20 transition-all">
+            <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Receita Acumulada</span>
+            <div className="mt-2">
+              <p className="text-xl font-black text-emerald-400 tracking-tighter">
                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(escrowBalance)}
               </p>
-              <p className="text-[9px] text-zinc-600 mt-1">Conclua os projetos para liberar</p>
+              <div className="w-full bg-zinc-800 h-1 mt-2 rounded-full overflow-hidden">
+                 <div className="bg-emerald-500 h-full w-2/3" />
+              </div>
             </div>
           </div>
         </section>
@@ -179,12 +202,12 @@ export default function InfluencerDashboard() {
         {/* Chart Section: Audience Growth & Active Scroll */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <section className="bg-[#100c1e] border border-[#1e1430] rounded-2xl p-6 relative overflow-hidden group h-full">
+            <section className="bg-zinc-900/30 border border-zinc-800 rounded-2xl p-6 relative overflow-hidden group h-full">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Crescimento Histórico (Seguidores)</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Fluxo de Audiência</h3>
                 <div className="flex items-center gap-2">
-                   <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
-                   <span className="text-[9px] font-black text-purple-400 uppercase">Live Data</span>
+                   <div className="w-1.5 h-1.5 rounded-full bg-zinc-700" />
+                   <span className="text-[9px] font-black text-zinc-500 uppercase tracking-tighter">Últimos 30 Dias</span>
                 </div>
               </div>
           
@@ -253,58 +276,57 @@ export default function InfluencerDashboard() {
             )}
           </div>
           
-          <div className="mt-4 flex justify-between text-[8px] font-black text-zinc-700 uppercase tracking-widest">
-             <span>Há 30 dias</span>
-             <span>Projeção Semanal: +12%</span>
-             <span>Hoje</span>
+          <div className="mt-4 flex justify-between text-[8px] font-black text-zinc-600 uppercase tracking-[0.2em]">
+             <span>D-30</span>
+             <span className="text-emerald-500/50">PROJEÇÃO POSITIVA</span>
+             <span>HOJE</span>
           </div>
         </section>
       </div>
 
       {/* Scroll Ativo Sidebar */}
       <div className="space-y-6">
-        <section className="bg-[#100c1e] border border-[#1e1430] rounded-2xl p-6 h-full">
+        <section className="bg-zinc-900/30 border border-zinc-800 rounded-2xl p-6 h-full">
            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-6 flex items-center gap-2">
-             <Activity size={14} className="text-emerald-500" /> Scroll_Ativo
+             <Activity size={12} className="text-zinc-600" /> Atividade_Recente
            </h3>
-           <div className="space-y-4">
+           <div className="space-y-5">
              {[
                { time: '2 min', type: 'VIEW', desc: 'Marca visualizou seu perfil.' },
-               { time: '1h', type: 'CONTRACT', desc: 'Proposta recebida: TechGlobal.' },
-               { time: '3h', type: 'SYSTEM', desc: 'Score GOLD atingido!' },
-               { time: '5h', type: 'TASK', desc: 'Tarefa concluída com sucesso.' },
-               { time: '12h', type: 'VIEW', desc: 'Sua trend subiu no radar.' },
+               { time: '1h', type: 'CONTRACT', desc: 'Proposta: TechGlobal Inc.' },
+               { time: '3h', type: 'SYSTEM', desc: 'InfluScore atualizado.' },
+               { time: '5h', type: 'TASK', desc: 'Tarefa concluída.' },
              ].map((act, i) => (
-               <div key={i} className="flex items-start justify-between group cursor-default">
+               <div key={i} className="flex items-start justify-between group">
                  <div className="flex gap-3">
-                   <div className={`mt-1 w-1.5 h-1.5 rounded-full ${act.type === 'VIEW' ? 'bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]' : act.type === 'CONTRACT' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-blue-500'}`} />
-                   <p className="text-[11px] text-zinc-400 group-hover:text-zinc-200 transition-colors">{act.desc}</p>
+                   <div className={`mt-1 w-1 h-1 rounded-full ${act.type === 'VIEW' ? 'bg-purple-500' : act.type === 'CONTRACT' ? 'bg-emerald-500' : 'bg-zinc-600'}`} />
+                   <p className="text-[11px] text-zinc-400 group-hover:text-zinc-200 transition-colors leading-none">{act.desc}</p>
                  </div>
-                 <span className="text-[9px] text-zinc-700 font-black">{act.time}</span>
+                 <span className="text-[9px] text-zinc-700 font-bold">{act.time}</span>
                </div>
              ))}
-           </div>
-           <div className="mt-8 p-4 bg-purple-500/5 border border-purple-500/10 rounded-xl">
-              <p className="text-[9px] text-purple-400 font-bold leading-relaxed italic">"Sua performance em Reels subiu 12% na última hora. Mantenha o ritmo."</p>
            </div>
         </section>
       </div>
     </div>
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Trends Section (New) */}
-          <div className="md:col-span-3 bg-gradient-to-r from-purple-900/20 to-transparent border border-purple-500/20 rounded-2xl p-5 space-y-4">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-purple-300 flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5" /> Trend Vault AI
-            </h3>
+          {/* Trends Section */}
+          <div className="md:col-span-3 bg-zinc-900/30 border border-zinc-800 rounded-2xl p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
+                <Sparkles className="w-3 h-3 text-zinc-600" /> Radar de Tendências
+              </h3>
+              <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-tighter">Powered by Gemini AI</span>
+            </div>
             {activeTrends.length === 0 ? (
-               <div className="text-[10px] text-zinc-600 font-bold py-4 italic">Nenhuma trend no radar.</div>
+               <div className="text-[10px] text-zinc-600 font-bold py-4 italic">Nenhuma trend no radar no momento.</div>
             ) : (
-               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                  {activeTrends.slice(0, 3).map((trend: Trend) => (
-                   <div key={trend.id} className="p-3 bg-[#0d0820] border border-purple-500/20 rounded-xl">
-                      <span className="text-[11px] font-bold text-zinc-300 block mb-2">{trend.title}</span>
-                      <a href={trend.videoUrl} target="_blank" className="text-[9px] font-black uppercase text-purple-400 hover:text-purple-300 flex items-center gap-1">
+                   <div key={trend.id} className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl hover:border-zinc-700 transition-all group">
+                      <span className="text-[11px] font-bold text-zinc-300 block mb-2 group-hover:text-white transition-colors">{trend.title}</span>
+                      <a href={trend.videoUrl} target="_blank" className="text-[9px] font-black uppercase text-zinc-500 hover:text-white flex items-center gap-1 transition-colors">
                         Ver Referência <ExternalLink className="w-2.5 h-2.5" />
                       </a>
                    </div>
@@ -316,18 +338,22 @@ export default function InfluencerDashboard() {
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Contracts Section */}
-          <div className="md:col-span-1 bg-[#100c1e] border border-[#1e1430] rounded-2xl p-5 space-y-4">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
-              <span className="w-2 h-2 bg-[#fbbf24] rounded-full" /> Escrow Ativo
-            </h3>
+          <div className="md:col-span-1 bg-zinc-900/30 border border-zinc-800 rounded-2xl p-6 space-y-4">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Fluxo de Caixa</h3>
             {activeContracts.length === 0 ? (
-              <div className="text-[10px] text-zinc-600 font-bold py-10 text-center">Nenhum contrato ativo.</div>
+              <div className="text-[10px] text-zinc-600 font-bold py-10 text-center">SEM CONTRATOS ATIVOS</div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {activeContracts.slice(0, 3).map((c: Contract) => (
-                  <div key={c.id} className="p-3 bg-[#080810] rounded-xl border border-[#1e1430] flex justify-between items-center">
-                    <span className="text-[11px] font-bold text-zinc-300 truncate pr-2">{c.title}</span>
-                    <span className="text-emerald-400 font-black text-xs">
+                  <div key={c.id} className="flex justify-between items-center group">
+                    <div className="flex flex-col">
+                      <span className="text-[11px] font-bold text-zinc-400 group-hover:text-zinc-200 transition-colors">{c.title}</span>
+                      <div className="flex items-center gap-2 mt-1">
+                        <EscrowTimeline status={c.escrowStatus as any} />
+                        <span className="text-[8px] text-zinc-600 uppercase font-black">{c.escrowStatus}</span>
+                      </div>
+                    </div>
+                    <span className="text-zinc-200 font-black text-xs">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(c.budget))}
                     </span>
                   </div>
@@ -337,27 +363,22 @@ export default function InfluencerDashboard() {
           </div>
 
           {/* Tasks Section */}
-          <div className="md:col-span-2 bg-[#100c1e] border border-[#1e1430] rounded-2xl p-5 space-y-4">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
-              <CheckSquare className="w-3.5 h-3.5" /> Entregáveis Pendentes
-            </h3>
-            <div className="overflow-x-auto">
+          <div className="md:col-span-2 bg-zinc-900/30 border border-zinc-800 rounded-2xl p-6 space-y-4">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Lista de Entregáveis</h3>
+            <div className="space-y-1">
               {pendingTasks.length === 0 ? (
-                <div className="text-[10px] text-zinc-600 font-bold py-10 text-center uppercase tracking-widest">✦ Seu fluxo está limpo ✦</div>
+                <div className="text-[10px] text-zinc-600 font-bold py-10 text-center uppercase tracking-widest italic opacity-50">✦ Sem pendências ✦</div>
               ) : (
-                <Table>
-                  <TableBody>
-                    {pendingTasks.map((t: Task) => (
-                      <TableRow key={t.id} className="border-b-[#1e1430] hover:bg-[#151025]">
-                        <TableCell className="text-[11px] font-bold py-4 flex items-center gap-2">
-                          {t.title}
-                          {t.fromAI && <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 text-[8px] rounded uppercase">IA</span>}
-                        </TableCell>
-                        <TableCell className="text-[10px] text-zinc-500 text-right">{t.scheduledDate ? new Date(t.scheduledDate).toLocaleDateString() : 'Sem data'}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                pendingTasks.map((t: Task) => (
+                  <div key={t.id} className="flex items-center justify-between py-3 border-b border-zinc-800/50 last:border-0 group">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-4 h-4 rounded border ${t.isDone ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-700'}`} />
+                      <span className="text-[11px] font-bold text-zinc-400 group-hover:text-zinc-200 transition-colors">{t.title}</span>
+                      {t.fromAI && <span className="text-[7px] font-black bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded tracking-widest">IA</span>}
+                    </div>
+                    <span className="text-[9px] text-zinc-600 font-black uppercase">{t.scheduledDate ? new Date(t.scheduledDate).toLocaleDateString() : '--'}</span>
+                  </div>
+                ))
               )}
             </div>
           </div>
@@ -365,27 +386,24 @@ export default function InfluencerDashboard() {
 
       </div>
 
-      {/* InfluScore Strip - Bottom Footer */}
-      <footer className="fixed bottom-0 left-0 md:left-[158px] right-0 h-16 md:h-20 bg-[#150228] border-t border-purple-500/20 backdrop-blur-xl z-30 px-6 flex items-center justify-between shadow-[0_-10px_40px_rgba(21,2,40,0.8)]">
-        <div className="flex items-center gap-4">
-           <div className="hidden md:flex items-center gap-2 text-[10px] font-black uppercase tracking-tighter text-purple-400">
-             <Sparkles className="w-4 h-4" /> Evolução de Carreira
-           </div>
-           <div className="h-6 w-[1px] bg-purple-500/20 hidden md:block" />
+      {/* Status Bar - Refined & Integrated */}
+      <footer className="mt-20 border-t border-zinc-900 py-8 flex flex-col md:flex-row items-center justify-between gap-6 opacity-60 hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-6">
            <div className="flex flex-col">
-              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Nível Atual</span>
-              <span className="text-xs font-black text-[#e8e0f5] uppercase">{data?.scoreClass || 'Calculando...'}</span>
+              <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Nível de Autoridade</span>
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tighter">{data?.scoreClass || 'BRONZE'}</span>
+           </div>
+           <div className="w-[1px] h-4 bg-zinc-800" />
+           <div className="flex flex-col">
+              <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">InfluScore</span>
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tighter">{kpis?.influScore ?? data?.profile?.influScore ?? 0}/100</span>
            </div>
         </div>
         
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-             <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block">InfluScore</span>
-             <span className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">{kpis?.influScore ?? data?.profile?.influScore ?? 0}</span>
-          </div>
-          <div className="bg-gradient-to-tr from-purple-600 to-pink-500 p-2 rounded-xl shadow-[0_0_15px_-5px_rgba(168,85,247,0.5)]">
-             <Trophy className="w-5 h-5 text-white" />
-          </div>
+        <div className="flex items-center gap-2 text-[8px] font-black text-zinc-600 uppercase tracking-[0.3em]">
+           <span>InfluNext</span>
+           <span className="w-1 h-1 rounded-full bg-zinc-800" />
+           <span>2026</span>
         </div>
       </footer>
 

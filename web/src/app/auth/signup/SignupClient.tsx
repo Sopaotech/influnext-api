@@ -158,14 +158,9 @@ export default function SignupClient() {
     setIsLoading(true);
     try {
       if (isInfluencer) {
-        await api.post('/auth/complete-profile', {
-          niche,
-          yearsOfCareer,
-          goal,
-          city,
           state,
         });
-        router.push('/dashboard/influencer');
+        setStep(3); // Go to Social Connection
       } else {
         await api.post('/auth/complete-profile', {
           companyName,
@@ -201,14 +196,13 @@ export default function SignupClient() {
       </div>
 
 
-        {/* Card */}
         <div className="relative">
           <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-b from-purple-500/20 via-purple-500/5 to-transparent" />
           <div className="relative bg-[#0d0b18]/80 backdrop-blur-xl rounded-2xl p-8 shadow-[0_32px_64px_rgba(0,0,0,0.7)] border border-white/[0.04] space-y-6">
 
             {/* Header */}
             <div>
-              <Stepper currentStep={step} totalSteps={2} />
+              <Stepper currentStep={step} totalSteps={3} />
 
               {step === 1 && (
                 <>
@@ -235,14 +229,22 @@ export default function SignupClient() {
                 </>
               )}
 
-              {step === 2 && (
                 <div className="text-center space-y-0.5">
+                  <Stepper currentStep={step} totalSteps={3} />
                   <h1 className="text-xl font-black text-white tracking-tight">
-                    {isInfluencer ? 'Entrevista de Carreira' : 'Perfil da Empresa'}
+                    {isInfluencer ? 'Estratégia de Carreira' : 'Perfil da Empresa'}
                   </h1>
                   <p className="text-zinc-600 text-xs">
-                    Passo 2 de 2 — {isInfluencer ? 'Vamos conhecer sua trajetória' : 'Nos conte sobre sua empresa'}
+                    Passo 2 de 3 — {isInfluencer ? 'Construindo seu alicerce de elite' : 'Nos conte sobre sua empresa'}
                   </p>
+                </div>
+              )}
+
+              {step === 3 && (
+                <div className="text-center space-y-0.5">
+                  <Stepper currentStep={step} totalSteps={3} />
+                  <h1 className="text-xl font-black text-white tracking-tight">Potencializando Alcance</h1>
+                  <p className="text-zinc-600 text-xs">Passo 3 de 3 — Conecte suas fontes de dados</p>
                 </div>
               )}
             </div>
@@ -321,9 +323,9 @@ export default function SignupClient() {
                 <div className="bg-[#1a1040] text-purple-200 p-4 rounded-2xl rounded-tl-sm text-xs border border-purple-500/20 shadow-md">
                   <p className="font-bold mb-1 flex items-center gap-2 text-purple-300">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    Mentor InfluNext
+                    Consultor de Performance
                   </p>
-                  <p>Fala! Pra configurar seu negócio, preciso saber: Qual seu foco principal e nicho de atuação?</p>
+                  <p>Bora pra cima! O mercado não espera quem fica parado. Para desenharmos sua estratégia de escala, preciso saber: Qual seu nicho dominante e onde você quer chegar?</p>
                 </div>
 
                 {/* User Reply Area */}
@@ -415,12 +417,52 @@ export default function SignupClient() {
                     {isLoading ? (
                       <span className="flex items-center justify-center gap-2">
                         <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                        Configurando...
+                        Analizando perfil...
                       </span>
-                    ) : 'Iniciar meu Workspace'}
+                    ) : 'Próximo Passo →'}
                   </button>
                 </div>
               </form>
+            )}
+
+            {/* ─── STEP 3: Social Connection ───────────────────────────────── */}
+            {step === 3 && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="bg-[#1a1040] text-purple-200 p-4 rounded-2xl rounded-tl-sm text-xs border border-purple-500/20 shadow-md">
+                  <p className="font-bold mb-1 flex items-center gap-2 text-purple-300">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    Verificador de Autoridade
+                  </p>
+                  <p>Quase lá! Agora conecte suas redes sociais. Sem dados reais, você é invisível para as marcas. Com dados, você é imparável.</p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  {[
+                    { name: 'Instagram', icon: '📸', color: 'hover:border-pink-500/40 hover:bg-pink-500/5' },
+                    { name: 'TikTok', icon: '🎵', color: 'hover:border-zinc-100/40 hover:bg-zinc-100/5' },
+                    { name: 'YouTube', icon: '📺', color: 'hover:border-red-500/40 hover:bg-red-500/5' }
+                  ].map((plat) => (
+                    <button 
+                      key={plat.name}
+                      onClick={() => toast.success(`Conectando ${plat.name}... (Simulação)`)}
+                      className={`flex items-center justify-between p-4 bg-white/[0.02] border border-white/[0.06] rounded-2xl transition-all ${plat.color}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{plat.icon}</span>
+                        <span className="text-sm font-bold text-zinc-300">{plat.name}</span>
+                      </div>
+                      <span className="text-[9px] font-black uppercase text-zinc-600 bg-zinc-900 px-2 py-1 rounded">Conectar</span>
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => router.push('/dashboard/influencer')}
+                  className="w-full h-12 bg-zinc-100 hover:bg-white text-black font-black uppercase tracking-widest rounded-xl transition-all text-xs"
+                >
+                  Concluir e Acessar Hub
+                </button>
+              </div>
             )}
 
             {/* STEP 2: Company Interview */}

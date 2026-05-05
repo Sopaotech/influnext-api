@@ -74,4 +74,22 @@ router.post('/chat', authenticate, async (req: Request, res: Response): Promise<
   }
 });
 
+// Gerar Briefing de Campanha (para Empresas)
+router.post('/generate-briefing', authenticate, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { influencerHandle, campaignTitle } = req.body;
+
+    if (!influencerHandle || !campaignTitle) {
+      res.status(400).json({ error: 'Handle do influenciador e título da campanha são obrigatórios.' });
+      return;
+    }
+
+    const briefing = await AIService.generateCampaignBriefing(influencerHandle, campaignTitle);
+    res.json({ briefing });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Erro ao gerar briefing.';
+    res.status(500).json({ error: errorMsg });
+  }
+});
+
 export default router;
