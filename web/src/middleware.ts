@@ -14,7 +14,7 @@ export function middleware(request: NextRequest) {
   // Isolamento de Role (RBAC no Edge)
   if (pathname.startsWith('/dashboard/influencer') && role !== 'INFLUENCER') {
     if (role === 'COMPANY') return NextResponse.redirect(new URL('/dashboard/company', request.url));
-    if (role === 'ADMIN') return NextResponse.redirect(new URL('/admin/stats', request.url));
+    if (role === 'ADMIN') return NextResponse.redirect(new URL('/dashboard/admin', request.url));
   }
 
   if (pathname.startsWith('/dashboard/company') && role !== 'COMPANY') {
@@ -22,14 +22,14 @@ export function middleware(request: NextRequest) {
     if (pathname.includes('new-contract')) return NextResponse.next();
     
     if (role === 'INFLUENCER') return NextResponse.redirect(new URL('/dashboard/influencer', request.url));
-    if (role === 'ADMIN') return NextResponse.redirect(new URL('/admin/stats', request.url));
+    if (role === 'ADMIN') return NextResponse.redirect(new URL('/dashboard/admin', request.url));
   }
 
   // Se o usuário logado tentar entrar no login/signup
   if (pathname.startsWith('/auth') && token) {
     if (role === 'COMPANY') return NextResponse.redirect(new URL('/dashboard/company', request.url));
     if (role === 'INFLUENCER') return NextResponse.redirect(new URL('/dashboard/influencer', request.url));
-    if (role === 'ADMIN') return NextResponse.redirect(new URL('/admin/stats', request.url));
+    if (role === 'ADMIN') return NextResponse.redirect(new URL('/dashboard/admin', request.url));
   }
 
   return NextResponse.next();
