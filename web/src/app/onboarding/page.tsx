@@ -20,7 +20,8 @@ import {
   Camera as InstagramIcon,
   Globe,
   Zap,
-  Target
+  Target,
+  AtSign
 } from 'lucide-react';
 import { toast } from 'sonner';
 
