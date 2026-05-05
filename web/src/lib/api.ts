@@ -48,6 +48,7 @@ export interface User {
   id: string;
   email: string;
   role: 'INFLUENCER' | 'COMPANY' | 'ADMIN';
+  onboardingCompleted: boolean;
   createdAt: string;
 }
 

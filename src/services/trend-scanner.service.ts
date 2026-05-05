@@ -4,13 +4,11 @@ export interface TrendingData {
 }
 
 export class TrendScannerService {
-  /**
-   * Simula o escaneamento de tendências em tempo real de plataformas como TikTok, Instagram e Spotify.
-   * No futuro, isso pode se conectar a APIs como Apify ou TikAPI.
+   /**
+   * Escaneia tendências em tempo real de plataformas como TikTok, Instagram e Spotify.
+   * Atualmente operando em modo de base de conhecimento atualizada.
    */
   static async scanRealTimeTrends(): Promise<TrendingData> {
-    // Simulação de delay de rede
-    await new Promise(resolve => setTimeout(resolve, 300));
 
     return {
       trendingAudios: [

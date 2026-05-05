@@ -11,6 +11,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
+  // Forçar Onboarding
+  const onboarding = request.cookies.get('influnext_onboarding')?.value;
+  if (token && onboarding === 'false' && !pathname.startsWith('/onboarding') && role === 'INFLUENCER') {
+    return NextResponse.redirect(new URL('/onboarding', request.url));
+  }
+
   // Isolamento de Role (RBAC no Edge)
   if (pathname.startsWith('/dashboard/influencer') && role !== 'INFLUENCER') {
     if (role === 'COMPANY') return NextResponse.redirect(new URL('/dashboard/company', request.url));
@@ -37,5 +43,5 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   // A raiz '/' NÃO está no matcher — usuários não logados sempre veem a Landing Page
-  matcher: ['/dashboard/:path*', '/auth/:path*'],
+  matcher: ['/dashboard/:path*', '/auth/:path*', '/onboarding/:path*'],
 };

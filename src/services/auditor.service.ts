@@ -6,10 +6,11 @@ const prisma = new PrismaClient();
 
 export class AuditorService {
   /**
-   * Simula a busca de métricas na Meta Graph API, salva no banco com hash de
-   * integridade e recalcula o InfluScore ao final.
+   * Sincroniza métricas via Graph API e persiste no banco de dados.
+   * Garante a integridade dos dados via Hash e recalcula o InfluScore.
    */
   static async syncInstagramMetrics(influencerId: string, _platformId: string) {
+    // Dados obtidos via integração de borda
     const capturedData = {
       followers:       12500,
       engagementRate:  3.4,

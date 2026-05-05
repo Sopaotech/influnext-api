@@ -154,7 +154,45 @@ export const createAITasks = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-export const completeTaskWithProof = async (req: Request, res: Response): Promise<void> => {
+export const processAICommand = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const { command } = req.body;
+
+    if (!command) {
+      res.status(400).json({ error: 'Comando não enviado.' });
+      return;
+    }
+
+    const { AIService } = await import('../services/ai.service');
+    const intent = await AIService.parseNaturalCommand(command);
+
+    if (intent.action === 'CREATE_TASK' && intent.data) {
+      const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
+      if (!influencer) {
+        res.status(404).json({ error: 'Influenciador não encontrado.' });
+        return;
+      }
+
+      const task = await prisma.task.create({
+        data: {
+          influencerId: influencer.id,
+          title: intent.data.title,
+          scheduledDate: new Date(intent.data.scheduledDate),
+          fromAI: true
+        }
+      });
+
+      res.status(201).json({ message: 'Tarefa agendada com sucesso!', task });
+      return;
+    }
+
+    res.status(422).json({ error: 'Não consegui entender esse comando estrategicamente. Tente algo como "Marcar reunião para amanhã".' });
+  } catch (error) {
+    console.error('[TASK AI COMMAND ERROR]:', error);
+    res.status(500).json({ error: 'Erro ao processar comando de IA.' });
+  }
+};
   try {
     const { taskId } = req.params;
     const { proofUrl } = req.body;

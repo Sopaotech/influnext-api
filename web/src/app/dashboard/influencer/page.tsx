@@ -1,21 +1,12 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { api, DashboardData } from '@/lib/api';
+import { api } from '@/lib/api';
 import Cookies from 'js-cookie';
 import { toast } from 'sonner';
 import { MetricCard } from '@/components/MetricCard';
-import { Users, Activity, Target, Eye, AlertCircle, ExternalLink, CheckSquare, Sparkles, Zap, Trophy } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Users, Activity, CheckSquare, Sparkles, Zap, Clock, ExternalLink, ArrowRight, Wallet, Target, TrendingUp } from 'lucide-react';
 import { InfluScoreCard } from '@/components/influ-score-card';
-import { EscrowTimeline } from '@/components/EscrowTimeline';
 import Link from 'next/link';
-
-interface Contract {
-  id: string;
-  title: string;
-  budget: number | string;
-  escrowStatus: string;
-}
 
 interface Task {
   id: string;
@@ -53,22 +44,10 @@ export default function InfluencerDashboard() {
           missionCompleted: dashRes.data.profile.missionCompleted
         } : missionRes.data);
 
-        // Validação do Estado de Assinatura (Trial 15 dias)
+        // Validation of Subscription State
         const userState = dashRes.data.userState;
-        if (userState) {
-          if (!userState.onboardingCompleted) {
-            window.location.href = '/auth/login';
-            return;
-          }
-          if (userState.subscriptionStatus === 'INACTIVE' || 
-             (userState.subscriptionStatus === 'TRIAL' && new Date() > new Date(userState.trialEndsAt))) {
-            toast.error('Seu período de Trial de 15 dias acabou. Por favor, reative sua assinatura.');
-            // Simulando redirecionamento para página de billing
-            setTimeout(() => {
-              // window.location.href = '/dashboard/billing/locked';
-              toast.info('Redirecionando para a página de Pagamento... (Mock)');
-            }, 2000);
-          }
+        if (userState && userState.subscriptionStatus === 'INACTIVE') {
+          toast.error('Assinatura Inativa. Por favor, regularize seu acesso.');
         }
 
       } catch (err: any) {
@@ -79,10 +58,9 @@ export default function InfluencerDashboard() {
     };
     fetchDashboard();
 
-    // Check for Score Decay notification
     const decayed = Cookies.get('influnext_decayed');
     if (decayed) {
-      toast.error(`Sentimos sua falta! Seu InfluScore caiu ${decayed} pontos por inatividade. Complete a missão de hoje para recuperar seu ritmo!`, {
+      toast.error(`Sentimos sua falta! Seu InfluScore caiu ${decayed} pontos por inatividade.`, {
         duration: 8000,
       });
       Cookies.remove('influnext_decayed');
@@ -104,326 +82,314 @@ export default function InfluencerDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-4">
-        <Sparkles className="w-8 h-8 text-purple-500 animate-pulse" />
-        <p className="text-zinc-500 text-[10px] uppercase font-black tracking-widest">Inicializando Motor de Dados...</p>
+      <div className="p-10 space-y-10 animate-pulse">
+        <div className="h-12 w-64 bg-white/5 rounded-2xl" />
+        <div className="grid grid-cols-4 gap-6">
+          {[1,2,3,4].map(i => <div key={i} className="h-32 bg-white/5 rounded-3xl" />)}
+        </div>
+        <div className="grid grid-cols-3 gap-8">
+           <div className="col-span-2 h-80 bg-white/5 rounded-3xl" />
+           <div className="h-80 bg-white/5 rounded-3xl" />
+        </div>
       </div>
     );
   }
 
   const latestMetrics = data?.metricsHistory?.[0] || null;
-  const activeContracts = data?.contracts || [];
   const pendingTasks = data?.tasks || [];
   const activeTrends = data?.trendVault || [];
   const escrowBalance = kpis?.escrowBalance ?? 0;
   const pendingMissionsCount = kpis?.pendingMissionsCount ?? 0;
+  const currentScore = kpis?.influScore ?? data?.profile?.influScore ?? 0;
 
   return (
-    <div className="flex flex-col min-h-screen relative pb-10">
+    <div className="flex flex-col min-h-screen bg-[#050508] selection:bg-purple-500/30">
       
-      {/* Daily Mission Banner - Refined */}
+      {/* Daily Mission Banner - Premium Floating */}
       {mission && !mission.missionCompleted && (
-        <div className="bg-emerald-500/10 border-b border-emerald-500/10 px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
-           <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
-                 Foco Estratégico: <span className="text-zinc-200">{mission.dailyMission}</span>
-              </p>
+        <div className="mx-8 mt-6 p-1 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-emerald-500/5 to-transparent border border-emerald-500/20 backdrop-blur-xl animate-in slide-in-from-top-4 duration-700">
+           <div className="px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                 <div className="p-2 bg-emerald-500/10 rounded-lg">
+                    <Zap className="w-4 h-4 text-emerald-400 animate-pulse" />
+                 </div>
+                 <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/60">Missão de Impacto</p>
+                    <p className="text-sm font-bold text-zinc-100">{mission.dailyMission}</p>
+                 </div>
+              </div>
+              <button 
+                onClick={handleCompleteMission}
+                disabled={completingMission}
+                className="group px-8 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-xl active:scale-95 disabled:opacity-50 flex items-center gap-2"
+              >
+                {completingMission ? 'PROCESSANDO...' : (
+                  <>CONCLUIR AGORA <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" /></>
+                )}
+              </button>
            </div>
-           <button 
-             onClick={handleCompleteMission}
-             disabled={completingMission}
-             className="px-4 py-1.5 bg-zinc-100 hover:bg-white text-black text-[9px] font-black uppercase rounded-lg transition-all active:scale-95 disabled:opacity-50"
-           >
-             {completingMission ? 'Verificando...' : 'Concluir Agora'}
-           </button>
         </div>
       )}
 
-      <div className="p-4 md:p-8 space-y-8 flex-1 max-w-7xl mx-auto w-full">
+      <div className="p-6 md:p-10 space-y-10 flex-1 max-w-7xl mx-auto w-full">
         
-        {/* Header Section - Clean */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-zinc-800/50 pb-8">
-          <div>
-            <h1 className="text-3xl font-black text-white tracking-tighter">
+        {/* Pro Max Header */}
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-white/[0.03] pb-10">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 mb-2">
+               <div className="h-1 w-8 bg-purple-600 rounded-full" />
+               <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.4em]">Console_InfluNext_v2.6</span>
+            </div>
+            <h1 className="text-5xl font-black text-white tracking-tighter leading-[0.9]">
               {(() => {
                 const hour = new Date().getHours();
-                const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
-                return `${greeting}, ${data?.handle?.split(/[0-9]/)[0] || 'Campeão'}`;
-              })()} 🚀
+                return hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+              })()}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-500">{data?.handle?.toUpperCase() || 'CREATOR'}</span>
             </h1>
-            <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1">
-              Foco estratégico de hoje: <span className="text-purple-400">Escalar sua autoridade</span>
-            </p>
+          </div>
+
+          <div className="flex items-center gap-4">
+             <div className="bg-[#0d0b1a] border border-white/[0.05] px-6 py-4 rounded-[1.5rem] flex flex-col items-end group hover:border-emerald-500/30 transition-all duration-500">
+                <div className="flex items-center gap-2 mb-1">
+                   <Wallet className="w-3.5 h-3.5 text-zinc-600 group-hover:text-emerald-400 transition-colors" />
+                   <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Saldo Protegido</span>
+                </div>
+                <span className="text-2xl font-black text-emerald-400 tracking-tighter">
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(escrowBalance)}
+                </span>
+             </div>
           </div>
         </header>
 
-        {/* Profile Progress - Dynamic */}
-        {data?.profile?.profileProgress < 100 && (
-          <section className="bg-[#130f24] border border-purple-500/10 rounded-2xl p-6 relative overflow-hidden group transition-all hover:border-purple-500/30">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
-              <Sparkles className="w-12 h-12 text-purple-400" />
-            </div>
-            
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative">
-              <div className="space-y-1.5 flex-1 text-center md:text-left">
-                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-purple-400">Poder de Influência: {data?.profile?.profileProgress}%</h3>
-                <h2 className="text-xl font-bold text-white tracking-tight">Complete seu perfil para ser visto por marcas premium</h2>
-                <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">Faltam apenas alguns passos para você entrar no radar das grandes campanhas.</p>
-              </div>
-
-              <div className="w-full md:w-64 space-y-3">
-                <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
-                  <div 
-                    className="h-full bg-gradient-to-r from-purple-600 to-violet-500 transition-all duration-1000 ease-out"
-                    style={{ width: `${data?.profile?.profileProgress}%` }}
-                  />
-                </div>
-                <div className="flex justify-between items-center px-1">
-                  <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Invisível</span>
-                  <span className="text-[9px] font-black text-purple-400 uppercase tracking-widest">Elite Radar</span>
-                </div>
-              </div>
-
-              <Link 
-                href="/dashboard/settings" 
-                className="px-6 py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-black uppercase rounded-xl transition-all shadow-[0_0_20px_rgba(168,85,247,0.2)]"
-              >
-                Completar Agora
-              </Link>
-            </div>
-          </section>
-        )}
-
-        {/* Metrics Grid */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          <MetricCard title="Seguidores" value={latestMetrics?.followers ?? kpis?.latestFollowers} icon={Users} />
-          <MetricCard title="Engajamento" value={latestMetrics ? `${latestMetrics.engagementRate}%` : (kpis?.latestEngagement ? `${kpis.latestEngagement}%` : null)} icon={Activity} />
-          <MetricCard title="Missões" value={pendingMissionsCount} icon={CheckSquare} />
-          
-          <div className="bg-zinc-900/40 border border-emerald-500/10 rounded-2xl p-5 flex flex-col justify-between group hover:border-emerald-500/20 transition-all">
-            <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Receita Acumulada</span>
-            <div className="mt-2">
-              <p className="text-xl font-black text-emerald-400 tracking-tighter">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(escrowBalance)}
-              </p>
-              <div className="w-full bg-zinc-800 h-1 mt-2 rounded-full overflow-hidden">
-                 <div className="bg-emerald-500 h-full w-2/3" />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Chart Section: Audience Growth & Active Scroll */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <section className="bg-zinc-900/30 border border-zinc-800 rounded-2xl p-6 relative overflow-hidden group h-full">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Fluxo de Audiência</h3>
-                <div className="flex items-center gap-2">
-                   <div className="w-1.5 h-1.5 rounded-full bg-zinc-700" />
-                   <span className="text-[9px] font-black text-zinc-500 uppercase tracking-tighter">Últimos 30 Dias</span>
-                </div>
-              </div>
-          
-          <div className="h-[200px] md:h-[300px] w-full relative">
-            {data?.metricsHistory?.length > 1 ? (
-              <svg className="w-full h-full overflow-visible" viewBox="0 0 1000 300" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#a855f7" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                
-                {/* Grid Lines */}
-                {[0, 1, 2, 3].map((i) => (
-                  <line key={i} x1="0" y1={i * 100} x2="1000" y2={i * 100} stroke="#1e1430" strokeWidth="1" strokeDasharray="4 4" />
-                ))}
-
-                {/* The Path */}
-                {(() => {
-                  const history = [...data.metricsHistory].reverse();
-                  const min = Math.min(...history.map((m: any) => m.followers));
-                  const max = Math.max(...history.map((m: any) => m.followers));
-                  const range = max - min || 1;
-                  const points = history.map((m: any, i: number) => {
-                    const x = (i / (history.length - 1)) * 1000;
-                    const y = 300 - ((m.followers - min) / range) * 250 - 25;
-                    return `${x},${y}`;
-                  }).join(' ');
-
-                  return (
-                    <>
-                      <path
-                        d={`M 0,300 L ${points} L 1000,300 Z`}
-                        fill="url(#chartGradient)"
-                        className="transition-all duration-1000"
-                      />
-                      <polyline
-                        fill="none"
-                        stroke="#a855f7"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        points={points}
-                        className="drop-shadow-[0_0_8px_rgba(168,85,247,0.5)] transition-all duration-1000"
-                      />
-                      {/* Dots */}
-                      {history.map((m: any, i: number) => {
-                        const x = (i / (history.length - 1)) * 1000;
-                        const y = 300 - ((m.followers - min) / range) * 250 - 25;
-                        return (
-                          <circle key={i} cx={x} cy={y} r="4" fill="#a855f7" className="cursor-pointer hover:r-6 transition-all" />
-                        );
-                      })}
-                    </>
-                  );
-                })()}
-              </svg>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full space-y-3 opacity-20">
-                 <svg className="w-full max-w-md h-24 text-purple-500" viewBox="0 0 400 100">
-                    <path d="M0,50 Q50,20 100,50 T200,50 T300,50 T400,50" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
-                 </svg>
-                 <p className="text-[10px] font-bold text-zinc-500 italic">Coletando seus primeiros dados de audiência...</p>
-              </div>
-            )}
-          </div>
-          
-          <div className="mt-4 flex justify-between text-[8px] font-black text-zinc-600 uppercase tracking-[0.2em]">
-             <span>D-30</span>
-             <span className="text-emerald-500/50">PROJEÇÃO POSITIVA</span>
-             <span>HOJE</span>
-          </div>
-        </section>
-      </div>
-
-      {/* Scroll Ativo Sidebar */}
-      <div className="space-y-6">
-        <section className="bg-zinc-900/30 border border-zinc-800 rounded-2xl p-6 h-full">
-           <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-6 flex items-center gap-2">
-             <Activity size={12} className="text-zinc-600" /> Atividade_Recente
-           </h3>
-           <div className="space-y-5">
-             {[
-               { time: '2 min', type: 'VIEW', desc: 'Marca visualizou seu perfil.' },
-               { time: '1h', type: 'CONTRACT', desc: 'Proposta: TechGlobal Inc.' },
-               { time: '3h', type: 'SYSTEM', desc: 'InfluScore atualizado.' },
-               { time: '5h', type: 'TASK', desc: 'Tarefa concluída.' },
-             ].map((act, i) => (
-               <div key={i} className="flex items-start justify-between group">
-                 <div className="flex gap-3">
-                   <div className={`mt-1 w-1 h-1 rounded-full ${act.type === 'VIEW' ? 'bg-purple-500' : act.type === 'CONTRACT' ? 'bg-emerald-500' : 'bg-zinc-600'}`} />
-                   <p className="text-[11px] text-zinc-400 group-hover:text-zinc-200 transition-colors leading-none">{act.desc}</p>
+        {/* Core KPIs & InfluScore Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+           <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <MetricCard 
+                title="Audiência Total" 
+                value={latestMetrics?.followers ?? kpis?.latestFollowers ?? 0} 
+                icon={Users} 
+                change={+2.4}
+                description="Crescimento orgânico constante"
+              />
+              <MetricCard 
+                title="Taxa de Engajamento" 
+                value={latestMetrics ? `${latestMetrics.engagementRate}%` : (kpis?.latestEngagement ? `${kpis.latestEngagement}%` : '0.0%')} 
+                icon={TrendingUp} 
+                change={-0.8}
+                description="Média de interações por post"
+              />
+              <MetricCard 
+                title="Missões Pendentes" 
+                value={pendingMissionsCount} 
+                icon={CheckSquare} 
+                description="Complete para subir seu score"
+              />
+              <div className="bg-gradient-to-br from-[#100c1e] to-[#050508] border border-white/[0.05] rounded-[2rem] p-6 flex flex-col justify-between group hover:border-purple-500/20 transition-all cursor-pointer">
+                 <div className="flex items-center justify-between">
+                    <div className="p-3 bg-purple-500/10 rounded-xl">
+                       <Target className="w-5 h-5 text-purple-400" />
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-zinc-700 group-hover:text-white transition-all" />
                  </div>
-                 <span className="text-[9px] text-zinc-700 font-bold">{act.time}</span>
-               </div>
-             ))}
+                 <div>
+                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Status de Campanha</p>
+                    <p className="text-lg font-bold text-white uppercase tracking-tight">4 Propostas Ativas</p>
+                 </div>
+              </div>
            </div>
-        </section>
-      </div>
-    </div>
 
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Trends Section */}
-          <div className="md:col-span-3 bg-zinc-900/30 border border-zinc-800 rounded-2xl p-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
-                <Sparkles className="w-3 h-3 text-zinc-600" /> Radar de Tendências
-              </h3>
-              <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-tighter">Powered by Gemini AI</span>
-            </div>
-            {activeTrends.length === 0 ? (
-               <div className="text-[10px] text-zinc-600 font-bold py-4 italic">Nenhuma trend no radar no momento.</div>
-            ) : (
-               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                 {activeTrends.slice(0, 3).map((trend: Trend) => (
-                   <div key={trend.id} className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl hover:border-zinc-700 transition-all group">
-                      <span className="text-[11px] font-bold text-zinc-300 block mb-2 group-hover:text-white transition-colors">{trend.title}</span>
-                      <a href={trend.videoUrl} target="_blank" className="text-[9px] font-black uppercase text-zinc-500 hover:text-white flex items-center gap-1 transition-colors">
-                        Ver Referência <ExternalLink className="w-2.5 h-2.5" />
+           <div className="lg:col-span-1">
+              <InfluScoreCard score={currentScore} />
+           </div>
+        </div>
+
+        {/* Central Intelligence Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Main Chart Card */}
+          <div className="lg:col-span-2">
+            <section className="bg-[#0d0b1a] border border-white/[0.05] p-8 rounded-[2.5rem] relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-8">
+                 <div className="bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_#10b981]" />
+                    <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Sincronização 2026</span>
+                 </div>
+              </div>
+
+              <div className="mb-10">
+                <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-zinc-600 mb-2 flex items-center gap-2">
+                   <Activity className="w-3.5 h-3.5" /> Curva_de_Crescimento
+                </h3>
+                <p className="text-xs font-bold text-zinc-400">Análise volumétrica de autoridade digital</p>
+              </div>
+
+              <div className="h-[280px] w-full relative">
+                {data?.metricsHistory?.length > 1 ? (
+                  <svg className="w-full h-full overflow-visible" viewBox="0 0 1000 300" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="chartLineGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.3" />
+                        <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    
+                    {/* The Path */}
+                    {(() => {
+                      const history = [...data.metricsHistory].reverse();
+                      const min = Math.min(...history.map((m: any) => m.followers));
+                      const max = Math.max(...history.map((m: any) => m.followers));
+                      const range = max - min || 1;
+                      const points = history.map((m: any, i: number) => {
+                        const x = (i / (history.length - 1)) * 1000;
+                        const y = 300 - ((m.followers - min) / range) * 220 - 40;
+                        return `${x},${y}`;
+                      }).join(' ');
+
+                      return (
+                        <>
+                          <path
+                            d={`M 0,300 L ${points} L 1000,300 Z`}
+                            fill="url(#chartLineGradient)"
+                            className="transition-all duration-1000"
+                          />
+                          <polyline
+                            fill="none"
+                            stroke="#8b5cf6"
+                            strokeWidth="5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            points={points}
+                            className="drop-shadow-[0_0_20px_rgba(139,92,246,0.5)] transition-all duration-1000"
+                          />
+                        </>
+                      );
+                    })()}
+                  </svg>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full space-y-4 opacity-30">
+                     <TrendingUp className="w-12 h-12 text-zinc-700 animate-pulse" />
+                     <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest text-center">Processando Sinais Históricos...</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="mt-8 flex justify-between text-[10px] font-black text-zinc-700 uppercase tracking-[0.5em]">
+                 <span>Mês Anterior</span>
+                 <span className="text-zinc-800">|</span>
+                 <span>Agora</span>
+              </div>
+            </section>
+          </div>
+
+          {/* Activity Stream Sidebar */}
+          <div className="lg:col-span-1">
+             <section className="bg-[#0d0b1a] border border-white/[0.05] p-8 rounded-[2.5rem] h-full flex flex-col">
+                <div className="flex items-center justify-between mb-8">
+                   <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 flex items-center gap-3">
+                     <Clock className="w-4 h-4 text-purple-600" /> Atividade
+                   </h3>
+                   <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+                </div>
+
+                <div className="flex-1 space-y-8 overflow-y-auto pr-2 scrollbar-none">
+                  {[
+                    { time: 'AGORA', type: 'IA', desc: 'Briefing de marca analisado.' },
+                    { time: '2H', type: 'SCORE', desc: 'InfluScore atualizado +5 pts.' },
+                    { time: '5H', type: 'MSG', desc: 'Novas propostas no Marketplace.' },
+                    { time: '1D', type: 'VIEW', desc: 'Perfil visualizado por 12 marcas.' },
+                    { time: '1D', type: 'SYS', desc: 'Check-in diário concluído.' },
+                  ].map((act, i) => (
+                    <div key={i} className="relative pl-6 border-l border-white/5 group">
+                       <div className="absolute -left-[4.5px] top-1.5 w-2 h-2 rounded-full bg-zinc-800 border border-white/10 group-hover:bg-purple-500 group-hover:border-purple-400 transition-all duration-300" />
+                       <div className="space-y-1">
+                          <p className="text-[11px] font-bold text-zinc-400 group-hover:text-white transition-colors">{act.desc}</p>
+                          <p className="text-[9px] text-zinc-600 font-black tracking-widest uppercase">{act.time}</p>
+                       </div>
+                    </div>
+                  ))}
+                </div>
+
+                <button className="mt-8 w-full py-4 bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-zinc-300 text-[10px] font-black uppercase rounded-2xl transition-all hover:tracking-widest duration-500">
+                   Ver Histórico Completo
+                </button>
+             </section>
+          </div>
+        </div>
+
+        {/* Secondary Info: Trends & Tasks */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+           <div className="bg-[#0d0b1a] border border-white/[0.05] p-8 rounded-[2.5rem] space-y-8">
+              <div className="flex items-center justify-between">
+                <div>
+                   <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-1">Radar_Estratégico</h3>
+                   <p className="text-xs font-bold text-zinc-400">Tendências de alta conversão</p>
+                </div>
+                <Sparkles className="w-5 h-5 text-purple-600/30" />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 {activeTrends.slice(0, 4).map((trend: Trend) => (
+                   <div key={trend.id} className="p-4 bg-white/[0.02] border border-white/[0.05] rounded-2xl hover:border-purple-500/30 transition-all group flex flex-col justify-between min-h-[100px]">
+                      <span className="text-xs font-bold text-zinc-300 leading-tight line-clamp-2 uppercase tracking-tighter">{trend.title}</span>
+                      <a href={trend.videoUrl} target="_blank" className="flex items-center gap-2 text-[9px] font-black uppercase text-purple-400 hover:text-white transition-all mt-4">
+                         Explorar Insights <ExternalLink className="w-3 h-3" />
                       </a>
                    </div>
                  ))}
-               </div>
-            )}
-          </div>
-        </section>
-
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Contracts Section */}
-          <div className="md:col-span-1 bg-zinc-900/30 border border-zinc-800 rounded-2xl p-6 space-y-4">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Fluxo de Caixa</h3>
-            {activeContracts.length === 0 ? (
-              <div className="text-[10px] text-zinc-600 font-bold py-10 text-center">SEM CONTRATOS ATIVOS</div>
-            ) : (
-              <div className="space-y-4">
-                {activeContracts.slice(0, 3).map((c: Contract) => (
-                  <div key={c.id} className="flex justify-between items-center group">
-                    <div className="flex flex-col">
-                      <span className="text-[11px] font-bold text-zinc-400 group-hover:text-zinc-200 transition-colors">{c.title}</span>
-                      <div className="flex items-center gap-2 mt-1">
-                        <EscrowTimeline status={c.escrowStatus as any} />
-                        <span className="text-[8px] text-zinc-600 uppercase font-black">{c.escrowStatus}</span>
-                      </div>
-                    </div>
-                    <span className="text-zinc-200 font-black text-xs">
-                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(c.budget))}
-                    </span>
-                  </div>
-                ))}
               </div>
-            )}
-          </div>
+           </div>
 
-          {/* Tasks Section */}
-          <div className="md:col-span-2 bg-zinc-900/30 border border-zinc-800 rounded-2xl p-6 space-y-4">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Lista de Entregáveis</h3>
-            <div className="space-y-1">
-              {pendingTasks.length === 0 ? (
-                <div className="text-[10px] text-zinc-600 font-bold py-10 text-center uppercase tracking-widest italic opacity-50">✦ Sem pendências ✦</div>
-              ) : (
-                pendingTasks.map((t: Task) => (
-                  <div key={t.id} className="flex items-center justify-between py-3 border-b border-zinc-800/50 last:border-0 group">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-4 h-4 rounded border ${t.isDone ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-700'}`} />
-                      <span className="text-[11px] font-bold text-zinc-400 group-hover:text-zinc-200 transition-colors">{t.title}</span>
-                      {t.fromAI && <span className="text-[7px] font-black bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded tracking-widest">IA</span>}
-                    </div>
-                    <span className="text-[9px] text-zinc-600 font-black uppercase">{t.scheduledDate ? new Date(t.scheduledDate).toLocaleDateString() : '--'}</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+           <div className="bg-[#0d0b1a] border border-white/[0.05] p-8 rounded-[2.5rem] space-y-8">
+              <div className="flex items-center justify-between">
+                <div>
+                   <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-1">Pipeline_Tarefas</h3>
+                   <p className="text-xs font-bold text-zinc-400">Próximos entregáveis planejados</p>
+                </div>
+                <CheckSquare className="w-5 h-5 text-emerald-600/30" />
+              </div>
+
+              <div className="space-y-3">
+                 {pendingTasks.slice(0, 5).map((t: Task) => (
+                   <div key={t.id} className="flex items-center justify-between p-4 bg-white/[0.02] rounded-2xl border border-white/[0.05] hover:bg-white/[0.04] transition-all group">
+                      <div className="flex items-center gap-4">
+                         <div className={`w-4 h-4 rounded-md border ${t.isDone ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-700 group-hover:border-purple-500/50'} transition-all`} />
+                         <span className="text-[11px] font-bold text-zinc-400 group-hover:text-white transition-colors uppercase">{t.title}</span>
+                      </div>
+                      <span className="text-[9px] font-black text-zinc-700">{new Date(t.scheduledDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
+                   </div>
+                 ))}
+              </div>
+           </div>
         </section>
 
       </div>
 
-      {/* Status Bar - Refined & Integrated */}
-      <footer className="mt-20 border-t border-zinc-900 py-8 flex flex-col md:flex-row items-center justify-between gap-6 opacity-60 hover:opacity-100 transition-opacity">
-        <div className="flex items-center gap-6">
-           <div className="flex flex-col">
-              <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Nível de Autoridade</span>
-              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tighter">{data?.scoreClass || 'BRONZE'}</span>
+      {/* Global Status Footer */}
+      <footer className="mt-20 border-t border-white/[0.03] py-12 px-10 flex flex-col md:flex-row items-center justify-between gap-8 bg-[#0d0b1a]/30 backdrop-blur-3xl">
+        <div className="flex items-center gap-10">
+           <div className="space-y-1">
+              <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest block">Autoridade_Digital</span>
+              <div className="flex items-center gap-2">
+                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                 <span className="text-[10px] font-black text-zinc-300 uppercase">{data?.scoreClass || 'BRONZE'}</span>
+              </div>
            </div>
-           <div className="w-[1px] h-4 bg-zinc-800" />
-           <div className="flex flex-col">
-              <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">InfluScore</span>
-              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tighter">{kpis?.influScore ?? data?.profile?.influScore ?? 0}/100</span>
+           <div className="space-y-1">
+              <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest block">InfluScore_System</span>
+              <span className="text-[10px] font-black text-purple-400 uppercase">{currentScore}/100 PONTOS</span>
+           </div>
+           <div className="space-y-1">
+              <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest block">Status_Sincronismo</span>
+              <span className="text-[10px] font-black text-emerald-400 uppercase tracking-tighter">SISTEMA OPERACIONAL</span>
            </div>
         </div>
         
-        <div className="flex items-center gap-2 text-[8px] font-black text-zinc-600 uppercase tracking-[0.3em]">
-           <span>InfluNext</span>
-           <span className="w-1 h-1 rounded-full bg-zinc-800" />
-           <span>2026</span>
+        <div className="flex items-center gap-3">
+           <span className="text-[9px] font-black text-zinc-700 uppercase tracking-[0.4em]">InfluNext // Alpha_v2.6</span>
+           <div className="h-1 w-1 bg-zinc-800 rounded-full" />
+           <span className="text-[9px] font-bold text-zinc-800">© 2026</span>
         </div>
       </footer>
-
     </div>
   );
 }
-
-// Fim da página

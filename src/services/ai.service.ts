@@ -18,24 +18,7 @@ export class AIService {
     const apiKey = process.env.GEMINI_API_KEY;
     
     if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
-      // Fallback para mock se a chave não estiver configurada
-      return {
-        mentorGreeting: `Direto ao ponto @${influencer.handle}. Seu score é ${influencer.influScore}. Menos papo, mais faturamento. Aqui está o plano de hoje.`,
-        trends: [
-          { music: "Espresso - Sabrina Carpenter", videoType: "Minimalist GRWM", duration: "15s" }
-        ],
-        suggestedTasks: [
-          { title: "Executar Trend Espresso", description: "Focar em alta retenção", daysFromNow: 0 }
-        ],
-        videoInspirations: [
-          { title: "Produtividade Real", hook: "Como eu organizo minha vida...", whyItWorks: "Contexto workaholic", platform: "REELS" }
-        ],
-        trendingNow: {
-           audios: ["Espresso", "Birds of a Feather"],
-           topics: ["Productivity", "Minimalism"]
-        },
-        videoReferences: []
-      };
+      throw new Error('✦ IA InfluNext: GEMINI_API_KEY não configurada no ambiente.');
     }
 
     try {
@@ -369,6 +352,54 @@ Responda apenas com o texto do briefing, formatado em Markdown simples.`;
     } catch (error: any) {
       console.error('[AI BRIEFING] Erro:', error);
       return `Falha ao gerar briefing automático. Por favor, preencha manualmente as diretrizes para a campanha ${campaignTitle}.`;
+    }
+  /**
+   * Interpreta comandos em linguagem natural e retorna uma intenção estruturada.
+   */
+  static async parseNaturalCommand(message: string): Promise<{ action: string; data?: any }> {
+    const apiKey = process.env.GEMINI_API_KEY;
+    
+    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
+       // Mock básico para desenvolvimento local
+       if (message.toLowerCase().includes('marcar') || message.toLowerCase().includes('agendar')) {
+          return { action: 'CREATE_TASK', data: { title: message, scheduledDate: new Date().toISOString() } };
+       }
+       return { action: 'UNKNOWN' };
+    }
+
+    try {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+
+      const prompt = `Você é o interpretador de comandos do InfluNext. 
+Sua tarefa é extrair a intenção do usuário de uma mensagem de texto e retornar um JSON puro.
+
+Hoje é: ${new Date().toISOString()}
+
+REGRAS:
+1. Se o usuário quiser agendar, marcar ou criar uma tarefa/evento, use action: "CREATE_TASK".
+2. Tente extrair a data correta. Se ele disser "amanhã", calcule a data correta.
+3. Se não entender, use action: "UNKNOWN".
+
+EXEMPLO:
+Input: "marcar live para amanhã às 15h"
+Output: { "action": "CREATE_TASK", "data": { "title": "Live", "scheduledDate": "2024-05-06T15:00:00.000Z" } }
+
+Input: "${message}"
+Output:`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text().replace(/```json|```/g, '').trim();
+      
+      try {
+        return JSON.parse(text);
+      } catch {
+        return { action: 'UNKNOWN' };
+      }
+    } catch (error) {
+      console.error('[AI PARSER] Erro:', error);
+      return { action: 'UNKNOWN' };
     }
   }
 }

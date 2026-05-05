@@ -10,15 +10,16 @@ export default function CheckoutClient({ contractId }: { contractId: string }) {
     // Simula requisição para /v1/payments/create-order
     setPixCode('00020126360014br.gov.bcb.pix0114+5511999999999520400005303986540510.005802BR5915INFLUNEXT SA6009SAO PAULO62070503***6304');
     
-    // Inicia Polling fake
-    const interval = setInterval(() => {
-      // Aqui faríamos fetch GET /v1/contracts/:id para checar se virou IN_PROGRESS
-      // Simulando pagamento após 5 segundos
-      setTimeout(() => {
-        setStatus('paid');
-        clearInterval(interval);
-      }, 5000);
-    }, 2000);
+    // Inicia Polling para verificar status real no backend
+    const interval = setInterval(async () => {
+       try {
+         // Aqui faremos fetch GET /v1/contracts/:contractId para checar o escrowStatus
+         // Se escrowStatus === 'IN_PROGRESS', setStatus('paid')
+       } catch (e) {}
+    }, 5000);
+    
+    // Limpeza do intervalo ao desmontar (opcional aqui mas boa prática)
+    return () => clearInterval(interval);
   };
 
   if (status === 'paid') {
@@ -51,11 +52,10 @@ export default function CheckoutClient({ contractId }: { contractId: string }) {
         </button>
       ) : (
         <div className="flex flex-col items-center p-6 bg-[#080810] rounded-xl border border-white/5">
-          <div className="w-48 h-48 bg-white p-2 rounded-xl mb-6">
-            <div className="w-full h-full bg-zinc-200 flex items-center justify-center text-xs text-black font-bold text-center">
-              [QR CODE SIMULADO]
+            <div className="w-full h-full bg-zinc-200 flex flex-col items-center justify-center text-xs text-black font-bold text-center p-4">
+              <div className="w-32 h-32 border-4 border-black mb-2 opacity-10" />
+              AGUARDANDO PAGAMENTO
             </div>
-          </div>
           <p className="text-sm text-zinc-400 mb-4 text-center">Escaneie o QR Code ou copie a chave abaixo. Aguardando pagamento...</p>
           <div className="flex w-full gap-2">
              <input type="text" readOnly value={pixCode} className="flex-1 bg-[#11111a] border border-white/10 rounded-lg px-4 text-sm text-zinc-400" />

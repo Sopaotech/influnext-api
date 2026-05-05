@@ -10,9 +10,12 @@ import {
   Circle,
   Clock,
   Sparkles,
-  Search
+  Search,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 interface Task {
   id: string;
@@ -24,10 +27,42 @@ interface Task {
 }
 
 export default function CalendarPage() {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Inicializa a data a partir da URL ou hoje
+  const getInitialDate = () => {
+    const yearParam = searchParams.get('year');
+    const monthParam = searchParams.get('month');
+    if (yearParam && monthParam) {
+      return new Date(parseInt(yearParam), parseInt(monthParam), 1);
+    }
+    return new Date();
+  };
+
+  const [currentDate, setCurrentDate] = useState(getInitialDate());
+  const [selectedDay, setSelectedDay] = useState<number | null>(new Date().getDate());
+  const [viewMode, setViewMode] = useState<'month' | 'day'>('month');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Sincroniza estado local com URL se a URL mudar externamente
+  useEffect(() => {
+    const newDate = getInitialDate();
+    if (newDate.getMonth() !== currentDate.getMonth() || newDate.getFullYear() !== currentDate.getFullYear()) {
+      setCurrentDate(newDate);
+    }
+  }, [searchParams]);
+
+  const updateUrl = (date: Date) => {
+    const params = new URLSearchParams();
+    params.set('year', date.getFullYear().toString());
+    params.set('month', date.getMonth().toString());
+    const newUrl = `${pathname}?${params.toString()}`;
+    router.replace(newUrl, { scroll: false });
+  };
 
   const fetchTasks = async () => {
     try {
@@ -47,8 +82,15 @@ export default function CalendarPage() {
   const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
   const firstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
 
-  const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-  const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  const prevMonth = () => {
+    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+    updateUrl(newDate);
+  };
+  
+  const nextMonth = () => {
+    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+    updateUrl(newDate);
+  };
 
   const monthNames = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -85,34 +127,39 @@ export default function CalendarPage() {
   return (
     <div className="p-4 md:p-8 space-y-8 animate-in fade-in duration-700">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-black text-[#e8e0f5] tracking-tighter">
-            Calendário de <span className="text-purple-500">Conteúdo</span>
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 border-b border-white/[0.03] pb-10">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 mb-2">
+             <div className="h-1 w-8 bg-purple-600 rounded-full" />
+             <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.4em]">Content_Strategy_Engine</span>
+          </div>
+          <h1 className="text-4xl font-black text-white tracking-tighter leading-none">
+            Calendário de <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-500">Conteúdo</span>
           </h1>
-          <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mt-1">Organize sua produção e nunca perca um deadline.</p>
         </div>
 
-        <div className="flex items-center gap-3 bg-[#100c1e] border border-[#1e1430] rounded-2xl px-4 py-2 w-full md:w-80">
+        <div className="flex items-center gap-3 bg-[#0d0b1a] border border-white/[0.05] rounded-2xl px-5 py-3 w-full md:w-96 focus-within:border-purple-500/50 transition-all duration-500">
           <Search className="w-4 h-4 text-zinc-600" />
           <input 
             type="text" 
-            placeholder="Buscar tarefa..." 
-            className="bg-transparent border-none focus:outline-none text-[11px] text-zinc-300 w-full placeholder:text-zinc-700"
+            placeholder="Buscar tarefa estratégica..." 
+            className="bg-transparent border-none focus:outline-none text-[11px] text-zinc-300 w-full placeholder:text-zinc-700 font-bold"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </header>
+      </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Calendar Grid */}
-        <div className="lg:col-span-3 bg-[#0d0b18]/50 border border-white/[0.04] rounded-3xl overflow-hidden backdrop-blur-sm">
-          <div className="p-6 border-b border-white/[0.04] flex items-center justify-between bg-white/[0.02]">
+        <div className="lg:col-span-3 bg-[#0d0b1a] border border-white/[0.05] rounded-[2.5rem] overflow-hidden group hover:border-purple-500/20 transition-all duration-500">
+          <div className="p-8 border-b border-white/[0.03] flex items-center justify-between bg-white/[0.01]">
             <div className="flex items-center gap-4">
-              <div className="p-2.5 bg-purple-500/10 rounded-xl">
-                <CalendarIcon className="w-5 h-5 text-purple-400" />
+              <div className="p-3 bg-purple-500/10 rounded-2xl border border-purple-500/20">
+                <CalendarIcon className="w-6 h-6 text-purple-400" />
               </div>
-              <h2 className="text-lg font-black text-[#e8e0f5]">
+              <h2 className="text-xl font-black text-white tracking-tight">
                 {monthNames[month]} <span className="text-zinc-600 ml-1">{year}</span>
               </h2>
             </div>
@@ -121,8 +168,13 @@ export default function CalendarPage() {
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <button 
-                onClick={() => setCurrentDate(new Date())} 
-                className="px-4 py-1.5 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase rounded-lg transition-colors"
+                onClick={() => {
+                  const today = new Date();
+                  setCurrentDate(today);
+                  setSelectedDay(today.getDate());
+                  updateUrl(today);
+                }} 
+                className="px-4 py-1.5 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase rounded-lg transition-colors border border-white/10"
               >
                 Hoje
               </button>
@@ -184,35 +236,72 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        {/* Sidebar: Stats & Upcoming */}
         <div className="space-y-6">
-          <div className="bg-[#100c1e] border border-[#1e1430] rounded-2xl p-5 space-y-6">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
-               <Sparkles className="w-3.5 h-3.5 text-purple-400" /> Próximos Passos
+          <div className="bg-[#0d0b1a] border border-white/[0.05] rounded-[2rem] p-8 space-y-8 h-fit">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 flex items-center gap-3">
+               <Sparkles className="w-4 h-4 text-purple-500" /> Navegação Rápida
             </h3>
             
-            <div className="space-y-4">
-              {tasks.filter(t => !t.isDone).slice(0, 5).map(t => (
-                <div key={t.id} className="group cursor-pointer">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-1">
-                      <Circle className="w-3 h-3 text-purple-500/50 group-hover:text-purple-400 transition-colors" />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[11px] font-bold text-zinc-300 group-hover:text-white transition-colors line-clamp-1">{t.title}</p>
-                      <p className="text-[9px] text-zinc-600 font-medium">
-                        {new Date(t.scheduledDate).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="grid grid-cols-3 gap-2">
+               {[
+                 { label: 'Hoje', id: 'today' },
+                 { label: 'Amanhã', id: 'tomorrow' },
+                 { label: 'Próximos', id: 'upcoming' }
+               ].map((tab) => (
+                 <button 
+                   key={tab.id}
+                   onClick={() => {
+                     const date = new Date();
+                     if (tab.id === 'tomorrow') date.setDate(date.getDate() + 1);
+                     setCurrentDate(new Date(date.getFullYear(), date.getMonth(), 1));
+                     setSelectedDay(date.getDate());
+                     updateUrl(date);
+                   }}
+                   className={`py-2 text-[9px] font-black uppercase rounded-lg border transition-all ${
+                     (tab.id === 'today' && selectedDay === new Date().getDate()) ||
+                     (tab.id === 'tomorrow' && selectedDay === new Date().getDate() + 1)
+                       ? 'bg-purple-600 border-purple-500 text-white'
+                       : 'bg-white/5 border-white/10 text-zinc-500 hover:text-zinc-300'
+                   }`}
+                 >
+                   {tab.label}
+                 </button>
+               ))}
+            </div>
 
-              {tasks.filter(t => !t.isDone).length === 0 && (
-                <div className="text-center py-6">
-                  <p className="text-[10px] text-zinc-600 font-bold italic">Nenhuma tarefa pendente!</p>
-                </div>
-              )}
+            <div className="space-y-4 pt-4 border-t border-white/[0.04]">
+               <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 text-zinc-600" /> {selectedDay ? `Tarefas: ${selectedDay}/${month + 1}` : 'Próximos Passos'}
+               </h3>
+               <div className="space-y-4">
+                  {(selectedDay ? getTasksForDay(selectedDay) : tasks.filter(t => !t.isDone).slice(0, 5)).map(t => (
+                    <div key={t.id} className="group cursor-pointer">
+                      <div className="flex items-start gap-3">
+                        <div className="mt-1">
+                          {t.isDone ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                          ) : (
+                            <Circle className="w-3.5 h-3.5 text-purple-500/50 group-hover:text-purple-400 transition-colors" />
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          <p className={`text-[11px] font-bold transition-colors line-clamp-1 ${t.isDone ? 'text-zinc-600 line-through' : 'text-zinc-300 group-hover:text-white'}`}>
+                            {t.title}
+                          </p>
+                          <p className="text-[9px] text-zinc-600 font-medium">
+                            {new Date(t.scheduledDate).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {(selectedDay ? getTasksForDay(selectedDay).length : tasks.filter(t => !t.isDone).length) === 0 && (
+                    <div className="text-center py-6">
+                      <p className="text-[10px] text-zinc-600 font-bold italic">Nenhuma tarefa encontrada!</p>
+                    </div>
+                  )}
+               </div>
             </div>
 
             <button className="w-full py-3 bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-zinc-300 text-[10px] font-black uppercase rounded-xl transition-all">
@@ -229,10 +318,20 @@ export default function CalendarPage() {
                     type="text"
                     placeholder="Agendar post dia 10 sobre..."
                     className="w-full bg-[#080810] border border-purple-500/30 rounded-xl px-4 py-3 text-[10px] text-zinc-200 focus:outline-none focus:border-purple-500 transition-all placeholder:text-zinc-700"
-                    onKeyDown={(e) => {
+                    onKeyDown={async (e) => {
                        if (e.key === 'Enter') {
-                          toast.success('✦ IA processando comando... Tarefa agendada para o dia selecionado!');
-                          (e.target as HTMLInputElement).value = '';
+                          const command = (e.target as HTMLInputElement).value;
+                          if (!command) return;
+                          
+                          const id = toast.loading('✦ Mentor analisando comando estrategicamente...');
+                          try {
+                             await api.post('/tasks/process-command', { command });
+                             toast.success('✦ Inteligência Aplicada! Tarefa adicionada ao cronograma.', { id });
+                             (e.target as HTMLInputElement).value = '';
+                             fetchTasks(); // Recarrega o calendário
+                          } catch (err: any) {
+                             toast.error(err.response?.data?.error || 'Não consegui processar esse comando agora.', { id });
+                          }
                        }
                     }}
                   />

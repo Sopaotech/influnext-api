@@ -26,8 +26,8 @@ export const postAnalyzerWorker = new Worker(
 
       const latestMetrics = task.influencer.metricsHistory[0];
       const avgViews = latestMetrics?.avgViews || 1000;
-      const simulatedViews = avgViews * (Math.random() * (2.0 - 0.5) + 0.5);
-      const multiplier = simulatedViews / avgViews;
+      // Performance neutra até integração com Graph API para fetch de insights reais
+      const multiplier = 1.0;
 
       await prisma.task.update({
         where: { id: taskId },

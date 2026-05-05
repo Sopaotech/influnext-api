@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { UserRole } from '../types/roles';
+import { ScoringService } from '../services/scoring.service';
 
 // Nota: Em produção, estas chaves devem estar no .env
 const INSTAGRAM_CLIENT_ID = process.env.INSTAGRAM_CLIENT_ID;
@@ -33,9 +34,44 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
     // Mock do processo de troca de token (em produção faria um fetch para a API do Meta)
     console.log(`[INTEGRATION] Recebido código Instagram: ${code}`);
     
-    // Supondo que o usuário está logado e passamos o ID via state ou sessão
-    // Para simplificar no MVP, vamos buscar o último influenciador logado (apenas para teste)
-    // Em produção, usaríamos o req.user.id
+    // Buscar perfil do influenciador (em produção usaria req.user.id)
+    const userId = req.user?.id;
+    if (!userId) {
+      res.redirect(`${process.env.FRONTEND_URL}/dashboard/settings?status=error&error=auth`);
+      return;
+    }
+
+    const influencer = await prisma.influencerProfile.findUnique({
+      where: { userId }
+    });
+
+    if (influencer) {
+      // Salva a conexão (Mockando dados do perfil vindo da API)
+      await prisma.socialPlatform.upsert({
+        where: {
+          influencerId_platformName: {
+            influencerId: influencer.id,
+            platformName: 'INSTAGRAM'
+          }
+        },
+        create: {
+          influencerId: influencer.id,
+          platformName: 'INSTAGRAM',
+          platformId: `ig_${Math.random().toString(36).substr(2, 9)}`,
+          username: `${influencer.handle}_ig`,
+          accessToken: `mock_at_${Math.random().toString(36).substr(2, 20)}`,
+          isActive: true
+        },
+        update: {
+          isActive: true,
+          accessToken: `mock_at_${Math.random().toString(36).substr(2, 20)}`
+        }
+      });
+
+      // Gatilho imediato de InfluScore
+      await ScoringService.calculateAndPersist(influencer.id);
+      console.log(`[INTEGRATION] InfluScore recalculado para ${influencer.id}`);
+    }
     
     res.redirect(`${process.env.FRONTEND_URL}/dashboard/settings?status=success&platform=instagram`);
   } catch (error) {
@@ -53,6 +89,42 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
     }
 
     console.log(`[INTEGRATION] Recebido código TikTok: ${code}`);
+    
+    const userId = req.user?.id;
+    if (!userId) {
+      res.redirect(`${process.env.FRONTEND_URL}/dashboard/settings?status=error&error=auth`);
+      return;
+    }
+
+    const influencer = await prisma.influencerProfile.findUnique({
+      where: { userId }
+    });
+
+    if (influencer) {
+      await prisma.socialPlatform.upsert({
+        where: {
+          influencerId_platformName: {
+            influencerId: influencer.id,
+            platformName: 'TIKTOK'
+          }
+        },
+        create: {
+          influencerId: influencer.id,
+          platformName: 'TIKTOK',
+          platformId: `tt_${Math.random().toString(36).substr(2, 9)}`,
+          username: `${influencer.handle}_tt`,
+          accessToken: `mock_at_${Math.random().toString(36).substr(2, 20)}`,
+          isActive: true
+        },
+        update: {
+          isActive: true,
+          accessToken: `mock_at_${Math.random().toString(36).substr(2, 20)}`
+        }
+      });
+
+      await ScoringService.calculateAndPersist(influencer.id);
+      console.log(`[INTEGRATION] InfluScore recalculado para ${influencer.id}`);
+    }
     
     res.redirect(`${process.env.FRONTEND_URL}/dashboard/settings?status=success&platform=tiktok`);
   } catch (error) {

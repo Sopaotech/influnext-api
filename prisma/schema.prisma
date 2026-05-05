@@ -22,6 +22,10 @@ model User {
   twoFactorEnabled  Boolean   @default(false)
   twoFactorSecret   String?   // AES-256-GCM encrypted
   createdAt         DateTime  @default(now())
+  
+  // Preferências de Aparência
+  theme             String    @default("dark")  // "dark" | "light" | "system"
+  accentColor       String    @default("#a855f7")
 
   // SaaS e Trial
   onboardingCompleted Boolean @default(false)

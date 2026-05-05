@@ -68,6 +68,8 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
       bio:            z.string().optional(),
       city:           z.string().optional(),
       state:          z.string().max(2).optional(),
+      theme:          z.enum(['dark', 'light', 'system']).optional(),
+      accentColor:    z.string().optional(),
     });
 
     const parsed = schema.safeParse(req.body);
@@ -76,10 +78,24 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
+    const { theme, accentColor, ...profileData } = parsed.data;
+
+    // Atualiza perfil do influenciador
     const updated = await prisma.influencerProfile.update({
       where: { userId },
-      data: parsed.data,
+      data: profileData,
     });
+
+    // Atualiza preferências do usuário (se enviadas)
+    if (theme || accentColor) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          theme: theme as any,
+          accentColor
+        }
+      });
+    }
 
     res.json(updated);
   } catch (error) {
