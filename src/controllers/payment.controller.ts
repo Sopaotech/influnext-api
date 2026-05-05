@@ -112,6 +112,52 @@ export class PaymentController {
   }
 
   /**
+   * POST /v1/payments/create-subscription
+   * Assina o usuário em um plano recorrente
+   */
+  static async createSubscription(req: Request, res: Response) {
+    try {
+      const userId = req.user!.id;
+      const { planId, cardToken } = req.body;
+
+      if (!planId) return res.status(400).json({ error: 'planId é obrigatório' });
+
+      const plan = await prisma.plan.findUnique({ where: { id: planId } });
+      if (!plan) return res.status(404).json({ error: 'Plano não encontrado' });
+
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+
+      // Sandbox: Mock de assinatura do Pagar.me
+      const subscriptionId = `sub_${Date.now().toString(36)}`;
+      
+      const newSubscription = await prisma.subscription.create({
+        data: {
+          userId,
+          planId,
+          externalId: subscriptionId,
+          status: 'active',
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 dias
+        }
+      });
+
+      // Atualiza status do usuário
+      await prisma.user.update({
+        where: { id: userId },
+        data: { subscriptionStatus: 'ACTIVE' }
+      });
+
+      return res.status(201).json({
+        message: 'Assinatura criada com sucesso!',
+        subscription: newSubscription
+      });
+    } catch (error) {
+      console.error('[PAYMENT] Erro ao criar assinatura:', error);
+      return res.status(500).json({ error: 'Erro ao processar assinatura' });
+    }
+  }
+
+  /**
    * POST /v1/payments/webhook
    * Recebe notificações do Pagar.me com validação de assinatura HMAC-SHA256
    */
@@ -128,6 +174,50 @@ export class PaymentController {
     try {
       const event = req.body;
       console.log(`[WEBHOOK] Evento recebido: ${event.type}`);
+
+      // Evento de Assinatura Paga
+      if (event.type === 'subscription.paid') {
+        const externalId = event.data?.id;
+        const subscription = await prisma.subscription.findUnique({
+          where: { externalId },
+          include: { user: true }
+        });
+
+        if (subscription) {
+          await prisma.user.update({
+            where: { id: subscription.userId },
+            data: { subscriptionStatus: 'ACTIVE' }
+          });
+          
+          await prisma.subscription.update({
+            where: { id: subscription.id },
+            data: { 
+              status: 'active',
+              currentPeriodEnd: new Date(event.data.current_period_end)
+            }
+          });
+          console.log(`[WEBHOOK] ✅ Assinatura ${externalId} paga. Usuário ${subscription.userId} ATIVADO.`);
+        }
+      }
+
+      // Evento de Assinatura Cancelada/Inadimplente
+      if (event.type === 'subscription.canceled' || event.type === 'subscription.past_due') {
+        const externalId = event.data?.id;
+        const subscription = await prisma.subscription.findUnique({ where: { externalId } });
+
+        if (subscription) {
+          await prisma.user.update({
+            where: { id: subscription.userId },
+            data: { subscriptionStatus: 'INACTIVE' }
+          });
+          
+          await prisma.subscription.update({
+            where: { id: subscription.id },
+            data: { status: 'canceled' }
+          });
+          console.log(`[WEBHOOK] ⚠️ Assinatura ${externalId} suspensa. Usuário ${subscription.userId} INATIVADO.`);
+        }
+      }
 
       if (event.type === 'order.paid') {
         const contractId = event.data?.metadata?.contractId;
@@ -155,9 +245,6 @@ export class PaymentController {
         });
 
         console.log(`[WEBHOOK] ✅ Contrato ${contractId} → IN_PROGRESS. Escrow ativado. Split 90/10 garantido.`);
-
-        // TODO: Notificação Plim para o influenciador via Notification model
-        // await prisma.notification.create({ data: { ... } })
       }
 
       if (event.type === 'order.payment_failed') {

@@ -4,8 +4,11 @@ import { authenticate } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-// Rota protegida para criar a intenção de pagamento
+// Rota protegida para criar a intenção de pagamento de contrato
 router.post('/create-order', authenticate, PaymentController.createOrder);
+
+// Rota protegida para criar assinatura de mensalidade
+router.post('/create-subscription', authenticate, PaymentController.createSubscription);
 
 // Rota pública para receber o webhook do Pagar.me
 router.post('/webhook', PaymentController.webhook);
