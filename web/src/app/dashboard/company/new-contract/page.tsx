@@ -7,7 +7,7 @@ import * as z from 'zod';
 import { api, searchInfluencers, createContract, InfluencerSearchItem } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Search, Plus, Trash2, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { Search, Plus, Trash2, ShieldCheck, ArrowLeft, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 const formSchema = z.object({
