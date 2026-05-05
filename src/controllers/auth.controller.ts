@@ -530,24 +530,24 @@ export const simulateDemo = async (req: Request, res: Response): Promise<void> =
     });
 
     // 7. Conectar Contas Sociais Mock (Instagram e TikTok)
-    await prisma.socialAccount.deleteMany({ where: { influencerId: profile.id } });
-    await prisma.socialAccount.createMany({
+    await prisma.socialPlatform.deleteMany({ where: { influencerId: profile.id } });
+    await prisma.socialPlatform.createMany({
       data: [
         { 
           influencerId: profile.id, 
-          provider: 'INSTAGRAM', 
+          platformName: 'INSTAGRAM', 
+          platformId: 'ig_123',
           username: 'influ_demo_oficial', 
-          externalId: 'ig_123', 
           accessToken: 'mock_token',
-          isPrimary: true
+          isActive: true
         },
         { 
           influencerId: profile.id, 
-          provider: 'TIKTOK', 
+          platformName: 'TIKTOK', 
+          platformId: 'tt_456',
           username: 'influ_demo_tiktok', 
-          externalId: 'tt_456', 
           accessToken: 'mock_token',
-          isPrimary: false
+          isActive: false
         }
       ]
     });
