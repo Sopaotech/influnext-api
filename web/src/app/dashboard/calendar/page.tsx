@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { api } from '@/lib/api';
 import { 
   ChevronLeft, 
@@ -26,7 +26,7 @@ interface Task {
   fromAI: boolean;
 }
 
-export default function CalendarPage() {
+function CalendarContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -126,7 +126,6 @@ export default function CalendarPage() {
 
   return (
     <div className="p-4 md:p-8 space-y-8 animate-in fade-in duration-700">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 border-b border-white/[0.03] pb-10">
         <div className="space-y-2">
           <div className="flex items-center gap-2 mb-2">
@@ -148,7 +147,6 @@ export default function CalendarPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-      </header>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -366,5 +364,17 @@ export default function CalendarPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CalendarPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen bg-[#050508] text-zinc-500 font-black uppercase text-[10px] tracking-widest">
+         ✦ Inicializando Motor Estratégico...
+      </div>
+    }>
+      <CalendarContent />
+    </Suspense>
   );
 }
