@@ -158,6 +158,11 @@ export default function SignupClient() {
     setIsLoading(true);
     try {
       if (isInfluencer) {
+        await api.post('/auth/complete-profile', {
+          niche,
+          yearsOfCareer,
+          goal,
+          city,
           state,
         });
         setStep(3); // Go to Social Connection

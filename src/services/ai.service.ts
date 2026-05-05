@@ -334,6 +334,8 @@ Responda de forma direta, tática e acionável. Não use jargões motivacionais 
       console.error('[AI CHAT] Erro ao conectar ao Gemini:', error);
       throw new Error(`O Mentor está indisponível: ${error.message || 'Erro de conexão'}`);
     }
+  }
+
   /**
    * Gera um briefing profissional para uma campanha.
    */
