@@ -172,8 +172,12 @@ export default function LoginPage() {
                   disabled={isLoading}
                   className="w-full h-12 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] text-[#e8e0f5] font-bold rounded-xl transition-all duration-300 text-sm flex items-center justify-center gap-2 group"
                 >
-                  <Sparkles className="w-4 h-4 text-purple-400 group-hover:animate-pulse" />
-                  Acessar Modo Simulação
+                  {isLoading ? (
+                    <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-purple-400 rounded-full animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4 text-purple-400 group-hover:animate-pulse" />
+                  )}
+                  {isLoading ? 'Iniciando Simulação...' : 'Acessar Modo Simulação'}
                 </button>
               </>
             ) : (

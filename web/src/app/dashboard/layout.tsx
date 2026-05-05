@@ -14,8 +14,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
-    Cookies.remove('influnext_token', { path: '/' });
-    Cookies.remove('influnext_role', { path: '/' });
+    const cookieOptions: Cookies.CookieAttributes = {
+      path: '/',
+      domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN || undefined,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    };
+    Cookies.remove('influnext_token', cookieOptions);
+    Cookies.remove('influnext_role', cookieOptions);
     router.push('/auth/login');
   };
 
