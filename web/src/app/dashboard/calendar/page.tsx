@@ -31,33 +31,30 @@ function CalendarContent() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Inicializa a data a partir da URL ou hoje
-  const getInitialDate = () => {
+  // Memoize initial date calculation
+  const initialDate = React.useMemo(() => {
     const yearParam = searchParams.get('year');
     const monthParam = searchParams.get('month');
     if (yearParam && monthParam) {
       return new Date(parseInt(yearParam), parseInt(monthParam), 1);
     }
     return new Date();
-  };
+  }, [searchParams]);
 
-  const [currentDate, setCurrentDate] = useState(getInitialDate());
+  const [currentDate, setCurrentDate] = useState(initialDate);
   const [selectedDay, setSelectedDay] = useState<number | null>(new Date().getDate());
   const [viewMode, setViewMode] = useState<'month' | 'day'>('month');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Sincroniza estado local com URL se a URL mudar externamente
+  // Update local state ONLY when initialDate (derived from URL) actually changes
   useEffect(() => {
-    const newDate = getInitialDate();
-    if (newDate.getMonth() !== currentDate.getMonth() || newDate.getFullYear() !== currentDate.getFullYear()) {
-      setCurrentDate(newDate);
-    }
-  }, [searchParams]);
+    setCurrentDate(initialDate);
+  }, [initialDate]);
 
   const updateUrl = (date: Date) => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams.toString());
     params.set('year', date.getFullYear().toString());
     params.set('month', date.getMonth().toString());
     const newUrl = `${pathname}?${params.toString()}`;

@@ -2,18 +2,19 @@
 
 import { useEffect } from 'react';
 import { api } from '@/lib/api';
+import Cookies from 'js-cookie';
 
 export function AppearanceManager() {
   useEffect(() => {
+    const token = Cookies.get('influnext_token');
+    if (!token) return; // Se não estiver logado, não tenta carregar estilo customizado
+
     const applyPreferences = async () => {
       try {
         const res = await api.get('/dashboard/influencer');
-        const { accentColor } = res.data.profile;
-        
-        if (accentColor) {
-          // Converte HEX para HSL format (Tailwind usa HSL space em variáveis)
-          // Mas aqui usaremos RGB/HEX direto para facilitar a injeção via CSS variable
-          // No globals.css --primary está em formato '168 85 247' (r g b sem vírgulas para tailwind v4)
+        // ... rest of the code logic remains similar but safe
+        if (res.data?.profile?.accentColor) {
+          const accentColor = res.data.profile.accentColor;
           
           const hexToRgb = (hex: string) => {
             const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -30,7 +31,10 @@ export function AppearanceManager() {
           }
         }
       } catch (err) {
-        console.error('[APPEARANCE_MANAGER] Falha ao sincronizar estilo:', err);
+        // Silently fail to avoid loops, only log in development
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('[APPEARANCE_MANAGER] Falha ao sincronizar estilo:', err);
+        }
       }
     };
 

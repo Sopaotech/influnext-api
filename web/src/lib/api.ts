@@ -34,7 +34,9 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       Cookies.remove('influnext_token');
       Cookies.remove('influnext_role');
-      if (typeof window !== 'undefined') {
+      
+      // Evitar loop infinito se já estivermos na página de login
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
         window.location.href = '/auth/login';
       }
     }
