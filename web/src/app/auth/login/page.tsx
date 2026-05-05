@@ -65,6 +65,19 @@ export default function LoginPage() {
     }
   };
 
+  const handleSimulate = async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const res = await api.post<LoginResponse>('/auth/simulate');
+      completeLogin(res.data);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Erro ao iniciar simulação.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="text-center">
@@ -96,52 +109,72 @@ export default function LoginPage() {
             )}
 
             {step === 'credentials' ? (
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label htmlFor="email" className="block text-[11px] font-bold text-zinc-500 uppercase tracking-widest">
-                    E-mail
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    autoComplete="email"
-                    placeholder="seu@email.com"
-                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:border-purple-500/40 focus:bg-white/[0.06] transition-all"
-                  />
-                </div>
+              <>
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label htmlFor="email" className="block text-[11px] font-bold text-zinc-500 uppercase tracking-widest">
+                      E-mail
+                    </label>
+                    <input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      autoComplete="email"
+                      placeholder="seu@email.com"
+                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:border-purple-500/40 focus:bg-white/[0.06] transition-all"
+                    />
+                  </div>
 
-                <div className="space-y-1.5">
-                  <label htmlFor="password" className="block text-[11px] font-bold text-zinc-500 uppercase tracking-widest">
-                    Senha
-                  </label>
-                  <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    autoComplete="current-password"
-                    placeholder="••••••••"
-                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:border-purple-500/40 focus:bg-white/[0.06] transition-all"
-                  />
+                  <div className="space-y-1.5">
+                    <label htmlFor="password" className="block text-[11px] font-bold text-zinc-500 uppercase tracking-widest">
+                      Senha
+                    </label>
+                    <input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      autoComplete="current-password"
+                      placeholder="••••••••"
+                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:border-purple-500/40 focus:bg-white/[0.06] transition-all"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading || !email || !password}
+                    className="w-full h-12 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 disabled:from-purple-900 disabled:to-violet-900 disabled:text-zinc-600 text-white font-bold rounded-xl shadow-[0_0_24px_rgba(192,132,252,0.2)] hover:shadow-[0_0_32px_rgba(192,132,252,0.35)] transition-all duration-300 text-sm"
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                        Autenticando...
+                      </span>
+                    ) : 'Entrar'}
+                  </button>
+                </form>
+
+                <div className="relative py-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/[0.05]"></div>
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="bg-[#0d0b18] px-3 text-[10px] font-black text-zinc-700 uppercase tracking-widest">Ou</span>
+                  </div>
                 </div>
 
                 <button
-                  type="submit"
-                  disabled={isLoading || !email || !password}
-                  className="w-full h-12 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 disabled:from-purple-900 disabled:to-violet-900 disabled:text-zinc-600 text-white font-bold rounded-xl shadow-[0_0_24px_rgba(192,132,252,0.2)] hover:shadow-[0_0_32px_rgba(192,132,252,0.35)] transition-all duration-300 text-sm"
+                  onClick={handleSimulate}
+                  disabled={isLoading}
+                  className="w-full h-12 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] text-[#e8e0f5] font-bold rounded-xl transition-all duration-300 text-sm flex items-center justify-center gap-2 group"
                 >
-                  {isLoading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                      Autenticando...
-                    </span>
-                  ) : 'Entrar'}
+                  <Sparkles className="w-4 h-4 text-purple-400 group-hover:animate-pulse" />
+                  Acessar Modo Simulação
                 </button>
-              </form>
+              </>
             ) : (
               <form onSubmit={handleVerify2FA} className="space-y-4">
                 <p className="text-zinc-400 text-xs text-center">

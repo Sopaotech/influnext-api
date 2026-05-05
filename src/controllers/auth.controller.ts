@@ -385,3 +385,107 @@ export const confirm2FASetup = async (req: Request, res: Response): Promise<void
     res.status(500).json({ error: 'Erro ao confirmar 2FA.' });
   }
 };
+
+export const simulateDemo = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const demoEmail = 'demo@influnext.com';
+    let user = await prisma.user.findUnique({ where: { email: demoEmail } });
+
+    if (!user) {
+      const passwordHash = await bcrypt.hash('demo1234', 12);
+      user = await prisma.user.create({
+        data: {
+          email: demoEmail,
+          passwordHash,
+          role: 'INFLUENCER',
+          onboardingCompleted: true,
+          subscriptionStatus: 'ACTIVE',
+        },
+      });
+    }
+
+    let profile = await prisma.influencerProfile.findUnique({ where: { userId: user.id } });
+
+    if (!profile) {
+      profile = await prisma.influencerProfile.create({
+        data: {
+          userId: user.id,
+          handle: 'influ_demo',
+          niche: 'Tecnologia & Inovação',
+          city: 'São Paulo',
+          state: 'SP',
+          bio: 'Perfil de demonstração para o Influnext. Especialista em gadgets e futuro.',
+          influScore: 85,
+          scoreClass: 'GOLD',
+        },
+      });
+    }
+
+    // Limpar e recriar dados mockados para a simulação ficar "fresca"
+    await prisma.task.deleteMany({ where: { influencerId: profile.id } });
+    await prisma.metricSnapshot.deleteMany({ where: { influencerId: profile.id } });
+
+    // Criar Tasks para o mês atual (Calendário)
+    const now = new Date();
+    const tasksData = [
+      { title: 'Postar Reels: Review iPhone 15', days: -2, done: true },
+      { title: 'Story: Bastidores do Setup', days: 0, done: false },
+      { title: 'Post Fixo: Dicas de Produtividade', days: 2, done: false },
+      { title: 'Editar vídeo: Unboxing Teclado Mecânico', days: 1, done: false },
+      { title: 'Live: Perguntas e Respostas', days: 5, done: false },
+      { title: 'Reunião com Marca: TechWorld', days: -1, done: true },
+    ];
+
+    for (const t of tasksData) {
+      const scheduledDate = new Date();
+      scheduledDate.setDate(now.getDate() + t.days);
+      await prisma.task.create({
+        data: {
+          influencerId: profile.id,
+          title: t.title,
+          scheduledDate,
+          isDone: t.done,
+          fromAI: true,
+        },
+      });
+    }
+
+    // Criar métricas mockadas
+    await prisma.metricSnapshot.create({
+      data: {
+        influencerId: profile.id,
+        provider: 'INSTAGRAM',
+        followers: 12500,
+        engagementRate: 4.8,
+        reachLast30Days: 45000,
+        avgViews: 2200,
+        integrityHash: 'demo_hash_1',
+        capturedAt: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    await prisma.metricSnapshot.create({
+      data: {
+        influencerId: profile.id,
+        provider: 'INSTAGRAM',
+        followers: 12850,
+        engagementRate: 5.2,
+        reachLast30Days: 48000,
+        avgViews: 2400,
+        integrityHash: 'demo_hash_2',
+        capturedAt: now,
+      },
+    });
+
+    const token = signFullToken(user as any);
+
+    res.status(200).json({
+      message: 'Simulação iniciada!',
+      token,
+      user: { id: user.id, email: user.email, role: user.role },
+    });
+  } catch (error) {
+    console.error('[AUTH SIMULATE ERROR]:', error);
+    res.status(500).json({ error: 'Erro ao iniciar simulação.' });
+  }
+};
