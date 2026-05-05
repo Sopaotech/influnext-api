@@ -361,6 +361,35 @@ export const setup2FA = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+export const confirm2FASetup = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const { code } = req.body;
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.twoFactorSecret) {
+      res.status(404).json({ error: 'Configuração 2FA não iniciada.' });
+      return;
+    }
+
+    const isValid = TwoFactorService.verifyToken(user.twoFactorSecret, code);
+    if (!isValid) {
+      res.status(400).json({ error: 'Código inválido.' });
+      return;
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { twoFactorEnabled: true }
+    });
+
+    res.json({ message: '2FA ativado com sucesso!' });
+  } catch (error) {
+    console.error('[AUTH CONFIRM2FA ERROR]:', error);
+    res.status(500).json({ error: 'Erro ao confirmar 2FA.' });
+  }
+};
+
 export const simulateDemo = async (req: Request, res: Response): Promise<void> => {
   try {
     const demoEmail = 'demo@influnext.com';
