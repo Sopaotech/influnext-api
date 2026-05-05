@@ -194,7 +194,7 @@ export const processAICommand = async (req: Request, res: Response): Promise<voi
   }
 };
 
-export const completeTask = async (req: Request, res: Response): Promise<void> => {
+export const completeTaskWithProof = async (req: Request, res: Response): Promise<void> => {
   try {
     const { taskId } = req.params;
     const { proofUrl } = req.body;

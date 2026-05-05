@@ -22,7 +22,40 @@ async function main() {
   });
   console.log(`✅ Admin master configurado: ${admin.email}`);
 
-  // 2. Nichos (Simulado via DB, caso tenhamos tabela. Como não há tabela 'Niche' no schema, pulamos)
+  // 2. Planos de Assinatura
+  const plans = [
+    {
+      id: 'plan_pro_influencer_1',
+      name: 'Plano Influencer Pro',
+      price: 97.00,
+      interval: 'month',
+    },
+    {
+      id: 'plan_brand_enterprise_1',
+      name: 'Plano Brand Enterprise',
+      price: 497.00,
+      interval: 'month',
+    }
+  ];
+
+  for (const plan of plans) {
+    await prisma.plan.upsert({
+      where: { id: plan.id },
+      update: {
+        name: plan.name,
+        price: plan.price,
+      },
+      create: {
+        id: plan.id,
+        name: plan.name,
+        price: plan.price,
+        interval: plan.interval,
+        externalId: plan.id,
+        active: true
+      }
+    });
+    console.log(`✅ Plano configurado: ${plan.name} (R$ ${plan.price})`);
+  }
   
   console.log('🚀 Seed concluído com sucesso!');
 }
