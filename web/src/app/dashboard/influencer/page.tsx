@@ -156,7 +156,6 @@ export default function InfluencerDashboard() {
               Foco estratégico de hoje: <span className="text-purple-400">Escalar sua autoridade</span>
             </p>
           </div>
-          </Link>
         </header>
 
         {/* Onboarding Checklist - New */}
