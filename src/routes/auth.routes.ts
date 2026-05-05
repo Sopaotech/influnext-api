@@ -1,3 +1,4 @@
+// Build Version: 2.0.1 - Fix Sync
 import { Router } from 'express';
 import { signup, login, verify2FA, setup2FA, confirm2FASetup, completeProfile, simulateDemo } from '../controllers/auth.controller';
 import { authenticate } from '../middlewares/auth.middleware';
