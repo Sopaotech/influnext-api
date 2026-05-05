@@ -165,7 +165,7 @@ export default function NewContractPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-zinc-300">Orçamento em Escrow (USD $)</label>
+              <label className="text-sm font-bold text-zinc-300">Orçamento em Escrow (BRL R$)</label>
               <input 
                 type="number"
                 {...register('budget')} 

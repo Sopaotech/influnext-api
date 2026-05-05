@@ -7,8 +7,10 @@ import { Input } from '@/components/ui/input';
 
 import { toast } from 'sonner';
 import { User, Camera, AtSign, Tag, FileText, Shield } from 'lucide-react';
+import { useTheme } from 'next-themes';
 
 export default function SettingsPage() {
+  const { theme, setTheme } = useTheme();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -146,7 +148,8 @@ export default function SettingsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <button 
                   type="button"
-                  className="p-4 rounded-xl border-2 border-purple-600 bg-zinc-900 text-left space-y-2 transition-all"
+                  onClick={() => setTheme('dark')}
+                  className={`p-4 rounded-xl border-2 text-left space-y-2 transition-all ${theme === 'dark' ? 'border-purple-600 bg-zinc-900' : 'border-zinc-800 bg-zinc-950 opacity-50'}`}
                 >
                   <div className="w-full h-2 bg-zinc-800 rounded-full" />
                   <div className="w-1/2 h-2 bg-zinc-800 rounded-full" />
@@ -154,7 +157,8 @@ export default function SettingsPage() {
                 </button>
                 <button 
                   type="button"
-                  className="p-4 rounded-xl border border-zinc-800 bg-zinc-100 text-left space-y-2 opacity-50 hover:opacity-80 transition-all"
+                  onClick={() => setTheme('light')}
+                  className={`p-4 rounded-xl border-2 text-left space-y-2 transition-all ${theme === 'light' ? 'border-purple-600 bg-white' : 'border-zinc-800 bg-zinc-100 opacity-50'}`}
                 >
                   <div className="w-full h-2 bg-zinc-300 rounded-full" />
                   <div className="w-1/2 h-2 bg-zinc-300 rounded-full" />

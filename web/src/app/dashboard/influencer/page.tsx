@@ -169,7 +169,7 @@ export default function InfluencerDashboard() {
             <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Receita Gerada</span>
             <div>
               <p className="text-xl font-black text-emerald-400">
-                R$ {escrowBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(escrowBalance)}
               </p>
               <p className="text-[9px] text-zinc-600 mt-1">Conclua os projetos para liberar</p>
             </div>
@@ -294,7 +294,9 @@ export default function InfluencerDashboard() {
                 {activeContracts.slice(0, 3).map((c: Contract) => (
                   <div key={c.id} className="p-3 bg-[#080810] rounded-xl border border-[#1e1430] flex justify-between items-center">
                     <span className="text-[11px] font-bold text-zinc-300 truncate pr-2">{c.title}</span>
-                    <span className="text-emerald-400 font-black text-xs">${Number(c.budget)}</span>
+                    <span className="text-emerald-400 font-black text-xs">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(c.budget))}
+                    </span>
                   </div>
                 ))}
               </div>

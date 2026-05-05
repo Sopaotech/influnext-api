@@ -474,26 +474,30 @@ export const simulateDemo = async (req: Request, res: Response): Promise<void> =
       ]
     });
 
-    // 6. Contratos Mock
-    await prisma.contract.create({
-      data: {
-        influencerId: profile.id,
-        companyId: demoCompany.id,
-        title: 'Campanha Black Friday 2025',
-        budget: 5000,
-        escrowStatus: 'COMPLETED',
-        briefing: 'Divulgação de cupons exclusivos nos stories.'
-      }
+    // 6. Contratos e Propostas (BRL)
+    const company = await prisma.companyProfile.findFirst() || await prisma.companyProfile.create({
+      data: { userId: user.id, companyName: 'TechGlobal Brasil', taxId: '00.000.000/0001-00' }
     });
-    await prisma.contract.create({
-      data: {
-        influencerId: profile.id,
-        companyId: demoCompany.id,
-        title: 'Lançamento App TechFlow',
-        budget: 2500,
-        escrowStatus: 'IN_PROGRESS',
-        briefing: '1 Reels + 3 Stories apresentando o app.'
-      }
+
+    await prisma.contract.createMany({
+      data: [
+        { 
+          influencerId: profile.id, 
+          companyId: company.id, 
+          title: 'Lançamento SmartWatch X', 
+          budget: 2500.00, 
+          escrowStatus: 'IN_PROGRESS', // Contrato Formalizado
+          briefing: 'Criar 3 Reels focados em produtividade.' 
+        },
+        { 
+          influencerId: profile.id, 
+          companyId: company.id, 
+          title: 'Review Headset Gamer', 
+          budget: 1200.00, 
+          escrowStatus: 'PENDING_PAYMENT',
+          briefing: 'Postar nos Stories o unboxing.' 
+        }
+      ]
     });
 
     // 7. Suporte e Notificações
@@ -503,15 +507,15 @@ export const simulateDemo = async (req: Request, res: Response): Promise<void> =
     await prisma.notification.createMany({
       data: [
         { userId: user.id, message: 'Seu perfil atingiu o Score GOLD! Parabéns.', type: 'SYSTEM' },
-        { userId: user.id, message: 'Nova proposta de contrato de TechGlobal Inc.', type: 'CONTRACT' }
+        { userId: user.id, message: 'Nova proposta de contrato de TechGlobal Brasil.', type: 'CONTRACT' }
       ]
     });
 
-    // 8. Análise de IA (Workspace)
+    // 8. Análise de IA (Workspace) - Motivação Máxima
     await prisma.aIAnalysis.create({
       data: {
         influencerId: profile.id,
-        analysisText: "Sua audiência está reagindo muito bem a conteúdos de produtividade com IA. Foque em Reels curtos (até 30s) mostrando seu setup. O 'Tech ASMR' está em alta no seu nicho.",
+        analysisText: `Fala, @${profile.handle}! 🚀 O mercado está em chamas e você é o combustível. Sua audiência de Tecnologia está sedenta por conteúdos de IA. Não é hora de parar, é hora de escalar. O foco de hoje: Reels de alto impacto mostrando seu setup. Vamos dominar o topo?`,
         recommendations: JSON.stringify({
           trends: [
             { videoType: 'Tech Review Fast', duration: '30s', music: 'Phonk/Cyberpunk' },

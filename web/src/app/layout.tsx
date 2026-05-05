@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   manifest: '/manifest.json'
 };
 
+import { ThemeProvider } from "@/components/theme-provider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,10 +29,18 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} h-full antialiased dark`}
+      className={`${geistSans.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full bg-[#080810] text-[#e8e0f5] flex flex-col selection:bg-purple-500/30">
-        {children}
+      <body className="min-h-full flex flex-col selection:bg-purple-500/30">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

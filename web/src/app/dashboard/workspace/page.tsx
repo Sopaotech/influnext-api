@@ -130,10 +130,10 @@ export default function AIWorkspacePage() {
       
       <div className="space-y-2">
         <h2 className="text-3xl font-black text-white tracking-tighter">
-          Bom dia, <span className="text-purple-500 italic">Campeão</span>! 🚀
+          Fala, <span className="text-purple-500 italic">@{analysis?.recommendations ? 'influ_demo' : 'Campeão'}</span>! 🚀
         </h2>
-        <p className="text-zinc-500 text-xs font-bold uppercase tracking-[0.2em]">
-          Bora pra +1 dia. Aqui está o seu foco estratégico de hoje.
+        <p className="text-zinc-500 text-sm font-bold uppercase tracking-[0.1em]">
+          O mercado não espera por ninguém. <span className="text-zinc-300">Hoje é o seu dia de dominar o topo.</span>
         </p>
       </div>
 
@@ -375,9 +375,21 @@ export default function AIWorkspacePage() {
           </div>
         </div>
       ) : (
-        <div className="bg-zinc-950 border border-zinc-800 border-dashed p-24 rounded-lg text-center space-y-4">
-          <Loader2 className="w-8 h-8 text-zinc-800 animate-spin mx-auto" />
-          <p className="text-zinc-600 text-[10px] font-black uppercase tracking-widest">Aguardando_Input_Data...</p>
+        <div className="bg-zinc-950 border border-zinc-800 border-dashed p-16 md:p-32 rounded-lg text-center space-y-6 flex flex-col items-center justify-center">
+          <div className="p-4 bg-purple-500/10 rounded-full animate-pulse">
+            <BrainCircuit className="w-12 h-12 text-purple-500" />
+          </div>
+          <div className="space-y-2">
+            <p className="text-zinc-200 text-lg font-black uppercase tracking-widest">Aguardando Sincronização de IA</p>
+            <p className="text-zinc-500 text-xs font-bold max-w-md mx-auto">Parece que ainda não analisamos seus dados hoje. Clique abaixo para que o Mentor InfluNext gere sua estratégia personalizada.</p>
+          </div>
+          <Button 
+            onClick={generateNewAnalysis}
+            disabled={isGenerating}
+            className="bg-purple-600 hover:bg-purple-500 text-white font-black px-10 h-14 rounded-xl shadow-xl shadow-purple-500/20"
+          >
+            {isGenerating ? '>> ANALISANDO ALGORITMOS...' : '>> SINCRONIZAR_MENTORIA_IA'}
+          </Button>
         </div>
       )}
 

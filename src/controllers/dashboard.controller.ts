@@ -13,7 +13,7 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
           where: { escrowStatus: { in: ['IN_PROGRESS', 'PENDING_PAYMENT', 'UNDER_REVIEW'] } },
           select: { id: true, title: true, budget: true, escrowStatus: true, createdAt: true }
         },
-        metricsHistory: { take: 1, orderBy: { capturedAt: 'desc' } },
+        metricsHistory: { take: 30, orderBy: { capturedAt: 'desc' } },
         tasks: { where: { isDone: false }, orderBy: { scheduledDate: 'asc' } },
         trendVault: { where: { expiresAt: { gte: new Date() } }, orderBy: { createdAt: 'desc' } }
       }
