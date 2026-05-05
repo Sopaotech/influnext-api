@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+@theme {
+  --color-border: var(--border);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+}
+
 :root {
   --background: #050508;
   --foreground: #f8fafc;
@@ -75,10 +83,12 @@
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: var(--border);
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    background-color: var(--background);
+    color: var(--foreground);
+    @apply antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
     letter-spacing: -0.01em;
   }

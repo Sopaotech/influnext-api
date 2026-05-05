@@ -17,7 +17,7 @@ import {
   Sun,
   Layout,
   Rocket,
-  Instagram,
+  Camera as InstagramIcon,
   Globe,
   Zap,
   Target
@@ -261,8 +261,8 @@ export default function OnboardingPage() {
                  className={`w-full p-6 rounded-[2rem] border-2 flex items-center justify-between transition-all group ${connectedPlatforms.includes('INSTAGRAM') ? 'border-emerald-500 bg-emerald-500/5' : 'border-rose-500/20 bg-rose-500/5 hover:border-rose-500/50'}`}
                >
                   <div className="flex items-center gap-6">
-                     <div className="p-4 bg-rose-500/10 rounded-2xl text-rose-500 group-hover:scale-110 transition-transform">
-                        <Instagram size={24} />
+                     <div className="p-4 bg-rose-500/10 rounded-2xl text-rose-400 group-hover:scale-110 transition-transform">
+                        <InstagramIcon size={24} />
                      </div>
                      <div className="text-left">
                         <p className="font-black text-sm uppercase tracking-widest">Instagram Official</p>

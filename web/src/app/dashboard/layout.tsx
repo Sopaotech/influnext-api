@@ -123,7 +123,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
         </div>
       </aside>
-e>
 
       {/* Main Content Area */}
       <main className="flex-1 w-full h-screen pt-14 md:pt-0 overflow-y-auto bg-[#050508]">

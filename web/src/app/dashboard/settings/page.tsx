@@ -12,7 +12,7 @@ import {
   Tag, 
   FileText, 
   Shield, 
-  Instagram, 
+  Camera as InstagramIcon, 
   Zap, 
   Globe, 
   Palette,
@@ -293,7 +293,7 @@ export default function SettingsPage() {
                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                          <div className="p-3 bg-rose-500/10 rounded-2xl text-rose-400">
-                            <Instagram size={20} />
+                            <InstagramIcon size={20} />
                          </div>
                          <div>
                             <p className="text-sm font-black text-white">Instagram</p>
