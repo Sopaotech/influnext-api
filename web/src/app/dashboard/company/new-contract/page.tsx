@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { searchInfluencers, createContract, InfluencerSearchItem } from '@/lib/api';
+import { api, searchInfluencers, createContract, InfluencerSearchItem } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Search, Plus, Trash2, ShieldCheck, ArrowLeft } from 'lucide-react';
