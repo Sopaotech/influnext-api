@@ -207,7 +207,7 @@ export default function SignupClient() {
           <div className="relative bg-[#0d0b18]/80 backdrop-blur-xl rounded-2xl p-8 shadow-[0_32px_64px_rgba(0,0,0,0.7)] border border-white/[0.04] space-y-6">
 
             {/* Header */}
-            <div>
+            <div className="space-y-4">
               <Stepper currentStep={step} totalSteps={3} />
 
               {step === 1 && (
@@ -230,14 +230,13 @@ export default function SignupClient() {
                   </div>
                   <div className="text-center space-y-0.5">
                     <h1 className="text-xl font-black text-white tracking-tight">Criar conta</h1>
-                    <p className="text-zinc-600 text-xs">Passo 1 de 2 — Credenciais de acesso</p>
+                    <p className="text-zinc-600 text-xs">Passo 1 de 3 — Credenciais de acesso</p>
                   </div>
                 </>
               )}
 
               {step === 2 && (
                 <div className="text-center space-y-0.5">
-                  <Stepper currentStep={step} totalSteps={3} />
                   <h1 className="text-xl font-black text-white tracking-tight">
                     {isInfluencer ? 'Estratégia de Carreira' : 'Perfil da Empresa'}
                   </h1>
@@ -249,7 +248,6 @@ export default function SignupClient() {
 
               {step === 3 && (
                 <div className="text-center space-y-0.5">
-                  <Stepper currentStep={step} totalSteps={3} />
                   <h1 className="text-xl font-black text-white tracking-tight">Potencializando Alcance</h1>
                   <p className="text-zinc-600 text-xs">Passo 3 de 3 — Conecte suas fontes de dados</p>
                 </div>
