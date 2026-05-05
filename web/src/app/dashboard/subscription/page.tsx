@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useState } from 'react';
 import { 
   CheckCircle2, 
   Crown, 
@@ -48,7 +49,7 @@ const BENEFITS = [
 
 export default function SubscriptionPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubscribe = async () => {
     try {
