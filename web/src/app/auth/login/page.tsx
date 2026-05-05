@@ -7,6 +7,7 @@ import Cookies from 'js-cookie';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 import { Sparkles } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 export default function LoginPage() {
   const router = useRouter();
