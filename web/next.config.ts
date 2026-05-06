@@ -5,7 +5,6 @@ const withPWA = withPWAInit({
   dest: "public",
   disable: process.env.NODE_SET !== "production",
   register: true,
-  skipWaiting: true,
 });
 
 const nextConfig: NextConfig = {
