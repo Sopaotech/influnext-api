@@ -43,7 +43,7 @@ app.use(trackPageView);
 // Todas as suas rotas começarão com /v1
 app.use('/v1', routes);
 
-const PORT = 4001;
+const PORT = process.env.PORT || 4000;
 
 app.listen(PORT, () => {
   console.log(`🚀 INFLUNEXT ONLINE: Port ${PORT}`);

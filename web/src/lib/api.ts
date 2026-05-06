@@ -2,7 +2,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 
 // Centralização da URL da API: Prioridade para o .env da Vercel/Railway
-let baseApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/v1';
+let baseApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/v1';
 
 // Garantir que a URL termine com /v1 para evitar erros de rota
 if (!baseApiUrl.endsWith('/v1')) {
