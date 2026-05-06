@@ -12,7 +12,8 @@ import {
   Sparkles,
   Search,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Target
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
