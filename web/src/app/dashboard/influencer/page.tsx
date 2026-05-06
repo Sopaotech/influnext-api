@@ -107,64 +107,171 @@ export default function InfluencerDashboard() {
   return (
     <div className="flex flex-col min-h-screen bg-[#050508] selection:bg-purple-500/30">
       
-      {/* Daily Mission Banner - Premium Floating */}
+      {/* Mobile Bottom Navigation - Floating & Premium */}
+      <div className="md:hidden fixed bottom-6 left-6 right-6 z-50">
+        <nav className="bg-[#0d0b1a]/80 backdrop-blur-3xl border border-white/[0.08] p-2 rounded-full flex items-center justify-around shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+          <button className="p-3 text-purple-400 bg-purple-500/10 rounded-full transition-all">
+             <Target className="w-5 h-5" />
+          </button>
+          <button className="p-3 text-zinc-500 hover:text-white transition-all">
+             <Activity className="w-5 h-5" />
+          </button>
+          <div className="relative -top-4">
+             <button className="p-4 bg-gradient-to-br from-purple-600 to-emerald-600 text-white rounded-full shadow-[0_10px_20px_rgba(124,58,237,0.4)] active:scale-90 transition-all">
+                <Sparkles className="w-6 h-6" />
+             </button>
+          </div>
+          <button className="p-3 text-zinc-500 hover:text-white transition-all">
+             <TrendingUp className="w-5 h-5" />
+          </button>
+          <button className="p-3 text-zinc-500 hover:text-white transition-all">
+             <Users className="w-5 h-5" />
+          </button>
+        </nav>
+      </div>
+
+      {/* Daily Mission Banner - Refined for Mobile */}
       {mission && !mission.missionCompleted && (
-        <div className="mx-4 md:mx-8 mt-4 md:mt-6 p-1 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-emerald-500/5 to-transparent border border-emerald-500/20 backdrop-blur-xl animate-in slide-in-from-top-4 duration-700">
-           <div className="px-4 md:px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
+        <div className="mx-4 md:mx-8 mt-4 md:mt-6 p-px rounded-2xl bg-gradient-to-r from-emerald-500/40 via-emerald-500/10 to-transparent">
+           <div className="bg-[#050508]/60 backdrop-blur-xl px-4 py-3 rounded-[calc(1rem-1px)] flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
                  <div className="p-2 bg-emerald-500/10 rounded-lg">
                     <Zap className="w-4 h-4 text-emerald-400 animate-pulse" />
                  </div>
                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/60">Missão de Impacto</p>
-                    <p className="text-sm font-bold text-zinc-100">{mission.dailyMission}</p>
+                    <p className="text-[8px] font-black uppercase tracking-[0.2em] text-emerald-500/60">Missão_Diária</p>
+                    <p className="text-xs font-bold text-zinc-100 line-clamp-1">{mission.dailyMission}</p>
                  </div>
               </div>
               <button 
                 onClick={handleCompleteMission}
                 disabled={completingMission}
-                className="w-full md:w-auto group px-8 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="group px-4 py-2 bg-emerald-600 text-white text-[9px] font-black uppercase tracking-widest rounded-lg transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
               >
-                {completingMission ? 'PROCESSANDO...' : (
-                  <>CONCLUIR AGORA <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" /></>
-                )}
+                {completingMission ? '...' : <CheckSquare className="w-3.5 h-3.5" />}
               </button>
            </div>
         </div>
       )}
 
-      <div className="p-4 md:p-10 space-y-6 md:space-y-10 flex-1 max-w-7xl mx-auto w-full">
+      <div className="p-4 md:p-10 space-y-8 md:space-y-10 flex-1 max-w-7xl mx-auto w-full">
         
-        {/* Pro Max Header */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/[0.03] pb-8 md:pb-10">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 mb-2">
-               <div className="h-1 w-8 bg-purple-600 rounded-full" />
-               <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.4em]">Console_InfluNext_v2.6</span>
+        {/* Pro Max Header - Ultra Premium on Mobile */}
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/[0.03] pb-6 md:pb-10">
+          <div className="flex items-center justify-between w-full md:w-auto">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 mb-1">
+                 <div className="h-1 w-4 bg-purple-600 rounded-full" />
+                 <span className="text-[8px] md:text-[10px] font-black text-purple-400 uppercase tracking-[0.4em]">Influ_Hub</span>
+              </div>
+              <h1 className="text-2xl md:text-5xl font-black text-white tracking-tighter leading-tight">
+                Olá, <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-500">{data?.handle?.toUpperCase() || 'CREATOR'}</span>
+              </h1>
             </div>
-            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter leading-[0.9]">
-              {(() => {
-                const hour = new Date().getHours();
-                return hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
-              })()}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-500">{data?.handle?.toUpperCase() || 'CREATOR'}</span>
-            </h1>
+            {/* Mobile Profile Avatar/Wallet Trigger */}
+            <div className="md:hidden">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-emerald-600 p-0.5 shadow-lg shadow-purple-500/20">
+                <div className="w-full h-full rounded-[0.9rem] bg-[#0d0b1a] flex items-center justify-center text-white font-black text-xs">
+                  {data?.handle?.substring(0, 2).toUpperCase() || 'CR'}
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
-             <div className="w-full md:w-auto bg-[#0d0b1a] border border-white/[0.05] px-6 py-4 rounded-[1.5rem] flex flex-col items-center md:items-end group hover:border-emerald-500/30 transition-all duration-500">
-                <div className="flex items-center gap-2 mb-1">
-                   <Wallet className="w-3.5 h-3.5 text-zinc-600 group-hover:text-emerald-400 transition-colors" />
-                   <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Saldo Protegido</span>
+             <div className="w-full md:w-auto bg-[#0d0b1a] border border-white/[0.05] px-6 py-4 rounded-[2rem] flex items-center md:items-end justify-between md:justify-end gap-4 group hover:border-emerald-500/30 transition-all duration-500">
+                <div className="flex items-center gap-2">
+                   <div className="p-2 bg-emerald-500/10 rounded-lg">
+                      <Wallet className="w-4 h-4 text-emerald-400" />
+                   </div>
+                   <div className="flex flex-col">
+                      <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Saldo Protegido</span>
+                      <span className="text-lg md:text-2xl font-black text-emerald-400 tracking-tighter">
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(escrowBalance)}
+                      </span>
+                   </div>
                 </div>
-                <span className="text-xl md:text-2xl font-black text-emerald-400 tracking-tighter">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(escrowBalance)}
-                </span>
+                <ArrowRight className="md:hidden w-4 h-4 text-zinc-800" />
              </div>
           </div>
         </header>
 
-        {/* Social Connection Section - NEW */}
-        <SocialConnect />
+        {/* InfluScore Section - Primary Focus on Mobile */}
+        <section className="md:hidden">
+          <InfluScoreCard score={currentScore} />
+        </section>
+
+        {/* Social Connection Section - Horizontal Scroll on Mobile */}
+        <section className="space-y-3">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 px-1">Conexões Ativas</h3>
+          <div className="flex overflow-x-auto pb-4 gap-4 scrollbar-none -mx-4 px-4 snap-x">
+             <SocialConnect isHorizontal={true} connectedPlatforms={data?.platforms} />
+          </div>
+        </section>
+
+        {/* Core KPIs - Compact Grid on Mobile */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between px-1">
+             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Métricas Principais</h3>
+             <TrendingUp className="w-4 h-4 text-zinc-800" />
+          </div>
+          <div className="grid grid-cols-2 md:hidden gap-3">
+             <div className="col-span-1">
+                <MetricCard 
+                  title="Audiência" 
+                  value={latestMetrics?.followers ?? kpis?.latestFollowers ?? 0} 
+                  icon={Users} 
+                  change={+2.4}
+                />
+             </div>
+             <div className="col-span-1">
+                <MetricCard 
+                  title="Engajamento" 
+                  value={latestMetrics ? `${latestMetrics.engagementRate}%` : (kpis?.latestEngagement ? `${kpis.latestEngagement}%` : '0.0%')} 
+                  icon={TrendingUp} 
+                  change={-0.8}
+                />
+             </div>
+             <div className="col-span-2">
+                <div className="bg-[#0d0b1a] border border-white/[0.05] p-5 rounded-[2rem] flex items-center justify-between group">
+                   <div className="flex items-center gap-4">
+                      <div className="p-3 bg-purple-500/10 rounded-2xl">
+                         <CheckSquare className="w-5 h-5 text-purple-400" />
+                      </div>
+                      <div>
+                         <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Missões Pendentes</p>
+                         <p className="text-xl font-black text-white">{pendingMissionsCount}</p>
+                      </div>
+                   </div>
+                   <div className="w-10 h-10 rounded-full border border-white/5 flex items-center justify-center">
+                      <ArrowRight className="w-4 h-4 text-zinc-700" />
+                   </div>
+                </div>
+             </div>
+          </div>
+
+          {/* Desktop KPIs - Hidden on Mobile */}
+          <div className="hidden md:flex overflow-x-auto pb-4 gap-4 scrollbar-none -mx-4 px-4 snap-x">
+            <div className="min-w-[280px] snap-center">
+              <MetricCard 
+                title="Audiência Total" 
+                value={latestMetrics?.followers ?? kpis?.latestFollowers ?? 0} 
+                icon={Users} 
+                change={+2.4}
+                description="Crescimento constante"
+              />
+            </div>
+            <div className="min-w-[280px] snap-center">
+              <MetricCard 
+                title="Engajamento" 
+                value={latestMetrics ? `${latestMetrics.engagementRate}%` : (kpis?.latestEngagement ? `${kpis.latestEngagement}%` : '0.0%')} 
+                icon={TrendingUp} 
+                change={-0.8}
+                description="Média de interações"
+              />
+            </div>
+          </div>
+        </section>
 
         {/* AI Strategy Insight - NEW */}
         {data?.analysis && (
@@ -193,8 +300,8 @@ export default function InfluencerDashboard() {
           </section>
         )}
 
-        {/* Core KPIs & InfluScore Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Core KPIs & InfluScore Section - Desktop Layout */}
+        <div className="hidden md:grid grid-cols-1 lg:grid-cols-3 gap-8">
            <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
               <MetricCard 
                 title="Audiência Total" 
@@ -349,48 +456,66 @@ export default function InfluencerDashboard() {
         </div>
 
         {/* Secondary Info: Trends & Tasks */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-           <div className="bg-[#0d0b1a] border border-white/[0.05] p-8 rounded-[2.5rem] space-y-8">
-              <div className="flex items-center justify-between">
-                <div>
-                   <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-1">Radar_Estratégico</h3>
-                   <p className="text-xs font-bold text-zinc-400">Tendências de alta conversão</p>
-                </div>
-                <Sparkles className="w-5 h-5 text-purple-600/30" />
+        {/* Trend Vault - Premium Vertical Stack for Mobile */}
+        <section className="space-y-4">
+           <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                 <div className="w-1.5 h-1.5 bg-purple-500 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
+                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Trend_Vault</h3>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 {activeTrends.slice(0, 4).map((trend: Trend) => (
-                   <div key={trend.id} className="p-4 bg-white/[0.02] border border-white/[0.05] rounded-2xl hover:border-purple-500/30 transition-all group flex flex-col justify-between min-h-[100px]">
-                      <span className="text-xs font-bold text-zinc-300 leading-tight line-clamp-2 uppercase tracking-tighter">{trend.title}</span>
-                      <a href={trend.videoUrl} target="_blank" className="flex items-center gap-2 text-[9px] font-black uppercase text-purple-400 hover:text-white transition-all mt-4">
-                         Explorar Insights <ExternalLink className="w-3 h-3" />
-                      </a>
+              <span className="text-[9px] font-black text-purple-400/60 tracking-widest uppercase">Ver Tudo</span>
+           </div>
+           
+           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {activeTrends.slice(0, 4).map((trend: any) => (
+                <div key={trend.id} className="group relative aspect-[9/16] rounded-[2rem] overflow-hidden border border-white/10 bg-zinc-900">
+                   <img 
+                     src={trend.videoUrl || `https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400&q=80`} 
+                     alt={trend.title}
+                     className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700"
+                   />
+                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+                   <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
+                      <p className="text-[10px] font-bold text-white line-clamp-2 leading-tight uppercase tracking-tighter">
+                        {trend.title}
+                      </p>
+                      <div className="flex items-center gap-2">
+                         <div className="h-0.5 flex-1 bg-white/20 rounded-full overflow-hidden">
+                            <div className="h-full bg-purple-500 w-1/3" />
+                         </div>
+                         <span className="text-[8px] font-black text-purple-400">HOT</span>
+                      </div>
                    </div>
-                 ))}
-              </div>
+                   <div className="absolute top-3 right-3">
+                      <div className="p-1.5 bg-black/40 backdrop-blur-md rounded-lg border border-white/10">
+                         <ExternalLink className="w-3 h-3 text-white/70" />
+                      </div>
+                   </div>
+                </div>
+              ))}
+           </div>
+        </section>
+
+        {/* Tasks Section */}
+        <section className="bg-[#0d0b1a] border border-white/[0.05] p-8 rounded-[2.5rem] space-y-8">
+           <div className="flex items-center justify-between">
+             <div>
+                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-1">Pipeline_Tarefas</h3>
+                <p className="text-xs font-bold text-zinc-400">Próximos entregáveis planejados</p>
+             </div>
+             <CheckSquare className="w-5 h-5 text-emerald-600/30" />
            </div>
 
-           <div className="bg-[#0d0b1a] border border-white/[0.05] p-8 rounded-[2.5rem] space-y-8">
-              <div className="flex items-center justify-between">
-                <div>
-                   <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-1">Pipeline_Tarefas</h3>
-                   <p className="text-xs font-bold text-zinc-400">Próximos entregáveis planejados</p>
-                </div>
-                <CheckSquare className="w-5 h-5 text-emerald-600/30" />
-              </div>
-
-              <div className="space-y-3">
-                 {pendingTasks.slice(0, 5).map((t: Task) => (
-                   <div key={t.id} className="flex items-center justify-between p-4 bg-white/[0.02] rounded-2xl border border-white/[0.05] hover:bg-white/[0.04] transition-all group">
-                      <div className="flex items-center gap-4">
-                         <div className={`w-4 h-4 rounded-md border ${t.isDone ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-700 group-hover:border-purple-500/50'} transition-all`} />
-                         <span className="text-[11px] font-bold text-zinc-400 group-hover:text-white transition-colors uppercase">{t.title}</span>
-                      </div>
-                      <span className="text-[9px] font-black text-zinc-700">{new Date(t.scheduledDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
+           <div className="space-y-3">
+              {pendingTasks.slice(0, 5).map((t: Task) => (
+                <div key={t.id} className="flex items-center justify-between p-4 bg-white/[0.02] rounded-2xl border border-white/[0.05] hover:bg-white/[0.04] transition-all group">
+                   <div className="flex items-center gap-4">
+                      <div className={`w-4 h-4 rounded-md border ${t.isDone ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-700 group-hover:border-purple-500/50'} transition-all`} />
+                      <span className="text-[11px] font-bold text-zinc-400 group-hover:text-white transition-colors uppercase">{t.title}</span>
                    </div>
-                 ))}
-              </div>
+                   <span className="text-[9px] font-black text-zinc-700">{new Date(t.scheduledDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
+                </div>
+              ))}
            </div>
         </section>
 

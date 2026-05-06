@@ -12,9 +12,11 @@ import aiRoutes from './ai.routes';
 import paymentRoutes from './payment.routes';
 import webhookRoutes from './webhook.routes';
 import supportRoutes from './support.routes';
+import socialAuthRoutes from './auth.social.routes';
 
 const routes = Router();
 routes.get('/health', (req, res) => res.json({ status: 'OK' }));
+routes.use('/auth/social', socialAuthRoutes);
 routes.use('/auth', authRoutes);
 routes.use('/integrations', integrationRoutes);
 routes.use('/tasks', taskRoutes);

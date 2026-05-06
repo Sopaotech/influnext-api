@@ -4,9 +4,10 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import Cookies from 'js-cookie';
-import { Home, FileText, Settings, LogOut, Menu, X, Sparkles, ShieldCheck, Store, LifeBuoy, Crown, Calendar } from 'lucide-react';
+import { Home, FileText, Settings, LogOut, Menu, X, Sparkles, ShieldCheck, Store, LifeBuoy, Crown, Calendar, Search } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
 import { Logo } from '@/components/Logo';
+import { BottomNav } from '@/components/BottomNav';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -47,19 +48,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (    <div className="min-h-screen bg-[#050508] flex text-white font-sans selection:bg-purple-500/30 overflow-hidden">
       
-      {/* Mobile Header (Hamburger) */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#050508]/80 backdrop-blur-xl border-b border-white/[0.04] z-[100] flex items-center justify-between px-6">
+      {/* Mobile Header - Ultra Premium */}
+      <header className="md:hidden fixed top-0 left-0 right-0 z-[100] bg-[#050508]/80 backdrop-blur-xl border-b border-white/[0.04] p-4 flex items-center justify-between">
         <Logo size="sm" href="/dashboard/influencer" />
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-zinc-400 p-2 hover:bg-white/[0.05] rounded-lg transition-colors">
-          {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
-      </div>
+        <div className="flex items-center gap-3">
+           <button className="p-2 rounded-xl bg-white/5 text-zinc-400">
+             <Search className="w-4 h-4" />
+           </button>
+           <div className="w-8 h-8 rounded-full border border-purple-500/30 p-0.5 bg-gradient-to-tr from-purple-500 to-indigo-500">
+             <div className="w-full h-full rounded-full bg-[#0d0b1a] overflow-hidden">
+               <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" className="w-full h-full" />
+             </div>
+           </div>
+        </div>
+      </header>
 
-      {/* Sidebar - Desktop (180px) & Mobile Overlay */}
+      {/* Sidebar - Desktop Only */}
       <aside className={`
-        fixed md:static top-16 md:top-0 left-0 z-[90] h-[calc(100vh-4rem)] md:h-screen w-[180px]
-        bg-[#050508] border-r border-white/[0.04] flex flex-col justify-between transition-transform duration-300
-        ${isMobileMenuOpen ? 'translate-x-0 shadow-[20px_0_50px_rgba(0,0,0,0.5)]' : '-translate-x-full md:translate-x-0'}
+        hidden md:flex static h-screen w-[180px]
+        bg-[#050508] border-r border-white/[0.04] flex flex-col justify-between
       `}>
         <div className="p-6">
           <div className="hidden md:flex items-center mb-10 px-2">
@@ -144,6 +151,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </div>
       </main>
+
+      {/* Mobile Navigation */}
+      <BottomNav />
 
       <Toaster theme="dark" position="bottom-right" />
     </div>

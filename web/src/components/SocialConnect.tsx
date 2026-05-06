@@ -1,23 +1,47 @@
 "use client";
 import React from 'react';
+import { api } from '@/lib/api';
+import { toast } from 'sonner';
 import { Plus, CheckCircle2 } from 'lucide-react';
 
 interface SocialAccount {
-  platform: 'instagram' | 'tiktok' | 'youtube';
+  platform: 'INSTAGRAM' | 'TIKTOK' | 'YOUTUBE';
   connected: boolean;
   username?: string;
 }
 
-export function SocialConnect() {
-  const accounts: SocialAccount[] = [
-    { platform: 'instagram', connected: false },
-    { platform: 'tiktok', connected: false },
-    { platform: 'youtube', connected: false },
-  ];
+interface SocialConnectProps {
+  isHorizontal?: boolean;
+  connectedPlatforms?: any[];
+}
+
+export function SocialConnect({ isHorizontal = false, connectedPlatforms = [] }: SocialConnectProps) {
+  const handleConnect = async (platform: string) => {
+    try {
+      const { data } = await api.get('/auth/social/urls');
+      const url = data[platform.toLowerCase()];
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (error) {
+      toast.error('Erro ao iniciar conexão social.');
+    }
+  };
+
+  const platforms: ('INSTAGRAM' | 'TIKTOK' | 'YOUTUBE')[] = ['INSTAGRAM', 'TIKTOK', 'YOUTUBE'];
+  
+  const accounts: SocialAccount[] = platforms.map(p => {
+    const connected = connectedPlatforms.find(cp => cp.platformName === p);
+    return {
+      platform: p,
+      connected: !!connected,
+      username: connected?.username
+    };
+  });
 
   const getPlatformDetails = (platform: string) => {
     switch (platform) {
-      case 'instagram':
+      case 'INSTAGRAM':
         return { 
           name: 'Instagram', 
           icon: () => (
@@ -34,12 +58,12 @@ export function SocialConnect() {
                 </linearGradient>
               </defs>
             </svg>
-          ), 
-          color: 'text-white', 
-          bg: 'bg-gradient-to-tr from-[#405DE6] via-[#C13584] to-[#F56040]/20',
+          ),
+          color: 'text-pink-500', 
+          bg: 'bg-pink-500/10',
           border: 'hover:border-pink-500/30'
         };
-      case 'tiktok':
+      case 'TIKTOK':
         return { 
           name: 'TikTok', 
           icon: () => (
@@ -53,7 +77,7 @@ export function SocialConnect() {
           bg: 'bg-black/40',
           border: 'hover:border-cyan-500/30'
         };
-      case 'youtube':
+      case 'YOUTUBE':
         return { 
           name: 'YouTube', 
           icon: () => (
@@ -70,47 +94,60 @@ export function SocialConnect() {
     }
   };
 
+  const Card = ({ acc }: { acc: SocialAccount }) => {
+    const details = getPlatformDetails(acc.platform);
+    return (
+      <div 
+        key={acc.platform}
+        className={`min-w-[200px] snap-center p-5 rounded-2xl bg-white/[0.02] border transition-all group relative overflow-hidden flex flex-col items-center gap-4 text-center ${
+          acc.connected ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-white/[0.05] ' + details.border
+        }`}
+      >
+        <div className={`p-4 ${details.bg} rounded-2xl group-hover:scale-110 transition-transform`}>
+          <details.icon />
+        </div>
+        <div className="space-y-1">
+          <h4 className="text-sm font-black text-white uppercase tracking-widest">{details.name}</h4>
+          <p className={`text-[9px] font-black uppercase tracking-widest ${acc.connected ? 'text-emerald-400' : 'text-zinc-600'}`}>
+            {acc.connected ? `@${acc.username}` : 'DESCONECTADO'}
+          </p>
+        </div>
+        <button 
+          onClick={() => !acc.connected && handleConnect(acc.platform)}
+          className={`w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+          acc.connected 
+          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-default' 
+          : 'bg-white text-black hover:bg-zinc-200'
+        }`}>
+          {acc.connected ? (
+            <span className="flex items-center justify-center gap-2 italic">ATIVO <CheckCircle2 className="w-3 h-3" /></span>
+          ) : (
+            <span className="flex items-center justify-center gap-2">CONECTAR <Plus className="w-3 h-3" /></span>
+          )}
+        </button>
+      </div>
+    );
+  }
+
+  if (isHorizontal) {
+    return (
+      <>
+        {accounts.map((acc) => <Card key={acc.platform} acc={acc} />)}
+      </>
+    );
+  }
+
   return (
     <section className="bg-[#0d0b1a] border border-white/[0.05] p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-1">Central_De_Conexões</h3>
-          <p className="text-xs font-bold text-zinc-400">Vincule suas contas para ativar a IA</p>
+           <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-1">Radar_Social</h3>
+           <p className="text-xs font-bold text-zinc-400">Contas vinculadas para análise em tempo real</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {accounts.map((acc) => {
-          const details = getPlatformDetails(acc.platform);
-          return (
-            <div 
-              key={acc.platform}
-              className={`p-5 md:p-6 rounded-2xl bg-white/[0.02] border border-white/[0.05] ${details.border} transition-all group relative overflow-hidden flex flex-col items-center gap-4 text-center`}
-            >
-              <div className={`p-4 ${details.bg} rounded-2xl group-hover:scale-110 transition-transform`}>
-                <details.icon />
-              </div>
-              <div className="space-y-1">
-                <h4 className="text-sm font-black text-white uppercase tracking-widest">{details.name}</h4>
-                <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest">
-                  {acc.connected ? 'ATIVO' : 'DESCONECTADO'}
-                </p>
-              </div>
-              
-              <button className={`w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                acc.connected 
-                ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' 
-                : 'bg-white text-black hover:bg-zinc-200'
-              }`}>
-                {acc.connected ? (
-                  <span className="flex items-center justify-center gap-2 italic">VINCULADO <CheckCircle2 className="w-3 h-3" /></span>
-                ) : (
-                  <span className="flex items-center justify-center gap-2">CONECTAR <Plus className="w-3 h-3" /></span>
-                )}
-              </button>
-            </div>
-          );
-        })}
+        {accounts.map((acc) => <Card key={acc.platform} acc={acc} />)}
       </div>
     </section>
   );

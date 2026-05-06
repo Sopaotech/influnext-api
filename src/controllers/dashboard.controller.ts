@@ -69,6 +69,7 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
       userState: profile.user,
       contracts: profile.contracts,
       tasks: profile.tasks,
+      platforms: profile.platforms,
       trendVault: profile.trendVault,
       metricsHistory: profile.metricsHistory,
       analysis: profile.aiAnalyses[0] || null,
