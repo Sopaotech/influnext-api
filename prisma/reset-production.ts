@@ -32,7 +32,13 @@ async function main() {
   await prisma.task.deleteMany();
   await prisma.metricSnapshot.deleteMany();
 
-  // 6. Limpar Usuários (Exceto o Administrador Alexsandro)
+  // 6. Limpar Perfis
+  console.log('🧹 Limpando Perfis de Influenciadores e Empresas...');
+  await prisma.socialPlatform.deleteMany();
+  await prisma.influencerProfile.deleteMany();
+  await prisma.companyProfile.deleteMany();
+
+  // 7. Limpar Usuários (Exceto o Administrador Alexsandro)
   console.log('👥 Limpando Usuários não-administradores...');
   const deletedUsers = await prisma.user.deleteMany({
     where: {
