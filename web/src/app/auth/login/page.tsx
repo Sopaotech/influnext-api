@@ -87,30 +87,29 @@ export default function LoginPage() {
 
         {/* Card */}
         <div className="relative">
-          <div className="absolute -inset-[1px] rounded-[2rem] bg-gradient-to-b from-purple-500/20 via-purple-500/5 to-transparent" />
-          <div className="relative bg-[#0d0b1a]/90 backdrop-blur-3xl rounded-[2rem] p-10 shadow-[0_40px_80px_rgba(0,0,0,0.8)] space-y-8 border border-white/[0.06]">
+          <div className="relative bg-white rounded-[2.5rem] p-10 shadow-[0_20px_50px_rgba(0,0,0,0.05)] space-y-8 border border-slate-100">
 
             <div className="space-y-1">
-              <h1 className="text-xl font-black text-white tracking-tight">
-                {step === 'credentials' ? 'Entrar na plataforma' : 'Verificação em dois fatores'}
+              <h1 className="text-xl font-black text-slate-900 tracking-tight">
+                {step === 'credentials' ? 'Entrar na plataforma' : 'Verificação de Identidade'}
               </h1>
-              <p className="text-zinc-600 text-xs">
+              <p className="text-slate-500 text-xs font-medium">
                 {step === 'credentials' ? 'Acesse sua conta para continuar.' : 'Insira o código do seu app autenticador.'}
               </p>
             </div>
 
             {error && (
-              <div className="bg-red-500/8 border border-red-500/25 text-red-400 p-3 rounded-xl text-xs text-center font-semibold">
+              <div className="bg-red-50 border border-red-100 text-red-600 p-4 rounded-2xl text-[10px] text-center font-black uppercase tracking-widest animate-in fade-in zoom-in-95">
                 {error}
               </div>
             )}
 
             {step === 'credentials' ? (
               <>
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label htmlFor="email" className="block text-[11px] font-bold text-zinc-500 uppercase tracking-widest">
-                      E-mail
+                <form onSubmit={handleLogin} className="space-y-5">
+                  <div className="space-y-2">
+                    <label htmlFor="email" className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                      E-mail Profissional
                     </label>
                     <input
                       id="email"
@@ -119,14 +118,14 @@ export default function LoginPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                       autoComplete="email"
-                      placeholder="seu@email.com"
-                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:border-purple-500/40 focus:bg-white/[0.06] transition-all"
+                      placeholder="exemplo@email.com"
+                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm text-slate-900 placeholder:text-slate-300 focus:outline-none focus:border-purple-300 focus:bg-white transition-all shadow-sm"
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label htmlFor="password" className="block text-[11px] font-bold text-zinc-500 uppercase tracking-widest">
-                      Senha
+                  <div className="space-y-2">
+                    <label htmlFor="password" className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                      Sua Senha
                     </label>
                     <input
                       id="password"
@@ -136,24 +135,24 @@ export default function LoginPage() {
                       required
                       autoComplete="current-password"
                       placeholder="••••••••"
-                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:border-purple-500/40 focus:bg-white/[0.06] transition-all"
+                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm text-slate-900 placeholder:text-slate-300 focus:outline-none focus:border-purple-300 focus:bg-white transition-all shadow-sm"
                     />
                   </div>
 
                   <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full h-14 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-[0_15px_30px_rgba(139,92,246,0.2)] hover:shadow-[0_20px_40px_rgba(139,92,246,0.3)] transition-all duration-500 active:scale-[0.98]"
-              >
-                {isLoading ? 'PROCESSANDO...' : 'Acessar Console →'}
-              </button>
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full h-14 bg-slate-900 hover:bg-purple-600 disabled:opacity-50 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-lg shadow-slate-900/10 transition-all duration-500 active:scale-95"
+                  >
+                    {isLoading ? 'PROCESSANDO...' : 'Acessar Painel →'}
+                  </button>
 
               </form>
               </>
             ) : (
               <form onSubmit={handleVerify2FA} className="space-y-4">
-                <p className="text-zinc-400 text-xs text-center">
-                  Código de 6 dígitos do seu app autenticador
+                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest text-center">
+                  Código de 6 dígitos
                 </p>
                 <input
                   id="otp"
@@ -162,25 +161,25 @@ export default function LoginPage() {
                   value={otpCode}
                   onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
                   required
-                  className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-4 text-white text-center text-2xl tracking-[0.5em] font-black focus:outline-none focus:border-purple-500/40 transition-all"
+                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-5 text-slate-900 text-center text-2xl tracking-[0.5em] font-black focus:outline-none focus:border-purple-300 transition-all"
                   placeholder="000000"
                 />
                 <button
                   type="submit"
                   disabled={isLoading || otpCode.length < 6}
-                  className="w-full h-12 bg-gradient-to-r from-emerald-700 to-emerald-600 hover:from-emerald-600 hover:to-emerald-500 disabled:opacity-40 text-white font-bold rounded-xl transition-all text-sm"
+                  className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-black uppercase text-[10px] tracking-widest rounded-2xl transition-all shadow-lg shadow-emerald-600/10"
                 >
-                  {isLoading ? 'Verificando...' : 'Confirmar identidade'}
+                  {isLoading ? 'Verificando...' : 'Confirmar Identidade'}
                 </button>
               </form>
             )}
 
-            <div className="pt-1 border-t border-white/[0.05] flex items-center justify-between">
-              <Link href="/auth/signup" className="text-xs text-zinc-600 hover:text-purple-400 transition-colors font-semibold">
-                Criar conta gratis
+            <div className="pt-2 border-t border-slate-50 flex items-center justify-between">
+              <Link href="/auth/signup" className="text-[10px] text-slate-400 hover:text-purple-600 transition-colors font-black uppercase tracking-widest">
+                Criar conta grátis
               </Link>
-              <Link href="/" className="text-xs text-zinc-700 hover:text-zinc-500 transition-colors">
-                Voltar ao inicio
+              <Link href="/" className="text-[10px] text-slate-300 hover:text-slate-500 transition-colors font-black uppercase tracking-widest">
+                Voltar ao início
               </Link>
             </div>
           </div>

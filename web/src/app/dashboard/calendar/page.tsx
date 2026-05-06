@@ -129,17 +129,12 @@ function CalendarContent() {
              <div className="h-1 w-8 bg-purple-600 rounded-full" />
              <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.4em]">Content_Strategy_Engine</span>
           </div>
-          <h1 className="text-4xl font-black text-white tracking-tighter leading-none">
-            Calendário de <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-500">Conteúdo</span>
-          </h1>
-        </div>
-
-        <div className="flex items-center gap-3 bg-[#0d0b1a] border border-white/[0.05] rounded-2xl px-5 py-3 w-full md:w-96 focus-within:border-purple-500/50 transition-all duration-500">
-          <Search className="w-4 h-4 text-zinc-600" />
+        <div className="flex items-center gap-3 bg-white border border-slate-100 rounded-2xl px-5 py-3 w-full md:w-96 focus-within:border-purple-300 transition-all duration-500 shadow-sm">
+          <Search className="w-4 h-4 text-slate-400" />
           <input 
             type="text" 
             placeholder="Buscar tarefa estratégica..." 
-            className="bg-transparent border-none focus:outline-none text-[11px] text-zinc-300 w-full placeholder:text-zinc-700 font-bold"
+            className="bg-transparent border-none focus:outline-none text-[11px] text-slate-600 w-full placeholder:text-slate-300 font-bold"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -148,18 +143,18 @@ function CalendarContent() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Calendar Grid */}
-        <div className="lg:col-span-3 bg-[#0d0b1a] border border-white/[0.05] rounded-[2.5rem] overflow-hidden group hover:border-purple-500/20 transition-all duration-500">
-          <div className="p-8 border-b border-white/[0.03] flex items-center justify-between bg-white/[0.01]">
+        <div className="lg:col-span-3 bg-white border border-slate-100 rounded-[2.5rem] overflow-hidden group hover:border-purple-200 transition-all duration-500 shadow-sm">
+          <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-purple-500/10 rounded-2xl border border-purple-500/20">
-                <CalendarIcon className="w-6 h-6 text-purple-400" />
+              <div className="p-3 bg-purple-50 rounded-2xl border border-purple-100">
+                <CalendarIcon className="w-6 h-6 text-purple-600" />
               </div>
-              <h2 className="text-xl font-black text-white tracking-tight">
-                {monthNames[month]} <span className="text-zinc-600 ml-1">{year}</span>
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                {monthNames[month]} <span className="text-slate-300 ml-1">{year}</span>
               </h2>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={prevMonth} className="p-2 hover:bg-white/5 rounded-xl transition-colors text-zinc-400">
+              <button onClick={prevMonth} className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400">
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <button 
@@ -168,20 +163,21 @@ function CalendarContent() {
                   setCurrentDate(today);
                   setSelectedDay(today.getDate());
                   updateUrl(today);
+                  toast.info('Retornando para o presente...');
                 }} 
-                className="px-4 py-1.5 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase rounded-lg transition-colors border border-white/10"
+                className="px-6 py-2 bg-slate-900 hover:bg-purple-600 text-white text-[10px] font-black uppercase rounded-xl transition-all shadow-lg shadow-slate-900/10"
               >
                 Hoje
               </button>
-              <button onClick={nextMonth} className="p-2 hover:bg-white/5 rounded-xl transition-colors text-zinc-400">
+              <button onClick={nextMonth} className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400">
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-7 border-b border-white/[0.04]">
+          <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/50">
             {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => (
-              <div key={d} className="py-4 text-center text-[10px] font-black text-zinc-600 uppercase tracking-widest">
+              <div key={d} className="py-5 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
                 {d}
               </div>
             ))}
@@ -195,8 +191,8 @@ function CalendarContent() {
               return (
                 <div 
                   key={idx} 
-                  className={`min-h-[120px] p-3 border-r border-b border-white/[0.04] transition-colors group relative
-                    ${day ? 'hover:bg-white/[0.02]' : 'bg-[#080810]/20'}
+                  className={`min-h-[120px] p-3 border-r border-b border-slate-50 transition-colors group relative
+                    ${day ? 'hover:bg-slate-50/50' : 'bg-slate-50/30'}
                   `}
                 >
                   {day && (
@@ -338,23 +334,28 @@ function CalendarContent() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-indigo-900/40 to-purple-900/40 border border-white/[0.05] rounded-2xl p-5">
-            <h4 className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-4">Meta Mensal</h4>
-            <div className="space-y-3">
+          <div className="bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 border border-purple-500/30 rounded-3xl p-8 shadow-2xl shadow-purple-900/20 relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-4 opacity-10">
+                <Target className="w-12 h-12 text-white" />
+             </div>
+            <h4 className="text-[10px] font-black text-purple-200 uppercase tracking-widest mb-6 flex items-center gap-2">
+               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Meta Mensal de Conteúdo
+            </h4>
+            <div className="space-y-4">
                <div className="flex justify-between items-end">
-                  <span className="text-[10px] font-bold text-zinc-400">Progresso</span>
-                  <span className="text-xs font-black text-white">
+                  <span className="text-[10px] font-black text-purple-300 uppercase tracking-widest">Progresso Total</span>
+                  <span className="text-2xl font-black text-white italic">
                     {tasks.length > 0 ? Math.round((tasks.filter(t => t.isDone).length / tasks.length) * 100) : 0}%
                   </span>
                </div>
-               <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+               <div className="h-3 w-full bg-black/40 rounded-full overflow-hidden border border-white/5">
                   <div 
-                    className="h-full bg-indigo-500 rounded-full transition-all duration-1000" 
+                    className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(16,185,129,0.5)]" 
                     style={{ width: `${tasks.length > 0 ? (tasks.filter(t => t.isDone).length / tasks.length) * 100 : 0}%` }}
                   />
                </div>
-               <p className="text-[9px] text-zinc-500 font-medium leading-relaxed">
-                 Você concluiu {tasks.filter(t => t.isDone).length} de {tasks.length} tarefas planejadas para este mês. Continue assim!
+               <p className="text-[10px] text-purple-100/60 font-bold leading-relaxed">
+                 Você concluiu {tasks.filter(t => t.isDone).length} de {tasks.length} entregas estratégicas planejadas. Mantenha a constância!
                </p>
             </div>
           </div>

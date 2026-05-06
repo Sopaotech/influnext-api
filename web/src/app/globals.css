@@ -9,6 +9,40 @@
 }
 
 :root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
+  
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #7c3aed;
+  
+  --radius: 1.5rem;
+
+  /* Custom Premium Tokens */
+  --premium-violet: #7c3aed;
+  --premium-indigo: #6366f1;
+  --premium-slate: #0f172a;
+}
+
+.dark {
   --background: #050508;
   --foreground: #f8fafc;
   
@@ -33,30 +67,40 @@
   --border: rgba(255, 255, 255, 0.06);
   --input: rgba(255, 255, 255, 0.06);
   --ring: #8b5cf6;
-  
-  --radius: 1.25rem;
-
-  /* Custom Premium Tokens */
-  --premium-indigo: #6366f1;
-  --premium-rose: #f43f5e;
-  --premium-slate: #0f172a;
 }
 
 .glass {
-  background: rgba(13, 11, 26, 0.7);
+  background: var(--theme-glass-bg);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+}
+
+:root {
+  --theme-glass-bg: rgba(255, 255, 255, 0.7);
+}
+
+.dark {
+  --theme-glass-bg: rgba(13, 11, 26, 0.7);
 }
 
 .glass-card {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+  background: var(--theme-glass-card-bg);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.05);
+}
+
+:root {
+  --theme-glass-card-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 100%);
+}
+
+.dark {
+  --theme-glass-card-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
   box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6);
 }
 
 .glow-purple {
-  box-shadow: 0 0 50px -10px rgba(139, 92, 246, 0.2);
+  box-shadow: 0 0 50px -10px rgba(124, 58, 237, 0.15);
 }
 
 .text-gradient {

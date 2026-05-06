@@ -61,38 +61,41 @@ export default function SupportPage() {
         
         {/* Formulário de Abertura */}
         <section className="space-y-6">
-           <form onSubmit={handleSubmit} className="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-8 space-y-6">
+           <form onSubmit={handleSubmit} className="bg-slate-950 border border-purple-500/10 rounded-[2.5rem] p-10 space-y-8 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-6 opacity-5">
+                 <MessageSquare className="w-20 h-20 text-purple-500" />
+              </div>
               <div className="space-y-2">
                  <label className="text-[10px] font-black uppercase text-zinc-500">Categoria</label>
-                 <select 
-                   value={form.category}
-                   onChange={e => setForm({...form, category: e.target.value})}
-                   className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-xs font-bold text-zinc-200 outline-none focus:border-purple-500/50 transition-all"
-                 >
-                    <option value="SUPPORT">Suporte Geral</option>
-                    <option value="BUG">Relatar um Erro (Bug)</option>
-                    <option value="FEATURE">Sugestão de Funcionalidade</option>
-                 </select>
+                  <select 
+                    value={form.category}
+                    onChange={e => setForm({...form, category: e.target.value})}
+                    className="w-full bg-slate-900 border border-white/[0.05] rounded-xl px-4 py-4 text-xs font-black text-white outline-none focus:border-purple-500/50 transition-all appearance-none cursor-pointer"
+                  >
+                     <option value="SUPPORT">Suporte de Conta</option>
+                     <option value="BUG">Relatar um Erro Técnico</option>
+                     <option value="FEATURE">Sugestão de Evolução</option>
+                  </select>
               </div>
 
               <div className="space-y-2">
-                 <label className="text-[10px] font-black uppercase text-zinc-500">Assunto</label>
-                 <Input 
-                   placeholder="Ex: Erro ao carregar Media Kit"
-                   value={form.subject}
-                   onChange={e => setForm({...form, subject: e.target.value})}
-                   className="bg-zinc-950 border-zinc-800"
-                 />
+                 <label className="text-[10px] font-black uppercase text-slate-400">Assunto</label>
+                  <Input 
+                    placeholder="Como podemos resumir seu pedido?"
+                    value={form.subject}
+                    onChange={e => setForm({...form, subject: e.target.value})}
+                    className="bg-slate-50 border-slate-100 h-12 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:border-purple-200"
+                  />
               </div>
 
               <div className="space-y-2">
-                 <label className="text-[10px] font-black uppercase text-zinc-500">Mensagem Detalhada</label>
-                 <textarea 
-                   placeholder="Explique o que está acontecendo..."
-                   value={form.message}
-                   onChange={e => setForm({...form, message: e.target.value})}
-                   className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-xs font-medium text-zinc-200 min-h-[150px] outline-none focus:border-purple-500/50 transition-all"
-                 />
+                 <label className="text-[10px] font-black uppercase text-slate-400">Mensagem Detalhada</label>
+                  <textarea 
+                    placeholder="Descreva detalhadamente sua necessidade para que nosso time possa agir rápido..."
+                    value={form.message}
+                    onChange={e => setForm({...form, message: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-xs font-medium text-slate-900 min-h-[180px] outline-none focus:border-purple-200 transition-all placeholder:text-slate-400 resize-none"
+                  />
               </div>
 
               <Button 
@@ -109,33 +112,36 @@ export default function SupportPage() {
         {/* Histórico de Chamados */}
         <section className="space-y-6">
            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Meus Chamados</h3>
-           <div className="space-y-4">
+           <div className="space-y-8">
+            <div className="space-y-2">
+               <h2 className="text-2xl font-black text-slate-900 tracking-tight">Seus Chamados</h2>
+               <p className="text-slate-500 text-sm font-medium">Acompanhe o status e as respostas do suporte.</p>
+            </div>
+            
+            <div className="space-y-4">
               {isLoading ? (
                 <div className="animate-pulse space-y-4">
                    {[1,2,3].map(i => <div key={i} className="h-20 bg-zinc-900/50 rounded-2xl" />)}
                 </div>
-              ) : tickets.length > 0 ? (
-                tickets.map((t: any) => (
-                   <div key={t.id} className="p-5 bg-zinc-950 border border-zinc-800 rounded-2xl space-y-3">
-                      <div className="flex items-center justify-between">
-                         <span className="text-[9px] font-black text-purple-400 uppercase tracking-widest">{t.category}</span>
-                         <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase ${t.status === 'OPEN' ? 'bg-amber-500/20 text-amber-500' : 'bg-emerald-500/20 text-emerald-500'}`}>
-                            {t.status}
-                         </span>
-                      </div>
-                      <h4 className="text-xs font-bold text-zinc-100">{t.subject}</h4>
-                      <div className="flex items-center gap-2 text-[9px] text-zinc-600 font-bold uppercase">
-                         <Clock className="w-3 h-3" /> {new Date(t.createdAt).toLocaleDateString()}
-                      </div>
-                   </div>
-                ))
-              ) : (
-                <div className="text-center py-20 bg-zinc-900/20 border-2 border-dashed border-zinc-900 rounded-3xl">
-                   <MessageSquare className="w-8 h-8 text-zinc-800 mx-auto mb-2" />
-                   <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest">Nenhum chamado aberto</p>
+              ) : tickets.length > 0 ? tickets.map((t) => (
+                <div key={t.id} className="p-6 bg-slate-50 border border-slate-100 rounded-3xl group hover:border-purple-300 transition-all shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                     <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${t.status === 'OPEN' ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                        {t.status === 'OPEN' ? 'Em Aberto' : 'Resolvido'}
+                     </span>
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Ref: #{t.id.slice(-6)}</p>
+                  </div>
+                  <h4 className="text-sm font-black text-slate-900 mb-1">{t.subject}</h4>
+                  <p className="text-xs text-slate-500 line-clamp-2">{t.message}</p>
+                </div>
+              )) : (
+                <div className="py-20 border-2 border-dashed border-slate-100 rounded-3xl flex flex-col items-center justify-center space-y-4">
+                  <LifeBuoy className="w-10 h-10 text-slate-200" />
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nenhum chamado aberto</p>
                 </div>
               )}
-           </div>
+            </div>
+          </div>
         </section>
 
       </div>

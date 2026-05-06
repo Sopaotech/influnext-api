@@ -57,15 +57,15 @@ function Stepper({ currentStep, totalSteps }: { currentStep: number; totalSteps:
         return (
           <React.Fragment key={i}>
             <div className={`
-              w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-black border transition-all duration-300
-              ${isDone ? 'bg-purple-600 border-purple-600 text-white shadow-[0_0_12px_rgba(192,132,252,0.4)]'
-                : isActive ? 'bg-transparent border-purple-500 text-purple-400 shadow-[0_0_12px_rgba(192,132,252,0.2)]'
-                : 'bg-transparent border-zinc-800 text-zinc-700'}
+              w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black border transition-all duration-300
+              ${isDone ? 'bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-600/20'
+                : isActive ? 'bg-white border-purple-500 text-purple-600 shadow-sm'
+                : 'bg-white border-slate-100 text-slate-300'}
             `}>
               {isDone ? <Check className="w-3.5 h-3.5" /> : stepNum}
             </div>
             {i < totalSteps - 1 && (
-              <div className={`flex-1 h-px max-w-[40px] transition-all duration-500 ${isDone ? 'bg-purple-600' : 'bg-zinc-800'}`} />
+              <div className={`flex-1 h-px max-w-[40px] transition-all duration-500 ${isDone ? 'bg-purple-600' : 'bg-slate-100'}`} />
             )}
           </React.Fragment>
         );
@@ -190,9 +190,9 @@ export default function SignupClient() {
     }
   };
 
-  const inputClass = "w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:border-purple-500/40 focus:bg-white/[0.06] transition-all";
-  const selectClass = "w-full bg-[#0d0b18] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-purple-500/40 transition-all appearance-none";
-  const labelClass = "block text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5";
+  const inputClass = "w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm text-slate-900 placeholder:text-slate-300 focus:outline-none focus:border-purple-300 focus:bg-white transition-all shadow-sm";
+  const selectClass = "w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm text-slate-900 focus:outline-none focus:border-purple-300 focus:bg-white transition-all appearance-none font-bold";
+  const labelClass = "block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2";
 
   return (
     <div className="w-full space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -203,8 +203,7 @@ export default function SignupClient() {
 
 
         <div className="relative">
-          <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-b from-purple-500/20 via-purple-500/5 to-transparent" />
-          <div className="relative bg-[#0d0b18]/80 backdrop-blur-xl rounded-2xl p-8 shadow-[0_32px_64px_rgba(0,0,0,0.7)] border border-white/[0.04] space-y-6">
+          <div className="relative bg-white rounded-[2.5rem] p-10 shadow-[0_20px_60px_rgba(0,0,0,0.06)] border border-slate-100 space-y-8">
 
             {/* Header */}
             <div className="space-y-4">
@@ -212,71 +211,71 @@ export default function SignupClient() {
 
               {step === 1 && (
                 <>
-                  <div className="flex gap-1 p-1 bg-white/[0.04] border border-white/[0.06] rounded-xl mb-4 w-max mx-auto">
+                  <div className="flex gap-1 p-1 bg-slate-50 border border-slate-100 rounded-2xl mb-4 w-max mx-auto">
                     <button
                       type="button"
                       onClick={() => setUserType('influencer')}
-                      className={`px-5 py-2 text-[11px] font-black rounded-lg tracking-wider uppercase transition-all ${isInfluencer ? 'bg-purple-600 text-white shadow-[0_0_16px_rgba(192,132,252,0.3)]' : 'text-zinc-600 hover:text-zinc-400'}`}
+                      className={`px-6 py-2.5 text-[10px] font-black rounded-xl tracking-wider uppercase transition-all ${isInfluencer ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' : 'text-slate-400 hover:text-slate-600'}`}
                     >
-                      Influencer
+                      Influenciador
                     </button>
                     <button
                       type="button"
                       onClick={() => setUserType('company')}
-                      className={`px-5 py-2 text-[11px] font-black rounded-lg tracking-wider uppercase transition-all ${!isInfluencer ? 'bg-blue-600 text-white shadow-[0_0_16px_rgba(59,130,246,0.3)]' : 'text-zinc-600 hover:text-zinc-400'}`}
+                      className={`px-6 py-2.5 text-[10px] font-black rounded-xl tracking-wider uppercase transition-all ${!isInfluencer ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20' : 'text-slate-400 hover:text-slate-600'}`}
                     >
                       Empresa
                     </button>
                   </div>
-                  <div className="text-center space-y-0.5">
-                    <h1 className="text-xl font-black text-white tracking-tight">Criar conta</h1>
-                    <p className="text-zinc-600 text-xs">Passo 1 de 3 — Credenciais de acesso</p>
+                  <div className="text-center space-y-1">
+                    <h1 className="text-2xl font-black text-slate-900 tracking-tight">Criar sua conta</h1>
+                    <p className="text-slate-500 text-xs font-medium">Passo 1 de 3 — Credenciais de acesso</p>
                   </div>
                 </>
               )}
 
               {step === 2 && (
-                <div className="text-center space-y-0.5">
-                  <h1 className="text-xl font-black text-white tracking-tight">
-                    {isInfluencer ? 'Estratégia de Carreira' : 'Perfil da Empresa'}
+                <div className="text-center space-y-1">
+                  <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+                    {isInfluencer ? 'Estratégia de Carreira' : 'Perfil Estratégico'}
                   </h1>
-                  <p className="text-zinc-600 text-xs">
-                    Passo 2 de 3 — {isInfluencer ? 'Construindo seu alicerce de elite' : 'Nos conte sobre sua empresa'}
+                  <p className="text-slate-500 text-xs font-medium">
+                    Passo 2 de 3 — {isInfluencer ? 'Construindo seu alicerce de elite' : 'Personalizando sua experiência'}
                   </p>
                 </div>
               )}
 
               {step === 3 && (
-                <div className="text-center space-y-0.5">
-                  <h1 className="text-xl font-black text-white tracking-tight">Potencializando Alcance</h1>
-                  <p className="text-zinc-600 text-xs">Passo 3 de 3 — Conecte suas fontes de dados</p>
+                <div className="text-center space-y-1">
+                  <h1 className="text-2xl font-black text-slate-900 tracking-tight">Potencializando Alcance</h1>
+                  <p className="text-slate-500 text-xs font-medium">Passo 3 de 3 — Conecte suas fontes de dados</p>
                 </div>
               )}
             </div>
 
             {error && (
-              <div className="bg-red-500/8 border border-red-500/25 text-red-400 p-3 rounded-xl text-xs text-center font-semibold">
+              <div className="bg-red-50 border border-red-100 text-red-600 p-4 rounded-2xl text-[10px] text-center font-black uppercase tracking-widest animate-in fade-in zoom-in-95">
                 {error}
               </div>
             )}
 
             {/* ─── STEP 1: Credentials ─────────────────────────────────────── */}
             {step === 1 && (
-              <form onSubmit={handleStep1Submit} className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <form onSubmit={handleStep1Submit} className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <div>
-                  <label className={labelClass}>E-mail</label>
+                  <label className={labelClass}>E-mail Profissional</label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    placeholder="seu@email.com"
+                    placeholder="exemplo@email.com"
                     className={inputClass}
                   />
                 </div>
 
                 <div>
-                  <label className={labelClass}>Senha</label>
+                  <label className={labelClass}>Escolha uma Senha</label>
                   <input
                     type="password"
                     value={password}
@@ -286,36 +285,36 @@ export default function SignupClient() {
                     className={inputClass}
                   />
                   {password.length > 0 && password.length < 8 && (
-                    <p className="text-amber-500/80 text-[10px] mt-1 font-semibold">Pelo menos 8 caracteres</p>
+                    <p className="text-amber-600 text-[10px] mt-2 font-black uppercase tracking-widest">Senha muito curta</p>
                   )}
                 </div>
 
                 <div>
-                  <label className={labelClass}>Confirmar Senha</label>
+                  <label className={labelClass}>Confirme a Senha</label>
                   <input
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     placeholder="Repita a senha"
-                    className={`${inputClass} ${confirmPassword.length > 0 && confirmPassword !== password ? 'border-red-500/40' : ''}`}
+                    className={`${inputClass} ${confirmPassword.length > 0 && confirmPassword !== password ? 'border-red-300' : ''}`}
                   />
                   {confirmPassword.length > 0 && confirmPassword !== password && (
-                    <p className="text-red-400 text-[10px] mt-1 font-semibold">As senhas não coincidem</p>
+                    <p className="text-red-500 text-[10px] mt-2 font-black uppercase tracking-widest">Senhas não conferem</p>
                   )}
                 </div>
 
                 <button
                   type="submit"
                   disabled={!step1Valid || isLoading}
-                  className="w-full h-12 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 disabled:opacity-30 text-white font-bold rounded-xl shadow-[0_0_24px_rgba(192,132,252,0.15)] hover:shadow-[0_0_32px_rgba(192,132,252,0.3)] transition-all duration-300 text-sm"
+                  className="w-full h-14 bg-slate-900 hover:bg-purple-600 disabled:opacity-30 text-white font-black uppercase text-[10px] tracking-widest rounded-2xl shadow-lg shadow-slate-900/10 transition-all duration-500 active:scale-95"
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center gap-2">
                       <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                      Criando conta...
+                      Processando...
                     </span>
-                  ) : 'Continuar →'}
+                  ) : 'Continuar para Perfil →'}
                 </button>
               </form>
             )}
@@ -325,22 +324,23 @@ export default function SignupClient() {
               <form onSubmit={handleStep2Submit} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                 
                 {/* AI Consultant Message */}
-                <div className="bg-[#1a1040] text-purple-200 p-4 rounded-2xl rounded-tl-sm text-xs border border-purple-500/20 shadow-md">
-                  <p className="font-bold mb-1 flex items-center gap-2 text-purple-300">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    Consultor de Performance
+                <div className="bg-slate-50 text-slate-600 p-5 rounded-2xl rounded-tl-sm text-[11px] font-medium border border-slate-100 shadow-sm relative overflow-hidden">
+                   <div className="absolute top-0 left-0 w-1 h-full bg-purple-500" />
+                  <p className="font-black mb-1 flex items-center gap-2 text-purple-600 uppercase tracking-widest text-[9px]">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    Consultor de Estratégia
                   </p>
-                  <p>Bora pra cima! O mercado não espera quem fica parado. Para desenharmos sua estratégia de escala, preciso saber: Qual seu nicho dominante e onde você quer chegar?</p>
+                  <p>Incrível! O mercado busca autenticidade. Para desenharmos sua estratégia de crescimento, preciso entender: Qual seu nicho dominante e qual seu grande objetivo hoje?</p>
                 </div>
 
                 {/* User Reply Area */}
-                <div className="bg-purple-600/10 border border-purple-500/20 p-4 rounded-2xl rounded-tr-sm text-sm ml-auto w-[90%] space-y-4">
+                <div className="bg-purple-50 border border-purple-100 p-6 rounded-3xl rounded-tr-sm text-sm ml-auto w-[95%] space-y-5 shadow-sm">
                   <div>
                     <label className={labelClass}>Meu Nicho é:</label>
                     <select value={niche} onChange={(e) => setNiche(e.target.value)} required className={selectClass}>
-                      <option value="" className="bg-zinc-900">Selecione...</option>
+                      <option value="">Selecione...</option>
                       {INFLUENCER_NICHES.map(n => (
-                        <option key={n} value={n} className="bg-zinc-900">{n}</option>
+                        <option key={n} value={n}>{n}</option>
                       ))}
                     </select>
                   </div>
@@ -354,9 +354,9 @@ export default function SignupClient() {
                         max={20}
                         value={yearsOfCareer}
                         onChange={(e) => setYearsOfCareer(Number(e.target.value))}
-                        className="w-full accent-purple-500"
+                        className="w-full h-1.5 bg-purple-100 rounded-full appearance-none cursor-pointer accent-purple-600"
                       />
-                      <div className="flex justify-between text-[10px] text-purple-300 font-bold">
+                      <div className="flex justify-between text-[10px] text-purple-400 font-black uppercase tracking-widest">
                         <span>{yearsOfCareer === 0 ? 'Começando' : `${yearsOfCareer} anos`}</span>
                       </div>
                     </div>
@@ -366,16 +366,16 @@ export default function SignupClient() {
                     <label className={labelClass}>E meu grande objetivo é:</label>
                     <div className="grid grid-cols-1 gap-2">
                       {CAREER_GOALS.map(g => (
-                        <label key={g.value} className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${goal === g.value ? 'border-purple-500/50 bg-purple-500/20 text-white' : 'border-purple-500/10 bg-black/20 text-purple-200 hover:border-purple-500/30'}`}>
+                        <label key={g.value} className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${goal === g.value ? 'border-purple-500 bg-purple-50 text-purple-900 shadow-sm' : 'border-slate-100 bg-white text-slate-500 hover:border-purple-200 hover:bg-slate-50'}`}>
                           <input
                             type="radio"
                             name="goal"
                             value={g.value}
                             checked={goal === g.value}
                             onChange={() => setGoal(g.value)}
-                            className="accent-purple-500 hidden"
+                            className="accent-purple-600 w-4 h-4"
                           />
-                          <span className="text-xs font-bold">{g.label}</span>
+                          <span className="text-[11px] font-black uppercase tracking-wider">{g.label}</span>
                         </label>
                       ))}
                     </div>
@@ -406,23 +406,23 @@ export default function SignupClient() {
                   </div>
                 </div>
 
-                <div className="flex gap-3 pt-2">
+                <div className="flex gap-3 pt-4">
                   <button
                     type="button"
                     onClick={() => setStep(1)}
-                    className="px-5 py-3 border border-white/[0.08] text-zinc-500 rounded-xl text-sm font-bold hover:bg-white/[0.04] hover:text-zinc-300 transition-all"
+                    className="px-6 py-4 border border-slate-100 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 hover:text-slate-600 transition-all"
                   >
                     ← Voltar
                   </button>
                   <button
                     type="submit"
                     disabled={!step2InfluencerValid || isLoading}
-                    className="flex-1 h-12 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 disabled:opacity-30 text-white font-bold rounded-xl transition-all text-sm"
+                    className="flex-1 h-14 bg-slate-900 hover:bg-purple-600 disabled:opacity-30 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl transition-all shadow-lg shadow-slate-900/10 active:scale-95"
                   >
                     {isLoading ? (
                       <span className="flex items-center justify-center gap-2">
                         <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                        Analizando perfil...
+                        Processando...
                       </span>
                     ) : 'Próximo Passo →'}
                   </button>
@@ -433,39 +433,53 @@ export default function SignupClient() {
             {/* ─── STEP 3: Social Connection ───────────────────────────────── */}
             {step === 3 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="bg-[#1a1040] text-purple-200 p-4 rounded-2xl rounded-tl-sm text-xs border border-purple-500/20 shadow-md">
-                  <p className="font-bold mb-1 flex items-center gap-2 text-purple-300">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    Verificador de Autoridade
+                <div className="bg-slate-50 text-slate-600 p-5 rounded-2xl rounded-tl-sm text-[11px] font-medium border border-slate-100 shadow-sm relative overflow-hidden">
+                   <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500" />
+                  <p className="font-black mb-1 flex items-center gap-2 text-emerald-600 uppercase tracking-widest text-[9px]">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    Validação de Autoridade
                   </p>
-                  <p>Quase lá! Agora conecte suas redes sociais. Sem dados reais, você é invisível para as marcas. Com dados, você é imparável.</p>
+                  <p>Etapa final! Conecte suas redes sociais para validar seu alcance. Dados reais garantem segurança nas negociações e aceleram seu fechamento com marcas.</p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3">
                   {[
-                    { name: 'Instagram', icon: '📸', color: 'hover:border-pink-500/40 hover:bg-pink-500/5' },
-                    { name: 'TikTok', icon: '🎵', color: 'hover:border-zinc-100/40 hover:bg-zinc-100/5' },
-                    { name: 'YouTube', icon: '📺', color: 'hover:border-red-500/40 hover:bg-red-500/5' }
+                    { id: 'instagram', name: 'Instagram', icon: '📸', color: 'hover:border-pink-200 hover:bg-pink-50 text-pink-600' },
+                    { id: 'tiktok', name: 'TikTok', icon: '🎵', color: 'hover:border-slate-300 hover:bg-slate-50 text-slate-900' },
+                    { id: 'youtube', name: 'YouTube', icon: '📺', color: 'hover:border-red-200 hover:bg-red-50 text-red-600' }
                   ].map((plat) => (
                     <button 
-                      key={plat.name}
-                      onClick={() => toast.success(`Conectando ${plat.name}... (Simulação)`)}
-                      className={`flex items-center justify-between p-4 bg-white/[0.02] border border-white/[0.06] rounded-2xl transition-all ${plat.color}`}
+                      key={plat.id}
+                      onClick={async () => {
+                        const id = toast.loading(`Iniciando conexão com ${plat.name}...`);
+                        try {
+                          const { data } = await api.get('/auth/social/urls');
+                          const url = data[plat.id];
+                          if (url) {
+                            window.location.href = url;
+                          } else {
+                            toast.error('URL de conexão não encontrada.', { id });
+                          }
+                        } catch (err) {
+                          toast.error('Erro ao conectar rede social.', { id });
+                        }
+                      }}
+                      className={`flex items-center justify-between p-5 bg-white border border-slate-100 rounded-[1.5rem] transition-all shadow-sm hover:shadow-md ${plat.color}`}
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-xl">{plat.icon}</span>
-                        <span className="text-sm font-bold text-zinc-300">{plat.name}</span>
+                        <span className="text-xs font-black uppercase tracking-widest">{plat.name}</span>
                       </div>
-                      <span className="text-[9px] font-black uppercase text-zinc-600 bg-zinc-900 px-2 py-1 rounded">Conectar</span>
+                      <span className="text-[9px] font-black uppercase text-purple-600 bg-purple-50 px-3 py-1.5 rounded-full border border-purple-100">Conectar</span>
                     </button>
                   ))}
                 </div>
 
                 <button
                   onClick={() => router.push('/dashboard/influencer')}
-                  className="w-full h-12 bg-zinc-100 hover:bg-white text-black font-black uppercase tracking-widest rounded-xl transition-all text-xs"
+                  className="w-full h-14 bg-slate-900 hover:bg-purple-600 text-white font-black uppercase tracking-[0.2em] rounded-2xl transition-all text-[10px] shadow-lg shadow-slate-900/10 active:scale-95"
                 >
-                  Concluir e Acessar Hub
+                  Concluir e Acessar Painel
                 </button>
               </div>
             )}
@@ -512,9 +526,9 @@ export default function SignupClient() {
                 <div>
                   <label className={labelClass}>Segmento de Atuação</label>
                   <select value={segment} onChange={(e) => setSegment(e.target.value)} className={selectClass}>
-                    <option value="" className="bg-zinc-900">Selecione o segmento...</option>
+                    <option value="">Selecione o segmento...</option>
                     {COMPANY_SEGMENTS.map(s => (
-                      <option key={s} value={s} className="bg-zinc-900">{s}</option>
+                      <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
                 </div>
@@ -523,16 +537,16 @@ export default function SignupClient() {
                   <label className={labelClass}>Tamanho da Empresa</label>
                   <div className="grid grid-cols-1 gap-2">
                     {EMPLOYEE_RANGES.map(r => (
-                      <label key={r.value} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${employeeCount === r.value ? 'border-blue-500/50 bg-blue-500/8 text-blue-300' : 'border-white/[0.06] bg-white/[0.02] text-zinc-500 hover:border-white/[0.12] hover:text-zinc-300'}`}>
+                      <label key={r.value} className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${employeeCount === r.value ? 'border-purple-500 bg-purple-50 text-purple-900 shadow-sm' : 'border-slate-100 bg-white text-slate-500 hover:border-purple-200 hover:bg-slate-50'}`}>
                         <input
                           type="radio"
                           name="employees"
                           value={r.value}
                           checked={employeeCount === r.value}
                           onChange={() => setEmployeeCount(r.value)}
-                          className="accent-blue-500"
+                          className="accent-purple-600 w-4 h-4"
                         />
-                        <span className="text-xs font-semibold">{r.label}</span>
+                        <span className="text-[11px] font-black uppercase tracking-wider">{r.label}</span>
                       </label>
                     ))}
                   </div>
@@ -542,7 +556,7 @@ export default function SignupClient() {
                   <label className={labelClass}>Budget para Campanhas</label>
                   <div className="grid grid-cols-2 gap-2">
                     {BUDGET_RANGES.map(b => (
-                      <label key={b.value} className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all text-center justify-center ${campaignBudget === b.value ? 'border-emerald-500/50 bg-emerald-500/8 text-emerald-300' : 'border-white/[0.06] bg-white/[0.02] text-zinc-500 hover:border-white/[0.12] hover:text-zinc-300'}`}>
+                      <label key={b.value} className={`flex items-center gap-2 p-4 rounded-2xl border cursor-pointer transition-all text-center justify-center ${campaignBudget === b.value ? 'border-purple-500 bg-purple-50 text-purple-900 shadow-sm' : 'border-slate-100 bg-white text-slate-500 hover:border-purple-200 hover:bg-slate-50'}`}>
                         <input
                           type="radio"
                           name="budget"
@@ -551,41 +565,41 @@ export default function SignupClient() {
                           onChange={() => setCampaignBudget(b.value)}
                           className="sr-only"
                         />
-                        <span className="text-[10px] font-bold">{b.label}</span>
+                        <span className="text-[10px] font-black uppercase tracking-tight">{b.label}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
-                <div className="flex gap-3 pt-2">
+                <div className="flex gap-3 pt-4">
                   <button
                     type="button"
                     onClick={() => setStep(1)}
-                    className="px-5 py-3 border border-white/[0.08] text-zinc-500 rounded-xl text-sm font-bold hover:bg-white/[0.04] hover:text-zinc-300 transition-all"
+                    className="px-6 py-4 border border-slate-100 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 hover:text-slate-600 transition-all"
                   >
                     Voltar
                   </button>
                   <button
                     type="submit"
                     disabled={!step2CompanyValid || isLoading}
-                    className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-cyan-500 disabled:opacity-30 text-white font-bold rounded-xl transition-all text-sm"
+                    className="flex-1 h-14 bg-slate-900 hover:bg-purple-600 disabled:opacity-30 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl transition-all shadow-lg shadow-slate-900/10 active:scale-95"
                   >
                     {isLoading ? (
                       <span className="flex items-center justify-center gap-2">
                         <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                         Configurando...
                       </span>
-                    ) : 'Acessar Marketplace'}
+                    ) : 'Finalizar Cadastro'}
                   </button>
                 </div>
               </form>
             )}
 
             {step === 1 && (
-              <p className="text-center text-xs text-zinc-700">
-                Já tem conta?{' '}
-                <Link href="/auth/login" className="text-purple-500 hover:text-purple-400 font-semibold transition-colors">
-                  Entrar
+              <p className="text-center text-[10px] font-black uppercase tracking-widest text-slate-300">
+                Já possui conta?{' '}
+                <Link href="/auth/login" className="text-purple-500 hover:text-purple-700 transition-colors">
+                  Fazer Login
                 </Link>
               </p>
             )}

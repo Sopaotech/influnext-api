@@ -15,7 +15,7 @@ const outfit = Outfit({
 });
 
 export const viewport: Viewport = {
-  themeColor: '#8b5cf6',
+  themeColor: '#7C3AED',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -104,7 +104,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col selection:bg-purple-500/30 font-sans">
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
+          defaultTheme="light"
           enableSystem
           disableTransitionOnChange
         >

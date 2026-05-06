@@ -58,13 +58,14 @@ export class AIService {
       DADOS DO CRIADOR:
       Handle: @${influencer.handle}
       Nicho: ${influencer.niche || 'Geral'}
+      Objetivo Principal: ${influencer.careerObjective || 'Crescimento Geral'}
       InfluScore: ${influencer.influScore}
 
       TAREFA:
       1. Saudação: Direta e focada em negócios. (Ex: "Foco no caixa, @${influencer.handle}. Temos trabalho.")
-      2. 3 Trends: Baseados nos audios do SCANNER.
-      3. 3 Sugestões de Vídeos: Inovadores, sem repetir a memória.
-      4. 3 Tarefas Práticas: Para execução imediata.
+      2. 3 Trends: Baseados nos audios do SCANNER, focados em atingir o objetivo de ${influencer.careerObjective}.
+      3. 3 Sugestões de Vídeos: Inovadores, focados em ${influencer.careerObjective}.
+      4. 3 Tarefas Práticas: Para execução imediata para atingir o objetivo.
 
       Responda em JSON puro:
       {
@@ -419,6 +420,40 @@ Output:`;
     } catch (error) {
       console.error('[AI PARSER] Erro:', error);
       return { action: 'UNKNOWN' };
+    }
+  }
+
+  /**
+   * Gera um insight empresarial diário focado no objetivo do usuário.
+   */
+  static async generateDailyBusinessInsight(influencerId: string): Promise<string> {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return "Foque na consistência hoje!";
+
+    const influencer = await prisma.influencerProfile.findUnique({
+      where: { id: influencerId },
+      select: { handle: true, niche: true, careerObjective: true, influScore: true }
+    });
+
+    if (!influencer) return "Bora pra cima!";
+
+    try {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+
+      const prompt = `Você é a IA Empresária do InfluNext. 
+      Gere uma frase curta, impactante e motivacional para @${influencer.handle}.
+      Nicho: ${influencer.niche}. 
+      Objetivo: ${influencer.careerObjective || 'Crescer na carreira'}.
+      Status Atual: ${influencer.influScore}/100 no InfluScore.
+      
+      A frase deve ser de uma sócia para um parceiro de negócios. Nada de clichês bobos. Seja direta e inspiradora. Máximo 150 caracteres.`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return response.text().trim();
+    } catch (error) {
+      return `O segredo do sucesso é a constância, @${influencer.handle}. Vamos dominar o nicho de ${influencer.niche} hoje!`;
     }
   }
 }

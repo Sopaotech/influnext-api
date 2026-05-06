@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
+import withPWAInit from "@ducanh2912/next-pwa";
+
+const withPWA = withPWAInit({
+  dest: "public",
+  disable: process.env.NODE_SET !== "production",
+  register: true,
+  skipWaiting: true,
+});
 
 const nextConfig: NextConfig = {
+  turbopack: {}, // Adicionado para silenciar o erro de configuração webpack
   distDir: '.next',
   reactStrictMode: true,
   poweredByHeader: false,
@@ -45,4 +54,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withPWA(nextConfig);

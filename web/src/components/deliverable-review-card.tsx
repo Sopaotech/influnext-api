@@ -43,44 +43,44 @@ export function DeliverableReviewCard({ deliverableId, contractTitle, influencer
   };
 
   return (
-    <div className="bg-zinc-900/50 border border-amber-500/30 rounded-xl p-5 shadow-lg flex flex-col gap-4 transition-all hover:border-amber-500/50">
+    <div className="bg-white border border-purple-100 rounded-[2rem] p-6 shadow-sm flex flex-col gap-5 transition-all hover:border-purple-200 hover:shadow-md group animate-in fade-in slide-in-from-right-4 duration-500">
       <div className="flex justify-between items-start">
-        <div>
-          <span className="text-xs font-bold uppercase text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-md">
+        <div className="space-y-3">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-600 bg-purple-50 px-3 py-1 rounded-full">
             Revisão Pendente
           </span>
-          <h3 className="text-lg font-bold text-zinc-100 mt-3 truncate">{contractTitle}</h3>
-          <p className="text-sm text-zinc-400 mt-1">
-            Enviado por: <span className="text-purple-400 font-semibold">@{influencerHandle}</span>
+          <h3 className="text-xl font-black text-slate-900 tracking-tight truncate max-w-[200px]">{contractTitle}</h3>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+            Influenciador: <span className="text-slate-900">@{influencerHandle}</span>
           </p>
         </div>
       </div>
 
-      <div className="bg-zinc-950 p-3.5 rounded-lg border border-zinc-800 flex items-center justify-between mt-2">
-        <span className="text-sm text-zinc-300 truncate max-w-[70%]">{proofUrl}</span>
+      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center justify-between gap-4">
+        <span className="text-[10px] font-black uppercase tracking-tighter text-slate-400 truncate flex-1">{proofUrl}</span>
         <a 
           href={proofUrl} 
           target="_blank" 
           rel="noopener noreferrer" 
-          className="flex items-center gap-1.5 text-xs font-bold text-blue-400 hover:text-blue-300 bg-blue-500/10 px-2.5 py-1.5 rounded-md border border-blue-500/20 transition-colors"
+          className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white bg-slate-900 hover:bg-purple-600 px-4 py-2 rounded-xl transition-all shadow-sm"
         >
           Visualizar <ExternalLink className="w-3.5 h-3.5" />
         </a>
       </div>
 
       {error && (
-        <div className="text-red-400 text-xs font-medium bg-red-500/10 p-2 rounded border border-red-500/20 text-center animate-in fade-in">
+        <div className="text-red-600 text-[10px] font-black uppercase tracking-widest bg-red-50 p-3 rounded-xl border border-red-100 text-center animate-in fade-in">
           {error}
         </div>
       )}
 
       {isRejecting ? (
-        <div className="space-y-3 mt-2 animate-in fade-in zoom-in-95 duration-200">
+        <div className="space-y-3 animate-in fade-in zoom-in-95 duration-200">
           <textarea 
             value={reason} 
             onChange={(e) => setReason(e.target.value)} 
-            placeholder="Descreva o que o influenciador precisa ajustar (ex: A logo não apareceu no vídeo)..." 
-            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-zinc-100 focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/50 transition-all resize-none"
+            placeholder="Descreva o que o influenciador precisa ajustar..." 
+            className="w-full bg-white border border-red-100 rounded-2xl p-4 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-red-400 transition-all resize-none shadow-sm"
             rows={3}
             disabled={loading}
           />
@@ -88,32 +88,32 @@ export function DeliverableReviewCard({ deliverableId, contractTitle, influencer
             <button 
               onClick={() => { setIsRejecting(false); setError(''); }} 
               disabled={loading}
-              className="flex-1 py-2.5 rounded-lg text-sm font-semibold border border-zinc-700 text-zinc-300 hover:bg-zinc-800 transition-colors"
+              className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-100 text-slate-400 hover:bg-slate-50 transition-colors"
             >
               Cancelar
             </button>
             <button 
               onClick={handleRejectSubmit} 
               disabled={loading}
-              className="flex-1 py-2.5 rounded-lg text-sm font-semibold bg-red-600 hover:bg-red-700 text-white flex justify-center items-center gap-2 transition-all shadow-[0_0_15px_-3px_rgba(220,38,38,0.4)]"
+              className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-red-600 hover:bg-red-700 text-white flex justify-center items-center gap-2 transition-all shadow-lg shadow-red-600/20"
             >
               {loading ? 'Processando...' : 'Confirmar Rejeição'}
             </button>
           </div>
         </div>
       ) : (
-        <div className="flex gap-3 mt-2">
+        <div className="flex gap-3">
           <button 
             onClick={() => setIsRejecting(true)} 
             disabled={loading}
-            className="flex-1 py-2.5 rounded-lg font-semibold text-sm border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 flex justify-center items-center gap-2 transition-colors"
+            className="flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-slate-100 text-slate-400 hover:text-red-600 hover:border-red-100 hover:bg-red-50 flex justify-center items-center gap-2 transition-all"
           >
             <XCircle className="w-4 h-4" /> Solicitar Ajuste
           </button>
           <button 
             onClick={handleApprove} 
             disabled={loading}
-            className="flex-1 py-2.5 rounded-lg font-bold text-sm bg-emerald-600 hover:bg-emerald-500 text-white flex justify-center items-center gap-2 shadow-[0_0_15px_-3px_rgba(16,185,129,0.4)] transition-all"
+            className="flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white flex justify-center items-center gap-2 shadow-lg shadow-emerald-600/20 transition-all"
           >
             <CheckCircle className="w-4 h-4" /> Aprovar Pagamento
           </button>

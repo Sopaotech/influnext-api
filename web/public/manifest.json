@@ -1,11 +1,11 @@
 {
   "name": "InfluNext",
   "short_name": "InfluNext",
-  "description": "O Workspace Definitivo para Influenciadores e Marcas",
+  "description": "Seu Escritório Digital Neural - Gestão de Carreira para Influenciadores",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#080810",
-  "theme_color": "#8b5cf6",
+  "background_color": "#F8FAFC",
+  "theme_color": "#7C3AED",
   "icons": [
     {
       "src": "/icon.svg",

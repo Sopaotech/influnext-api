@@ -132,7 +132,7 @@ export default function SettingsPage() {
         <div className="space-y-2">
           <div className="flex items-center gap-2 mb-2">
              <div className="h-1 w-8 bg-purple-600 rounded-full" />
-             <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.4em]">Account_Kernel_v2.0</span>
+              <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.4em]">Núcleo de Identidade v2.0</span>
           </div>
           <h1 className="text-4xl font-black text-white tracking-tighter">
             Centro de <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-500">Configurações</span>
@@ -186,17 +186,18 @@ export default function SettingsPage() {
                 <Input 
                   value={profile?.niche || ''} 
                   onChange={e => setProfile({...profile, niche: e.target.value})}
+                  placeholder="Ex: Lifestyle, Tech, Gaming"
                   className="bg-white/[0.02] border-white/[0.05] rounded-xl h-12 font-bold focus:border-purple-500/50 transition-all"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-zinc-500 tracking-[0.2em] flex items-center gap-2"><FileText size={12} className="text-purple-500" /> Manifesto_Pessoal</label>
+              <label className="text-[10px] font-black uppercase text-zinc-500 tracking-[0.2em] flex items-center gap-2"><FileText size={12} className="text-purple-500" /> Bio e Posicionamento</label>
               <textarea 
                 value={profile?.bio || ''} 
                 onChange={e => setProfile({...profile, bio: e.target.value})}
-                placeholder="Qual sua proposta única de valor para as marcas?"
+                placeholder="Conte para as marcas o valor que você entrega..."
                 className="w-full bg-white/[0.02] border-white/[0.05] rounded-xl p-4 text-sm font-medium focus:outline-none focus:border-purple-500/50 min-h-[120px] transition-all"
               />
             </div>
@@ -206,8 +207,8 @@ export default function SettingsPage() {
           <section className="bg-[#0d0b1a] border border-white/[0.05] rounded-[2.5rem] p-8 space-y-8">
              <div className="flex items-center justify-between">
                 <div>
-                   <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-1">Tabela_de_Preços</h3>
-                   <p className="text-xs font-bold text-zinc-400">Defina o valor da sua influência</p>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-1">Tabela de Preços</h3>
+                    <p className="text-xs font-bold text-zinc-400">Defina o valor médio para suas entregas</p>
                 </div>
                 <button 
                   type="button"
@@ -222,7 +223,7 @@ export default function SettingsPage() {
                 {rateCards.map((rate, idx) => (
                   <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-4 p-5 bg-white/[0.01] rounded-2xl border border-white/[0.03] group relative hover:border-white/[0.08] transition-all">
                      <Input 
-                       placeholder="Serviço (ex: Reels)"
+                       placeholder="Ex: Post no Feed"
                        value={rate.serviceName}
                        onChange={e => {
                           const newCards = [...rateCards];
@@ -234,7 +235,7 @@ export default function SettingsPage() {
                      <div className="relative">
                         <Input 
                           type="number"
-                          placeholder="Valor"
+                          placeholder="0,00"
                           value={rate.price}
                           onChange={e => {
                              const newCards = [...rateCards];
@@ -247,7 +248,7 @@ export default function SettingsPage() {
                      </div>
                      <div className="flex items-center gap-2">
                         <Input 
-                          placeholder="Detalhes..."
+                          placeholder="Breve descrição..."
                           value={rate.description}
                           onChange={e => {
                              const newCards = [...rateCards];
@@ -283,8 +284,8 @@ export default function SettingsPage() {
              <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-500/5 blur-3xl rounded-full" />
              
              <div>
-                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-1">Conexões_Sociais</h3>
-                <p className="text-xs font-bold text-zinc-400">Aumente seu InfluScore conectando suas redes</p>
+                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-1">Redes Sociais</h3>
+                 <p className="text-xs font-bold text-zinc-400">Aumente sua autoridade conectando suas contas</p>
              </div>
 
              <div className="space-y-4">
@@ -355,15 +356,15 @@ export default function SettingsPage() {
              
              <div className="p-4 bg-purple-500/5 border border-purple-500/10 rounded-2xl flex items-start gap-3">
                 <Zap size={14} className="text-purple-400 mt-0.5" />
-                <p className="text-[9px] font-bold text-purple-300 leading-relaxed uppercase tracking-tighter">Conectar contas reais aumenta seu InfluScore em até 40 pontos imediatamente.</p>
+                <p className="text-[9px] font-bold text-purple-300 leading-relaxed uppercase tracking-tighter">Conectar contas reais aumenta seu score de autoridade.</p>
              </div>
           </section>
 
           {/* Appearance Section */}
           <section className="bg-[#0d0b1a] border border-white/[0.05] rounded-[2.5rem] p-8 space-y-8">
              <div>
-                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-1">Cromatismo_e_Interface</h3>
-                <p className="text-xs font-bold text-zinc-400">Personalize seu workspace neural</p>
+                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-1">Design e Interface</h3>
+                 <p className="text-xs font-bold text-zinc-400">Personalize seu ambiente de trabalho</p>
              </div>
 
              <div className="space-y-6">

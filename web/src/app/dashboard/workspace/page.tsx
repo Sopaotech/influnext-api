@@ -31,6 +31,7 @@ export default function AIWorkspacePage() {
   const [isChatting, setIsChatting] = useState(false);
   const router = useRouter();
   const chatEndRef = React.useRef<HTMLDivElement>(null);
+  const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -47,12 +48,17 @@ export default function AIWorkspacePage() {
   const fetchLatestAnalysis = async () => {
     try {
       setIsLoading(true);
-      const res = await api.get<AIAnalysis>('/ai/latest');
+      const [res, telRes, connRes] = await Promise.all([
+        api.get<AIAnalysis>('/ai/latest'),
+        api.get('/tasks/telemetry'),
+        api.get('/integrations/connected')
+      ]);
+      
       if (res.data && res.data.analysisText) {
         setAnalysis(res.data);
       }
-      const telRes = await api.get('/tasks/telemetry');
       setTelemetry(telRes.data);
+      setConnectedPlatforms(connRes.data.platforms || []);
     } catch (err) {
       console.error('Erro ao buscar análise:', err);
     } finally {
@@ -144,30 +150,44 @@ export default function AIWorkspacePage() {
                <div className="h-1 w-8 bg-purple-600 rounded-full" />
                <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.4em]">Strategic_Neural_Link</span>
             </div>
-            <h1 className="text-4xl font-black text-white tracking-tighter">
-              AI <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-500">Workspace</span>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tighter">
+              Área de <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600">Trabalho</span>
             </h1>
+            <p className="text-xs font-medium text-slate-500 max-w-lg">
+              Sua central de comando estratégico. Aqui, a inteligência artificial analisa seus dados, 
+              planeja seu conteúdo e atua como sua sócia para maximizar seu ROI e influência.
+            </p>
           </div>
           
           <div className="flex items-center gap-4">
-             <div className="bg-purple-600/10 border border-purple-500/20 px-5 py-2.5 rounded-2xl flex items-center gap-3">
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse shadow-[0_0_8px_#a855f7]" />
-                <span className="text-[10px] font-black text-purple-300 uppercase tracking-widest">Mentor Ativo</span>
-             </div>
+             {connectedPlatforms.length === 0 ? (
+               <Button 
+                onClick={() => router.push('/dashboard/settings')}
+                className="bg-rose-500/10 border border-rose-500/20 px-5 py-2.5 rounded-2xl flex items-center gap-3 group hover:bg-rose-500/20 transition-all"
+               >
+                  <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse shadow-[0_0_8px_#f43f5e]" />
+                  <span className="text-[10px] font-black text-rose-300 uppercase tracking-widest">Nenhuma rede conectada</span>
+               </Button>
+             ) : (
+               <div className="bg-purple-600/10 border border-purple-500/20 px-5 py-2.5 rounded-2xl flex items-center gap-3">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse shadow-[0_0_8px_#a855f7]" />
+                  <span className="text-[10px] font-black text-purple-300 uppercase tracking-widest">{connectedPlatforms.length} {connectedPlatforms.length === 1 ? 'Rede Ativa' : 'Redes Ativas'}</span>
+               </div>
+             )}
           </div>
         </div>
       </header>
 
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 p-6 bg-zinc-950 border border-zinc-800 rounded-lg shadow-[0_0_15px_-5px_rgba(139,92,246,0.3)] relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-        <div className="space-y-1 relative z-10">
-          <div className="flex items-center gap-2 text-purple-400 font-black text-[10px] tracking-widest uppercase">
-            <Terminal className="w-4 h-4" />
-            Core Terminal v2.0
-          </div>
-          <h1 className="text-2xl font-black text-zinc-50 tracking-tighter flex items-center gap-2">
-            Workspace_<span className="text-purple-500 italic">Estratégico</span>
-          </h1>
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 p-8 bg-white border border-slate-100 rounded-3xl shadow-sm relative overflow-hidden group">
+         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+         <div className="space-y-1 relative z-10">
+           <div className="flex items-center gap-2 text-purple-600 font-black text-[10px] tracking-widest uppercase">
+             <Terminal className="w-4 h-4" />
+             Terminal Estratégico v2.0
+           </div>
+           <h1 className="text-2xl font-black text-slate-900 tracking-tighter flex items-center gap-2">
+             Análise_<span className="text-purple-600 italic">Ativa</span>
+           </h1>
           <div className="flex gap-4 mt-2">
             <div className="flex items-center gap-2 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
                <Zap className="w-3 h-3 text-emerald-500" />
@@ -183,9 +203,9 @@ export default function AIWorkspacePage() {
         <Button 
           onClick={generateNewAnalysis}
           disabled={isGenerating}
-          className="bg-zinc-900 border border-zinc-800 hover:border-purple-500 text-zinc-400 hover:text-white h-10 px-6 rounded-md transition-all text-[10px] font-black uppercase tracking-widest relative z-10"
+          className="bg-slate-900 hover:bg-slate-800 text-white h-12 px-8 rounded-xl transition-all text-[10px] font-black uppercase tracking-widest relative z-10 shadow-sm"
         >
-          {isGenerating ? '>> PROCESSANDO...' : '>> ATUALIZAR_DADOS'}
+          {isGenerating ? 'ANALISANDO...' : 'ATUALIZAR DADOS'}
         </Button>
       </header>
 
@@ -194,17 +214,17 @@ export default function AIWorkspacePage() {
           
           {/* Main Console */}
           <div className="lg:col-span-3 space-y-8">
-            <section className="bg-zinc-950 border border-zinc-800 p-8 rounded-lg relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-2 opacity-5">
-                 <BrainCircuit className="w-32 h-32" />
+            <section className="bg-white border border-slate-100 p-10 rounded-[2.5rem] relative overflow-hidden shadow-sm">
+              <div className="absolute top-0 right-0 p-4 opacity-5">
+                 <BrainCircuit className="w-32 h-32 text-purple-600" />
               </div>
               
-              <div className="flex items-center gap-2 mb-6 text-emerald-500 text-[10px] font-black uppercase tracking-widest">
-                 <Zap className="w-3 h-3" /> Diretriz_Executiva
+              <div className="flex items-center gap-2 mb-8 text-purple-600 text-[10px] font-black uppercase tracking-widest">
+                 <Zap className="w-4 h-4 fill-purple-600" /> Diretriz do Mentor
               </div>
 
-              <div className="prose prose-invert max-w-none">
-                <p className="text-zinc-100 font-bold leading-relaxed whitespace-pre-wrap text-sm border-l-2 border-emerald-500 pl-4 py-2 bg-emerald-500/5">
+              <div className="prose prose-slate max-w-none">
+                <p className="text-slate-700 font-bold leading-relaxed whitespace-pre-wrap text-base border-l-4 border-purple-500 pl-6 py-4 bg-purple-50/50 rounded-r-2xl">
                   {analysis.analysisText}
                 </p>
               </div>
@@ -218,17 +238,21 @@ export default function AIWorkspacePage() {
                 <Button 
                   onClick={handleTransformToPlan}
                   disabled={isCreatingTasks}
-                  className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest h-10 px-6 rounded-md shadow-lg shadow-emerald-500/10 transition-all active:scale-95"
+                  className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest h-12 px-8 rounded-xl shadow-lg shadow-emerald-500/20 transition-all active:scale-95 flex items-center gap-2"
                 >
-                  {isCreatingTasks ? '>> AGENDANDO...' : '>> ATACAR_AGORA'}
+                  {isCreatingTasks ? (
+                    <> <Loader2 className="w-4 h-4 animate-spin" /> SINCRONIZANDO... </>
+                  ) : (
+                    <> <ClipboardList className="w-4 h-4" /> ENVIAR PARA O CALENDÁRIO </>
+                  )}
                 </Button>
               </div>
             </section>
 
             {/* Chat com Mentor Interativo */}
-            <section className="bg-zinc-950 border border-zinc-800 p-6 rounded-lg relative flex flex-col h-[400px]">
-              <div className="flex items-center gap-2 mb-4 text-purple-400 text-[10px] font-black uppercase tracking-widest border-b border-zinc-900 pb-4">
-                 <Terminal className="w-4 h-4" /> Mentor InfluNext // Chat Direto
+            <section className="bg-white border border-slate-100 p-8 rounded-[2.5rem] relative flex flex-col h-[500px] shadow-sm">
+              <div className="flex items-center gap-3 mb-6 text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-50 pb-6">
+                 <Terminal className="w-5 h-5 text-purple-600" /> Chat Direto com seu Mentor
               </div>
               
               <div className="flex-1 overflow-y-auto space-y-6 pr-2 scrollbar-none scroll-smooth">
@@ -242,8 +266,8 @@ export default function AIWorkspacePage() {
                     <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-500`}>
                       <div className={`max-w-[85%] p-5 rounded-3xl text-[13px] leading-relaxed border break-words shadow-lg ${
                         msg.role === 'user' 
-                          ? 'bg-purple-600/10 border-purple-500/20 text-zinc-100 rounded-tr-sm' 
-                          : 'bg-white/[0.02] border-white/[0.04] text-zinc-300 rounded-tl-sm backdrop-blur-sm'
+                          ? 'bg-purple-600 text-white border-purple-500 shadow-md rounded-tr-sm' 
+                          : 'bg-slate-50 border-slate-100 text-slate-700 rounded-tl-sm'
                       }`}>
                         {msg.text}
                       </div>
@@ -271,7 +295,7 @@ export default function AIWorkspacePage() {
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   placeholder="Minha campanha flopou, o que eu ajusto hoje?"
-                  className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2 text-xs text-zinc-200 focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-zinc-700 font-sans"
+                  className="flex-1 bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm text-slate-900 focus:outline-none focus:border-purple-300 focus:bg-white transition-all placeholder:text-slate-400 font-sans"
                 />
                 <Button 
                   type="submit"
@@ -285,20 +309,20 @@ export default function AIWorkspacePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                {analysis.recommendations.videoInspirations?.map((ins: any, idx: number) => (
-                <div key={idx} className="bg-zinc-950 border border-zinc-800 p-6 rounded-lg group hover:border-amber-500/30 transition-all">
+                <div key={idx} className="bg-white border border-slate-100 p-6 rounded-3xl group hover:border-purple-300 transition-all shadow-sm">
                    <div className="flex justify-between items-start mb-4">
-                      <span className="text-[9px] font-black px-2 py-1 bg-zinc-900 text-zinc-500 rounded border border-zinc-800">
-                         IDEA_0{idx + 1} // {ins.platform}
+                      <span className="text-[9px] font-black px-2 py-1 bg-slate-50 text-slate-400 rounded border border-slate-100 uppercase">
+                         IDEIA_0{idx + 1} // {ins.platform}
                       </span>
-                      <Activity className="w-3 h-3 text-amber-500" />
+                      <Activity className="w-3 h-3 text-purple-600" />
                    </div>
-                   <h4 className="text-sm font-black text-zinc-50 mb-2 uppercase">{ins.title}</h4>
-                   <p className="text-[10px] text-zinc-500 italic mb-4">"{ins.hook}"</p>
+                   <h4 className="text-sm font-black text-slate-900 mb-2 uppercase tracking-tight">{ins.title}</h4>
+                   <p className="text-[10px] text-slate-500 italic mb-4 font-medium">"{ins.hook}"</p>
                    <Button 
                       onClick={() => handleUseInspiration(ins)}
-                      className="w-full bg-transparent border border-zinc-800 hover:bg-zinc-900 text-[9px] font-black uppercase py-2 h-auto"
+                      className="w-full bg-slate-900 hover:bg-purple-600 text-white text-[9px] font-black uppercase py-3 h-auto rounded-xl transition-all"
                    >
-                      DEPLOY_TASK
+                      ADICIONAR AO CRONOGRAMA
                    </Button>
                 </div>
                ))}
@@ -309,9 +333,9 @@ export default function AIWorkspacePage() {
           <div className="space-y-6">
             
             {/* BIBLIOTECA_DE_PARAMETROS (Trend Vault) */}
-            <div className="bg-zinc-950 border border-zinc-800 p-6 rounded-lg space-y-4 border-l-2 border-l-purple-500 shadow-[0_0_20px_-10px_rgba(168,85,247,0.3)]">
-               <h3 className="text-purple-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                  <Play className="w-3 h-3" /> BIBLIOTECA_DE_PARAMETROS
+            <div className="bg-white border border-slate-100 p-8 rounded-[2rem] space-y-6 border-l-4 border-l-purple-500 shadow-sm">
+               <h3 className="text-slate-900 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                  <Play className="w-4 h-4 text-purple-600" /> BIBLIOTECA DE REFERÊNCIAS
                </h3>
                <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar snap-x">
                   {analysis.trendVault?.length > 0 ? analysis.trendVault.map((ref, idx) => {
@@ -346,32 +370,32 @@ export default function AIWorkspacePage() {
             </div>
             
             {/* Trending Audio Widget */}
-            <div className="bg-zinc-950 border border-zinc-800 p-6 rounded-lg space-y-4 shadow-[0_0_10px_-5px_rgba(236,72,153,0.2)]">
-               <h3 className="text-pink-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                  <Music className="w-3 h-3" /> Live_Trends
+            <div className="bg-white border border-slate-100 p-6 rounded-3xl space-y-4 shadow-sm border-t-4 border-t-pink-500">
+               <h3 className="text-pink-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                  <Music className="w-3 h-3" /> LIVE TRENDS (AUDIOS)
                </h3>
                <div className="space-y-2">
                   {analysis.recommendations.trendingNow?.audios.map((audio: string, idx: number) => (
-                    <div key={idx} className="p-3 bg-zinc-900/50 border border-zinc-800 rounded-md flex items-center justify-between group hover:border-pink-500/30 transition-all">
-                       <span className="text-[9px] text-zinc-400 font-bold truncate max-w-[120px]">{audio}</span>
-                       <span className="text-[8px] font-black text-pink-400">🔥 98%</span>
+                    <div key={idx} className="p-3 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between group hover:border-pink-200 transition-all">
+                       <span className="text-[9px] text-slate-600 font-bold truncate max-w-[120px]">{audio}</span>
+                       <span className="text-[8px] font-black text-pink-600">🔥 EM ALTA</span>
                     </div>
                   ))}
                </div>
             </div>
 
             {/* Checklist Action */}
-            <div className="bg-zinc-950 border border-zinc-800 p-6 rounded-lg space-y-4">
-               <h3 className="text-emerald-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                  <ClipboardList className="w-3 h-3" /> Checklist_Acao
+            <div className="bg-white border border-slate-100 p-6 rounded-3xl space-y-4 shadow-sm">
+               <h3 className="text-purple-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                  <ClipboardList className="w-3 h-3" /> CHECKLIST DE AÇÃO
                </h3>
                <div className="space-y-3">
                   {analysis.recommendations.trends.map((trend: any, idx: number) => (
-                    <div key={idx} className="flex items-start gap-3 p-2 border-b border-zinc-900 pb-3">
-                       <div className="mt-1 w-2 h-2 bg-zinc-800 border border-zinc-700 rounded-sm" />
+                    <div key={idx} className="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 transition-all hover:bg-white">
+                       <div className="mt-1 w-2 h-2 bg-purple-500 rounded-sm" />
                        <div className="space-y-1">
-                          <p className="text-[9px] font-black text-zinc-300 uppercase">{trend.videoType}</p>
-                          <p className="text-[8px] text-zinc-600 font-bold">{trend.duration} // {trend.music}</p>
+                          <p className="text-[9px] font-black text-slate-700 uppercase tracking-tight">{trend.videoType}</p>
+                          <p className="text-[8px] text-slate-400 font-bold uppercase">{trend.duration} // {trend.music}</p>
                        </div>
                     </div>
                   ))}
@@ -379,23 +403,23 @@ export default function AIWorkspacePage() {
             </div>
 
             {/* Telemetria de Resultados */}
-            <div className="bg-zinc-950 border border-zinc-800 p-6 rounded-lg space-y-4 border-t-2 border-t-emerald-500/30">
-               <h3 className="text-emerald-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                  <Activity className="w-3 h-3" /> TELEMETRIA_DE_RESULTADOS
+            <div className="bg-white border border-slate-100 p-6 rounded-3xl space-y-4 border-t-4 border-t-emerald-500 shadow-sm">
+               <h3 className="text-emerald-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                  <Activity className="w-3 h-3" /> TELEMETRIA DE PERFORMANCE
                </h3>
                <div className="space-y-3">
                   {telemetry.length > 0 ? telemetry.map((item, idx) => (
-                    <div key={idx} className="p-3 bg-zinc-900/30 border border-zinc-800 rounded-md space-y-1">
-                       <p className="text-[9px] text-zinc-400 font-bold truncate uppercase">{item.title}</p>
+                    <div key={idx} className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-2 group hover:bg-white transition-all">
+                       <p className="text-[9px] text-slate-500 font-black truncate uppercase tracking-tight">{item.title}</p>
                        <div className="flex items-center justify-between">
-                          <span className="text-[8px] text-zinc-600 font-black">ROI_INDEX</span>
-                          <span className={`text-[9px] font-black ${item.performanceMultiplier >= 1.0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          <span className="text-[8px] text-slate-400 font-black uppercase">Impacto Estimado</span>
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${item.performanceMultiplier >= 1.0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
                              {item.performanceMultiplier.toFixed(1)}x {item.performanceMultiplier >= 1.0 ? '↑' : '↓'}
                           </span>
                        </div>
                     </div>
                   )) : (
-                    <p className="text-[8px] text-zinc-700 font-black italic uppercase">Aguardando processamento de dados...</p>
+                    <p className="text-[8px] text-slate-400 font-black italic uppercase text-center py-4">Sincronizando dados de ROI...</p>
                   )}
                </div>
             </div>
@@ -403,20 +427,20 @@ export default function AIWorkspacePage() {
           </div>
         </div>
       ) : (
-        <div className="bg-zinc-950 border border-zinc-800 border-dashed p-16 md:p-32 rounded-lg text-center space-y-6 flex flex-col items-center justify-center">
-          <div className="p-4 bg-purple-500/10 rounded-full animate-pulse">
-            <BrainCircuit className="w-12 h-12 text-purple-500" />
+        <div className="bg-white border-2 border-slate-100 border-dashed p-16 md:p-32 rounded-[3rem] text-center space-y-8 flex flex-col items-center justify-center shadow-sm">
+          <div className="p-6 bg-purple-50 rounded-full animate-bounce">
+            <BrainCircuit className="w-16 h-16 text-purple-600" />
           </div>
-          <div className="space-y-2">
-            <p className="text-zinc-200 text-lg font-black uppercase tracking-widest">Aguardando Sincronização de IA</p>
-            <p className="text-zinc-500 text-xs font-bold max-w-md mx-auto">Parece que ainda não analisamos seus dados hoje. Clique abaixo para que o Mentor InfluNext gere sua estratégia personalizada.</p>
+          <div className="space-y-3">
+            <p className="text-slate-900 text-2xl font-black uppercase tracking-tighter">Pronto para Sincronizar?</p>
+            <p className="text-slate-400 text-sm font-medium max-w-md mx-auto">Sua Área de Trabalho está vazia. Inicie a análise neural para que seu Assistente gere as melhores estratégias baseadas nas tendências de hoje.</p>
           </div>
           <Button 
             onClick={generateNewAnalysis}
             disabled={isGenerating}
-            className="bg-purple-600 hover:bg-purple-500 text-white font-black px-10 h-14 rounded-xl shadow-xl shadow-purple-500/20"
+            className="bg-slate-900 hover:bg-purple-600 text-white font-black px-12 h-16 rounded-2xl shadow-xl shadow-slate-900/10 transition-all active:scale-95 text-xs uppercase tracking-widest"
           >
-            {isGenerating ? '>> ANALISANDO ALGORITMOS...' : '>> SINCRONIZAR_MENTORIA_IA'}
+            {isGenerating ? 'ANALISANDO ALGORITMOS...' : 'SINCRONIZAR INTELIGÊNCIA AGORA'}
           </Button>
         </div>
       )}

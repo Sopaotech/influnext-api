@@ -27,7 +27,7 @@ export function EscrowTimeline({ status }: EscrowTimelineProps) {
   };
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1.5">
       {STEPS.map((step, i) => {
         const state = getStepState(step.statuses, i);
         const isLast = i === STEPS.length - 1;
@@ -36,25 +36,26 @@ export function EscrowTimeline({ status }: EscrowTimelineProps) {
           <React.Fragment key={step.id}>
             <div className="flex flex-col items-center group relative">
               <div className={`
-                w-5 h-5 rounded-full flex items-center justify-center transition-all duration-500
-                ${state === 'completed' ? 'bg-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 
-                  state === 'active' ? 'bg-purple-600 text-white animate-pulse shadow-[0_0_15px_rgba(147,51,234,0.5)]' : 
-                  state === 'error' ? 'bg-red-500 text-white' :
-                  'bg-zinc-800 text-zinc-600 border border-zinc-700'}
+                w-6 h-6 rounded-full flex items-center justify-center transition-all duration-500 border-2
+                ${state === 'completed' ? 'bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/20' : 
+                  state === 'active' ? 'bg-purple-600 border-purple-600 text-white animate-pulse shadow-md shadow-purple-600/20' : 
+                  state === 'error' ? 'bg-red-500 border-red-500 text-white' :
+                  'bg-white border-slate-100 text-slate-200'}
               `}>
                 {state === 'completed' ? <CheckCircle2 size={12} /> : 
                  state === 'active' ? <Clock size={12} /> : 
                  state === 'error' ? <AlertCircle size={12} /> :
-                 <Circle size={10} fill="currentColor" opacity={0.2} />}
+                 <Circle size={8} fill="currentColor" />}
               </div>
               
-              {/* Tooltip */}
-              <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-900 border border-zinc-800 rounded text-[8px] font-black uppercase tracking-widest text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+              {/* Tooltip - Dark High Contrast */}
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-slate-900 rounded-xl text-[9px] font-black uppercase tracking-widest text-white opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100 whitespace-nowrap pointer-events-none z-10 shadow-xl">
                 {step.label}
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45" />
               </div>
             </div>
             {!isLast && (
-              <div className={`h-[2px] w-4 rounded-full transition-colors duration-1000 ${i < STEPS.findIndex(s => s.statuses.includes(status)) ? 'bg-emerald-500/50' : 'bg-zinc-800'}`} />
+              <div className={`h-[3px] w-6 rounded-full transition-colors duration-1000 ${i < STEPS.findIndex(s => s.statuses.includes(status)) ? 'bg-emerald-200' : 'bg-slate-100'}`} />
             )}
           </React.Fragment>
         );

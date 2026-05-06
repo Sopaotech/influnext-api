@@ -1,7 +1,62 @@
 import { prisma } from '../lib/prisma';
 import { MissionService } from '../services/mission.service';
+import { CareerService } from '../services/career.service';
 import { Request, Response } from 'express';
 import { z } from 'zod';
+
+export const getTasks = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user!.id;
+    const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
+    
+    if (!influencer) {
+      res.status(404).json({ error: "Perfil não encontrado." });
+      return;
+    }
+
+    const tasks = await prisma.task.findMany({
+      where: { influencerId: influencer.id },
+      orderBy: { scheduledDate: 'asc' }
+    });
+
+    res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao buscar tarefas." });
+  }
+};
+
+export const updateTask = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { isDone } = req.body;
+
+    const updated = await prisma.task.update({
+      where: { id },
+      data: { isDone }
+    });
+
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao atualizar tarefa." });
+  }
+};
+
+export const getDailyInsight = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user!.id;
+    const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
+    
+    if (!influencer) {
+      res.status(404).json({ error: "Perfil não encontrado." });
+      return;
+    }
+
+    const insight = await CareerService.getDailyBusinessInsight(influencer.id);
+    res.json({ insight });
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao buscar insight." });
+  }
+};
 
 export const searchInfluencers = async (req: Request, res: Response): Promise<void> => {
   try {

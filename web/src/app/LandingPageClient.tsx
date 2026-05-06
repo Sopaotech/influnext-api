@@ -47,19 +47,19 @@ const FLOW_STEPS = [
 
 export default function LandingPageClient() {
   return (
-    <div className="min-h-screen bg-[#080810] text-white flex flex-col font-sans">
+    <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans">
 
       {/* ── Navbar ─────────────────────────────────────────────────────────── */}
-      <nav className="w-full px-6 lg:px-12 py-5 flex justify-between items-center z-30 border-b border-white/[0.04] bg-[#080810]/95 backdrop-blur-xl sticky top-0">
+      <nav className="w-full px-6 lg:px-12 py-5 flex justify-between items-center z-30 border-b border-slate-50 bg-white/80 backdrop-blur-xl sticky top-0">
         <Logo size="md" href="/" />
         <div className="flex items-center gap-2">
-          <Link href="/auth/login" className="text-zinc-500 hover:text-white text-sm px-4 py-2 font-semibold transition-colors hidden sm:block">
+          <Link href="/auth/login" className="text-slate-500 hover:text-slate-900 text-sm px-4 py-2 font-semibold transition-colors hidden sm:block">
             Entrar
           </Link>
-          <Link href="/auth/signup?type=influencer" className="bg-white/[0.06] hover:bg-white/[0.10] border border-white/[0.08] text-white text-sm px-4 py-2.5 rounded-xl font-bold transition-all">
+          <Link href="/auth/signup?type=influencer" className="bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-900 text-sm px-4 py-2.5 rounded-xl font-bold transition-all">
             Criar conta
           </Link>
-          <Link href="/auth/signup?type=company" className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white text-sm px-4 py-2.5 rounded-xl font-bold transition-all shadow-[0_0_16px_rgba(192,132,252,0.25)]">
+          <Link href="/auth/signup?type=company" className="bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-purple-600/20">
             Para Marcas
           </Link>
         </div>
@@ -67,66 +67,62 @@ export default function LandingPageClient() {
 
       <main className="flex-1 flex flex-col items-center relative overflow-hidden">
 
-        {/* Atmospheric bg */}
+        {/* Atmospheric bg - Lighter and softer */}
         <div className="fixed inset-0 pointer-events-none z-0">
-          <div className="absolute top-[-10%] left-[10%] w-[800px] h-[600px] rounded-full bg-purple-700/[0.07] blur-[150px]" />
-          <div className="absolute top-[50%] right-[-10%] w-[600px] h-[500px] rounded-full bg-violet-600/[0.05] blur-[130px]" />
-          <div className="absolute bottom-[5%] left-[-5%] w-[500px] h-[400px] rounded-full bg-pink-700/[0.04] blur-[120px]" />
-          <div className="absolute inset-0 opacity-[0.018]" style={{
-            backgroundImage: 'linear-gradient(rgba(192,132,252,1) 1px, transparent 1px), linear-gradient(90deg, rgba(192,132,252,1) 1px, transparent 1px)',
-            backgroundSize: '80px 80px',
-          }} />
+          <div className="absolute top-[-10%] left-[10%] w-[800px] h-[600px] rounded-full bg-purple-100/50 blur-[150px]" />
+          <div className="absolute top-[50%] right-[-10%] w-[600px] h-[500px] rounded-full bg-violet-50/50 blur-[130px]" />
+          <div className="absolute bottom-[5%] left-[-5%] w-[500px] h-[400px] rounded-full bg-pink-50/30 blur-[120px]" />
         </div>
 
         {/* ── HERO ───────────────────────────────────────────────────────────── */}
         <section className="w-full max-w-7xl mx-auto px-6 lg:px-12 pt-24 md:pt-36 pb-20 flex flex-col items-center text-center z-10">
 
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500/[0.08] border border-purple-500/[0.15] text-purple-300 text-[11px] font-bold uppercase tracking-[0.2em] mb-10">
-            <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-50 border border-purple-100 text-purple-600 text-[11px] font-bold uppercase tracking-[0.2em] mb-10">
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
             A plataforma de influência mais séria do Brasil
           </div>
 
-          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-black tracking-[-0.04em] leading-[1.02] mb-8 max-w-5xl">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-black tracking-[-0.04em] leading-[1.02] mb-8 max-w-5xl text-slate-900">
             Pare de contratar{' '}
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-zinc-400 to-zinc-200">números.</span>
+            <span className="text-slate-400">números.</span>
             <br />
             Comece a contratar{' '}
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-[#c084fc] to-violet-400">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
               resultados.
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-zinc-500 max-w-2xl mb-12 leading-relaxed font-medium">
+          <p className="text-lg md:text-xl text-slate-500 max-w-2xl mb-12 leading-relaxed font-medium">
             A INFLUNEXT conecta marcas e influencers com{' '}
-            <span className="text-zinc-200 font-semibold">dados reais</span>,
+            <span className="text-slate-900 font-semibold underline decoration-purple-500/30">dados reais</span>,
             gestão profissional de carreira e{' '}
-            <span className="text-zinc-200 font-semibold">segurança total nas transações</span>{' '}
+            <span className="text-slate-900 font-semibold underline decoration-purple-500/30">segurança total</span>{' '}
             — do comércio de bairro à multinacional.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 mb-20">
             <Link
               href="/auth/signup?type=influencer"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white px-8 py-4 rounded-2xl font-bold text-sm uppercase tracking-wider transition-all shadow-[0_0_32px_rgba(192,132,252,0.3)] hover:shadow-[0_0_52px_rgba(192,132,252,0.5)]"
+              className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-2xl font-bold text-sm uppercase tracking-wider transition-all shadow-xl shadow-purple-600/20 hover:scale-[1.02] active:scale-95"
             >
               Começar agora, é grátis <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               href="/auth/signup?type=company"
-              className="border border-purple-500/25 hover:bg-purple-500/[0.06] hover:border-purple-500/40 text-white px-8 py-4 rounded-2xl font-bold text-sm uppercase tracking-wider transition-all"
+              className="border border-slate-200 hover:bg-slate-50 text-slate-900 px-8 py-4 rounded-2xl font-bold text-sm uppercase tracking-wider transition-all"
             >
               Sou uma Marca →
             </Link>
           </div>
 
-          {/* Metrics bar */}
-          <div className="w-full max-w-2xl border border-white/[0.06] bg-white/[0.02] rounded-2xl grid grid-cols-3 divide-x divide-white/[0.06]">
+          {/* Metrics bar - Light Style */}
+          <div className="w-full max-w-2xl border border-slate-100 bg-white shadow-xl shadow-purple-500/5 rounded-2xl grid grid-cols-3 divide-x divide-slate-100">
             {STATS.map(s => (
               <div key={s.label} className="flex flex-col items-center py-5 px-4">
-                <span className="text-2xl md:text-3xl font-black text-white tracking-tight" style={{ textShadow: '0 0 20px rgba(192,132,252,0.35)' }}>
+                <span className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
                   {s.value}
                 </span>
-                <span className="text-[10px] md:text-[11px] text-zinc-600 font-bold uppercase tracking-widest mt-1 text-center">{s.label}</span>
+                <span className="text-[10px] md:text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-1 text-center">{s.label}</span>
               </div>
             ))}
           </div>
@@ -134,35 +130,35 @@ export default function LandingPageClient() {
 
         {/* ── A FERIDA ───────────────────────────────────────────────────────── */}
         <section className="w-full max-w-7xl mx-auto px-6 lg:px-12 pb-24 z-10">
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-8 md:p-12 space-y-8">
+          <div className="bg-slate-50 border border-slate-100 rounded-3xl p-8 md:p-12 space-y-8 shadow-inner">
 
-            <div className="space-y-2">
-              <p className="text-red-400 text-[11px] font-black uppercase tracking-[0.25em]">⚠ Você ainda faz isso?</p>
-              <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">
-                Se você respondeu <span className="text-red-400">SIM</span> para qualquer um destes…
+            <div className="space-y-2 text-center md:text-left">
+              <p className="text-red-500 text-[11px] font-black uppercase tracking-[0.25em]">⚠ Você ainda faz isso?</p>
+              <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
+                Se você respondeu <span className="text-red-500">SIM</span> para qualquer um destes…
               </h2>
-              <p className="text-zinc-500 text-sm">…você está deixando dinheiro e crescimento na mesa todo dia.</p>
+              <p className="text-slate-500 text-sm">…você está deixando dinheiro e crescimento na mesa todo dia.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {PAIN_POINTS.map((pain, i) => (
                 <div
                   key={i}
-                  className="flex items-start gap-4 p-5 bg-red-950/20 border border-red-500/[0.15] rounded-2xl group hover:border-red-500/[0.30] transition-all"
+                  className="flex items-start gap-4 p-5 bg-white border border-red-100 rounded-2xl group hover:border-red-200 transition-all shadow-sm"
                 >
                   <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-zinc-300 font-medium leading-relaxed">{pain}</p>
+                  <p className="text-sm text-slate-700 font-medium leading-relaxed">{pain}</p>
                 </div>
               ))}
             </div>
 
-            <div className="pt-4 border-t border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p className="text-zinc-500 text-sm font-semibold">
-                Isso tem solução. E ela chama-se <span className="text-white font-black">INFLUNEXT</span>.
+            <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-slate-500 text-sm font-semibold">
+                Isso tem solução. E ela chama-se <span className="text-slate-900 font-black">InfluNext</span>.
               </p>
               <Link
                 href="/auth/signup?type=influencer"
-                className="inline-flex items-center gap-2 text-sm font-black text-purple-400 hover:text-purple-300 transition-colors uppercase tracking-wider"
+                className="inline-flex items-center gap-2 text-sm font-black text-purple-600 hover:text-purple-700 transition-colors uppercase tracking-wider"
               >
                 Quero resolver isso agora <ArrowRight className="w-4 h-4" />
               </Link>
@@ -173,27 +169,27 @@ export default function LandingPageClient() {
         {/* ── ECOSYSTEM FLOW ─────────────────────────────────────────────────── */}
         <section className="w-full max-w-7xl mx-auto px-6 lg:px-12 pb-24 z-10">
           <div className="text-center mb-12 space-y-2">
-            <p className="text-purple-400 text-[11px] font-black uppercase tracking-[0.25em]">Como o Ecossistema Funciona</p>
-            <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">O fluxo que elimina o risco</h2>
+            <p className="text-purple-600 text-[11px] font-black uppercase tracking-[0.25em]">Como o Ecossistema Funciona</p>
+            <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">O fluxo que elimina o risco</h2>
           </div>
 
-          <div className="flex flex-col md:flex-row items-center justify-center gap-0">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4">
             {FLOW_STEPS.map((step, i) => (
               <React.Fragment key={i}>
-                <div className={`flex flex-col items-center text-center p-6 rounded-2xl min-w-[160px] transition-all ${step.highlight
-                  ? 'bg-gradient-to-br from-purple-600/20 to-violet-600/10 border border-purple-500/30 shadow-[0_0_30px_rgba(192,132,252,0.15)]'
-                  : 'bg-white/[0.02] border border-white/[0.05]'
+                <div className={`flex flex-col items-center text-center p-6 rounded-2xl min-w-[180px] transition-all ${step.highlight
+                  ? 'bg-white border-2 border-purple-200 shadow-xl shadow-purple-500/10'
+                  : 'bg-white border border-slate-100 shadow-sm'
                 }`}>
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black mb-3 ${step.highlight ? 'bg-purple-600 text-white shadow-[0_0_16px_rgba(192,132,252,0.4)]' : 'bg-white/[0.06] text-zinc-400'}`}>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black mb-3 ${step.highlight ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
                     {i + 1}
                   </div>
-                  <p className={`font-black text-sm ${step.highlight ? 'text-[#c084fc]' : 'text-white'}`}>{step.label}</p>
-                  <p className="text-[10px] text-zinc-600 font-semibold mt-1 max-w-[120px]">{step.sub}</p>
+                  <p className={`font-black text-sm ${step.highlight ? 'text-purple-600' : 'text-slate-900'}`}>{step.label}</p>
+                  <p className="text-[10px] text-slate-400 font-semibold mt-1 max-w-[120px]">{step.sub}</p>
                 </div>
 
                 {i < FLOW_STEPS.length - 1 && (
                   <div className="flex items-center justify-center w-8 md:w-12 h-8 md:h-auto my-2 md:my-0 flex-shrink-0">
-                    <ArrowRight className="w-5 h-5 text-purple-500/50 rotate-90 md:rotate-0" />
+                    <ArrowRight className="w-5 h-5 text-slate-200 rotate-90 md:rotate-0" />
                   </div>
                 )}
               </React.Fragment>
@@ -204,8 +200,8 @@ export default function LandingPageClient() {
         {/* ── O ABRAÇO: CREATOR + BRAND ──────────────────────────────────────── */}
         <section className="w-full max-w-7xl mx-auto px-6 lg:px-12 pb-24 z-10">
           <div className="text-center mb-12 space-y-2">
-            <p className="text-purple-400 text-[11px] font-black uppercase tracking-[0.25em]">A Proposta de Valor</p>
-            <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">
+            <p className="text-purple-600 text-[11px] font-black uppercase tracking-[0.25em]">A Proposta de Valor</p>
+            <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
               Dois lados. Um ecossistema. Resultado real.
             </h2>
           </div>
@@ -213,37 +209,37 @@ export default function LandingPageClient() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
             {/* Creator Side */}
-            <div className="relative bg-white/[0.02] border border-purple-500/[0.12] hover:border-purple-500/[0.25] rounded-3xl p-8 md:p-10 overflow-hidden group transition-all duration-500">
-              <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-purple-600/10 blur-[80px] group-hover:bg-purple-600/15 transition-all" />
+            <div className="relative bg-white border border-slate-100 hover:border-purple-200 rounded-[2.5rem] p-8 md:p-10 overflow-hidden group transition-all duration-500 shadow-sm hover:shadow-xl hover:shadow-purple-500/5">
+              <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-purple-50 blur-[80px] group-hover:bg-purple-100 transition-all" />
               <div className="relative z-10 space-y-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-violet-700 flex items-center justify-center shadow-[0_0_24px_rgba(192,132,252,0.3)]">
+                  <div className="w-12 h-12 rounded-2xl bg-purple-600 flex items-center justify-center shadow-lg shadow-purple-600/20">
                     <Rocket className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Para Influencers</p>
-                    <h3 className="text-xl font-black text-white">Workspace de Carreira</h3>
+                    <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest">Para Influencers</p>
+                    <h3 className="text-xl font-black text-slate-900">Workspace de Carreira</h3>
                   </div>
                 </div>
 
-                <p className="text-zinc-500 text-sm leading-relaxed">
+                <p className="text-slate-500 text-sm leading-relaxed">
                   Pare de improvisar. Nossa IA gerencia sua carreira em tempo real — você foca em criar, a plataforma cuida do resto.
                 </p>
 
                 <ul className="space-y-3">
                   {CREATOR_FEATURES.map(({ icon: Icon, text }) => (
                     <li key={text} className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center flex-shrink-0">
-                        <Icon className="w-3.5 h-3.5 text-purple-400" />
+                      <div className="w-8 h-8 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center flex-shrink-0">
+                        <Icon className="w-3.5 h-3.5 text-purple-600" />
                       </div>
-                      <span className="text-sm text-zinc-300 font-medium">{text}</span>
+                      <span className="text-sm text-slate-600 font-medium">{text}</span>
                     </li>
                   ))}
                 </ul>
 
                 <Link
                   href="/auth/signup?type=influencer"
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-[0_0_20px_rgba(192,132,252,0.2)] hover:shadow-[0_0_32px_rgba(192,132,252,0.35)]"
+                  className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3.5 rounded-xl font-bold text-sm transition-all"
                 >
                   Quero meu Workspace <ArrowRight className="w-4 h-4" />
                 </Link>
@@ -251,37 +247,37 @@ export default function LandingPageClient() {
             </div>
 
             {/* Brand Side */}
-            <div className="relative bg-white/[0.02] border border-blue-500/[0.10] hover:border-blue-500/[0.22] rounded-3xl p-8 md:p-10 overflow-hidden group transition-all duration-500">
-              <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-blue-600/8 blur-[80px] group-hover:bg-blue-600/12 transition-all" />
+            <div className="relative bg-white border border-slate-100 hover:border-blue-200 rounded-[2.5rem] p-8 md:p-10 overflow-hidden group transition-all duration-500 shadow-sm hover:shadow-xl hover:shadow-blue-500/5">
+              <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-blue-50 blur-[80px] group-hover:bg-blue-100 transition-all" />
               <div className="relative z-10 space-y-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center shadow-[0_0_24px_rgba(59,130,246,0.3)]">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/20">
                     <BarChart3 className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Para Marcas</p>
-                    <h3 className="text-xl font-black text-white">Marketplace com Escrow</h3>
+                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Para Marcas</p>
+                    <h3 className="text-xl font-black text-slate-900">Marketplace com Escrow</h3>
                   </div>
                 </div>
 
-                <p className="text-zinc-500 text-sm leading-relaxed">
+                <p className="text-slate-500 text-sm leading-relaxed">
                   Contrate com dados. Pague com segurança. Acompanhe o ROI. Sem planilha, sem DM, sem surpresa.
                 </p>
 
                 <ul className="space-y-3">
                   {BRAND_FEATURES.map(({ icon: Icon, text }) => (
                     <li key={text} className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
-                        <Icon className="w-3.5 h-3.5 text-blue-400" />
+                      <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
+                        <Icon className="w-3.5 h-3.5 text-blue-600" />
                       </div>
-                      <span className="text-sm text-zinc-300 font-medium">{text}</span>
+                      <span className="text-sm text-slate-600 font-medium">{text}</span>
                     </li>
                   ))}
                 </ul>
 
                 <Link
                   href="/auth/signup?type=company"
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-600 hover:to-cyan-600 text-white px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-[0_0_20px_rgba(59,130,246,0.2)] hover:shadow-[0_0_32px_rgba(59,130,246,0.35)]"
+                  className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3.5 rounded-xl font-bold text-sm transition-all"
                 >
                   Quero contratar com segurança <ArrowRight className="w-4 h-4" />
                 </Link>
@@ -289,57 +285,44 @@ export default function LandingPageClient() {
             </div>
           </div>
         </section>
+
         {/* ── CTA FINAL ──────────────────────────────────────────────────────── */}
         <section className="w-full max-w-7xl mx-auto px-6 lg:px-12 pb-28 z-10">
-          <div className="relative rounded-3xl overflow-hidden">
-            {/* BG layers */}
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-950/60 via-[#0a0618] to-violet-950/40" />
-            <div className="absolute inset-0 border border-purple-500/[0.15] rounded-3xl" />
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-purple-500/40 to-transparent" />
-            <div className="absolute inset-0 opacity-50" style={{
-              backgroundImage: 'radial-gradient(ellipse at 50% -20%, rgba(192,132,252,0.12) 0%, transparent 65%)',
-            }} />
-
-            <div className="relative z-10 text-center px-8 py-16 md:py-24 space-y-6 max-w-3xl mx-auto">
+          <div className="relative rounded-[3rem] overflow-hidden bg-slate-900 p-8 md:p-16 lg:p-24 shadow-2xl">
+            <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-purple-600/20 to-transparent" />
+            
+            <div className="relative z-10 text-center space-y-8 max-w-4xl mx-auto">
               <p className="text-purple-400 text-[11px] font-black uppercase tracking-[0.25em]">Chega de amadorismo</p>
 
-              <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-[-0.03em] leading-tight">
+              <h2 className="text-4xl md:text-5xl lg:text-7xl font-black text-white tracking-[-0.04em] leading-tight">
                 O amadorismo está{' '}
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-rose-400">
-                  custando caro.
-                </span>
+                <span className="text-red-400">custando caro.</span>
                 <br />
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-300 via-[#c084fc] to-violet-400">
-                  Profissionaliza agora.
-                </span>
+                <span className="text-purple-400">Profissionaliza agora.</span>
               </h2>
 
-              <p className="text-zinc-500 text-base md:text-lg leading-relaxed max-w-xl mx-auto">
+              <p className="text-slate-400 text-base md:text-xl leading-relaxed max-w-2xl mx-auto">
                 Seja você uma marca que quer{' '}
-                <span className="text-zinc-300 font-semibold">resultado real</span>{' '}
+                <span className="text-white font-semibold">resultado real</span>{' '}
                 ou um criador que quer ser{' '}
-                <span className="text-zinc-300 font-semibold">levado a sério</span>{' '}
+                <span className="text-white font-semibold">levado a sério</span>{' '}
                 — o seu lugar é aqui.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
                 <Link
                   href="/auth/signup?type=influencer"
-                  className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white px-10 py-5 rounded-2xl font-black text-base uppercase tracking-wider transition-all shadow-[0_0_40px_rgba(192,132,252,0.35)] hover:shadow-[0_0_70px_rgba(192,132,252,0.55)]"
+                  className="inline-flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-10 py-5 rounded-2xl font-black text-base uppercase tracking-wider transition-all shadow-xl shadow-purple-600/30 hover:scale-105 active:scale-95"
                 >
                   Começar agora, é grátis <ArrowRight className="w-5 h-5" />
                 </Link>
                 <Link
                   href="/auth/login"
-                  className="border border-white/[0.08] hover:bg-white/[0.04] text-zinc-500 hover:text-white px-10 py-5 rounded-2xl font-bold text-sm uppercase tracking-wider transition-all"
+                  className="border border-white/10 hover:bg-white/5 text-white px-10 py-5 rounded-2xl font-bold text-sm uppercase tracking-wider transition-all"
                 >
                   Já tenho conta
                 </Link>
               </div>
-
-              <p className="text-zinc-700 text-xs pt-2">
-                Sem cartão de crédito. Sem fidelidade. Cancele quando quiser.
-              </p>
             </div>
           </div>
         </section>
@@ -347,24 +330,21 @@ export default function LandingPageClient() {
       </main>
 
       {/* ── Footer ─────────────────────────────────────────────────────────────── */}
-      <footer className="w-full border-t border-white/[0.04] py-10 px-6 lg:px-12 bg-[#080810] z-10">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex flex-col items-center md:items-start gap-1.5">
+      <footer className="w-full border-t border-slate-50 py-12 px-6 lg:px-12 bg-white">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex flex-col items-center md:items-start gap-2">
             <Logo size="sm" href="/" />
-            <p className="text-zinc-700 text-xs">© 2026 INFLUNEXT. Todos os direitos reservados.</p>
-            <a href="mailto:contato@influnext.com.br" className="text-zinc-600 text-xs hover:text-purple-400 transition-colors">
-              contato@influnext.com.br
-            </a>
+            <p className="text-slate-400 text-xs">© 2026 InfluNext. Todos os direitos reservados.</p>
           </div>
-          <div className="flex flex-col items-center md:items-end gap-3">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/[0.06] text-[11px] font-bold text-zinc-600 tracking-wider">
-              🛡️ Powered by IA & Escrow — Feito no Brasil
-            </div>
-            <div className="flex gap-6 text-[11px] text-zinc-700">
-              <Link href="/auth/login" className="hover:text-zinc-400 transition-colors font-semibold">Entrar</Link>
-              <Link href="/auth/signup" className="hover:text-zinc-400 transition-colors font-semibold">Cadastrar</Link>
-              <Link href="/dashboard/marketplace" className="hover:text-zinc-400 transition-colors font-semibold">Marketplace</Link>
-            </div>
+          
+          <div className="flex gap-8 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
+            <Link href="/auth/login" className="hover:text-purple-600 transition-colors">Entrar</Link>
+            <Link href="/auth/signup" className="hover:text-purple-600 transition-colors">Cadastrar</Link>
+            <Link href="/dashboard/marketplace" className="hover:text-purple-600 transition-colors">Marketplace</Link>
+          </div>
+
+          <div className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-slate-50 border border-slate-100 text-[10px] font-black text-slate-400 tracking-wider">
+            🛡️ TECNOLOGIA IA & ESCROW — FEITO NO BRASIL
           </div>
         </div>
       </footer>

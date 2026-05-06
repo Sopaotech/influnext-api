@@ -1,13 +1,17 @@
 import Stripe from 'stripe';
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  console.warn('⚠️  STRIPE_SECRET_KEY não configurada. Pagamentos desativados.');
+const secretKey = process.env.STRIPE_SECRET_KEY;
+
+if (!secretKey) {
+  console.warn('⚠️  STRIPE_SECRET_KEY não configurada. Funcionalidades de pagamento estarão indisponíveis.');
 }
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2023-10-16' as any,
-  appInfo: {
-    name: 'InfluNext Platform',
-    version: '1.0.0',
-  },
-});
+export const stripe = secretKey 
+  ? new Stripe(secretKey, {
+      apiVersion: '2023-10-16' as any,
+      appInfo: {
+        name: 'InfluNext Platform',
+        version: '1.0.0',
+      },
+    })
+  : null;

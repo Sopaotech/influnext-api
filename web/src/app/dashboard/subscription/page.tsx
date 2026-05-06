@@ -78,8 +78,9 @@ export default function SubscriptionPage() {
           <h1 className="text-3xl font-black text-white tracking-tighter uppercase">Upgrade para o Plano Pro</h1>
           <p className="text-zinc-500 font-medium">Desbloqueie todo o poder da InfluNext e escale sua carreira.</p>
         </div>
-        <div className="px-4 py-2 bg-purple-500/10 border border-purple-500/20 rounded-full">
-           <span className="text-xs font-black text-purple-400 uppercase tracking-widest italic">Trial de 15 dias ativo</span>
+        <div className="px-5 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center gap-2 shadow-lg shadow-emerald-500/5">
+           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+           <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest italic">Teste Grátis de 7 dias disponível</span>
         </div>
       </div>
 
@@ -88,13 +89,13 @@ export default function SubscriptionPage() {
         {/* Left Side: Benefits Grid */}
         <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
           {BENEFITS.map((benefit, idx) => (
-            <div key={idx} className="p-6 bg-white/[0.02] border border-white/[0.05] rounded-3xl space-y-4 hover:border-purple-500/30 transition-all group">
-              <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <benefit.icon className="w-6 h-6 text-purple-400" />
+            <div key={idx} className="p-8 bg-slate-900/50 border border-white/[0.03] rounded-[2rem] space-y-4 hover:border-purple-500/30 transition-all group shadow-xl">
+              <div className="w-14 h-14 rounded-2xl bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition-transform border border-purple-500/10">
+                <benefit.icon className="w-7 h-7 text-purple-400" />
               </div>
-              <div className="space-y-1">
-                <h3 className="font-black text-white text-lg">{benefit.title}</h3>
-                <p className="text-sm text-zinc-500 leading-relaxed font-medium">{benefit.description}</p>
+              <div className="space-y-2">
+                <h3 className="font-black text-white text-xl tracking-tight leading-none">{benefit.title}</h3>
+                <p className="text-[13px] text-slate-400 leading-relaxed font-bold">{benefit.description}</p>
               </div>
             </div>
           ))}
@@ -103,18 +104,18 @@ export default function SubscriptionPage() {
         {/* Right Side: Checkout Card */}
         <div className="relative group">
           <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-          <div className="relative bg-[#100c1e] border border-purple-500/30 rounded-[2.5rem] p-10 flex flex-col items-center text-center space-y-8 h-full">
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-[0_0_40px_rgba(192,132,252,0.3)]">
-              <Rocket className="w-10 h-10 text-white" />
+          <div className="relative bg-white border border-purple-100 rounded-[2.5rem] p-10 flex flex-col items-center text-center space-y-8 h-full shadow-2xl shadow-purple-500/5">
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
+               <Rocket className="w-10 h-10 text-white" />
             </div>
 
             <div className="space-y-2">
-              <span className="text-purple-400 text-[10px] font-black uppercase tracking-[0.2em]">Sua jornada começa aqui</span>
-              <h2 className="text-2xl font-black text-white">InfluNext PRO</h2>
-              <div className="flex items-baseline gap-1 justify-center py-4">
-                <span className="text-2xl font-black text-zinc-500">R$</span>
-                <span className="text-7xl font-black text-white tracking-tighter">97</span>
-                <span className="text-lg font-bold text-zinc-500">/mês</span>
+              <span className="text-purple-400 text-[10px] font-black uppercase tracking-[0.3em]">Aceleração de Elite</span>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tighter">InfluNext <span className="text-purple-500 italic">PRO</span></h2>
+              <div className="flex items-baseline gap-1 justify-center py-6">
+                <span className="text-2xl font-black text-slate-400">R$</span>
+                <span className="text-8xl font-black text-slate-900 tracking-tighter">97</span>
+                <span className="text-xl font-bold text-slate-400">/mês</span>
               </div>
             </div>
 

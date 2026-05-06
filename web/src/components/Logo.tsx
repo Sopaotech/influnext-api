@@ -19,11 +19,11 @@ export function Logo({ size = 'md', href = '/', className = '' }: LogoProps) {
 
   const content = (
     <div className={`font-black tracking-tighter select-none ${textSize} ${className} font-sans`}>
-      <span className="text-[#e8e0f5]">INFLUNE</span>
-      <span className="text-transparent bg-clip-text bg-gradient-to-tr from-[#534AB7] to-[#C4BEFF] drop-shadow-[0_0_15px_rgba(196,190,255,0.4)] relative">
+      <span className="text-slate-900">INFLUNE</span>
+      <span className="text-transparent bg-clip-text bg-gradient-to-tr from-purple-600 to-indigo-600 relative">
         X
       </span>
-      <span className="text-[#e8e0f5]">T</span>
+      <span className="text-slate-900">T</span>
     </div>
   );
 
