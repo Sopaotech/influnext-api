@@ -129,6 +129,10 @@ function CalendarContent() {
              <div className="h-1 w-8 bg-purple-600 rounded-full" />
              <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.4em]">Content_Strategy_Engine</span>
           </div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tighter leading-none">
+            Calendário de <span className="text-purple-600">Conteúdo</span>
+          </h1>
+        </div>
         <div className="flex items-center gap-3 bg-white border border-slate-100 rounded-2xl px-5 py-3 w-full md:w-96 focus-within:border-purple-300 transition-all duration-500 shadow-sm">
           <Search className="w-4 h-4 text-slate-400" />
           <input 

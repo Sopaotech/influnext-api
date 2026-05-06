@@ -26,6 +26,10 @@ export class PaymentController {
       if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
 
       // Garante que o usuário tem um Customer ID na Stripe
+      if (!stripe) {
+        return res.status(500).json({ error: 'Serviço de pagamentos não configurado.' });
+      }
+
       let stripeCustomerId = user.stripeCustomerId;
       if (!stripeCustomerId) {
         const customer = await stripe.customers.create({
@@ -84,6 +88,10 @@ export class PaymentController {
 
       // Valor em centavos
       const amount = Math.round(contract.budget * 100);
+
+      if (!stripe) {
+        return res.status(500).json({ error: 'Serviço de pagamentos não configurado.' });
+      }
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card', 'pix'],
@@ -145,6 +153,10 @@ export class PaymentController {
       // Valor em centavos
       const amount = Math.round(contract.budget * 100);
 
+      if (!stripe) {
+        return res.status(500).json({ error: 'Serviço de pagamentos não configurado.' });
+      }
+
       const paymentIntent = await stripe.paymentIntents.create({
         amount,
         currency: 'brl',
@@ -185,6 +197,9 @@ export class PaymentController {
     let event: any;
 
     try {
+      if (!stripe) {
+        return res.status(500).json({ error: 'Webhook: Stripe não configurado.' });
+      }
       // É necessário o raw body para validar a assinatura
       // No Express, isso geralmente requer um middleware específico (express.raw)
       event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
