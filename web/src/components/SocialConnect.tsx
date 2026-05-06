@@ -2,7 +2,7 @@
 import React from 'react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
-import { Plus, CheckCircle2, Instagram, Youtube } from 'lucide-react';
+import { Plus, CheckCircle2, Camera, Play } from 'lucide-react';
 
 interface SocialAccount {
   platform: 'INSTAGRAM' | 'TIKTOK' | 'YOUTUBE';
@@ -44,7 +44,7 @@ export function SocialConnect({ isHorizontal = false, connectedPlatforms = [] }:
       case 'INSTAGRAM':
         return { 
           name: 'Instagram', 
-          icon: Instagram,
+          icon: Camera,
           color: 'text-pink-600', 
           bg: 'bg-pink-50',
           border: 'group-hover:border-pink-200'
@@ -64,7 +64,7 @@ export function SocialConnect({ isHorizontal = false, connectedPlatforms = [] }:
       case 'YOUTUBE':
         return { 
           name: 'YouTube', 
-          icon: Youtube,
+          icon: Play,
           color: 'text-red-600', 
           bg: 'bg-red-50',
           border: 'group-hover:border-red-200'
