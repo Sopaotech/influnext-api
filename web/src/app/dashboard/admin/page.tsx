@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import { toast } from 'sonner';
 import { MetricCard } from '@/components/MetricCard';
 import { Users, DollarSign, FileText, AlertTriangle, ShieldCheck, Activity, TrendingUp, BarChart3, Sparkles, Zap, Brain, CheckCircle2, Eye, MessageSquare, LifeBuoy } from 'lucide-react';
 
