@@ -33,11 +33,13 @@ api.interceptors.response.use(
   (error) => {
     // Diagnóstico de erro de rede (Ex: API fora do ar, CORS, DNS)
     if (!error.response) {
-      console.error('🚨 [NETWORK ERROR] Falha crítica de conexão:', {
-        message: error.message,
+      console.error('❌ [NETWORK ERROR]: Nenhuma resposta do servidor.');
+      console.error('Verifique:', {
         url: error.config?.url,
-        baseURL: error.config?.baseURL,
-        timestamp: new Date().toISOString()
+        method: error.config?.method,
+        baseUrl: error.config?.baseURL,
+        shield: 'Se estiver usando Brave, desative o Shield para testar.',
+        cors: 'Verifique se o domínio do front está no ALLOWED_ORIGINS do backend.'
       });
     }
 
