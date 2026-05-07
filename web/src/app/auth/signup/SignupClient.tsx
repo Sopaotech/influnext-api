@@ -444,33 +444,75 @@ export default function SignupClient() {
 
                 <div className="grid grid-cols-1 gap-3">
                   {[
-                    { id: 'instagram', name: 'Instagram', icon: '📸', color: 'hover:border-pink-200 hover:bg-pink-50 text-pink-600' },
-                    { id: 'tiktok', name: 'TikTok', icon: '🎵', color: 'hover:border-slate-300 hover:bg-slate-50 text-slate-900' },
-                    { id: 'youtube', name: 'YouTube', icon: '📺', color: 'hover:border-red-200 hover:bg-red-50 text-red-600' }
+                    { 
+                      id: 'instagram', 
+                      name: 'Instagram', 
+                      icon: (
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] flex items-center justify-center shadow-sm">
+                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                          </svg>
+                        </div>
+                      ),
+                      color: 'hover:border-purple-200 hover:bg-purple-50/30 text-slate-900' 
+                    },
+                    { 
+                      id: 'tiktok', 
+                      name: 'TikTok', 
+                      icon: (
+                        <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center shadow-sm">
+                          <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.89-.6-4.13-1.47-.13 3.44-.3 6.88-.45 10.32-.06 1.58-.56 3.17-1.6 4.38-1.14 1.36-2.88 2.09-4.63 2.13-2.07.13-4.22-.72-5.49-2.39-1.27-1.74-1.31-4.2-.23-6.01.94-1.57 2.66-2.58 4.49-2.61.31-.01.62.01.93.04v4.04c-.6-.11-1.25-.01-1.79.29-.71.41-1.07 1.25-.95 2.05.11.9.96 1.57 1.86 1.5.81-.02 1.51-.62 1.64-1.42.13-2.18.26-4.36.39-6.54V.02h-3.91z"/>
+                          </svg>
+                        </div>
+                      ),
+                      color: 'hover:border-slate-300 hover:bg-slate-50 text-slate-900' 
+                    },
+                    { 
+                      id: 'youtube', 
+                      name: 'YouTube', 
+                      icon: (
+                        <div className="w-8 h-8 rounded-lg bg-[#FF0000] flex items-center justify-center shadow-sm">
+                          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                          </svg>
+                        </div>
+                      ),
+                      color: 'hover:border-red-200 hover:bg-red-50 text-slate-900' 
+                    }
                   ].map((plat) => (
                     <button 
                       key={plat.id}
                       onClick={async () => {
-                        const id = toast.loading(`Iniciando conexão com ${plat.name}...`);
+                        const id = toast.loading(`Iniciando conexão segura com ${plat.name}...`);
                         try {
                           const { data } = await api.get('/auth/social/urls');
                           const url = data[plat.id];
                           if (url) {
                             window.location.href = url;
                           } else {
-                            toast.error('URL de conexão não encontrada.', { id });
+                            toast.error('O serviço de conexão está temporariamente indisponível.', { id });
                           }
                         } catch (err) {
-                          toast.error('Erro ao conectar rede social.', { id });
+                          toast.error('Falha na comunicação com a API InfluNext.', { id });
                         }
                       }}
-                      className={`flex items-center justify-between p-5 bg-white border border-slate-100 rounded-[1.5rem] transition-all shadow-sm hover:shadow-md ${plat.color}`}
+                      className={`flex items-center justify-between p-5 bg-white border border-slate-100 rounded-[2rem] transition-all duration-300 shadow-sm hover:shadow-xl hover:scale-[1.02] active:scale-95 group ${plat.color}`}
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">{plat.icon}</span>
-                        <span className="text-xs font-black uppercase tracking-widest">{plat.name}</span>
+                      <div className="flex items-center gap-4">
+                        {plat.icon}
+                        <div className="text-left">
+                          <span className="block text-xs font-black uppercase tracking-widest leading-none mb-1">{plat.name}</span>
+                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-tight">Vincular métricas oficiais</span>
+                        </div>
                       </div>
-                      <span className="text-[9px] font-black uppercase text-purple-600 bg-purple-50 px-3 py-1.5 rounded-full border border-purple-100">Conectar</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-black uppercase text-purple-600 bg-purple-50 px-4 py-2 rounded-xl border border-purple-100 group-hover:bg-purple-600 group-hover:text-white group-hover:border-purple-600 transition-all">
+                          Conectar
+                        </span>
+                      </div>
                     </button>
                   ))}
                 </div>

@@ -27,10 +27,20 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Interceptor para tratar 401 (Unauthorized) automaticamente
+// Interceptor para tratar erros e logs de diagnóstico
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Diagnóstico de erro de rede (Ex: API fora do ar, CORS, DNS)
+    if (!error.response) {
+      console.error('🚨 [NETWORK ERROR] Falha crítica de conexão:', {
+        message: error.message,
+        url: error.config?.url,
+        baseURL: error.config?.baseURL,
+        timestamp: new Date().toISOString()
+      });
+    }
+
     if (error.response?.status === 401) {
       Cookies.remove('influnext_token');
       Cookies.remove('influnext_role');

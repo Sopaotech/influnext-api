@@ -40,6 +40,15 @@ app.use('/v1/payments/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(trackPageView);
 
+// Endpoint de Health Check para Diagnóstico de Produção
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'online', 
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV || 'development'
+  });
+});
+
 // Todas as suas rotas começarão com /v1
 app.use('/v1', routes);
 
