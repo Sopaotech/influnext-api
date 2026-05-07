@@ -7,8 +7,8 @@ async function main() {
   console.log('🌱 Iniciando Seed de Produção...');
 
   // 1. Admin Master
-  const adminEmail = process.env.ADMIN_EMAIL || 'alexsandro@influnext.com.br';
-  const adminPassword = process.env.ADMIN_PASSWORD || 'Mudar123!';
+  const adminEmail = process.env.ADMIN_EMAIL || 'Alexsandrojunior144@gmail.com'.toLowerCase().trim();
+  const adminPassword = process.env.ADMIN_PASSWORD || 'Juninho1440@';
   const passwordHash = await bcrypt.hash(adminPassword, 12);
 
   const admin = await prisma.user.upsert({

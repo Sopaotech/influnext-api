@@ -4,8 +4,8 @@ import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  const email = 'alexsandro@influnext.com.br'.toLowerCase().trim();
-  const newPassword = 'Mudar123!';
+  const email = 'Alexsandrojunior144@gmail.com'.toLowerCase().trim();
+  const newPassword = 'Juninho1440@';
   const passwordHash = await bcrypt.hash(newPassword, 12);
 
   console.log(`🔐 Tentando restaurar acesso para: ${email}...`);
