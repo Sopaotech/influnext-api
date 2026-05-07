@@ -179,9 +179,14 @@ export default function LoginPage() {
                 Criar conta grátis
               </Link>
               <button 
-                onClick={() => {
+                onClick={async () => {
                   const url = process.env.NEXT_PUBLIC_API_URL;
-                  alert(`DEBUG - API URL: ${url || 'FALLBACK (Local)'}\nENV: ${process.env.NODE_ENV}`);
+                  try {
+                    const res = await api.get('/health');
+                    alert(`✅ API CONECTADA!\nURL: ${url || 'FALLBACK'}\nStatus: ${res.data.status}\nAmbiente: ${res.data.env}`);
+                  } catch (e) {
+                    alert(`❌ ERRO DE CONEXÃO!\nURL Tentada: ${url || 'FALLBACK'}\nErro: ${e instanceof Error ? e.message : 'Desconhecido'}`);
+                  }
                 }}
                 className="text-[10px] text-slate-200 hover:text-slate-400 transition-colors font-black uppercase tracking-widest opacity-20"
               >
