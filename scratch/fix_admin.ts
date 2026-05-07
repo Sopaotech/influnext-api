@@ -15,13 +15,15 @@ async function main() {
     update: {
       passwordHash,
       role: 'ADMIN',
-      onboardingCompleted: true
+      onboardingCompleted: true,
+      subscriptionStatus: 'ACTIVE'
     },
     create: {
       email,
       passwordHash,
       role: 'ADMIN',
-      onboardingCompleted: true
+      onboardingCompleted: true,
+      subscriptionStatus: 'ACTIVE'
     },
   });
 

