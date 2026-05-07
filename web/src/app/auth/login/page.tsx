@@ -178,6 +178,15 @@ export default function LoginPage() {
               <Link href="/auth/signup" className="text-[10px] text-slate-400 hover:text-purple-600 transition-colors font-black uppercase tracking-widest">
                 Criar conta grátis
               </Link>
+              <button 
+                onClick={() => {
+                  const url = process.env.NEXT_PUBLIC_API_URL;
+                  alert(`DEBUG - API URL: ${url || 'FALLBACK (Local)'}\nENV: ${process.env.NODE_ENV}`);
+                }}
+                className="text-[10px] text-slate-200 hover:text-slate-400 transition-colors font-black uppercase tracking-widest opacity-20"
+              >
+                Debug
+              </button>
               <Link href="/" className="text-[10px] text-slate-300 hover:text-slate-500 transition-colors font-black uppercase tracking-widest">
                 Voltar ao início
               </Link>

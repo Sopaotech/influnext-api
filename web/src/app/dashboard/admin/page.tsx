@@ -139,6 +139,53 @@ export default function AdminDashboard() {
         />
       </section>
 
+      {/* Social Assets Section for Admin */}
+      <section className="bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl">
+         <div className="absolute top-0 right-0 p-8 opacity-10">
+            <ShieldCheck className="w-32 h-32 text-white" />
+         </div>
+         <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div className="space-y-4">
+               <div>
+                  <div className="text-purple-400 font-black text-[10px] tracking-[0.3em] uppercase mb-1">Configuração de Elite</div>
+                  <h2 className="text-2xl font-black tracking-tight">Vincular Ativos da Empresa</h2>
+               </div>
+               <p className="text-slate-400 text-xs font-medium max-w-md">
+                 Conecte o Instagram e outras redes da <b>InfluNext</b> para monitorar métricas oficiais, validar parcerias e usar ativos da marca nas campanhas.
+               </p>
+            </div>
+            <div className="flex flex-wrap gap-4">
+               <button 
+                 onClick={() => {
+                   const id = toast.loading('Iniciando conexão com Instagram da Empresa...');
+                   api.get('/auth/social/urls').then(res => {
+                     if (res.data.instagram) window.location.href = res.data.instagram;
+                   }).catch(() => toast.error('Erro ao buscar URL de conexão.', { id }));
+                 }}
+                 className="px-6 py-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-2xl flex items-center gap-3 transition-all group"
+               >
+                 <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-pink-600 flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4 text-white" />
+                 </div>
+                 <div className="text-left">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-300">Conectar</div>
+                    <div className="text-sm font-bold">Instagram Pro</div>
+                 </div>
+               </button>
+
+               <button className="px-6 py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3 opacity-50 cursor-not-allowed">
+                 <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-slate-500" />
+                 </div>
+                 <div className="text-left">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Em Breve</div>
+                    <div className="text-sm font-bold text-slate-500">TikTok Enterprise</div>
+                 </div>
+               </button>
+            </div>
+         </div>
+      </section>
+
       {/* Gemini Growth Partner - Premium Light Style */}
       <section className="bg-white border border-purple-100 rounded-3xl p-8 relative overflow-hidden shadow-[0_20px_50px_rgba(139,92,246,0.05)]">
          <div className="absolute top-0 right-0 p-8 opacity-5">

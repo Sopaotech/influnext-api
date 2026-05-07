@@ -26,8 +26,8 @@ export const metadata: Metadata = {
     default: "INFLUNEXT — Plataforma de Marketing de Influência Pro Max",
     template: "%s | InfluNext"
   },
-  description: "A plataforma de marketing de influência mais rápida e avançada do Brasil. Workspace com IA para influenciadores e Marketplace com Escrow seguro para marcas.",
-  keywords: ["marketing de influência", "influenciadores", "marketplace de influência", "gestão de campanhas", "IA para criadores", "escrow seguro"],
+  description: "A plataforma #1 de marketing de influência para criadores e marcas no Brasil. Gerencie campanhas, escale seu alcance com IA e garanta pagamentos seguros com nosso sistema de Escrow.",
+  keywords: ["marketing de influência", "influenciadores brasil", "marketplace de influenciadores", "gestão de campanhas de influência", "IA para influenciadores", "pagamento seguro influenciador", "agência de influenciadores"],
   authors: [{ name: "InfluNext Team" }],
   creator: "InfluNext",
   publisher: "InfluNext",
