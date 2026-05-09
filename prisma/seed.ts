@@ -13,7 +13,10 @@ async function main() {
 
   const admin = await prisma.user.upsert({
     where: { email: adminEmail },
-    update: {},
+    update: {
+      role: 'ADMIN',
+      passwordHash,
+    },
     create: {
       email: adminEmail,
       passwordHash,
@@ -29,12 +32,14 @@ async function main() {
       name: 'Plano Influencer Pro',
       price: 97.00,
       interval: 'month',
+      externalId: process.env.STRIPE_PRICE_PRO || 'plan_pro_influencer_1',
     },
     {
       id: 'plan_brand_enterprise_1',
       name: 'Plano Brand Enterprise',
       price: 497.00,
       interval: 'month',
+      externalId: process.env.STRIPE_PRICE_ENTERPRISE || 'plan_brand_enterprise_1',
     }
   ];
 
@@ -44,13 +49,14 @@ async function main() {
       update: {
         name: plan.name,
         price: plan.price,
+        externalId: plan.externalId,
       },
       create: {
         id: plan.id,
         name: plan.name,
         price: plan.price,
         interval: plan.interval,
-        externalId: plan.id,
+        externalId: plan.externalId,
         active: true
       }
     });

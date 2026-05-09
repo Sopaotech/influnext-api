@@ -40,7 +40,12 @@ app.use('/v1/payments/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(trackPageView);
 
-// Endpoint de Health Check para Diagnóstico de Produção
+// Endpoint de Health Check Simples para o Railway (Raiz)
+app.get('/', (req, res) => {
+  res.status(200).send('🚀 INFLUNEXT API PRO MAX - OPERATIONAL');
+});
+
+// Endpoint de Health Check Detalhado
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'online', 
@@ -52,9 +57,18 @@ app.get('/health', (req, res) => {
 // Todas as suas rotas começarão com /v1
 app.use('/v1', routes);
 
+// Tratamento de erros globais para evitar SIGTERM silencioso no Railway
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ ERRO CRÍTICO (Rejeição não tratada):', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('❌ ERRO FATAL (Exceção não capturada):', error);
+});
+
 const PORT = process.env.PORT || 4000;
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 INFLUNEXT ONLINE: Port ${PORT}`);
   console.log(`🌍 MODO VIDA REAL ATIVADO`);
 });

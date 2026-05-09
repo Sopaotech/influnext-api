@@ -69,7 +69,7 @@ export class SocialAuthController {
           client_secret: process.env.GOOGLE_CLIENT_SECRET!,
           code: code as string,
           grant_type: 'authorization_code',
-          redirect_uri: `${process.env.FRONTEND_URL}/auth/callback/google`,
+          redirect_uri: `${process.env.FRONTEND_URL}/auth/callback/${platform}`,
         }).toString(), {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         });
