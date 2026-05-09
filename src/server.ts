@@ -32,43 +32,32 @@ app.use(cors({
   credentials: true
 }));
 
-import { trackPageView } from './middlewares/analytics.middleware';
-
-// Middleware especial para Webhook da Stripe (precisa do raw body para validar assinatura)
-app.use('/v1/payments/webhook', express.raw({ type: 'application/json' }));
+// Middleware de Analytics (Movido para ser carregado sob demanda)
+const analyticsMiddleware = (req: any, res: any, next: any) => {
+  if (req.path === '/' || req.path === '/health') return next();
+  import('./middlewares/analytics.middleware').then(m => m.trackPageView(req, res, next)).catch(() => next());
+};
 
 app.use(express.json());
-app.use(trackPageView);
 
-// Endpoint de Health Check Simples para o Railway (Raiz)
-app.get('/', (req, res) => {
-  res.status(200).send('🚀 INFLUNEXT API PRO MAX - OPERATIONAL');
-});
+// Rota Stripe (Deve vir ANTES do json() global se possível, mas aqui usamos o raw body específico)
+app.use('/v1/payments/webhook', express.raw({ type: 'application/json' }));
 
-// Endpoint de Health Check Detalhado
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'online', 
-    timestamp: new Date().toISOString(),
-    env: process.env.NODE_ENV || 'development'
-  });
-});
+app.use(analyticsMiddleware);
+
+// Endpoint de Health Check Simples para o Railway (RAIZ) - DEVE VIR ANTES DE TUDO
+app.get('/', (req, res) => res.status(200).send('🚀 API ONLINE'));
+app.get('/health', (req, res) => res.status(200).json({ status: 'online' }));
 
 // Todas as suas rotas começarão com /v1
 app.use('/v1', routes);
 
-// Tratamento de erros globais para evitar SIGTERM silencioso no Railway
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ ERRO CRÍTICO (Rejeição não tratada):', reason);
-});
-
-process.on('uncaughtException', (error) => {
-  console.error('❌ ERRO FATAL (Exceção não capturada):', error);
-});
+// Tratamento de erros globais
+process.on('unhandledRejection', (reason) => console.error('❌ REJEIÇÃO:', reason));
+process.on('uncaughtException', (error) => console.error('❌ EXCEÇÃO:', error));
 
 const PORT = Number(process.env.PORT) || 4000;
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 INFLUNEXT ONLINE: Port ${PORT}`);
-  console.log(`🌍 MODO VIDA REAL ATIVADO`);
 });
