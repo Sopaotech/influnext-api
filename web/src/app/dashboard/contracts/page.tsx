@@ -62,17 +62,17 @@ export default function ContractsPage() {
   return (
     <div className="p-4 md:p-10 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
       
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-purple-400 font-black text-[10px] tracking-widest uppercase">
-            <ShieldCheck className="w-4 h-4" />
-            Central de Governança
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/[0.08] pb-10">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-purple-500 font-black text-[10px] tracking-[0.4em] uppercase">
+            <ShieldCheck className="w-5 h-5" />
+            Central de Governança // Escrow_Active
           </div>
-          <h1 className="text-3xl font-black text-[#e8e0f5] tracking-tighter">
-            Meus <span className="text-purple-500">Contratos</span>
+          <h1 className="text-5xl font-black text-slate-900 tracking-tighter">
+            Meus <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600">Contratos</span>
           </h1>
-          <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">
-            Gestão de ativos e segurança via Escrow.
+          <p className="text-zinc-400 text-xs font-bold uppercase tracking-[0.2em]">
+            Gestão de ativos e segurança jurídica automatizada.
           </p>
         </div>
       </header>

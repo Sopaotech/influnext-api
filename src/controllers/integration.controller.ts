@@ -3,19 +3,12 @@ import { prisma } from '../lib/prisma';
 import { UserRole } from '../types/roles';
 import { ScoringService } from '../services/scoring.service';
 
-// Nota: Em produção, estas chaves devem estar no .env
-const INSTAGRAM_CLIENT_ID = process.env.INSTAGRAM_CLIENT_ID;
-const INSTAGRAM_CLIENT_SECRET = process.env.INSTAGRAM_CLIENT_SECRET;
-const INSTAGRAM_REDIRECT_URI = `${process.env.NEXT_PUBLIC_API_URL}/integrations/instagram/callback`;
-
-const TIKTOK_CLIENT_KEY = process.env.TIKTOK_CLIENT_KEY;
-const TIKTOK_CLIENT_SECRET = process.env.TIKTOK_CLIENT_SECRET;
-const TIKTOK_REDIRECT_URI = `${process.env.NEXT_PUBLIC_API_URL}/integrations/tiktok/callback`;
+// O scoring service é usado para calcular a autoridade do influenciador após a conexão
 
 export const getAuthUrls = async (req: Request, res: Response): Promise<void> => {
-  const instagramUrl = `https://api.instagram.com/oauth/authorize?client_id=${INSTAGRAM_CLIENT_ID}&redirect_uri=${INSTAGRAM_REDIRECT_URI}&scope=user_profile,user_media&response_type=code`;
+  const instagramUrl = `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${process.env.NEXT_PUBLIC_API_URL}/integrations/instagram/callback&scope=user_profile,user_media&response_type=code`;
   
-  const tiktokUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${TIKTOK_REDIRECT_URI}`;
+  const tiktokUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${process.env.NEXT_PUBLIC_API_URL}/integrations/tiktok/callback`;
 
   res.json({
     instagram: instagramUrl,

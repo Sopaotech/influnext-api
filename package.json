@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev": "npx ts-node src/scripts/kill-port.ts && ts-node-dev --respawn --transpile-only src/server.ts",
     "dev:web": "cd web && npm run dev",
     "dev:api": "cd src && npx ts-node server.ts",
     "build": "prisma generate && tsc",

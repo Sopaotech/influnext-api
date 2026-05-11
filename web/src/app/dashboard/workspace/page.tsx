@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Sparkles, BrainCircuit, Rocket, Lightbulb, CheckCircle2, Loader2, RefreshCcw, ClipboardList, Music, Terminal, Zap, Activity, Play } from 'lucide-react';
+import { Sparkles, BrainCircuit, Rocket, Lightbulb, CheckCircle2, Loader2, RefreshCcw, ClipboardList, Music, Terminal, Zap, Activity, Play, Mic, MicOff, Volume2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
@@ -29,6 +29,8 @@ export default function AIWorkspacePage() {
   const [chatMessages, setChatMessages] = useState<{role: 'user' | 'mentor', text: string}[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [isChatting, setIsChatting] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
   const router = useRouter();
   const chatEndRef = React.useRef<HTMLDivElement>(null);
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
@@ -123,12 +125,58 @@ export default function AIWorkspacePage() {
 
     try {
       const res = await api.post('/ai/chat', { message: userMessage });
-      setChatMessages(prev => [...prev, { role: 'mentor', text: res.data.reply }]);
+      const reply = res.data.reply;
+      setChatMessages(prev => [...prev, { role: 'mentor', text: reply }]);
+      speak(reply);
     } catch (err) {
       toast.error('O Mentor está ocupado processando dados no momento.');
     } finally {
       setIsChatting(false);
     }
+  };
+
+  const startListening = () => {
+    if (typeof window === 'undefined') return;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      toast.error('Seu navegador não suporta reconhecimento de voz.');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'pt-BR';
+    recognition.interimResults = false;
+    recognition.continuous = false;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+    
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setChatInput(transcript);
+      toast.success(`Entendi: "${transcript}"`);
+    };
+
+    recognition.start();
+  };
+
+  const speak = (text: string) => {
+    if (!isVoiceEnabled || typeof window === 'undefined' || !window.speechSynthesis) return;
+    
+    window.speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'pt-BR';
+    utterance.rate = 1.0;
+    utterance.pitch = 0.95;
+    
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(v => v.lang.includes('pt-BR') && v.name.includes('Google')) || voices.find(v => v.lang.includes('pt-BR'));
+    if (preferredVoice) utterance.voice = preferredVoice;
+
+    window.speechSynthesis.speak(utterance);
   };
 
   if (isLoading) {
@@ -143,19 +191,18 @@ export default function AIWorkspacePage() {
   return (
     <div className="p-4 md:p-10 max-w-7xl mx-auto space-y-8 font-mono animate-in fade-in duration-500">
       
-      <header className="px-8 py-10 border-b border-white/[0.03]">
+      <header className="px-8 py-10 border-b border-white/[0.08]">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2 mb-2">
-               <div className="h-1 w-8 bg-purple-600 rounded-full" />
-               <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.4em]">Strategic_Neural_Link</span>
+               <div className="h-1.5 w-10 bg-purple-600 rounded-full" />
+               <span className="text-[10px] font-black text-purple-500 uppercase tracking-[0.4em]">Strategic_Neural_Link v2.1</span>
             </div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tighter">
-              Área de <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600">Trabalho</span>
+            <h1 className="text-5xl font-black text-slate-900 tracking-tighter">
+              Central de <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-indigo-500 to-purple-600">Comando</span>
             </h1>
-            <p className="text-xs font-medium text-slate-500 max-w-lg">
-              Sua central de comando estratégico. Aqui, a inteligência artificial analisa seus dados, 
-              planeja seu conteúdo e atua como sua sócia para maximizar seu ROI e influência.
+            <p className="text-xs font-bold text-slate-500 max-w-lg uppercase tracking-wider">
+              Sua unidade de processamento tático e inteligência de mercado.
             </p>
           </div>
           
@@ -297,14 +344,45 @@ export default function AIWorkspacePage() {
                   placeholder="Minha campanha flopou, o que eu ajusto hoje?"
                   className="flex-1 bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm text-slate-900 focus:outline-none focus:border-purple-300 focus:bg-white transition-all placeholder:text-slate-400 font-sans"
                 />
-                <Button 
-                  type="submit"
-                  disabled={isChatting || !chatInput.trim()}
-                  className="bg-purple-600 hover:bg-purple-500 text-white px-6 font-black text-[10px] uppercase tracking-widest rounded-lg"
-                >
-                  Enviar
-                </Button>
+                
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={startListening}
+                    disabled={isListening}
+                    className={`p-4 rounded-2xl border transition-all ${
+                      isListening 
+                        ? 'bg-rose-500 text-white border-rose-400 animate-pulse' 
+                        : 'bg-slate-50 border-slate-100 text-slate-400 hover:text-purple-600 hover:border-purple-200'
+                    }`}
+                    title="Ativar Voz"
+                  >
+                    {isListening ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
+                    className={`p-4 rounded-2xl border transition-all ${
+                      isVoiceEnabled 
+                        ? 'bg-emerald-50 border-emerald-100 text-emerald-600' 
+                        : 'bg-slate-50 border-slate-100 text-slate-300'
+                    }`}
+                    title={isVoiceEnabled ? "Voz Ativada" : "Voz Desativada"}
+                  >
+                    <Volume2 className="w-5 h-5" />
+                  </button>
+
+                  <Button 
+                    type="submit"
+                    disabled={isChatting || !chatInput.trim()}
+                    className="bg-purple-600 hover:bg-purple-500 text-white px-8 font-black text-[10px] uppercase tracking-widest rounded-2xl h-full shadow-lg shadow-purple-600/20"
+                  >
+                    Enviar
+                  </Button>
+                </div>
               </form>
+
             </section>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -332,42 +410,37 @@ export default function AIWorkspacePage() {
           {/* Sidebar Widgets */}
           <div className="space-y-6">
             
-            {/* BIBLIOTECA_DE_PARAMETROS (Trend Vault) */}
-            <div className="bg-white border border-slate-100 p-8 rounded-[2rem] space-y-6 border-l-4 border-l-purple-500 shadow-sm">
-               <h3 className="text-slate-900 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                  <Play className="w-4 h-4 text-purple-600" /> BIBLIOTECA DE REFERÊNCIAS
-               </h3>
-               <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar snap-x">
-                  {analysis.trendVault?.length > 0 ? analysis.trendVault.map((ref, idx) => {
-                    const daysLeft = Math.ceil((new Date(ref.expiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-                    return (
-                      <div key={ref.id} className="flex-none w-48 space-y-2 snap-start">
-                         <div 
-                           className="relative aspect-[9/16] bg-zinc-900 rounded-md overflow-hidden border border-zinc-800 group cursor-pointer"
-                           style={{ viewTransitionName: `vault-card-${ref.id}` }}
-                         >
-                            {ref.thumbnail ? (
-                              <img src={ref.thumbnail} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-[10px] text-zinc-700 font-bold uppercase italic p-4 text-center">
-                                 Ref_{idx + 1}
-                              </div>
-                            )}
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
-                               <Play className="w-8 h-8 text-white fill-white" />
-                            </div>
-                            <div className="absolute top-2 right-2 px-2 py-0.5 bg-rose-500/80 text-white text-[7px] font-black uppercase rounded-full">
-                               Expira em {daysLeft}d
+             {/* BIBLIOTECA_DE_PARAMETROS (Trend Vault) */}
+             <div className="bg-white border border-slate-100 p-8 rounded-[2rem] space-y-6 border-l-4 border-l-purple-500 shadow-sm relative overflow-hidden">
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-500/5 blur-3xl rounded-full" />
+                <h3 className="text-slate-900 text-[10px] font-black uppercase tracking-widest flex items-center justify-between">
+                   <div className="flex items-center gap-2">
+                      <Play className="w-4 h-4 text-purple-600" /> VÍDEOS DE REFERÊNCIA
+                   </div>
+                   <span className="text-purple-500 text-[8px] font-black border border-purple-100 px-2 py-0.5 rounded-full">LIVE FEED</span>
+                </h3>
+                <div className="space-y-4">
+                   {[
+                     { title: "Review de Tech Minimalista", thumb: "/influencers/brazilian_influencer_2_1778513129863.png", tags: "TECH, MINIMAL" },
+                     { title: "Vlog: Rotina de Criadora", thumb: "/influencers/brazilian_influencer_1_1778513115825.png", tags: "LIFESTYLE, VLOG" },
+                     { title: "Dicas de Moda Verão", thumb: "/influencers/brazilian_influencer_3_1778513143227.png", tags: "FASHION, TREND" },
+                     { title: "Setup Gamer Pro", thumb: "/influencers/brazilian_influencer_4_1778513156892.png", tags: "GAMING, SETUP" }
+                   ].map((video, idx) => (
+                      <div key={idx} className="group relative aspect-video rounded-2xl overflow-hidden border border-slate-100 cursor-pointer shadow-sm hover:shadow-xl hover:border-purple-300 transition-all">
+                         <img src={video.thumb} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-90 group-hover:opacity-100" />
+                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-4">
+                            <span className="text-[7px] font-black text-purple-400 uppercase tracking-widest mb-1">{video.tags}</span>
+                            <h4 className="text-white text-xs font-black uppercase tracking-tight">{video.title}</h4>
+                         </div>
+                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
+                               <Play className="w-4 h-4 text-white fill-white" />
                             </div>
                          </div>
-                         <p className="text-[9px] text-zinc-500 font-bold uppercase truncate">{ref.title}</p>
                       </div>
-                    );
-                  }) : (
-                    <p className="text-[8px] text-zinc-700 font-black italic uppercase">Buscando referências visuais no Core...</p>
-                  )}
-               </div>
-            </div>
+                   ))}
+                </div>
+             </div>
             
             {/* Trending Audio Widget */}
             <div className="bg-white border border-slate-100 p-6 rounded-3xl space-y-4 shadow-sm border-t-4 border-t-pink-500">

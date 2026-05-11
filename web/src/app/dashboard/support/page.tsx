@@ -53,15 +53,15 @@ export default function SupportPage() {
           <LifeBuoy className="w-4 h-4" />
           Central de Ajuda & Reporte
         </div>
-        <h1 className="text-3xl font-black text-zinc-100 tracking-tighter">Como podemos <span className="text-purple-500">ajudar?</span></h1>
-        <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">Relate bugs, sugira melhorias ou peça suporte técnico.</p>
+        <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Como podemos <span className="text-purple-600">ajudar?</span></h1>
+        <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Relate bugs, sugira melhorias ou peça suporte técnico.</p>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         
         {/* Formulário de Abertura */}
         <section className="space-y-6">
-           <form onSubmit={handleSubmit} className="bg-slate-950 border border-purple-500/10 rounded-[2.5rem] p-10 space-y-8 shadow-2xl relative overflow-hidden">
+           <form onSubmit={handleSubmit} className="bg-white border border-slate-100 rounded-[2.5rem] p-10 space-y-8 shadow-sm relative overflow-hidden group hover:border-purple-200 transition-all">
               <div className="absolute top-0 right-0 p-6 opacity-5">
                  <MessageSquare className="w-20 h-20 text-purple-500" />
               </div>
@@ -70,7 +70,7 @@ export default function SupportPage() {
                   <select 
                     value={form.category}
                     onChange={e => setForm({...form, category: e.target.value})}
-                    className="w-full bg-slate-900 border border-white/[0.05] rounded-xl px-4 py-4 text-xs font-black text-white outline-none focus:border-purple-500/50 transition-all appearance-none cursor-pointer"
+                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-4 text-xs font-black text-slate-900 outline-none focus:border-purple-300 transition-all appearance-none cursor-pointer"
                   >
                      <option value="SUPPORT">Suporte de Conta</option>
                      <option value="BUG">Relatar um Erro Técnico</option>

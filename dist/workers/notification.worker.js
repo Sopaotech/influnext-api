@@ -8,15 +8,13 @@ const bullmq_1 = require("bullmq");
 const ioredis_1 = __importDefault(require("ioredis"));
 const connection = new ioredis_1.default(process.env.REDIS_URL || 'redis://localhost:6379', {
     maxRetriesPerRequest: null,
+    lazyConnect: true,
+    retryStrategy: (times) => Math.min(times * 5000, 60000)
 });
-connection.on('ready', () => {
-    console.log('[WORKER] Redis Connected com sucesso!');
-});
+// Silenciar logs de erro de conexão
+connection.on('error', () => { });
 exports.notificationWorker = new bullmq_1.Worker('notifications', async (job) => {
     const { userId, message, type } = job.data;
-    // Aqui no futuro integraremos com SendGrid, Mailtrap ou Firebase
-    console.log(`[JOB - ${type}] Enviando notificação para User ${userId}: ${message}`);
-    // Simula latência de rede de e-mail
-    await new Promise(res => setTimeout(res, 500));
+    console.log(`[NOTIFICAÇÃO] User ${userId}: ${message}`);
     return { success: true };
 }, { connection });

@@ -50,9 +50,11 @@ export default function SettingsPage() {
     try {
       const res = await api.get('/dashboard/influencer'); 
       setProfile(res.data.profile);
-      if (res.data.profile.accentColor) setAccentColor(res.data.profile.accentColor);
-    } catch (err) {
-      toast.error('Erro ao carregar dados do perfil');
+      if (res.data.profile?.accentColor) setAccentColor(res.data.profile.accentColor);
+    } catch (err: any) {
+      if (err.response?.status !== 404) {
+        toast.error('Erro ao carregar dados do perfil');
+      }
     }
   };
 
@@ -128,14 +130,14 @@ export default function SettingsPage() {
     <div className="max-w-5xl mx-auto p-6 md:p-10 space-y-12 animate-in fade-in duration-700">
       
       {/* Pro Max Header */}
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/[0.03] pb-10">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-100 pb-10">
         <div className="space-y-2">
           <div className="flex items-center gap-2 mb-2">
-             <div className="h-1 w-8 bg-purple-600 rounded-full" />
-              <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.4em]">Núcleo de Identidade v2.0</span>
+             <div className="h-1.5 w-10 bg-purple-600 rounded-full" />
+              <span className="text-[10px] font-black text-purple-500 uppercase tracking-[0.4em]">Núcleo de Identidade v2.1</span>
           </div>
-          <h1 className="text-4xl font-black text-white tracking-tighter">
-            Centro de <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-500">Configurações</span>
+          <h1 className="text-5xl font-black text-slate-900 tracking-tighter">
+            Centro de <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-800">Configurações</span>
           </h1>
         </div>
       </header>
@@ -146,7 +148,7 @@ export default function SettingsPage() {
         <div className="lg:col-span-2 space-y-8">
           
           {/* Basic Identity */}
-          <section className="bg-[#0d0b1a] border border-white/[0.05] rounded-[2.5rem] p-8 space-y-8 group hover:border-purple-500/20 transition-all duration-500">
+          <section className="bg-white border border-slate-100 rounded-[2.5rem] p-8 space-y-8 group hover:border-purple-500/20 transition-all duration-500 shadow-sm">
             <div className="flex items-center gap-6">
               <div className="relative group/avatar">
                 <div className="w-24 h-24 rounded-full bg-zinc-900 border-2 border-white/[0.05] overflow-hidden transition-all group-hover/avatar:border-purple-500/50">
@@ -164,7 +166,7 @@ export default function SettingsPage() {
                 </label>
               </div>
               <div className="space-y-1">
-                <h2 className="text-2xl font-black text-white tracking-tighter">@{profile?.handle}</h2>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tighter">@{profile?.handle}</h2>
                 <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full w-fit">
                   <Shield size={10} className="text-emerald-400" />
                   <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400">Status: {profile?.scoreClass}</span>
@@ -178,7 +180,7 @@ export default function SettingsPage() {
                 <Input 
                   value={profile?.handle || ''} 
                   onChange={e => setProfile({...profile, handle: e.target.value})}
-                  className="bg-white/[0.02] border-white/[0.05] rounded-xl h-12 font-bold focus:border-purple-500/50 transition-all"
+                  className="bg-slate-50 border-slate-100 rounded-xl h-12 font-bold focus:border-purple-300 focus:bg-white transition-all text-slate-900"
                 />
               </div>
               <div className="space-y-2">
@@ -187,7 +189,7 @@ export default function SettingsPage() {
                   value={profile?.niche || ''} 
                   onChange={e => setProfile({...profile, niche: e.target.value})}
                   placeholder="Ex: Lifestyle, Tech, Gaming"
-                  className="bg-white/[0.02] border-white/[0.05] rounded-xl h-12 font-bold focus:border-purple-500/50 transition-all"
+                  className="bg-slate-50 border-slate-100 rounded-xl h-12 font-bold focus:border-purple-300 focus:bg-white transition-all text-slate-900"
                 />
               </div>
             </div>
@@ -198,13 +200,13 @@ export default function SettingsPage() {
                 value={profile?.bio || ''} 
                 onChange={e => setProfile({...profile, bio: e.target.value})}
                 placeholder="Conte para as marcas o valor que você entrega..."
-                className="w-full bg-white/[0.02] border-white/[0.05] rounded-xl p-4 text-sm font-medium focus:outline-none focus:border-purple-500/50 min-h-[120px] transition-all"
+                className="w-full bg-slate-50 border-slate-100 rounded-xl p-4 text-sm font-medium focus:outline-none focus:border-purple-300 focus:bg-white min-h-[120px] transition-all text-slate-700"
               />
             </div>
           </section>
 
           {/* Rate Card Section */}
-          <section className="bg-[#0d0b1a] border border-white/[0.05] rounded-[2.5rem] p-8 space-y-8">
+          <section className="bg-white border border-slate-100 rounded-[2.5rem] p-8 space-y-8 shadow-sm">
              <div className="flex items-center justify-between">
                 <div>
                     <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-1">Tabela de Preços</h3>
@@ -280,7 +282,7 @@ export default function SettingsPage() {
         <div className="space-y-8">
           
           {/* SOCIAL INTEGRATIONS - THE KEY SECTION */}
-          <section className="bg-[#0d0b1a] border border-white/[0.05] rounded-[2.5rem] p-8 space-y-8 relative overflow-hidden">
+          <section className="bg-white border border-slate-100 rounded-[2.5rem] p-8 space-y-8 relative overflow-hidden shadow-sm">
              <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-500/5 blur-3xl rounded-full" />
              
              <div>
@@ -297,8 +299,8 @@ export default function SettingsPage() {
                             <InstagramIcon size={20} />
                          </div>
                          <div>
-                            <p className="text-sm font-black text-white">Instagram</p>
-                            <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Insights & Atividade</p>
+                            <p className="text-sm font-black text-slate-900">Instagram</p>
+                            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Insights & Atividade</p>
                          </div>
                       </div>
                       {connectedPlatforms.includes('INSTAGRAM') ? (
@@ -329,8 +331,8 @@ export default function SettingsPage() {
                             <Globe size={20} />
                          </div>
                          <div>
-                            <p className="text-sm font-black text-white">TikTok</p>
-                            <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Vídeos & Trends</p>
+                            <p className="text-sm font-black text-slate-900">TikTok</p>
+                            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Vídeos & Trends</p>
                          </div>
                       </div>
                       {connectedPlatforms.includes('TIKTOK') ? (
@@ -361,7 +363,7 @@ export default function SettingsPage() {
           </section>
 
           {/* Appearance Section */}
-          <section className="bg-[#0d0b1a] border border-white/[0.05] rounded-[2.5rem] p-8 space-y-8">
+          <section className="bg-white border border-slate-100 rounded-[2.5rem] p-8 space-y-8 shadow-sm">
              <div>
                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-1">Design e Interface</h3>
                  <p className="text-xs font-bold text-zinc-400">Personalize seu ambiente de trabalho</p>

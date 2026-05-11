@@ -6,4 +6,8 @@ const auth_middleware_1 = require("../middlewares/auth.middleware");
 const router = (0, express_1.Router)();
 router.post('/', auth_middleware_1.authenticate, task_controller_1.createTask);
 router.get('/', auth_middleware_1.authenticate, task_controller_1.getMyTasks);
+router.post('/ai-generate', auth_middleware_1.authenticate, task_controller_1.createAITasks);
+router.post('/process-command', auth_middleware_1.authenticate, task_controller_1.processAICommand);
+router.post('/:taskId/complete', auth_middleware_1.authenticate, task_controller_1.completeTaskWithProof);
+router.get('/telemetry', auth_middleware_1.authenticate, task_controller_1.getTelemetryResults);
 exports.default = router;

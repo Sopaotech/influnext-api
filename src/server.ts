@@ -53,8 +53,16 @@ app.get('/health', (req, res) => res.status(200).json({ status: 'online' }));
 app.use('/v1', routes);
 
 // Tratamento de erros globais
-process.on('unhandledRejection', (reason) => console.error('❌ REJEIÇÃO:', reason));
-process.on('uncaughtException', (error) => console.error('❌ EXCEÇÃO:', error));
+process.on('unhandledRejection', (reason: any) => {
+  // Silencia erros de conexão do Redis para não poluir o terminal
+  if (reason?.message?.includes('ECONNREFUSED') && reason?.message?.includes('6379')) return;
+  console.error('❌ REJEIÇÃO:', reason);
+});
+
+process.on('uncaughtException', (error: any) => {
+  if (error?.message?.includes('ECONNREFUSED') && error?.message?.includes('6379')) return;
+  console.error('❌ EXCEÇÃO:', error);
+});
 
 const PORT = Number(process.env.PORT) || 4000;
 

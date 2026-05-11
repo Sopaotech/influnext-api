@@ -13,7 +13,8 @@ import {
   Search,
   ChevronUp,
   ChevronDown,
-  Target
+  Target,
+  Mic
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
@@ -168,11 +169,11 @@ function CalendarContent() {
                   setCurrentDate(today);
                   setSelectedDay(today.getDate());
                   updateUrl(today);
-                  toast.info('Retornando para o presente...');
+                  toast.info(`Retornando para ${monthNames[today.getMonth()]}...`);
                 }} 
                 className="px-6 py-2 bg-slate-900 hover:bg-purple-600 text-white text-[10px] font-black uppercase rounded-xl transition-all shadow-lg shadow-slate-900/10"
               >
-                Hoje
+                {monthNames[new Date().getMonth()]}
               </button>
               <button onClick={nextMonth} className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400">
                 <ChevronRight className="w-5 h-5" />
@@ -305,15 +306,15 @@ function CalendarContent() {
             </button>
 
             {/* AI Assistant Command */}
-            <div className="pt-4 border-t border-white/[0.04] space-y-3">
-               <div className="flex items-center gap-2 text-[9px] font-black text-purple-400 uppercase tracking-widest">
+            <div className="pt-4 border-t border-slate-100 space-y-3">
+               <div className="flex items-center gap-2 text-[9px] font-black text-purple-600 uppercase tracking-widest">
                   <Sparkles className="w-3 h-3" /> Assistente_Estratégico
                </div>
-               <div className="relative">
+               <div className="relative group">
                   <input 
                     type="text"
                     placeholder="Agendar post dia 10 sobre..."
-                    className="w-full bg-[#080810] border border-purple-500/30 rounded-xl px-4 py-3 text-[10px] text-zinc-200 focus:outline-none focus:border-purple-500 transition-all placeholder:text-zinc-700"
+                    className="w-full bg-white border border-slate-100 rounded-2xl px-6 py-4 text-sm text-slate-900 focus:outline-none focus:border-purple-300 focus:bg-white transition-all placeholder:text-slate-400 font-sans pr-12 shadow-sm"
                     onKeyDown={async (e) => {
                        if (e.key === 'Enter') {
                           const command = (e.target as HTMLInputElement).value;
@@ -324,18 +325,19 @@ function CalendarContent() {
                              await api.post('/tasks/process-command', { command });
                              toast.success('✦ Inteligência Aplicada! Tarefa adicionada ao cronograma.', { id });
                              (e.target as HTMLInputElement).value = '';
-                             fetchTasks(); // Recarrega o calendário
+                             fetchTasks(); 
                           } catch (err: any) {
                              toast.error(err.response?.data?.error || 'Não consegui processar esse comando agora.', { id });
                           }
                        }
                     }}
                   />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                     <span className="text-[8px] font-black text-zinc-600 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">ENTER</span>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                     <Mic className="w-4 h-4 text-purple-500 cursor-pointer hover:scale-110 transition-transform" />
+                     <span className="text-[8px] font-black text-slate-300 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100 uppercase tracking-tighter">Enter</span>
                   </div>
                </div>
-               <p className="text-[8px] text-zinc-600 font-medium italic">Ex: "Adicionar vídeo dia 15", "Mudar live para amanhã"</p>
+               <p className="text-[8px] text-slate-400 font-medium italic">Ex: "Adicionar vídeo dia 15", "Mudar live para amanhã"</p>
             </div>
           </div>
 

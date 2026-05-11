@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authenticate = void 0;
+exports.authorizeAdmin = exports.authenticate = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const authenticate = (req, res, next) => {
     const authHeader = req.headers.authorization;
@@ -21,3 +21,10 @@ const authenticate = (req, res, next) => {
     }
 };
 exports.authenticate = authenticate;
+const authorizeAdmin = (req, res, next) => {
+    if (req.user?.role !== 'ADMIN') {
+        return res.status(403).json({ error: 'Acesso restrito. Apenas administradores podem realizar esta ação.' });
+    }
+    next();
+};
+exports.authorizeAdmin = authorizeAdmin;

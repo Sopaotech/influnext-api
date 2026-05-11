@@ -381,8 +381,16 @@ Responda apenas com o texto do briefing, formatado em Markdown simples.`;
     
     if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
        // Mock básico para desenvolvimento local
-       if (message.toLowerCase().includes('marcar') || message.toLowerCase().includes('agendar')) {
-          return { action: 'CREATE_TASK', data: { title: message, scheduledDate: new Date().toISOString() } };
+       const msg = message.toLowerCase();
+       if (msg.includes('marcar') || msg.includes('agendar') || msg.includes('reunião') || msg.includes('meeting') || msg.includes('call')) {
+          return { 
+            action: 'CREATE_TASK', 
+            data: { 
+              title: message.length > 30 ? 'Compromisso Agendado' : message, 
+              scheduledDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+              description: 'Agendado via comando de voz/texto InfluNext AI.'
+            } 
+          };
        }
        return { action: 'UNKNOWN' };
     }
@@ -391,19 +399,26 @@ Responda apenas com o texto do briefing, formatado em Markdown simples.`;
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
 
-      const prompt = `Você é o interpretador de comandos do InfluNext. 
+      const prompt = `Você é o interpretador de comandos do InfluNext Elite v2.1. 
 Sua tarefa é extrair a intenção do usuário de uma mensagem de texto e retornar um JSON puro.
 
 Hoje é: ${new Date().toISOString()}
 
 REGRAS:
-1. Se o usuário quiser agendar, marcar ou criar uma tarefa/evento, use action: "CREATE_TASK".
-2. Tente extrair a data correta. Se ele disser "amanhã", calcule a data correta.
-3. Se não entender, use action: "UNKNOWN".
+1. Se o usuário quiser agendar, marcar ou criar uma tarefa, evento ou reunião, use action: "CREATE_TASK".
+2. Identifique se é uma reunião (meeting, call, papo, meet) e inclua isso no título se necessário.
+3. Tente extrair o título e a data correta. Se ele disser "amanhã", "hoje", "sexta", calcule a data correta a partir de hoje.
+4. Se o usuário quiser saber o status de algo ou pedir uma análise, use action: "ANALYZE_REQUEST".
+5. Se o usuário quiser deletar ou cancelar algo, use action: "DELETE_TASK".
+6. Se não entender, use action: "UNKNOWN".
 
-EXEMPLO:
+EXEMPLO 1:
 Input: "marcar live para amanhã às 15h"
 Output: { "action": "CREATE_TASK", "data": { "title": "Live", "scheduledDate": "2024-05-06T15:00:00.000Z" } }
+
+EXEMPLO 2:
+Input: "agendar reunião com a marca X na sexta-feira às 10:00"
+Output: { "action": "CREATE_TASK", "data": { "title": "Reunião: Marca X", "scheduledDate": "2024-05-10T10:00:00.000Z" } }
 
 Input: "${message}"
 Output:`;

@@ -84,3 +84,68 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
     res.status(500).json({ error: "Erro ao buscar estatísticas do admin." });
   }
 };
+
+export const grantProAccess = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { identifier } = req.body;
+
+    if (!identifier) {
+      res.status(400).json({ error: 'Identificador (e-mail ou ID) é obrigatório.' });
+      return;
+    }
+
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: identifier },
+          { id: identifier }
+        ]
+      }
+    });
+
+    if (!user) {
+      res.status(404).json({ error: 'Usuário não encontrado.' });
+      return;
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        subscriptionStatus: 'ACTIVE',
+        trialEndsAt: null, // Remove expiração de trial
+      }
+    });
+
+    // Registrar notificação para o usuário
+    await prisma.notification.create({
+      data: {
+        userId: user.id,
+        type: 'SYSTEM',
+        message: '🚀 Parabéns! Seu acesso PRO foi liberado pelo administrador.'
+      }
+    });
+
+    res.json({ message: `Acesso PRO liberado para ${user.email}` });
+  } catch (error) {
+    console.error('[ADMIN GRANT PRO] Erro:', error);
+    res.status(500).json({ error: 'Erro ao liberar acesso PRO.' });
+  }
+};
+
+export const listAllUsers = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        subscriptionStatus: true,
+        createdAt: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao listar usuários.' });
+  }
+};

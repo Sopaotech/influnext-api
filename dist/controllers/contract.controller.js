@@ -1,10 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.confirmPayment = exports.createContract = void 0;
+exports.getMyContracts = exports.releasePayment = exports.confirmPayment = exports.createContract = void 0;
 const roles_1 = require("../types/roles");
 const prisma_1 = require("../lib/prisma");
 const zod_1 = require("zod");
 const notification_queue_1 = require("../queues/notification.queue");
+const briefing_service_1 = require("../services/briefing.service");
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 const deliverableSchema = zod_1.z.object({
     title: zod_1.z.string().min(3, 'O título do entregável é obrigatório.'),
@@ -16,6 +17,7 @@ const deliverableSchema = zod_1.z.object({
 const createContractSchema = zod_1.z.object({
     influencerId: zod_1.z.string().uuid('ID do influenciador inválido.'),
     title: zod_1.z.string().min(1, 'O título é obrigatório.'),
+    briefing: zod_1.z.string().min(10, 'O briefing deve ter pelo menos 10 caracteres.').optional(),
     budget: zod_1.z.coerce.number().positive('O budget deve ser um número positivo.'),
     deliverables: zod_1.z.array(deliverableSchema).min(1, 'Pelo menos um entregável é obrigatório.'),
 });
@@ -35,7 +37,13 @@ const createContract = async (req, res) => {
             res.status(400).json({ errors: parsed.error.flatten().fieldErrors });
             return;
         }
-        const { influencerId, title, budget, deliverables } = parsed.data;
+        const { influencerId, title, budget, deliverables, briefing } = parsed.data;
+        // ─── Geração de Roteiro IA (O Cérebro) ──────────────────────────────────
+        let aiScript = null;
+        if (briefing) {
+            aiScript = await briefing_service_1.BriefingService.generateSmartScript(influencerId, briefing);
+        }
+        // ────────────────────────────────────────────────────────────────────────
         // ─── Cálculo do Take Rate (10%) ─────────────────────────────────────────
         const platformFee = budget * PLATFORM_TAKE_RATE;
         const netAmount = budget - platformFee;
@@ -51,6 +59,8 @@ const createContract = async (req, res) => {
                     companyId: company.id,
                     influencerId,
                     title,
+                    briefing,
+                    aiScript,
                     budget,
                     platformFee,
                     netAmount,
@@ -148,3 +158,100 @@ const confirmPayment = async (req, res) => {
     }
 };
 exports.confirmPayment = confirmPayment;
+const releasePayment = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const userRole = req.user.role;
+        const { id } = req.params;
+        const idempotencyKey = req.headers['idempotency-key'];
+        if (!idempotencyKey) {
+            res.status(400).json({ error: "Idempotency-Key é obrigatória." });
+            return;
+        }
+        if (userRole !== roles_1.UserRole.COMPANY && userRole !== roles_1.UserRole.ADMIN) {
+            res.status(403).json({ error: "Apenas empresas ou admins podem liberar pagamentos." });
+            return;
+        }
+        const contract = await prisma_1.prisma.contract.findUnique({ where: { id } });
+        if (!contract) {
+            res.status(404).json({ error: "Contrato não encontrado." });
+            return;
+        }
+        if (contract.escrowStatus !== 'UNDER_REVIEW' && contract.escrowStatus !== 'IN_PROGRESS') {
+            res.status(400).json({ error: "Contrato não está pronto para liberação." });
+            return;
+        }
+        if (contract.releaseTxId === idempotencyKey || contract.idempotencyKey === idempotencyKey) {
+            res.status(409).json({ error: "Pagamento já foi liberado ou processado com esta chave." });
+            return;
+        }
+        const updated = await prisma_1.prisma.$transaction(async (tx) => {
+            const updatedContract = await tx.contract.updateMany({
+                where: { id, releaseTxId: null },
+                data: {
+                    escrowStatus: 'COMPLETED',
+                    releaseTxId: idempotencyKey,
+                    idempotencyKey
+                }
+            });
+            if (updatedContract.count === 0) {
+                throw new Error("Conflito: Transação já processada ou estado inválido.");
+            }
+            return tx.contract.findUnique({ where: { id } });
+        });
+        res.json({ message: "Pagamento liberado com sucesso.", contract: updated });
+    }
+    catch (error) {
+        console.error('[CONTRACT] Erro ao liberar pagamento:', error);
+        if (error.message.includes('Conflito')) {
+            res.status(409).json({ error: error.message });
+        }
+        else {
+            res.status(500).json({ error: "Erro ao liberar o pagamento." });
+        }
+    }
+};
+exports.releasePayment = releasePayment;
+const getMyContracts = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const userRole = req.user.role;
+        let contracts;
+        if (userRole === roles_1.UserRole.INFLUENCER) {
+            const profile = await prisma_1.prisma.influencerProfile.findUnique({ where: { userId } });
+            if (!profile) {
+                res.status(404).json({ error: "Perfil não encontrado." });
+                return;
+            }
+            contracts = await prisma_1.prisma.contract.findMany({
+                where: { influencerId: profile.id },
+                include: { company: true, deliverables: true },
+                orderBy: { createdAt: 'desc' }
+            });
+        }
+        else if (userRole === roles_1.UserRole.COMPANY) {
+            const profile = await prisma_1.prisma.companyProfile.findUnique({ where: { userId } });
+            if (!profile) {
+                res.status(404).json({ error: "Perfil não encontrado." });
+                return;
+            }
+            contracts = await prisma_1.prisma.contract.findMany({
+                where: { companyId: profile.id },
+                include: { influencer: true, deliverables: true },
+                orderBy: { createdAt: 'desc' }
+            });
+        }
+        else if (userRole === roles_1.UserRole.ADMIN) {
+            contracts = await prisma_1.prisma.contract.findMany({
+                include: { influencer: true, company: true, deliverables: true },
+                orderBy: { createdAt: 'desc' }
+            });
+        }
+        res.json(contracts);
+    }
+    catch (error) {
+        console.error('[CONTRACT] Erro ao buscar contratos:', error);
+        res.status(500).json({ error: "Erro ao buscar contratos." });
+    }
+};
+exports.getMyContracts = getMyContracts;

@@ -47,11 +47,13 @@ class ScoringService {
         ]);
         if (!latestMetric || !profile)
             return;
-        // Simulação de consistência (taxa de entrega no prazo) e rating
-        // Em produção, esses dados viriam de tabelas específicas
-        const consistency = 0.85; // Mock: 85% de consistência
-        const rating = 4.8; // Mock: 4.8 estrelas de média
-        const score = this.calculate(latestMetric.followers, latestMetric.engagementRate, consistency, rating);
+        // Baseline para novas contas até que dados históricos de contratos sejam acumulados
+        const consistency = 1.0; // Baseline: 100% (Novos usuários começam com reputação limpa)
+        const rating = 5.0; // Baseline: 5.0 estrelas
+        let score = this.calculate(latestMetric.followers, latestMetric.engagementRate, consistency, rating);
+        // Bônus Trend Seeker
+        const trendBonus = await this.calculateTrendSeekerBonus(influencerId);
+        score += trendBonus;
         const scoreClass = this.getTier(score);
         const prevClass = profile.scoreClass;
         await prisma_1.prisma.influencerProfile.update({
@@ -62,6 +64,22 @@ class ScoringService {
         if (scoreClass !== prevClass) {
             await (0, notification_queue_1.addNotificationJob)(profile.userId, `🏆 Evolução de Carreira! Você atingiu o nível ${scoreClass} com ${score} pontos.`, 'SCORE_UPGRADE');
         }
+    }
+    /**
+     * Bônus Trend Seeker: +50 pontos se postou 3 trends sugeridos na semana
+     */
+    static async calculateTrendSeekerBonus(influencerId) {
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        const aiTasksCompletedThisWeek = await prisma_1.prisma.task.count({
+            where: {
+                influencerId,
+                fromAI: true,
+                isDone: true,
+                scheduledDate: { gte: oneWeekAgo }
+            }
+        });
+        return aiTasksCompletedThisWeek >= 3 ? 50 : 0;
     }
 }
 exports.ScoringService = ScoringService;

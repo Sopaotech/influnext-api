@@ -5,10 +5,10 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
   try {
     const userId = req.user!.id;
 
-    const profile = await prisma.influencerProfile.findUnique({
+    let profile = await prisma.influencerProfile.findUnique({
       where: { userId },
       include: {
-        user: { select: { onboardingCompleted: true, subscriptionStatus: true, trialEndsAt: true } },
+        user: { select: { email: true, role: true, onboardingCompleted: true, subscriptionStatus: true, trialEndsAt: true } },
         platforms: true,
         contracts: {
           where: { escrowStatus: { in: ['IN_PROGRESS', 'PENDING_PAYMENT', 'UNDER_REVIEW'] } },
@@ -22,6 +22,33 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
     });
 
     if (!profile) {
+      // Se for ADMIN, retornamos um perfil fake ou dados globais para não quebrar a UI
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (user?.role === 'ADMIN') {
+        res.json({
+          profile: {
+            id: 'admin',
+            handle: 'Admin InfluNext',
+            niche: 'SaaS Platform',
+            profileImageUrl: null,
+            influScore: 100,
+            scoreClass: 'DIAMOND',
+            dailyMission: 'Gerenciar Ecossistema',
+            missionCompleted: false,
+            profileProgress: 100,
+          },
+          kpis: { influScore: 100, scoreClass: 'DIAMOND', escrowBalance: 0, activeContractsCount: 0, pendingMissionsCount: 0, latestFollowers: 0, latestEngagement: 0 },
+          userState: user,
+          contracts: [],
+          tasks: [],
+          platforms: [],
+          trendVault: [],
+          metricsHistory: [],
+          analysis: null,
+        } as any);
+        return;
+      }
+
       res.status(404).json({ error: 'Dashboard não encontrada.' });
       return;
     }

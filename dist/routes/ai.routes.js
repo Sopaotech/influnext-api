@@ -74,4 +74,44 @@ router.get('/latest', auth_middleware_1.authenticate, async (req, res) => {
         res.status(500).json({ error: 'Erro ao buscar análise.' });
     }
 });
+// Interagir com o Mentor IA
+router.post('/chat', auth_middleware_1.authenticate, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { message } = req.body;
+        if (!message) {
+            res.status(400).json({ error: 'Mensagem é obrigatória.' });
+            return;
+        }
+        const { PrismaClient } = await Promise.resolve().then(() => __importStar(require('@prisma/client')));
+        const prisma = new PrismaClient();
+        const profile = await prisma.influencerProfile.findUnique({ where: { userId }, select: { id: true } });
+        if (!profile) {
+            res.status(404).json({ error: 'Apenas influenciadores têm acesso ao mentor.' });
+            return;
+        }
+        const reply = await ai_service_1.AIService.chatWithMentor(profile.id, message);
+        res.json({ reply });
+    }
+    catch (err) {
+        const errorMsg = err instanceof Error ? err.message : 'Erro no chat com Mentor.';
+        res.status(500).json({ error: errorMsg });
+    }
+});
+// Gerar Briefing de Campanha (para Empresas)
+router.post('/generate-briefing', auth_middleware_1.authenticate, async (req, res) => {
+    try {
+        const { influencerHandle, campaignTitle } = req.body;
+        if (!influencerHandle || !campaignTitle) {
+            res.status(400).json({ error: 'Handle do influenciador e título da campanha são obrigatórios.' });
+            return;
+        }
+        const briefing = await ai_service_1.AIService.generateCampaignBriefing(influencerHandle, campaignTitle);
+        res.json({ briefing });
+    }
+    catch (err) {
+        const errorMsg = err instanceof Error ? err.message : 'Erro ao gerar briefing.';
+        res.status(500).json({ error: errorMsg });
+    }
+});
 exports.default = router;

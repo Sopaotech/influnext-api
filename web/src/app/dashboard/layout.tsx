@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import Cookies from 'js-cookie';
-import { Home, FileText, Settings, LogOut, Menu, X, Sparkles, ShieldCheck, Store, LifeBuoy, Crown, Calendar, Search, MessageSquare } from 'lucide-react';
+import { Home, FileText, Settings, LogOut, Menu, X, Sparkles, ShieldCheck, Store, LifeBuoy, Crown, Calendar, Search, MessageSquare, LayoutDashboard } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
 import { Logo } from '@/components/Logo';
 import { BottomNav } from '@/components/BottomNav';
@@ -36,15 +36,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navItems = [
     { name: 'Dashboard', href: '/dashboard/influencer', icon: Home },
     { name: 'Calendário', href: '/dashboard/calendar', icon: Calendar },
-    { name: 'Área de Trabalho', href: '/dashboard/workspace', icon: Sparkles, special: true },
+    { name: 'Área de Trabalho', href: '/dashboard/workspace', icon: LayoutDashboard, special: true },
     { name: 'Marketplace', href: '/dashboard/marketplace', icon: Store },
-    { name: 'Media Kit', href: '/dashboard/settings', icon: ShieldCheck }, 
+    { name: 'Media Kit', href: '/dashboard/mediakit', icon: Sparkles }, 
     { name: 'Contratos', href: '/dashboard/contracts', icon: FileText },
-    { name: 'Plano Pro', href: '/dashboard/subscription', icon: Crown, highlight: true },
+    ...(isAdmin ? [] : [{ name: 'Plano Pro', href: '/dashboard/subscription', icon: Crown, highlight: true }]),
     { name: 'Seu Assistente', href: '/dashboard/support', icon: MessageSquare },
-    ...(isAdmin ? [{ name: 'Admin', href: '/dashboard/admin', icon: ShieldCheck }] : []),
+    ...(isAdmin ? [{ name: 'Admin Control', href: '/dashboard/admin', icon: ShieldCheck }] : []),
     { name: 'Ajustes', href: '/dashboard/settings', icon: Settings },
   ];
+
   return (
     <div className="min-h-screen bg-slate-50 flex text-slate-900 font-sans selection:bg-purple-100 overflow-hidden selection:text-purple-900">
       
@@ -87,13 +88,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   className={`
                     flex items-center gap-3 px-3.5 py-3 rounded-2xl transition-all duration-500 group relative overflow-hidden
                     ${isActive 
-                      ? (isWorkspace ? 'bg-purple-50 text-purple-600 border border-purple-100 shadow-sm' : 'bg-slate-50 text-slate-900 border border-slate-100') 
-                      : 'text-slate-400 hover:text-slate-900 hover:bg-slate-50 border border-transparent'}
-                    ${isHighlight ? 'bg-purple-50/50 border-purple-100 text-purple-600' : ''}
+                      ? (isWorkspace ? 'bg-purple-100/50 text-purple-700 border border-purple-200 shadow-sm' : 'bg-slate-100 text-slate-900 border border-slate-200') 
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-transparent'}
+                    ${isHighlight ? 'bg-purple-100/40 border-purple-200 text-purple-700' : ''}
                   `}
                 >
-                  <item.icon className={`w-4 h-4 transition-colors duration-500 ${isActive || isHighlight ? 'text-purple-600' : 'text-slate-400 group-hover:text-slate-900'}`} />
-                  <span className={`text-[10px] font-black uppercase tracking-[0.15em] ${isActive || isHighlight ? 'opacity-100' : 'opacity-60 group-hover:opacity-100 transition-opacity'}`}>
+                  <item.icon className={`w-4 h-4 transition-colors duration-500 ${isActive || isHighlight ? 'text-purple-700' : 'text-slate-500 group-hover:text-slate-900'}`} />
+                  <span className={`text-[10px] font-black uppercase tracking-[0.15em] ${isActive || isHighlight ? 'opacity-100' : 'opacity-85 group-hover:opacity-100 transition-opacity'}`}>
                     {item.name}
                   </span>
                   {isHighlight && (
@@ -108,25 +109,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
         
         <div className="p-8 border-t border-slate-50 space-y-8">
-          <div className="relative group cursor-pointer px-2" onClick={() => {
-            setIsMobileMenuOpen(false);
-            router.push('/dashboard/subscription');
-          }}>
-            <div className="absolute -inset-[1px] bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500" />
-            <div className="relative bg-white border border-slate-100 p-5 rounded-2xl space-y-4 shadow-sm">
-               <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[10px] font-black text-purple-600 uppercase tracking-[0.2em]">Plano Free</p>
-                    <Crown className="w-3 h-3 text-purple-400" />
-                  </div>
-                  <p className="text-[11px] text-slate-500 font-bold">Uso de IA: 33%</p>
-               </div>
-               <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                 <div className="h-full w-1/3 bg-gradient-to-r from-purple-600 to-indigo-500 rounded-full" />
-               </div>
-               <p className="text-[10px] text-purple-600 font-black uppercase tracking-widest group-hover:translate-x-1 transition-transform">Evoluir para Pro →</p>
+          {!isAdmin && (
+            <div className="relative group cursor-pointer px-2" onClick={() => {
+              setIsMobileMenuOpen(false);
+              router.push('/dashboard/subscription');
+            }}>
+              <div className="absolute -inset-[1px] bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500" />
+              <div className="relative bg-white border border-slate-100 p-5 rounded-2xl space-y-4 shadow-sm">
+                 <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-black text-purple-600 uppercase tracking-[0.2em]">Plano Free</p>
+                      <Crown className="w-3 h-3 text-purple-400" />
+                    </div>
+                    <p className="text-[11px] text-slate-500 font-bold">Uso de IA: 33%</p>
+                 </div>
+                 <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                   <div className="h-full w-1/3 bg-gradient-to-r from-purple-600 to-indigo-500 rounded-full" />
+                 </div>
+                 <p className="text-[10px] text-purple-600 font-black uppercase tracking-widest group-hover:translate-x-1 transition-transform">Evoluir para Pro →</p>
+              </div>
             </div>
-          </div>
+          )}
           <button 
             onClick={() => {
               setIsMobileMenuOpen(false);
