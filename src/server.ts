@@ -9,7 +9,7 @@ dotenv.config();
 const app = express();
 
 // Configuração de CORS Dinâmica para Multi-Domínio
-const allowedOriginsStr = process.env.ALLOWED_ORIGINS || 'http://localhost:3000,https://influnext.com.br,https://www.influnext.com.br';
+const allowedOriginsStr = process.env.ALLOWED_ORIGINS || 'http://localhost:3000,https://influnext.com.br,https://www.influnext.com.br,https://influnext.com,https://www.influnext.com';
 const ALLOWED_ORIGINS = allowedOriginsStr.split(',').map(origin => origin.trim());
 
 app.use(cors({
@@ -19,7 +19,8 @@ app.use(cors({
     
     const isAllowed = ALLOWED_ORIGINS.includes(origin) || 
                      origin.endsWith('.vercel.app') ||
-                     origin === 'https://influnext-api.vercel.app' ||
+                     origin.endsWith('.influnext.com') ||
+                     origin.endsWith('.influnext.com.br') ||
                      origin.includes('localhost');
 
     if (isAllowed) {
