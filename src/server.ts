@@ -18,21 +18,23 @@ app.use(cors({
 }));
 
 // Middleware de Analytics (Movido para ser carregado sob demanda)
-const analyticsMiddleware = (req: any, res: any, next: any) => {
-  if (req.path === '/' || req.path === '/health') return next();
-  import('./middlewares/analytics.middleware').then(m => m.trackPageView(req, res, next)).catch(() => next());
-};
+// Middleware de Analytics (Desativado temporariamente para estabilidade)
+app.use((req, res, next) => {
+  next();
+});
 
 app.use(express.json());
-
-// Rota Stripe (Deve vir ANTES do json() global se possível, mas aqui usamos o raw body específico)
 app.use('/v1/payments/webhook', express.raw({ type: 'application/json' }));
 
-app.use(analyticsMiddleware);
+// Endpoint de Health Check (CRÍTICO para o Railway)
+app.get('/', (req, res) => {
+  res.setHeader('Content-Type', 'text/plain');
+  res.status(200).send('🚀 API ONLINE');
+});
 
-// Endpoint de Health Check Simples para o Railway (RAIZ) - DEVE VIR ANTES DE TUDO
-app.get('/', (req, res) => res.status(200).send('🚀 API ONLINE'));
-app.get('/health', (req, res) => res.status(200).json({ status: 'online' }));
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'online', timestamp: new Date().toISOString() });
+});
 
 // Todas as suas rotas começarão com /v1
 app.use('/v1', routes);
