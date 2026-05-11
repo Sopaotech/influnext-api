@@ -13,23 +13,7 @@ const allowedOriginsStr = process.env.ALLOWED_ORIGINS || 'http://localhost:3000,
 const ALLOWED_ORIGINS = allowedOriginsStr.split(',').map(origin => origin.trim());
 
 app.use(cors({
-  origin: (origin, callback) => {
-    // Permite requisições sem origin (como mobile apps ou curl)
-    if (!origin) return callback(null, true);
-    
-    const isAllowed = ALLOWED_ORIGINS.includes(origin) || 
-                     origin.endsWith('.vercel.app') ||
-                     origin.endsWith('.influnext.com') ||
-                     origin.endsWith('.influnext.com.br') ||
-                     origin.includes('localhost');
-
-    if (isAllowed) {
-      callback(null, true);
-    } else {
-      console.warn(`[CORS] Bloqueado: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true, // Temporário: permite TUDO para diagnóstico
   credentials: true
 }));
 
