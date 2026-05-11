@@ -186,7 +186,7 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
               >
                 <div className="flex items-center gap-4 md:gap-6 w-full sm:w-auto">
                   <div className={`transition-colors flex-shrink-0 ${task.isDone ? 'text-emerald-500' : 'text-slate-300 group-hover:text-purple-500'}`}>
-                    {task.isDone ? <CheckCircle2 size={24} md:size={28} /> : <Circle size={24} md:size={28} />}
+                    {task.isDone ? <CheckCircle2 className="w-6 h-6 md:w-7 md:h-7" /> : <Circle className="w-6 h-6 md:w-7 md:h-7" />}
                   </div>
                   <div className="text-left overflow-hidden">
                     <p className={`font-black text-xs md:text-sm uppercase tracking-widest ${task.isDone ? 'line-through text-slate-400' : 'text-slate-800'}`}>
@@ -198,7 +198,7 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
                   </div>
                 </div>
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-purple-600 group-hover:text-white transition-all ml-auto sm:ml-0">
-                  <ArrowRight size={14} md:size={16} />
+                  <ArrowRight className="w-3.5 h-3.5 md:w-4 h-4" />
                 </div>
               </div>
             ))}
