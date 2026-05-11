@@ -45,10 +45,10 @@ export default function InfluencerDashboard() {
   return (
     <div className="space-y-12 pb-20">
       
-      {/* Header Summary */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 animate-in fade-in slide-in-from-top-4 duration-700">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
+      {/* Header Summary - Stacks on Mobile */}
+      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8 animate-in fade-in slide-in-from-top-4 duration-700">
+        <div className="space-y-1 text-center lg:text-left">
+          <div className="flex items-center justify-center lg:justify-start gap-2">
             <Sparkles className="w-4 h-4 text-purple-600 animate-pulse" />
             <span className="text-[10px] font-black text-purple-600 uppercase tracking-[0.3em]">Gestão Inteligente</span>
           </div>
@@ -57,20 +57,20 @@ export default function InfluencerDashboard() {
           </h1>
         </div>
 
-        <div className="flex items-center gap-4">
-           <div className="bg-white border border-slate-100 px-6 md:px-8 py-5 rounded-[2.5rem] flex items-center gap-6 shadow-sm hover:border-purple-200 transition-all group">
+        <div className="flex items-center justify-center lg:justify-end gap-4 w-full lg:w-auto">
+           <div className="bg-white border border-slate-100 px-5 md:px-8 py-4 md:py-5 rounded-[2rem] md:rounded-[2.5rem] flex flex-col sm:flex-row items-center gap-4 md:gap-6 shadow-sm hover:border-purple-200 transition-all group w-full sm:w-auto text-center sm:text-left">
               <div className="flex items-center gap-3">
                  <div className="p-3 bg-emerald-50 rounded-2xl group-hover:scale-110 transition-transform">
                     <Wallet className="w-5 h-5 text-emerald-600" />
                  </div>
                  <div>
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Saldo Disponível</span>
-                    <span className="text-2xl font-black text-slate-900 tracking-tighter">
+                    <span className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(escrowBalance)}
                     </span>
                  </div>
               </div>
-              <Button className="rounded-full bg-slate-900 text-white font-black text-[10px] uppercase h-10 px-6 hover:bg-purple-600 transition-colors">Sacar</Button>
+              <Button className="rounded-full bg-slate-900 text-white font-black text-[10px] uppercase h-10 px-6 hover:bg-purple-600 transition-colors w-full sm:w-auto">Sacar</Button>
            </div>
         </div>
       </header>

@@ -93,8 +93,8 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
     <div className="space-y-8 animate-in fade-in duration-700">
       
       {/* IA Empresária Insight */}
-      <section className="relative overflow-hidden p-8 rounded-[2.5rem] bg-white border border-slate-200 shadow-sm group">
-        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+      <section className="relative overflow-hidden p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] bg-white border border-slate-200 shadow-sm group">
+        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity hidden md:block">
           <Zap size={120} className="text-purple-600" />
         </div>
         
@@ -182,23 +182,23 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
               <div 
                 key={task.id}
                 onClick={() => toggleTask(task.id, task.isDone)}
-                className={`p-6 rounded-[2rem] border-2 transition-all cursor-pointer flex items-center justify-between group ${task.isDone ? 'bg-emerald-50 border-emerald-100 opacity-60' : 'bg-white border-slate-100 hover:border-purple-200 hover:shadow-md'}`}
+                className={`p-5 md:p-6 rounded-[1.8rem] md:rounded-[2rem] border-2 transition-all cursor-pointer flex flex-col sm:flex-row items-center sm:justify-between gap-4 group ${task.isDone ? 'bg-emerald-50 border-emerald-100 opacity-60' : 'bg-white border-slate-100 hover:border-purple-200 hover:shadow-md'}`}
               >
-                <div className="flex items-center gap-6">
-                  <div className={`transition-colors ${task.isDone ? 'text-emerald-500' : 'text-slate-300 group-hover:text-purple-500'}`}>
-                    {task.isDone ? <CheckCircle2 size={28} /> : <Circle size={28} />}
+                <div className="flex items-center gap-4 md:gap-6 w-full sm:w-auto">
+                  <div className={`transition-colors flex-shrink-0 ${task.isDone ? 'text-emerald-500' : 'text-slate-300 group-hover:text-purple-500'}`}>
+                    {task.isDone ? <CheckCircle2 size={24} md:size={28} /> : <Circle size={24} md:size={28} />}
                   </div>
-                  <div className="text-left">
-                    <p className={`font-black text-sm uppercase tracking-widest ${task.isDone ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+                  <div className="text-left overflow-hidden">
+                    <p className={`font-black text-xs md:text-sm uppercase tracking-widest ${task.isDone ? 'line-through text-slate-400' : 'text-slate-800'}`}>
                       {task.title}
                     </p>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase truncate max-w-[200px] md:max-w-md">
+                    <p className="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase truncate max-w-full">
                       {task.description || 'Tarefa estratégica da IA'}
                     </p>
                   </div>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-purple-600 group-hover:text-white transition-all">
-                  <ArrowRight size={16} />
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-purple-600 group-hover:text-white transition-all ml-auto sm:ml-0">
+                  <ArrowRight size={14} md:size={16} />
                 </div>
               </div>
             ))}
