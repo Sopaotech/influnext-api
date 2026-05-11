@@ -21,9 +21,9 @@ export default function LoginPage() {
 
   const cookieOptions: Cookies.CookieAttributes = {
     expires: 7,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN || undefined,
+    secure: true, // Sempre secure em produção (HTTPS)
+    sameSite: 'none', // Necessário para cookies funcionarem entre domínios (Vercel -> Railway)
+    path: '/',
   };
 
   const completeLogin = (data: LoginResponse) => {

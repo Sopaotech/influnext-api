@@ -67,11 +67,10 @@ export default function LandingPageClient() {
 
       <main className="flex-1 flex flex-col items-center relative overflow-hidden">
 
-        {/* Atmospheric bg - Lighter and softer */}
-        <div className="fixed inset-0 pointer-events-none z-0">
-          <div className="absolute top-[-10%] left-[10%] w-[800px] h-[600px] rounded-full bg-purple-100/50 blur-[150px]" />
-          <div className="absolute top-[50%] right-[-10%] w-[600px] h-[500px] rounded-full bg-violet-50/50 blur-[130px]" />
-          <div className="absolute bottom-[5%] left-[-5%] w-[500px] h-[400px] rounded-full bg-pink-50/30 blur-[120px]" />
+        {/* Atmospheric bg - Lighter and softer, optimized for performance */}
+        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+          <div className="absolute top-[-10%] left-[10%] w-[80vw] md:w-[800px] h-[60vh] md:h-[600px] rounded-full bg-purple-100/30 blur-[80px] md:blur-[150px]" />
+          <div className="absolute top-[50%] right-[-10%] w-[60vw] md:w-[600px] h-[50vh] md:h-[500px] rounded-full bg-violet-50/30 blur-[60px] md:blur-[130px]" />
         </div>
 
         {/* ── HERO ───────────────────────────────────────────────────────────── */}
@@ -82,17 +81,17 @@ export default function LandingPageClient() {
             A plataforma de influência mais séria do Brasil
           </div>
 
-          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-black tracking-[-0.04em] leading-[1.02] mb-8 max-w-5xl text-slate-900">
+          <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-black tracking-[-0.04em] leading-[1.1] md:leading-[1.02] mb-6 md:mb-8 max-w-5xl text-slate-900">
             Pare de contratar{' '}
             <span className="text-slate-400">números.</span>
-            <br />
+            <br className="hidden md:block" />
             Comece a contratar{' '}
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
               resultados.
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-slate-500 max-w-2xl mb-12 leading-relaxed font-medium">
+          <p className="text-base md:text-xl text-slate-500 max-w-2xl mb-10 md:mb-12 leading-relaxed font-medium px-4 md:px-0">
             A INFLUNEXT conecta marcas e influencers com{' '}
             <span className="text-slate-900 font-semibold underline decoration-purple-500/30">dados reais</span>,
             gestão profissional de carreira e{' '}
@@ -100,29 +99,29 @@ export default function LandingPageClient() {
             — do comércio de bairro à multinacional.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 mb-20">
+          <div className="flex flex-col sm:flex-row gap-4 mb-16 md:mb-20 w-full sm:w-auto px-6 sm:px-0">
             <Link
               href="/auth/signup?type=influencer"
-              className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-2xl font-bold text-sm uppercase tracking-wider transition-all shadow-xl shadow-purple-600/20 hover:scale-[1.02] active:scale-95"
+              className="inline-flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-2xl font-bold text-sm uppercase tracking-wider transition-all shadow-xl shadow-purple-600/20 hover:scale-[1.02] active:scale-95"
             >
-              Começar agora, é grátis <ArrowRight className="w-4 h-4" />
+              Começar agora <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               href="/auth/signup?type=company"
-              className="border border-slate-200 hover:bg-slate-50 text-slate-900 px-8 py-4 rounded-2xl font-bold text-sm uppercase tracking-wider transition-all"
+              className="inline-flex items-center justify-center border border-slate-200 hover:bg-slate-50 text-slate-900 px-8 py-4 rounded-2xl font-bold text-sm uppercase tracking-wider transition-all"
             >
               Sou uma Marca →
             </Link>
           </div>
 
-          {/* Metrics bar - Light Style */}
-          <div className="w-full max-w-2xl border border-slate-100 bg-white shadow-xl shadow-purple-500/5 rounded-2xl grid grid-cols-3 divide-x divide-slate-100">
+          {/* Metrics bar - Stacks on mobile */}
+          <div className="w-full max-w-2xl border border-slate-100 bg-white shadow-xl shadow-purple-500/5 rounded-2xl flex flex-col md:grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100">
             {STATS.map(s => (
-              <div key={s.label} className="flex flex-col items-center py-5 px-4">
-                <span className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
+              <div key={s.label} className="flex flex-col items-center py-4 md:py-5 px-4">
+                <span className="text-xl md:text-3xl font-black text-slate-900 tracking-tight">
                   {s.value}
                 </span>
-                <span className="text-[10px] md:text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-1 text-center">{s.label}</span>
+                <span className="text-[9px] md:text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-1 text-center">{s.label}</span>
               </div>
             ))}
           </div>
