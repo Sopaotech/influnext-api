@@ -53,6 +53,24 @@ process.on('uncaughtException', (error: any) => {
 
 const PORT = Number(process.env.PORT) || 4000;
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 INFLUNEXT ONLINE: Port ${PORT}`);
-});
+const startServer = async () => {
+  try {
+    console.log('🔍 Verificando conexão com o banco de dados...');
+    const { prisma } = await import('./lib/prisma');
+    await prisma.$connect();
+    console.log('✅ Banco de dados conectado!');
+
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 INFLUNEXT ONLINE: Port ${PORT}`);
+      console.log(`🌍 URL da API: https://api.influnext.com.br`);
+    });
+  } catch (error: any) {
+    console.error('❌ FALHA CRÍTICA NO STARTUP:', error);
+    // Tenta subir o servidor mesmo com erro no banco para podermos ver o erro via HTTP/Health
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`⚠️ Servidor subiu com ERROS (Port ${PORT}). Verifique os logs.`);
+    });
+  }
+};
+
+startServer();
