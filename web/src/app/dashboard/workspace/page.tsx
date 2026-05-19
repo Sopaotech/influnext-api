@@ -198,10 +198,10 @@ export default function AIWorkspacePage() {
                <div className="h-1.5 w-10 bg-purple-600 rounded-full" />
                <span className="text-[10px] font-black text-purple-500 uppercase tracking-[0.4em]">Strategic_Neural_Link v2.1</span>
             </div>
-            <h1 className="text-5xl font-black text-slate-900 tracking-tighter">
-              Central de <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-indigo-500 to-purple-600">Comando</span>
+            <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter drop-shadow-[0_2px_10px_rgba(255,255,255,0.5)]">
+              Central de <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-700 via-indigo-600 to-purple-800 drop-shadow-none">Comando</span>
             </h1>
-            <p className="text-xs font-bold text-slate-500 max-w-lg uppercase tracking-wider">
+            <p className="text-[11px] font-black text-slate-700 max-w-lg uppercase tracking-widest bg-white/40 backdrop-blur-sm px-3 py-1 rounded-lg w-fit">
               Sua unidade de processamento tático e inteligência de mercado.
             </p>
           </div>
@@ -210,15 +210,15 @@ export default function AIWorkspacePage() {
              {connectedPlatforms.length === 0 ? (
                <Button 
                 onClick={() => router.push('/dashboard/settings')}
-                className="bg-rose-500/10 border border-rose-500/20 px-5 py-2.5 rounded-2xl flex items-center gap-3 group hover:bg-rose-500/20 transition-all"
+                className="bg-rose-600 border-2 border-rose-400 px-5 py-2.5 rounded-2xl flex items-center gap-3 group hover:bg-rose-500 transition-all shadow-xl shadow-rose-600/20"
                >
-                  <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse shadow-[0_0_8px_#f43f5e]" />
-                  <span className="text-[10px] font-black text-rose-300 uppercase tracking-widest">Nenhuma rede conectada</span>
+                  <div className="w-2.5 h-2.5 bg-white rounded-full animate-ping shadow-[0_0_12px_#fff]" />
+                  <span className="text-[10px] font-black text-white uppercase tracking-widest">Sincronizar Redes Agora</span>
                </Button>
              ) : (
-               <div className="bg-purple-600/10 border border-purple-500/20 px-5 py-2.5 rounded-2xl flex items-center gap-3">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse shadow-[0_0_8px_#a855f7]" />
-                  <span className="text-[10px] font-black text-purple-300 uppercase tracking-widest">{connectedPlatforms.length} {connectedPlatforms.length === 1 ? 'Rede Ativa' : 'Redes Ativas'}</span>
+               <div className="bg-emerald-600 border-2 border-emerald-400 px-5 py-2.5 rounded-2xl flex items-center gap-3 shadow-xl shadow-emerald-600/20">
+                  <div className="w-2.5 h-2.5 bg-white rounded-full animate-pulse shadow-[0_0_12px_#fff]" />
+                  <span className="text-[10px] font-black text-white uppercase tracking-widest">{connectedPlatforms.length} {connectedPlatforms.length === 1 ? 'Rede Ativa' : 'Redes Ativas'}</span>
                </div>
              )}
           </div>
@@ -261,23 +261,23 @@ export default function AIWorkspacePage() {
           
           {/* Main Console */}
           <div className="lg:col-span-3 space-y-8">
-            <section className="bg-white border border-slate-100 p-10 rounded-[2.5rem] relative overflow-hidden shadow-sm">
+            <section className="bg-white border border-slate-100 p-6 md:p-10 rounded-[2rem] md:rounded-[2.5rem] relative overflow-hidden shadow-sm">
               <div className="absolute top-0 right-0 p-4 opacity-5">
-                 <BrainCircuit className="w-32 h-32 text-purple-600" />
+                 <BrainCircuit className="w-20 h-20 md:w-32 md:h-32 text-purple-600" />
               </div>
               
-              <div className="flex items-center gap-2 mb-8 text-purple-600 text-[10px] font-black uppercase tracking-widest">
+              <div className="flex items-center gap-2 mb-6 md:mb-8 text-purple-600 text-[9px] md:text-[10px] font-black uppercase tracking-widest">
                  <Zap className="w-4 h-4 fill-purple-600" /> Diretriz do Mentor
               </div>
 
               <div className="prose prose-slate max-w-none">
-                <p className="text-slate-700 font-bold leading-relaxed whitespace-pre-wrap text-base border-l-4 border-purple-500 pl-6 py-4 bg-purple-50/50 rounded-r-2xl">
+                <p className="text-slate-700 font-bold leading-relaxed whitespace-pre-wrap text-sm md:text-base border-l-4 border-purple-500 pl-4 md:pl-6 py-4 bg-purple-50/50 rounded-r-2xl">
                   {analysis.analysisText}
                 </p>
               </div>
 
-              <div className="mt-8 pt-6 border-t border-zinc-900 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-4 text-[9px] text-zinc-600 font-black uppercase tracking-widest">
+              <div className="mt-6 md:mt-8 pt-6 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-4 text-[8px] md:text-[9px] text-slate-400 font-black uppercase tracking-widest">
                   <span>SISTEMA: OK</span>
                   <span>TIME: {new Date(analysis.generatedAt).toLocaleTimeString()}</span>
                 </div>
@@ -297,8 +297,8 @@ export default function AIWorkspacePage() {
             </section>
 
             {/* Chat com Mentor Interativo */}
-            <section className="bg-white border border-slate-100 p-8 rounded-[2.5rem] relative flex flex-col h-[500px] shadow-sm">
-              <div className="flex items-center gap-3 mb-6 text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-50 pb-6">
+            <section className="bg-white border border-slate-100 p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] relative flex flex-col h-[400px] md:h-[500px] shadow-sm">
+              <div className="flex items-center gap-3 mb-4 md:mb-6 text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest border-b border-slate-50 pb-4 md:pb-6">
                  <Terminal className="w-5 h-5 text-purple-600" /> Chat Direto com seu Mentor
               </div>
               

@@ -195,458 +195,214 @@ export default function SignupClient() {
   const labelClass = "block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2";
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {/* Logo Centralizada */}
+    <div className="w-full space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 relative z-10">
       <div className="text-center">
         <Logo size="lg" href="/" className="justify-center" />
+        <p className="mt-3 text-[11px] font-black uppercase tracking-[0.4em] text-slate-400">
+          Onboarding Experience
+        </p>
       </div>
 
+      <div className="relative group">
+        <div className="absolute -inset-1 bg-gradient-to-r from-slate-200 to-slate-100 rounded-[3rem] blur opacity-25"></div>
+        <div 
+          className="relative bg-white/10 border border-white/20 rounded-[3rem] p-10 space-y-8 shadow-2xl overflow-hidden"
+          style={{ backdropFilter: 'blur(30px)' }}
+        >
+          {/* Header */}
+          <div className="space-y-4">
+            <Stepper currentStep={step} totalSteps={3} />
 
-        <div className="relative">
-          <div className="relative bg-white rounded-[2.5rem] p-10 shadow-[0_20px_60px_rgba(0,0,0,0.06)] border border-slate-100 space-y-8">
-
-            {/* Header */}
-            <div className="space-y-4">
-              <Stepper currentStep={step} totalSteps={3} />
-
-              {step === 1 && (
-                <>
-                  <div className="flex gap-1 p-1 bg-slate-50 border border-slate-100 rounded-2xl mb-4 w-max mx-auto">
-                    <button
-                      type="button"
-                      onClick={() => setUserType('influencer')}
-                      className={`px-6 py-2.5 text-[10px] font-black rounded-xl tracking-wider uppercase transition-all ${isInfluencer ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' : 'text-slate-400 hover:text-slate-600'}`}
-                    >
-                      Influenciador
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setUserType('company')}
-                      className={`px-6 py-2.5 text-[10px] font-black rounded-xl tracking-wider uppercase transition-all ${!isInfluencer ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20' : 'text-slate-400 hover:text-slate-600'}`}
-                    >
-                      Empresa
-                    </button>
-                  </div>
-                  <div className="text-center space-y-1">
-                    <h1 className="text-2xl font-black text-slate-900 tracking-tight">Criar sua conta</h1>
-                    <p className="text-slate-500 text-xs font-medium">Passo 1 de 3 — Credenciais de acesso</p>
-                  </div>
-                </>
-              )}
-
-              {step === 2 && (
-                <div className="text-center space-y-1">
-                  <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                    {isInfluencer ? 'Estratégia de Carreira' : 'Perfil Estratégico'}
-                  </h1>
-                  <p className="text-slate-500 text-xs font-medium">
-                    Passo 2 de 3 — {isInfluencer ? 'Construindo seu alicerce de elite' : 'Personalizando sua experiência'}
-                  </p>
-                </div>
-              )}
-
-              {step === 3 && (
-                <div className="text-center space-y-1">
-                  <h1 className="text-2xl font-black text-slate-900 tracking-tight">Potencializando Alcance</h1>
-                  <p className="text-slate-500 text-xs font-medium">Passo 3 de 3 — Conecte suas fontes de dados</p>
-                </div>
-              )}
-            </div>
-
-            {error && (
-              <div className="bg-red-50 border border-red-100 text-red-600 p-4 rounded-2xl text-[10px] text-center font-black uppercase tracking-widest animate-in fade-in zoom-in-95">
-                {error}
-              </div>
-            )}
-
-            {/* ─── STEP 1: Credentials ─────────────────────────────────────── */}
             {step === 1 && (
-              <form onSubmit={handleStep1Submit} className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div>
-                  <label className={labelClass}>E-mail Profissional</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    placeholder="exemplo@email.com"
-                    className={inputClass}
-                  />
-                </div>
-
-                <div>
-                  <label className={labelClass}>Escolha uma Senha</label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    placeholder="Mínimo 8 caracteres"
-                    className={inputClass}
-                  />
-                  {password.length > 0 && password.length < 8 && (
-                    <p className="text-amber-600 text-[10px] mt-2 font-black uppercase tracking-widest">Senha muito curta</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className={labelClass}>Confirme a Senha</label>
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    placeholder="Repita a senha"
-                    className={`${inputClass} ${confirmPassword.length > 0 && confirmPassword !== password ? 'border-red-300' : ''}`}
-                  />
-                  {confirmPassword.length > 0 && confirmPassword !== password && (
-                    <p className="text-red-500 text-[10px] mt-2 font-black uppercase tracking-widest">Senhas não conferem</p>
-                  )}
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={!step1Valid || isLoading}
-                  className="w-full h-14 bg-slate-900 hover:bg-purple-600 disabled:opacity-30 text-white font-black uppercase text-[10px] tracking-widest rounded-2xl shadow-lg shadow-slate-900/10 transition-all duration-500 active:scale-95"
-                >
-                  {isLoading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                      Processando...
-                    </span>
-                  ) : 'Continuar para Perfil →'}
-                </button>
-              </form>
-            )}
-
-            {/* ─── STEP 2: Influencer Interview (Chat de Consultoria) ─── */}
-            {step === 2 && isInfluencer && (
-              <form onSubmit={handleStep2Submit} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                
-                {/* AI Consultant Message */}
-                <div className="bg-slate-50 text-slate-600 p-5 rounded-2xl rounded-tl-sm text-[11px] font-medium border border-slate-100 shadow-sm relative overflow-hidden">
-                   <div className="absolute top-0 left-0 w-1 h-full bg-purple-500" />
-                  <p className="font-black mb-1 flex items-center gap-2 text-purple-600 uppercase tracking-widest text-[9px]">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    Consultor de Estratégia
-                  </p>
-                  <p>Incrível! O mercado busca autenticidade. Para desenharmos sua estratégia de crescimento, preciso entender: Qual seu nicho dominante e qual seu grande objetivo hoje?</p>
-                </div>
-
-                {/* User Reply Area */}
-                <div className="bg-purple-50 border border-purple-100 p-6 rounded-3xl rounded-tr-sm text-sm ml-auto w-[95%] space-y-5 shadow-sm">
-                  <div>
-                    <label className={labelClass}>Meu Nicho é:</label>
-                    <select value={niche} onChange={(e) => setNiche(e.target.value)} required className={selectClass}>
-                      <option value="">Selecione...</option>
-                      {INFLUENCER_NICHES.map(n => (
-                        <option key={n} value={n}>{n}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className={labelClass}>Estou nessa jornada há:</label>
-                    <div className="space-y-2">
-                      <input
-                        type="range"
-                        min={0}
-                        max={20}
-                        value={yearsOfCareer}
-                        onChange={(e) => setYearsOfCareer(Number(e.target.value))}
-                        className="w-full h-1.5 bg-purple-100 rounded-full appearance-none cursor-pointer accent-purple-600"
-                      />
-                      <div className="flex justify-between text-[10px] text-purple-400 font-black uppercase tracking-widest">
-                        <span>{yearsOfCareer === 0 ? 'Começando' : `${yearsOfCareer} anos`}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className={labelClass}>E meu grande objetivo é:</label>
-                    <div className="grid grid-cols-1 gap-2">
-                      {CAREER_GOALS.map(g => (
-                        <label key={g.value} className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${goal === g.value ? 'border-purple-500 bg-purple-50 text-purple-900 shadow-sm' : 'border-slate-100 bg-white text-slate-500 hover:border-purple-200 hover:bg-slate-50'}`}>
-                          <input
-                            type="radio"
-                            name="goal"
-                            value={g.value}
-                            checked={goal === g.value}
-                            onChange={() => setGoal(g.value)}
-                            className="accent-purple-600 w-4 h-4"
-                          />
-                          <span className="text-[11px] font-black uppercase tracking-wider">{g.label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelClass}>Cidade</label>
-                    <input
-                      type="text"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      placeholder="São Paulo"
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>UF</label>
-                    <input
-                      type="text"
-                      value={state}
-                      onChange={(e) => setState(e.target.value.toUpperCase().slice(0, 2))}
-                      placeholder="SP"
-                      maxLength={2}
-                      className={inputClass}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-4">
+              <>
+                <div className="flex gap-1 p-1 bg-white/5 border border-white/10 rounded-2xl mb-4 w-max mx-auto">
                   <button
                     type="button"
-                    onClick={() => setStep(1)}
-                    className="px-6 py-4 border border-slate-100 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 hover:text-slate-600 transition-all"
+                    onClick={() => setUserType('influencer')}
+                    className={`px-6 py-2.5 text-[10px] font-black rounded-xl tracking-wider uppercase transition-all ${isInfluencer ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}
                   >
-                    ← Voltar
+                    Influenciador
                   </button>
                   <button
-                    type="submit"
-                    disabled={!step2InfluencerValid || isLoading}
-                    className="flex-1 h-14 bg-slate-900 hover:bg-purple-600 disabled:opacity-30 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl transition-all shadow-lg shadow-slate-900/10 active:scale-95"
+                    type="button"
+                    onClick={() => setUserType('company')}
+                    className={`px-6 py-2.5 text-[10px] font-black rounded-xl tracking-wider uppercase transition-all ${!isInfluencer ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}
                   >
-                    {isLoading ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                        Processando...
-                      </span>
-                    ) : 'Próximo Passo →'}
+                    Empresa
                   </button>
                 </div>
-              </form>
+                <div className="text-center space-y-1">
+                  <h1 className="text-2xl font-black text-slate-900 tracking-tighter">Criar sua conta</h1>
+                  <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">Passo 1 de 3 — Credenciais</p>
+                </div>
+              </>
             )}
 
-            {/* ─── STEP 3: Social Connection ───────────────────────────────── */}
-            {step === 3 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="bg-slate-50 text-slate-600 p-5 rounded-2xl rounded-tl-sm text-[11px] font-medium border border-slate-100 shadow-sm relative overflow-hidden">
-                   <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500" />
-                  <p className="font-black mb-1 flex items-center gap-2 text-emerald-600 uppercase tracking-widest text-[9px]">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    Validação de Autoridade
-                  </p>
-                  <p>Etapa final! Conecte suas redes sociais para validar seu alcance. Dados reais garantem segurança nas negociações e aceleram seu fechamento com marcas.</p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3">
-                  {[
-                    { 
-                      id: 'instagram', 
-                      name: 'Instagram', 
-                      icon: (
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] flex items-center justify-center shadow-sm">
-                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-                          </svg>
-                        </div>
-                      ),
-                      color: 'hover:border-purple-200 hover:bg-purple-50/30 text-slate-900' 
-                    },
-                    { 
-                      id: 'tiktok', 
-                      name: 'TikTok', 
-                      icon: (
-                        <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center shadow-sm">
-                          <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.89-.6-4.13-1.47-.13 3.44-.3 6.88-.45 10.32-.06 1.58-.56 3.17-1.6 4.38-1.14 1.36-2.88 2.09-4.63 2.13-2.07.13-4.22-.72-5.49-2.39-1.27-1.74-1.31-4.2-.23-6.01.94-1.57 2.66-2.58 4.49-2.61.31-.01.62.01.93.04v4.04c-.6-.11-1.25-.01-1.79.29-.71.41-1.07 1.25-.95 2.05.11.9.96 1.57 1.86 1.5.81-.02 1.51-.62 1.64-1.42.13-2.18.26-4.36.39-6.54V.02h-3.91z"/>
-                          </svg>
-                        </div>
-                      ),
-                      color: 'hover:border-slate-300 hover:bg-slate-50 text-slate-900' 
-                    },
-                    { 
-                      id: 'youtube', 
-                      name: 'YouTube', 
-                      icon: (
-                        <div className="w-8 h-8 rounded-lg bg-[#FF0000] flex items-center justify-center shadow-sm">
-                          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                          </svg>
-                        </div>
-                      ),
-                      color: 'hover:border-red-200 hover:bg-red-50 text-slate-900' 
-                    }
-                  ].map((plat) => (
-                    <button 
-                      key={plat.id}
-                      onClick={async () => {
-                        const id = toast.loading(`Iniciando conexão segura com ${plat.name}...`);
-                        try {
-                          const { data } = await api.get('/auth/social/urls');
-                          const url = data[plat.id];
-                          if (url) {
-                            window.location.href = url;
-                          } else {
-                            toast.error('O serviço de conexão está temporariamente indisponível.', { id });
-                          }
-                        } catch (err) {
-                          toast.error('Falha na comunicação com a API InfluNext.', { id });
-                        }
-                      }}
-                      className={`flex items-center justify-between p-5 bg-white border border-slate-100 rounded-[2rem] transition-all duration-300 shadow-sm hover:shadow-xl hover:scale-[1.02] active:scale-95 group ${plat.color}`}
-                    >
-                      <div className="flex items-center gap-4">
-                        {plat.icon}
-                        <div className="text-left">
-                          <span className="block text-xs font-black uppercase tracking-widest leading-none mb-1">{plat.name}</span>
-                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-tight">Vincular métricas oficiais</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[9px] font-black uppercase text-purple-600 bg-purple-50 px-4 py-2 rounded-xl border border-purple-100 group-hover:bg-purple-600 group-hover:text-white group-hover:border-purple-600 transition-all">
-                          Conectar
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => router.push('/dashboard/influencer')}
-                  className="w-full h-14 bg-slate-900 hover:bg-purple-600 text-white font-black uppercase tracking-[0.2em] rounded-2xl transition-all text-[10px] shadow-lg shadow-slate-900/10 active:scale-95"
-                >
-                  Concluir e Acessar Painel
-                </button>
+            {step === 2 && (
+              <div className="text-center space-y-1">
+                <h1 className="text-2xl font-black text-slate-900 tracking-tighter">
+                  {isInfluencer ? 'Estratégia de Carreira' : 'Perfil Estratégico'}
+                </h1>
+                <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">
+                  Passo 2 de 3 — {isInfluencer ? 'Construindo seu alicerce' : 'Personalizando sua experiência'}
+                </p>
               </div>
             )}
 
-            {/* STEP 2: Company Interview */}
-            {step === 2 && !isInfluencer && (
-              <form onSubmit={handleStep2Submit} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div>
-                  <label className={labelClass}>Nome da Empresa *</label>
-                  <input
-                    type="text"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    required
-                    placeholder="Razão social ou nome fantasia"
-                    className={inputClass}
-                  />
-                </div>
+            {step === 3 && (
+              <div className="text-center space-y-1">
+                <h1 className="text-2xl font-black text-slate-900 tracking-tighter">Potencializando Alcance</h1>
+                <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">Passo 3 de 3 — Conecte-se</p>
+              </div>
+            )}
+          </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelClass}>Cidade</label>
-                    <input
-                      type="text"
-                      value={companyCity}
-                      onChange={(e) => setCompanyCity(e.target.value)}
-                      placeholder="São Paulo"
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>UF</label>
-                    <input
-                      type="text"
-                      value={companyState}
-                      onChange={(e) => setCompanyState(e.target.value.toUpperCase().slice(0, 2))}
-                      placeholder="SP"
-                      maxLength={2}
-                      className={inputClass}
-                    />
-                  </div>
-                </div>
+          {error && (
+            <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 p-4 rounded-2xl text-[9px] text-center font-black uppercase tracking-widest animate-in shake">
+              {error}
+            </div>
+          )}
 
-                <div>
-                  <label className={labelClass}>Segmento de Atuação</label>
-                  <select value={segment} onChange={(e) => setSegment(e.target.value)} className={selectClass}>
-                    <option value="">Selecione o segmento...</option>
-                    {COMPANY_SEGMENTS.map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
+          {/* Form Step 1 */}
+          {step === 1 && (
+            <form onSubmit={handleStep1Submit} className="space-y-6">
+              <div className="space-y-2">
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] ml-2">E-mail Profissional</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="exemplo@email.com"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-sm font-bold text-slate-900 placeholder:text-slate-300 focus:outline-none focus:bg-white/15 transition-all shadow-sm"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] ml-2">Escolha uma Senha</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="Mínimo 8 caracteres"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-sm font-bold text-slate-900 placeholder:text-slate-300 focus:outline-none focus:bg-white/15 transition-all shadow-sm"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] ml-2">Confirme a Senha</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  placeholder="Repita a senha"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-sm font-bold text-slate-900 placeholder:text-slate-300 focus:outline-none focus:bg-white/15 transition-all shadow-sm"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={!step1Valid || isLoading}
+                className="w-full h-16 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white text-[10px] font-black uppercase tracking-[0.4em] rounded-2xl shadow-xl transition-all active:scale-95"
+              >
+                {isLoading ? 'CONFIGURANDO...' : 'PRÓXIMO PASSO'}
+              </button>
+            </form>
+          )}
+
+          {/* Step 2 Influencer */}
+          {step === 2 && isInfluencer && (
+            <form onSubmit={handleStep2Submit} className="space-y-6">
+              <div className="p-6 bg-slate-900/5 border border-slate-900/10 rounded-3xl space-y-4">
+                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                   Estratégia AI
+                 </p>
+                 <p className="text-xs font-bold text-slate-700 leading-relaxed italic">"Incrível! O mercado busca autenticidade. Qual seu nicho dominante e qual seu grande objetivo hoje?"</p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] ml-2">Meu nicho é:</label>
+                  <select 
+                    value={niche} 
+                    onChange={(e) => setNiche(e.target.value)} 
+                    required 
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-sm font-bold text-slate-900 focus:outline-none focus:bg-white/15 transition-all"
+                  >
+                    <option value="">Selecione...</option>
+                    {INFLUENCER_NICHES.map(n => <option key={n} value={n}>{n}</option>)}
                   </select>
                 </div>
 
-                <div>
-                  <label className={labelClass}>Tamanho da Empresa</label>
-                  <div className="grid grid-cols-1 gap-2">
-                    {EMPLOYEE_RANGES.map(r => (
-                      <label key={r.value} className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${employeeCount === r.value ? 'border-purple-500 bg-purple-50 text-purple-900 shadow-sm' : 'border-slate-100 bg-white text-slate-500 hover:border-purple-200 hover:bg-slate-50'}`}>
-                        <input
-                          type="radio"
-                          name="employees"
-                          value={r.value}
-                          checked={employeeCount === r.value}
-                          onChange={() => setEmployeeCount(r.value)}
-                          className="accent-purple-600 w-4 h-4"
-                        />
-                        <span className="text-[11px] font-black uppercase tracking-wider">{r.label}</span>
-                      </label>
-                    ))}
-                  </div>
+                <div className="space-y-2">
+                   <label className="block text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] ml-2">Meu objetivo é:</label>
+                   <div className="grid grid-cols-1 gap-2">
+                      {CAREER_GOALS.map(g => (
+                        <button
+                          key={g.value}
+                          type="button"
+                          onClick={() => setGoal(g.value)}
+                          className={`p-5 rounded-2xl border text-left transition-all ${goal === g.value ? 'bg-slate-900 text-white border-slate-900 shadow-xl' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-white/10'}`}
+                        >
+                           <span className="text-[10px] font-black uppercase tracking-widest">{g.label}</span>
+                        </button>
+                      ))}
+                   </div>
                 </div>
+              </div>
 
-                <div>
-                  <label className={labelClass}>Budget para Campanhas</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {BUDGET_RANGES.map(b => (
-                      <label key={b.value} className={`flex items-center gap-2 p-4 rounded-2xl border cursor-pointer transition-all text-center justify-center ${campaignBudget === b.value ? 'border-purple-500 bg-purple-50 text-purple-900 shadow-sm' : 'border-slate-100 bg-white text-slate-500 hover:border-purple-200 hover:bg-slate-50'}`}>
-                        <input
-                          type="radio"
-                          name="budget"
-                          value={b.value}
-                          checked={campaignBudget === b.value}
-                          onChange={() => setCampaignBudget(b.value)}
-                          className="sr-only"
-                        />
-                        <span className="text-[10px] font-black uppercase tracking-tight">{b.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
+              <button
+                type="submit"
+                disabled={!step2InfluencerValid || isLoading}
+                className="w-full h-16 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white text-[10px] font-black uppercase tracking-[0.4em] rounded-2xl shadow-xl transition-all active:scale-95"
+              >
+                {isLoading ? 'GERANDO PERFIL...' : 'FINALIZAR ESTRATÉGIA'}
+              </button>
+            </form>
+          )}
 
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setStep(1)}
-                    className="px-6 py-4 border border-slate-100 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 hover:text-slate-600 transition-all"
-                  >
-                    Voltar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={!step2CompanyValid || isLoading}
-                    className="flex-1 h-14 bg-slate-900 hover:bg-purple-600 disabled:opacity-30 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl transition-all shadow-lg shadow-slate-900/10 active:scale-95"
-                  >
-                    {isLoading ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                        Configurando...
-                      </span>
-                    ) : 'Finalizar Cadastro'}
-                  </button>
-                </div>
-              </form>
-            )}
+          {/* Step 3 Social Connection */}
+          {step === 3 && (
+            <div className="space-y-6">
+              <div className="p-6 bg-emerald-500/5 border border-emerald-500/10 rounded-3xl space-y-4">
+                 <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Validação de Alcance</p>
+                 <p className="text-xs font-bold text-slate-700 leading-relaxed italic">Conecte suas redes para validar seu InfluScore. Dados reais aceleram fechamentos.</p>
+              </div>
 
-            {step === 1 && (
-              <p className="text-center text-[10px] font-black uppercase tracking-widest text-slate-300">
-                Já possui conta?{' '}
-                <Link href="/auth/login" className="text-purple-500 hover:text-purple-700 transition-colors">
-                  Fazer Login
-                </Link>
-              </p>
-            )}
+              <div className="grid grid-cols-1 gap-3">
+                 {['Instagram', 'TikTok', 'YouTube'].map((plat) => (
+                   <button 
+                    key={plat}
+                    className="flex items-center justify-between p-6 bg-white/10 border border-white/20 rounded-[2rem] hover:bg-white/20 transition-all group"
+                   >
+                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">{plat}</span>
+                     <span className="text-[9px] font-black uppercase text-slate-400 group-hover:text-slate-900 transition-colors">Conectar →</span>
+                   </button>
+                 ))}
+              </div>
+
+              <button
+                onClick={() => router.push('/dashboard/influencer')}
+                className="w-full h-16 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-black uppercase tracking-[0.4em] rounded-2xl shadow-xl transition-all"
+              >
+                ACESSAR STUDIO
+              </button>
+            </div>
+          )}
+
+          <div className="pt-4 border-t border-white/10 text-center">
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+              Já possui conta?{' '}
+              <Link href="/auth/login" className="text-slate-900 hover:underline">
+                Fazer Login
+              </Link>
+            </p>
           </div>
         </div>
       </div>
+    </div>
     );
 }

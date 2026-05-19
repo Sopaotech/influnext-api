@@ -230,6 +230,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     });
 
     if (!isMatch) {
+      console.warn('[AUTH LOGIN FAIL]', { email, reason: 'Password mismatch' });
       res.status(401).json({ error: 'Credenciais inválidas.' });
       return;
     }

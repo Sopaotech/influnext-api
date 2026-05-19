@@ -19,11 +19,11 @@ app.use(cors({
 
 // Middleware de Analytics (Movido para ser carregado sob demanda)
 // Middleware de Analytics (Desativado temporariamente para estabilidade)
+app.use(express.json());
 app.use((req, res, next) => {
+  console.log(`[REQUEST] ${req.method} ${req.url}`);
   next();
 });
-
-app.use(express.json());
 app.use('/v1/payments/webhook', express.raw({ type: 'application/json' }));
 
 // Endpoint de Health Check (CRÍTICO para o Railway)
@@ -59,6 +59,10 @@ const startServer = async () => {
     const { prisma } = await import('./lib/prisma');
     await prisma.$connect();
     console.log('✅ Banco de dados conectado!');
+
+    // Garante que o administrador solicitado pelo usuário exista
+    const { ensureAdminExists } = await import('./lib/admin-init');
+    await ensureAdminExists();
 
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 INFLUNEXT ONLINE: Port ${PORT}`);

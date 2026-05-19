@@ -125,60 +125,43 @@ export default function SubscriptionPage() {
           ))}
         </div>
 
-        {/* Right Side: Checkout Card */}
-        {!isAlreadyPro ? (
-          <div className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-            <div className="relative bg-white border border-slate-100 rounded-[2.5rem] p-10 flex flex-col items-center text-center space-y-8 h-full shadow-xl">
-              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
-                 <Rocket className="w-10 h-10 text-white" />
-              </div>
-
-              <div className="space-y-2">
-                <span className="text-purple-600 text-[10px] font-black uppercase tracking-[0.3em]">Aceleração de Elite</span>
-                <h2 className="text-3xl font-black text-slate-900 tracking-tighter">InfluNext <span className="text-purple-600 italic">PRO</span></h2>
-                <div className="flex items-baseline gap-1 justify-center py-6">
-                  <span className="text-2xl font-black text-slate-400">R$</span>
-                  <span className="text-8xl font-black text-slate-900 tracking-tighter">97</span>
-                  <span className="text-xl font-bold text-slate-400">/mês</span>
-                </div>
-              </div>
-
-              <button 
-                onClick={handleSubscribe}
-                disabled={isLoading}
-                className="w-full py-5 bg-slate-900 text-white font-black rounded-2xl hover:bg-slate-800 transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? 'CARREGANDO...' : 'ASSINAR AGORA'} <CheckCircle2 className="w-5 h-5" />
-              </button>
-
-              <div className="space-y-4 pt-4 border-t border-slate-100 w-full">
-                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Sem fidelidade • Cancele quando quiser</p>
-                 <div className="flex items-center justify-center gap-2 opacity-20">
-                    <div className="h-6 w-10 bg-slate-100 rounded-md border border-slate-200" />
-                    <div className="h-6 w-10 bg-slate-100 rounded-md border border-slate-200" />
-                    <div className="h-6 w-10 bg-slate-100 rounded-md border border-slate-200" />
-                 </div>
-              </div>
+        {/* Right Side: Ecosystem Model Card */}
+        <div className="relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+          <div className="relative bg-white border border-slate-100 rounded-[2.5rem] p-10 flex flex-col items-center text-center space-y-8 h-full shadow-xl">
+            <div className="w-20 h-20 rounded-3xl bg-slate-900 flex items-center justify-center shadow-lg shadow-slate-500/20">
+               <ShieldCheck className="w-10 h-10 text-white" />
             </div>
-          </div>
-        ) : (
-          <div className="p-10 bg-gradient-to-br from-emerald-900/20 to-transparent border border-emerald-500/20 rounded-[2.5rem] flex flex-col items-center text-center justify-center space-y-6">
-            <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center">
-              <CheckCircle2 className="w-10 h-10 text-emerald-400" />
-            </div>
+
             <div className="space-y-2">
-              <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Acesso Ativo</h3>
-              <p className="text-zinc-400 text-sm font-medium">Sua conta possui privilégios de Elite. Aproveite todas as ferramentas!</p>
+              <span className="text-slate-900 text-[10px] font-black uppercase tracking-[0.3em]">Modelo de Parceria</span>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tighter">Crescemos <span className="text-slate-400 italic">Juntos</span></h2>
+              
+              <div className="py-6 space-y-4">
+                <div className="flex flex-col items-center">
+                  <span className="text-5xl font-black text-slate-900 tracking-tighter">15%</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Comissão por Job Fechado</span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                  Você não paga mensalidade para usar as ferramentas de elite. Nós só ganhamos quando você ganha. Risco zero para sua carreira.
+                </p>
+              </div>
             </div>
-            <Link 
-              href="/dashboard/influencer"
-              className="px-8 py-3 bg-white text-black font-black rounded-xl text-[10px] uppercase tracking-widest hover:bg-emerald-400 transition-colors"
-            >
-              Ir para o Dashboard
-            </Link>
+
+            <div className="w-full p-6 bg-slate-50 rounded-2xl border border-slate-100 text-left space-y-3">
+               <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">Plano Grátis</span>
+               </div>
+               <p className="text-[10px] font-bold text-slate-400">Acesso a todas as ferramentas (IA, Media Kit, Contratos) sem custo fixo.</p>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t border-slate-100 w-full">
+               <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Upgrade Opcional (Em breve)</p>
+               <p className="text-[10px] text-slate-500 font-bold">Plano de R$47/mês para reduzir a comissão para 5%.</p>
+            </div>
           </div>
-        )}
+        </div>
 
       </div>
 

@@ -5,6 +5,10 @@ export const cleanupQueue = new Queue('cleanup-tasks', {
   connection: redisConnection,
 });
 
+cleanupQueue.on('error', () => {
+  // Ignora erro de conexão do Redis
+});
+
 export const addDailyCleanupJob = async () => {
   await cleanupQueue.add(
     'daily-cleanup',

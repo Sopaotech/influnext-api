@@ -20,12 +20,14 @@ import {
   Lock,
   ExternalLink,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { BACKGROUNDS } from '@/lib/constants';
 
 export default function SettingsPage() {
-  const { theme, setTheme } = useTheme();
+  const [selectedBg, setSelectedBg] = useState(BACKGROUNDS[0].url);
   const [accentColor, setAccentColor] = useState('#a855f7');
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -33,6 +35,7 @@ export default function SettingsPage() {
   const [rateCards, setRateCards] = useState<any[]>([]);
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
   const [authUrls, setAuthUrls] = useState<any>(null);
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
 
   useEffect(() => {
     const init = async () => {
@@ -44,13 +47,37 @@ export default function SettingsPage() {
        setLoading(false);
     };
     init();
+
+    // Check for callback status in URL
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get('status');
+    const platform = params.get('platform');
+    const error = params.get('error');
+
+    if (status === 'success') {
+      toast.success(`✦ ${platform?.toUpperCase()} conectado com sucesso!`, {
+        description: 'Seus dados e métricas já estão sendo processados.',
+        duration: 5000
+      });
+      // Limpa os parâmetros da URL sem recarregar a página
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (status === 'error') {
+      toast.error('Falha na conexão social', {
+        description: error === 'no_business_account' 
+          ? 'Não encontramos uma conta do Instagram Business vinculada à sua página.'
+          : 'Ocorreu um erro ao processar a autenticação.',
+        duration: 5000
+      });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
   }, []);
 
   const fetchProfile = async () => {
     try {
       const res = await api.get('/dashboard/influencer'); 
       setProfile(res.data.profile);
-      if (res.data.profile?.accentColor) setAccentColor(res.data.profile.accentColor);
+      if (res.data.userState?.theme) setSelectedBg(res.data.userState.theme);
+      if (res.data.userState?.accentColor) setAccentColor(res.data.userState.accentColor);
     } catch (err: any) {
       if (err.response?.status !== 404) {
         toast.error('Erro ao carregar dados do perfil');
@@ -89,7 +116,7 @@ export default function SettingsPage() {
         niche: profile.niche,
         profileImageUrl: profile.profileImageUrl || null,
         bio: profile.bio,
-        theme,
+        theme: selectedBg,
         accentColor
       });
 
@@ -127,298 +154,372 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-6 md:p-10 space-y-12 animate-in fade-in duration-700">
+    <div className="max-w-6xl mx-auto p-6 md:p-10 space-y-12 animate-in fade-in duration-1000 pb-20">
       
-      {/* Pro Max Header */}
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-100 pb-10">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 mb-2">
-             <div className="h-1.5 w-10 bg-purple-600 rounded-full" />
-              <span className="text-[10px] font-black text-purple-500 uppercase tracking-[0.4em]">Núcleo de Identidade v2.1</span>
+      {/* Premium Header */}
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-white/10 pb-10">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3 mb-2">
+             <div className="h-1.5 w-12 bg-slate-900 rounded-full" />
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Studio Control Center</span>
           </div>
-          <h1 className="text-5xl font-black text-slate-900 tracking-tighter">
-            Centro de <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-800">Configurações</span>
+          <h1 className="text-4xl md:text-7xl font-black text-slate-900 tracking-tighter drop-shadow-[0_2px_10px_rgba(255,255,255,0.4)]">
+            Personalize seu <span className="text-slate-400 font-medium italic">Espaço</span>
           </h1>
         </div>
       </header>
 
-      <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         
         {/* Left Column: Profile & Rate Card */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-10">
           
-          {/* Basic Identity */}
-          <section className="bg-white border border-slate-100 rounded-[2.5rem] p-8 space-y-8 group hover:border-purple-500/20 transition-all duration-500 shadow-sm">
-            <div className="flex items-center gap-6">
+          {/* Identity Glass Card */}
+          <section className="bg-white/10 border border-white/20 rounded-[3rem] p-8 md:p-10 space-y-10 shadow-sm group hover:bg-white/15 transition-all duration-500" style={{ backdropFilter: 'blur(30px)' }}>
+            <div className="flex flex-col sm:flex-row items-center gap-8">
               <div className="relative group/avatar">
-                <div className="w-24 h-24 rounded-full bg-zinc-900 border-2 border-white/[0.05] overflow-hidden transition-all group-hover/avatar:border-purple-500/50">
+                <div className="w-32 h-32 rounded-full bg-slate-900 border-4 border-white/20 overflow-hidden shadow-2xl transition-all group-hover/avatar:scale-105">
                   {profile?.profileImageUrl ? (
                     <img src={profile.profileImageUrl} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-zinc-700 bg-gradient-to-br from-zinc-900 to-black">
-                       <User size={40} />
+                    <div className="w-full h-full flex items-center justify-center text-slate-600 bg-slate-200">
+                       <User size={50} />
                     </div>
                   )}
                 </div>
-                <label className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover/avatar:opacity-100 transition-opacity cursor-pointer rounded-full backdrop-blur-sm">
-                  <Camera size={20} className="text-white" />
+                <label className="absolute bottom-0 right-0 p-3 bg-slate-900 text-white rounded-full shadow-xl cursor-pointer hover:bg-slate-800 transition-colors">
+                  <Camera size={16} />
                   <input type="file" className="hidden" />
                 </label>
               </div>
-              <div className="space-y-1">
-                <h2 className="text-2xl font-black text-slate-900 tracking-tighter">@{profile?.handle}</h2>
-                <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full w-fit">
-                  <Shield size={10} className="text-emerald-400" />
-                  <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400">Status: {profile?.scoreClass}</span>
+              <div className="space-y-2 text-center sm:text-left">
+                <h2 className="text-3xl font-black text-slate-900 tracking-tighter">@{profile?.handle}</h2>
+                <div className="flex items-center justify-center sm:justify-start gap-2 px-4 py-1.5 bg-slate-900 text-white rounded-full w-fit mx-auto sm:mx-0 shadow-lg">
+                  <Shield size={12} />
+                  <span className="text-[9px] font-black uppercase tracking-widest">{profile?.scoreClass} Elite</span>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-zinc-500 tracking-[0.2em] flex items-center gap-2"><AtSign size={12} className="text-purple-500" /> Identificador</label>
-                <Input 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.3em] ml-2">Identificador</label>
+                <input 
                   value={profile?.handle || ''} 
                   onChange={e => setProfile({...profile, handle: e.target.value})}
-                  className="bg-slate-50 border-slate-100 rounded-xl h-12 font-bold focus:border-purple-300 focus:bg-white transition-all text-slate-900"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl h-14 px-6 font-bold text-slate-900 focus:outline-none focus:bg-white/20 transition-all shadow-sm"
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-zinc-500 tracking-[0.2em] flex items-center gap-2"><Tag size={12} className="text-purple-500" /> Especialidade</label>
-                <Input 
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.3em] ml-2">Nicho de Atuação</label>
+                <input 
                   value={profile?.niche || ''} 
                   onChange={e => setProfile({...profile, niche: e.target.value})}
-                  placeholder="Ex: Lifestyle, Tech, Gaming"
-                  className="bg-slate-50 border-slate-100 rounded-xl h-12 font-bold focus:border-purple-300 focus:bg-white transition-all text-slate-900"
+                  placeholder="Ex: Fashion, High-End Tech"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl h-14 px-6 font-bold text-slate-900 focus:outline-none focus:bg-white/20 transition-all shadow-sm"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-zinc-500 tracking-[0.2em] flex items-center gap-2"><FileText size={12} className="text-purple-500" /> Bio e Posicionamento</label>
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.3em] ml-2">Sua História (Bio)</label>
               <textarea 
                 value={profile?.bio || ''} 
                 onChange={e => setProfile({...profile, bio: e.target.value})}
-                placeholder="Conte para as marcas o valor que você entrega..."
-                className="w-full bg-slate-50 border-slate-100 rounded-xl p-4 text-sm font-medium focus:outline-none focus:border-purple-300 focus:bg-white min-h-[120px] transition-all text-slate-700"
+                placeholder="Conte sobre sua audiência e influência..."
+                className="w-full bg-white/5 border border-white/10 rounded-[2rem] p-8 text-sm font-medium text-slate-700 focus:outline-none focus:bg-white/20 min-h-[180px] transition-all shadow-sm"
               />
             </div>
           </section>
 
-          {/* Rate Card Section */}
-          <section className="bg-white border border-slate-100 rounded-[2.5rem] p-8 space-y-8 shadow-sm">
-             <div className="flex items-center justify-between">
+          {/* Rate Card Glass Card */}
+          <section className="bg-white/10 border border-white/20 rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-10 space-y-8 md:space-y-10 shadow-sm" style={{ backdropFilter: 'blur(30px)' }}>
+             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
                 <div>
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-1">Tabela de Preços</h3>
-                    <p className="text-xs font-bold text-zinc-400">Defina o valor médio para suas entregas</p>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-1">Price List</h3>
+                    <p className="text-xs font-bold text-slate-400">Tabela de serviços e valores</p>
                 </div>
                 <button 
                   type="button"
                   onClick={() => setRateCards([...rateCards, { serviceName: '', price: 0, description: '' }])}
-                  className="px-4 py-2 bg-purple-500/10 border border-purple-500/20 rounded-xl text-[10px] font-black text-purple-400 hover:bg-purple-500/20 transition-all uppercase tracking-widest"
+                  className="w-full sm:w-auto px-6 py-3 md:py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl"
                 >
-                   + Novo Serviço
+                   + Adicionar Serviço
                 </button>
              </div>
 
-             <div className="space-y-4">
+             <div className="space-y-4 md:space-y-6">
                 {rateCards.map((rate, idx) => (
-                  <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-4 p-5 bg-white/[0.01] rounded-2xl border border-white/[0.03] group relative hover:border-white/[0.08] transition-all">
-                     <Input 
-                       placeholder="Ex: Post no Feed"
-                       value={rate.serviceName}
-                       onChange={e => {
-                          const newCards = [...rateCards];
-                          newCards[idx].serviceName = e.target.value;
-                          setRateCards(newCards);
-                       }}
-                       className="bg-zinc-950/50 border-white/[0.05] h-10 text-[10px] font-black uppercase tracking-widest"
-                     />
+                  <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 p-5 md:p-6 bg-white/5 rounded-[2rem] border border-white/10 group relative transition-all">
+                     <div className="md:col-span-1">
+                        <input 
+                          placeholder="Serviço"
+                          value={rate.serviceName}
+                          onChange={e => {
+                              const newCards = [...rateCards];
+                              newCards[idx].serviceName = e.target.value;
+                              setRateCards(newCards);
+                          }}
+                          className="w-full bg-white/10 border border-white/10 h-12 rounded-xl px-4 text-[10px] font-black uppercase text-slate-900"
+                        />
+                     </div>
                      <div className="relative">
-                        <Input 
+                        <input 
                           type="number"
-                          placeholder="0,00"
                           value={rate.price}
                           onChange={e => {
-                             const newCards = [...rateCards];
-                             newCards[idx].price = Number(e.target.value);
-                             setRateCards(newCards);
+                              const newCards = [...rateCards];
+                              newCards[idx].price = Number(e.target.value);
+                              setRateCards(newCards);
                           }}
-                          className="bg-zinc-950/50 border-white/[0.05] h-10 text-[11px] font-black pl-8"
+                          className="w-full bg-white/10 border border-white/10 h-12 rounded-xl pl-10 pr-4 text-[11px] font-black text-slate-900"
                         />
-                        <span className="absolute left-3 top-2.5 text-[10px] font-bold text-zinc-600">R$</span>
+                        <span className="absolute left-4 top-3.5 text-[10px] font-bold text-slate-400">R$</span>
                      </div>
-                     <div className="flex items-center gap-2">
-                        <Input 
-                          placeholder="Breve descrição..."
+                     <div className="md:col-span-2 flex items-center gap-4">
+                        <input 
+                          placeholder="Detalhes..."
                           value={rate.description}
                           onChange={e => {
-                             const newCards = [...rateCards];
-                             newCards[idx].description = e.target.value;
-                             setRateCards(newCards);
+                              const newCards = [...rateCards];
+                              newCards[idx].description = e.target.value;
+                              setRateCards(newCards);
                           }}
-                          className="bg-zinc-950/50 border-white/[0.05] h-10 text-[10px] font-medium"
+                          className="flex-1 bg-white/10 border border-white/10 h-12 rounded-xl px-4 text-[10px] font-medium text-slate-600"
                         />
                         <button 
                           onClick={() => setRateCards(rateCards.filter((_, i) => i !== idx))}
-                          className="p-2 text-zinc-700 hover:text-rose-500 transition-colors"
+                          className="p-3 bg-white/10 text-slate-400 hover:text-rose-500 rounded-xl transition-all"
                         >
-                           <XCircle size={18} />
+                           <XCircle size={20} />
                         </button>
                      </div>
                   </div>
                 ))}
-                {rateCards.length === 0 && (
-                  <div className="py-12 border-2 border-dashed border-white/[0.02] rounded-[2rem] flex flex-col items-center justify-center space-y-3 opacity-30">
-                     <CreditCard size={24} className="text-zinc-600" />
-                     <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Nenhum serviço configurado</p>
-                  </div>
-                )}
              </div>
           </section>
         </div>
 
-        {/* Right Column: Socials & Appearance */}
-        <div className="space-y-8">
+        {/* Right Column: Appearance & Socials */}
+        <div className="space-y-10">
           
-          {/* SOCIAL INTEGRATIONS - THE KEY SECTION */}
-          <section className="bg-white border border-slate-100 rounded-[2.5rem] p-8 space-y-8 relative overflow-hidden shadow-sm">
-             <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-500/5 blur-3xl rounded-full" />
-             
-             <div>
-                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-1">Redes Sociais</h3>
-                 <p className="text-xs font-bold text-zinc-400">Aumente sua autoridade conectando suas contas</p>
+          {/* BACKGROUND SELECTOR - THE NEW STUFF */}
+          <section className="bg-white/10 border border-white/20 rounded-[3rem] p-8 space-y-8 shadow-sm" style={{ backdropFilter: 'blur(30px)' }}>
+             <div className="flex items-center gap-3">
+               <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-lg">
+                  <ImageIcon size={18} />
+               </div>
+               <div>
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Aesthetic Store</h3>
+                  <p className="text-xs font-bold text-slate-900">Tema do seu Dashboard</p>
+               </div>
+             </div>
+             <div className="space-y-10">
+                {['Aura Premium', 'World Explorer', 'Minimalist Life'].map(category => {
+                   const categoryBgs = BACKGROUNDS.filter(bg => bg.category === category);
+                   const isExpanded = expandedCategories.includes(category);
+                   const visibleBgs = isExpanded ? categoryBgs : categoryBgs.slice(0, 2);
+
+                   return (
+                    <div key={category} className="space-y-4">
+                       <div className="flex items-center justify-between px-1">
+                          <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-l-2 border-slate-900 pl-3">{category}</h4>
+                          {categoryBgs.length > 2 && (
+                             <button 
+                               type="button"
+                               onClick={() => setExpandedCategories(prev => 
+                                 isExpanded ? prev.filter(c => c !== category) : [...prev, category]
+                               )}
+                               className="text-[9px] font-black uppercase tracking-widest text-slate-900 hover:bg-slate-900 hover:text-white px-4 py-1.5 rounded-full border border-slate-900/10 transition-all"
+                             >
+                                {isExpanded ? 'Recolher' : 'Ver Mais'}
+                             </button>
+                          )}
+                       </div>
+                       
+                       <div className={`grid gap-4 transition-all duration-500 ${isExpanded ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                          {visibleBgs.map((bg) => (
+                             <button
+                               key={bg.id}
+                               type="button"
+                               onClick={() => {
+                                  setSelectedBg(bg.url);
+                                  window.dispatchEvent(new CustomEvent('theme-updated', { detail: { theme: bg.url } }));
+                                  toast.info(`✦ Background ${bg.name} selecionado!`);
+                               }}
+                               className={`
+                                 relative group rounded-[2rem] overflow-hidden transition-all duration-500 
+                                 ${isExpanded ? 'aspect-square' : 'aspect-[4/3]'}
+                                 ${selectedBg === bg.url ? 'ring-4 ring-slate-900 scale-[0.98] shadow-2xl z-10' : 'ring-1 ring-white/10 opacity-70 hover:opacity-100 hover:scale-[1.02]'}
+                               `}
+                             >
+                                <img src={bg.url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                                   <span className="text-[8px] font-black text-white uppercase tracking-widest truncate w-full">{bg.name}</span>
+                                </div>
+                                {selectedBg === bg.url && (
+                                  <div className="absolute top-2 right-2 p-1.5 bg-slate-900 text-white rounded-full shadow-lg">
+                                     <CheckCircle2 size={12} />
+                                  </div>
+                                )}
+                             </button>
+                          ))}
+                       </div>
+                    </div>
+                   );
+                })}
              </div>
 
-             <div className="space-y-4">
+                 {/* Botão de Custom Upload (+) */}
+                 <button
+                   type="button"
+                   onClick={() => {
+                     const url = window.prompt("Insira a URL da imagem para seu fundo personalizado:");
+                     if (url && url.startsWith('http')) {
+                       setSelectedBg(url);
+                       window.dispatchEvent(new CustomEvent('theme-updated', { detail: { theme: url } }));
+                       toast.success("Background personalizado aplicado!");
+                     }
+                   }}
+                   className="flex flex-col items-center justify-center rounded-3xl aspect-[4/3] border-4 border-dashed border-white/20 bg-white/5 hover:bg-white/10 hover:border-white/40 transition-all group"
+                 >
+                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-slate-400 group-hover:scale-110 transition-transform">
+                       <span className="text-2xl font-light">+</span>
+                    </div>
+                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 mt-3">Custom Pic</span>
+                 </button>
+          </section>
+
+          {/* Social Platforms Glass Card */}
+          <section className="bg-white/10 border border-white/20 rounded-[3rem] p-8 space-y-8 shadow-sm" style={{ backdropFilter: 'blur(30px)' }}>
+             <div>
+                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-1">Ecossistema Social</h3>
+                <p className="text-xs font-bold text-slate-900">Sincronize sua autoridade</p>
+               <div className="space-y-4">
                 {/* Instagram */}
-                <div className="p-5 rounded-3xl bg-white/[0.02] border border-white/[0.05] flex flex-col gap-4 group hover:border-rose-500/30 transition-all duration-500">
-                   <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                         <div className="p-3 bg-rose-500/10 rounded-2xl text-rose-400">
-                            <InstagramIcon size={20} />
-                         </div>
-                         <div>
-                            <p className="text-sm font-black text-slate-900">Instagram</p>
-                            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Insights & Atividade</p>
-                         </div>
-                      </div>
-                      {connectedPlatforms.includes('INSTAGRAM') ? (
-                         <div className="flex items-center gap-1 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                            <CheckCircle2 size={10} className="text-emerald-400" />
-                            <span className="text-[9px] font-black text-emerald-400 uppercase">Ativo</span>
-                         </div>
-                      ) : (
-                         <button 
-                           type="button"
-                           onClick={() => handleConnect(authUrls?.instagram)}
-                           className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl text-[9px] font-black text-rose-400 uppercase tracking-widest transition-all"
-                         >
-                            CONECTAR
-                         </button>
-                      )}
-                   </div>
-                   {!connectedPlatforms.includes('INSTAGRAM') && (
-                      <p className="text-[9px] text-zinc-600 italic leading-relaxed">Conecte para sincronizar seguidores e engajamento real.</p>
-                   )}
-                </div>
+                <button 
+                  type="button"
+                  onClick={() => handleConnect(authUrls?.instagram)}
+                  className={`w-full p-6 rounded-[2rem] border transition-all flex items-center justify-between group ${
+                    connectedPlatforms.includes('INSTAGRAM') 
+                      ? 'bg-green-500/10 border-green-500/20 hover:bg-green-500/20' 
+                      : 'bg-white/5 border-white/10 hover:bg-white/15'
+                  }`}
+                >
+                    <div className="flex items-center gap-4">
+                       <div className={`p-3 rounded-xl shadow-lg transition-colors ${
+                         connectedPlatforms.includes('INSTAGRAM') ? 'bg-green-500 text-white' : 'bg-slate-900 text-white'
+                       }`}>
+                          <InstagramIcon size={18} />
+                       </div>
+                       <div className="text-left">
+                          <p className="text-xs font-black text-slate-900">Instagram Professional</p>
+                          <p className={`text-[8px] font-bold uppercase tracking-widest ${
+                            connectedPlatforms.includes('INSTAGRAM') ? 'text-green-600' : 'text-slate-400'
+                          }`}>
+                            {connectedPlatforms.includes('INSTAGRAM') ? '✦ Sincronizado' : 'Conectar via Facebook'}
+                          </p>
+                       </div>
+                    </div>
+                    {connectedPlatforms.includes('INSTAGRAM') ? (
+                       <div className="flex items-center gap-2">
+                          <span className="text-[9px] font-black text-green-600 uppercase tracking-tighter">Ativo</span>
+                          <CheckCircle2 className="text-green-500" size={20} />
+                       </div>
+                    ) : (
+                       <ExternalLink className="text-slate-300 group-hover:text-slate-900 transition-colors" size={16} />
+                    )}
+                </button>
 
                 {/* TikTok */}
-                <div className="p-5 rounded-3xl bg-white/[0.02] border border-white/[0.05] flex flex-col gap-4 group hover:border-zinc-300/30 transition-all duration-500">
-                   <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                         <div className="p-3 bg-zinc-100/10 rounded-2xl text-white">
-                            <Globe size={20} />
-                         </div>
-                         <div>
-                            <p className="text-sm font-black text-slate-900">TikTok</p>
-                            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Vídeos & Trends</p>
-                         </div>
-                      </div>
-                      {connectedPlatforms.includes('TIKTOK') ? (
-                         <div className="flex items-center gap-1 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                            <CheckCircle2 size={10} className="text-emerald-400" />
-                            <span className="text-[9px] font-black text-emerald-400 uppercase">Ativo</span>
-                         </div>
-                      ) : (
-                         <button 
-                            type="button"
-                            onClick={() => handleConnect(authUrls?.tiktok)}
-                            className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[9px] font-black text-white uppercase tracking-widest transition-all"
-                         >
-                            CONECTAR
-                         </button>
-                      )}
-                   </div>
-                   {!connectedPlatforms.includes('TIKTOK') && (
-                      <p className="text-[9px] text-zinc-600 italic leading-relaxed">Sincronize sua autoridade em vídeos curtos.</p>
-                   )}
-                </div>
-             </div>
-             
-             <div className="p-4 bg-purple-500/5 border border-purple-500/10 rounded-2xl flex items-start gap-3">
-                <Zap size={14} className="text-purple-400 mt-0.5" />
-                <p className="text-[9px] font-bold text-purple-300 leading-relaxed uppercase tracking-tighter">Conectar contas reais aumenta seu score de autoridade.</p>
-             </div>
-          </section>
+                <button 
+                  type="button"
+                  onClick={() => handleConnect(authUrls?.tiktok)}
+                  className={`w-full p-6 rounded-[2rem] border transition-all flex items-center justify-between group ${
+                    connectedPlatforms.includes('TIKTOK') 
+                      ? 'bg-green-500/10 border-green-500/20 hover:bg-green-500/20' 
+                      : 'bg-white/5 border-white/10 hover:bg-white/15'
+                  }`}
+                >
+                    <div className="flex items-center gap-4">
+                       <div className={`p-3 rounded-xl shadow-lg transition-colors ${
+                         connectedPlatforms.includes('TIKTOK') ? 'bg-green-500 text-white' : 'bg-slate-900 text-white'
+                       }`}>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M19.589 6.686a4.793 4.793 0 0 1-3.77-4.245V2h-3.445v13.672a2.896 2.896 0 0 1-2.891 2.891 2.896 2.896 0 0 1-2.891-2.891 2.896 2.896 0 0 1 2.891-2.891c.153 0 .3.013.443.037v-3.468a6.34 6.34 0 0 0-.443-.016 6.341 6.341 0 1 0 6.341 6.341V8.658a8.212 8.212 0 0 0 4.265 1.474V6.686z" fill="currentColor" />
+                          </svg>
+                       </div>
+                       <div className="text-left">
+                          <p className="text-xs font-black text-slate-900">TikTok Creator</p>
+                          <p className={`text-[8px] font-bold uppercase tracking-widest ${
+                            connectedPlatforms.includes('TIKTOK') ? 'text-green-600' : 'text-slate-400'
+                          }`}>
+                            {connectedPlatforms.includes('TIKTOK') ? '✦ Sincronizado' : 'Conectar via TikTok'}
+                          </p>
+                       </div>
+                    </div>
+                    {connectedPlatforms.includes('TIKTOK') ? (
+                       <div className="flex items-center gap-2">
+                          <span className="text-[9px] font-black text-green-600 uppercase tracking-tighter">Ativo</span>
+                          <CheckCircle2 className="text-green-500" size={20} />
+                       </div>
+                    ) : (
+                       <ExternalLink className="text-slate-300 group-hover:text-slate-900 transition-colors" size={16} />
+                    )}
+                </button>
 
-          {/* Appearance Section */}
-          <section className="bg-white border border-slate-100 rounded-[2.5rem] p-8 space-y-8 shadow-sm">
-             <div>
-                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-1">Design e Interface</h3>
-                 <p className="text-xs font-bold text-zinc-400">Personalize seu ambiente de trabalho</p>
+                {/* YouTube */}
+                <button 
+                  type="button"
+                  onClick={() => handleConnect(authUrls?.youtube)}
+                  className={`w-full p-6 rounded-[2rem] border transition-all flex items-center justify-between group ${
+                    connectedPlatforms.includes('YOUTUBE') 
+                      ? 'bg-green-500/10 border-green-500/20 hover:bg-green-500/20' 
+                      : 'bg-white/5 border-white/10 hover:bg-white/15'
+                  }`}
+                >
+                    <div className="flex items-center gap-4">
+                       <div className={`p-3 rounded-xl shadow-lg transition-colors ${
+                         connectedPlatforms.includes('YOUTUBE') ? 'bg-green-500 text-white' : 'bg-slate-900 text-white'
+                       }`}>
+                          <Zap size={18} />
+                       </div>
+                       <div className="text-left">
+                          <p className="text-xs font-black text-slate-900">YouTube Insights</p>
+                          <p className={`text-[8px] font-bold uppercase tracking-widest ${
+                            connectedPlatforms.includes('YOUTUBE') ? 'text-green-600' : 'text-slate-400'
+                          }`}>
+                            {connectedPlatforms.includes('YOUTUBE') ? '✦ Sincronizado' : 'Conectar via Google'}
+                          </p>
+                       </div>
+                    </div>
+                    {connectedPlatforms.includes('YOUTUBE') ? (
+                       <div className="flex items-center gap-2">
+                          <span className="text-[9px] font-black text-green-600 uppercase tracking-tighter">Ativo</span>
+                          <CheckCircle2 className="text-green-500" size={20} />
+                       </div>
+                    ) : (
+                       <ExternalLink className="text-slate-300 group-hover:text-slate-900 transition-colors" size={16} />
+                    )}
+                </button>
              </div>
-
-             <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-3">
-                  <button 
-                    type="button"
-                    onClick={() => setTheme('dark')}
-                    className={`p-4 rounded-2xl border-2 transition-all ${theme === 'dark' ? 'border-purple-600 bg-purple-500/5' : 'border-white/[0.03] bg-transparent opacity-40 hover:opacity-100'}`}
-                  >
-                    <div className="w-full h-8 bg-zinc-900 rounded-lg mb-2" />
-                    <span className="text-[10px] font-black uppercase text-white tracking-widest">Dark</span>
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => setTheme('light')}
-                    className={`p-4 rounded-2xl border-2 transition-all ${theme === 'light' ? 'border-purple-600 bg-white' : 'border-white/[0.03] bg-transparent opacity-40 hover:opacity-100'}`}
-                  >
-                    <div className="w-full h-8 bg-zinc-100 rounded-lg mb-2" />
-                    <span className="text-[10px] font-black uppercase text-zinc-900 tracking-widest">Clean</span>
-                  </button>
-                </div>
-
-                <div className="space-y-3">
-                   <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest text-center">Cor de Identidade</p>
-                   <div className="flex justify-center gap-4">
-                      {['#a855f7', '#3b82f6', '#10b981', '#f43f5e', '#f59e0b'].map(color => (
-                        <button 
-                          key={color}
-                          type="button"
-                          onClick={() => setAccentColor(color)}
-                          style={{ backgroundColor: color }}
-                          className={`w-8 h-8 rounded-full border-2 ${accentColor === color ? 'border-white scale-125' : 'border-transparent opacity-30'} shadow-lg transition-all duration-300`}
-                        />
-                      ))}
-                   </div>
-                </div>
              </div>
           </section>
 
-          {/* Action Footer */}
-          <Button 
+          {/* Final Action Button */}
+          <button 
             type="submit" 
             disabled={saving}
-            className="w-full h-16 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-[1.5rem] transition-all shadow-[0_20px_40px_rgba(124,58,237,0.2)] active:scale-[0.98]"
+            className="w-full h-20 bg-slate-900 text-white hover:bg-slate-800 font-black text-xs uppercase tracking-[0.4em] rounded-[2rem] transition-all shadow-2xl active:scale-95 disabled:opacity-50"
           >
-            {saving ? 'SINCRONIZANDO...' : 'ATUALIZAR CONFIGURAÇÕES'}
-          </Button>
+            {saving ? 'PROCESSANDO...' : 'SYNC STUDIO'}
+          </button>
 
-          <div className="flex items-center justify-center gap-3 opacity-20">
-             <Lock size={12} className="text-zinc-500" />
-             <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Dados Criptografados // AES-256</span>
+          <div className="flex items-center justify-center gap-3 opacity-30">
+             <Lock size={12} className="text-slate-500" />
+             <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Security: SSL // AES-256</span>
           </div>
+
         </div>
       </form>
     </div>

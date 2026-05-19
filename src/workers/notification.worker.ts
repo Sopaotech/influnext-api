@@ -15,3 +15,7 @@ export const notificationWorker = new Worker('notifications', async (job) => {
   console.log(`[NOTIFICAÇÃO] User ${userId}: ${message}`);
   return { success: true };
 }, { connection });
+
+notificationWorker.on('error', () => {
+  // Ignora erro de conexão do Redis para não derrubar o host
+});

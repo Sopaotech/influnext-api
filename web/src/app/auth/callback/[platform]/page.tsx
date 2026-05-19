@@ -28,8 +28,11 @@ export default function SocialCallbackPage() {
     try {
       await api.get(`/auth/social/callback/${platform}?code=${code}&state=${state}`);
       setStatus('success');
-      toast.success(`Conta ${platform.toUpperCase()} conectada com sucesso!`);
-      router.push('/dashboard/influencer');
+      
+      // Delay de 2 segundos para o usuário ver o feedback de sucesso premium
+      setTimeout(() => {
+        router.push('/dashboard/influencer');
+      }, 2000);
     } catch (error: any) {
       console.error('Erro no callback social:', error);
       setStatus('error');
@@ -102,16 +105,29 @@ export default function SocialCallbackPage() {
           {status === 'success' && (
             <>
               <div className="relative">
-                <div className="absolute inset-0 bg-green-600/20 blur-3xl rounded-full" />
-                <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center relative">
-                  <RefreshCw className="w-8 h-8 text-black animate-spin" />
+                <div className="absolute inset-0 bg-green-500/20 blur-3xl rounded-full" />
+                <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center relative shadow-[0_0_40px_rgba(34,197,94,0.3)] animate-in zoom-in duration-500">
+                  <svg 
+                    className="w-10 h-10 text-black" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor" 
+                    strokeWidth={4}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
                 </div>
               </div>
-              <div className="text-center space-y-3">
-                <h2 className="text-2xl font-black text-white uppercase tracking-wider text-green-500">Sucesso!</h2>
-                <p className="text-zinc-400 text-sm">
-                  Redirecionando para o seu dashboard...
+              <div className="text-center space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-700">
+                <h2 className="text-2xl font-black text-white uppercase tracking-wider text-green-500">Conectado!</h2>
+                <p className="text-zinc-400 text-sm font-medium">
+                  Sua conta {platform?.toUpperCase()} foi vinculada com sucesso.
                 </p>
+                <div className="flex items-center justify-center gap-2 pt-4">
+                  <div className="w-1 h-1 bg-green-500 rounded-full animate-bounce" />
+                  <div className="w-1 h-1 bg-green-500 rounded-full animate-bounce [animation-delay:0.2s]" />
+                  <div className="w-1 h-1 bg-green-500 rounded-full animate-bounce [animation-delay:0.4s]" />
+                </div>
               </div>
             </>
           )}

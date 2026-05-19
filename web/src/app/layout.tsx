@@ -23,11 +23,11 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "INFLUNEXT — Plataforma de Marketing de Influência Pro Max",
+    default: "InfluNext — A Plataforma #1 de Gestão para Influenciadores de Elite",
     template: "%s | InfluNext"
   },
-  description: "A plataforma #1 de marketing de influência para criadores e marcas no Brasil. Gerencie campanhas, escale seu alcance com IA e garanta pagamentos seguros com nosso sistema de Escrow.",
-  keywords: ["marketing de influência", "influenciadores brasil", "marketplace de influenciadores", "gestão de campanhas de influência", "IA para influenciadores", "pagamento seguro influenciador", "agência de influenciadores"],
+  description: "Transforme sua influência em um negócio de alto nível. Gestão estratégica, Media Kit dinâmico, pagamentos seguros com Escrow e suporte de IA para criadores e marcas.",
+  keywords: ["marketing de influência", "gestão de carreira influenciador", "pagamento seguro escrow", "media kit digital", "influenciadores de elite", "IA para criadores", "InfluNext"],
   authors: [{ name: "InfluNext Team" }],
   creator: "InfluNext",
   publisher: "InfluNext",
@@ -41,8 +41,8 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: "INFLUNEXT — Plataforma de Marketing de Influência Pro Max",
-    description: "Conecte marcas e influenciadores com segurança de Escrow e Inteligência Artificial.",
+    title: "InfluNext — O Futuro do Marketing de Influência",
+    description: "Conecte marcas e influenciadores com segurança total e Inteligência Artificial.",
     url: 'https://influnext.com.br',
     siteName: 'InfluNext',
     images: [
@@ -58,8 +58,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "INFLUNEXT — O Futuro da Influência",
-    description: "Workspace estratégico com IA para criadores de elite.",
+    title: "InfluNext — Seu Escritório Digital Neural",
+    description: "Gestão estratégica para criadores que buscam o próximo nível.",
     images: ['/og-image.png'],
     creator: '@influnext',
   },
@@ -75,9 +75,13 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/icon.svg',
-    shortcut: '/icon.svg',
-    apple: '/icon.svg',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.png', type: 'image/png', sizes: '32x32' },
+      { url: '/apple-icon.png', type: 'image/png', sizes: '180x180' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/apple-icon.png',
   },
   manifest: '/manifest.json'
 };
@@ -102,10 +106,29 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className="min-h-full flex flex-col selection:bg-purple-500/30 font-sans">
+        {/* Google Structured Data (JSON-LD) */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              "name": "InfluNext",
+              "url": "https://influnext.com.br",
+              "logo": "https://influnext.com.br/icon.png",
+              "description": "Plataforma de elite para gestão de carreira de influenciadores e marcas.",
+              "sameAs": [
+                "https://instagram.com/influnext",
+                "https://twitter.com/influnext"
+              ]
+            })
+          }}
+        />
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
           enableSystem
+          disableThemeOnChange={false}
           disableTransitionOnChange
         >
           <AppearanceManager />

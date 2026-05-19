@@ -9,15 +9,7 @@ export class AuditorService {
    * Sincroniza métricas via Graph API e persiste no banco de dados.
    * Garante a integridade dos dados via Hash e recalcula o InfluScore.
    */
-  static async syncInstagramMetrics(influencerId: string, _platformId: string) {
-    // Dados obtidos via integração de borda
-    const capturedData = {
-      followers:       12500,
-      engagementRate:  3.4,
-      reachLast30Days: 45000,
-      avgViews:        8500,
-    };
-
+  static async syncInstagramMetrics(influencerId: string, capturedData: { followers: number; engagementRate: number; reachLast30Days: number; avgViews: number }) {
     const metrics = {
       influencerId,
       provider: 'META_GRAPH_API',

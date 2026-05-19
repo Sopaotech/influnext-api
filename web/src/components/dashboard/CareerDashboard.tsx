@@ -90,64 +90,67 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-8 animate-in fade-in duration-1000">
       
-      {/* IA Empresária Insight */}
-      <section className="relative overflow-hidden p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] bg-white border border-slate-200 shadow-sm group">
+      {/* IA Empresária Insight - Glass */}
+      <section 
+        className="relative overflow-hidden p-6 md:p-12 rounded-[2.5rem] md:rounded-[3rem] bg-white/10 border border-white/20 shadow-sm group"
+        style={{ backdropFilter: 'blur(30px)' }}
+      >
         <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity hidden md:block">
-          <Zap size={120} className="text-purple-600" />
+          <Zap size={150} className="text-slate-900" />
         </div>
         
-        <div className="relative z-10 space-y-6">
-          <div className="flex items-center gap-2">
-            <div className="flex -space-x-2">
-              <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white ring-4 ring-white">
-                <Sparkles size={14} />
-              </div>
+        <div className="relative z-10 space-y-6 md:space-y-8 text-center md:text-left">
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-xl">
+              <Sparkles size={18} />
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
-                Sua parceira <span className="text-purple-600">{aiName}</span> diz:
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">
+                AI Strategic Intelligence
               </span>
-              <button 
-                onClick={() => setIsEditingName(true)}
-                className="text-[8px] font-black text-slate-300 hover:text-purple-500 uppercase tracking-widest border border-slate-100 px-2 py-0.5 rounded-full transition-all"
-              >
-                [Renomear]
-              </button>
+              <div className="flex items-center justify-center md:justify-start gap-2">
+                 <span className="text-xs font-bold text-slate-900">{aiName}</span>
+                 <button 
+                  onClick={() => setIsEditingName(true)}
+                  className="text-[8px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-widest transition-all"
+                >
+                  [Edit]
+                </button>
+              </div>
             </div>
           </div>
           
           {isEditingName && (
-            <div className="flex gap-2 animate-in fade-in zoom-in-95 bg-slate-50 p-2 rounded-2xl border border-purple-100 w-max">
+            <div className="flex gap-2 animate-in fade-in zoom-in-95 bg-white/5 p-2 rounded-2xl border border-white/10 w-max mx-auto md:mx-0">
               <input 
                 autoFocus
-                className="bg-white border border-purple-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-900 focus:outline-none w-48"
-                placeholder="Dê um nome para sua IA..."
+                className="bg-white/10 border border-white/10 rounded-xl px-4 py-2 text-xs font-bold text-slate-900 focus:outline-none w-48"
+                placeholder="Nome da IA..."
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') saveAiName((e.target as HTMLInputElement).value);
                   if (e.key === 'Escape') setIsEditingName(false);
                 }}
                 onBlur={(e) => saveAiName(e.target.value)}
               />
-              <Button onClick={() => setIsEditingName(false)} variant="ghost" className="text-[10px] font-black uppercase h-auto py-1">OK</Button>
             </div>
           )}
           
-          <h2 className="text-2xl md:text-3xl font-black tracking-tight text-slate-800 leading-tight max-w-2xl">
+          <h2 className="text-xl md:text-4xl font-black tracking-tighter text-slate-900 leading-tight max-w-3xl">
             "{insight || 'Analizando o mercado para você... preparando o próximo passo.'}"
           </h2>
 
-          <div className="flex flex-wrap gap-4">
-            <div className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-full flex items-center gap-2">
-              <Target size={14} className="text-purple-600" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+          <div className="flex flex-wrap justify-center md:justify-start gap-3 md:gap-4">
+            <div className="px-4 md:px-5 py-2 md:py-2.5 bg-white/5 border border-white/10 rounded-full flex items-center gap-2 md:gap-3">
+              <Target size={12} className="text-slate-900" />
+              <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-600">
                 {getObjectiveLabel(influencer.careerObjective)}
               </span>
             </div>
-            <div className="px-4 py-2 bg-emerald-50 border border-emerald-100 rounded-full flex items-center gap-2">
-              <TrendingUp size={14} className="text-emerald-600" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">
+            <div className="px-4 md:px-5 py-2 md:py-2.5 bg-white/5 border border-white/10 rounded-full flex items-center gap-2 md:gap-3">
+              <TrendingUp size={12} className="text-slate-900" />
+              <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-600">
                 InfluScore: {influencer.influScore}
               </span>
             </div>
@@ -155,26 +158,26 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-10">
         
-        {/* Daily Tasks / Calendar */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between px-2">
-            <h3 className="text-xl font-black tracking-tight flex items-center gap-2">
-              <Calendar className="text-purple-600" /> SUAS MISSÕES
+        {/* Daily Tasks / Calendar - Glass */}
+        <div className="lg:col-span-2 space-y-6 md:space-y-8">
+          <div className="flex items-center justify-between px-4">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 flex items-center gap-3">
+              <Calendar className="w-4 h-4" /> Daily Missions
             </h3>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              {tasks.filter(t => t.isDone).length}/{tasks.length} Completas
+            <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">
+              {tasks.filter(t => t.isDone).length}/{tasks.length} Completed
             </span>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3 md:space-y-4">
             {tasks.length === 0 && !isLoading && (
-              <div className="p-12 rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-center space-y-4">
-                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
+              <div className="py-12 md:py-20 px-6 rounded-[2.5rem] md:rounded-[3rem] border border-white/20 bg-white/5 flex flex-col items-center justify-center text-center space-y-4 md:space-y-6">
+                <div className="w-16 h-16 md:w-20 md:h-20 bg-white/10 rounded-full flex items-center justify-center text-slate-300 border border-white/10">
                   <CheckCircle2 size={32} />
                 </div>
-                <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">Nenhuma missão pendente. <br />Você está no controle.</p>
+                <p className="text-slate-400 font-bold text-[9px] md:text-[10px] uppercase tracking-[0.3em]">All objectives secured. <br />You are in full control.</p>
               </div>
             )}
 
@@ -182,70 +185,76 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
               <div 
                 key={task.id}
                 onClick={() => toggleTask(task.id, task.isDone)}
-                className={`p-5 md:p-6 rounded-[1.8rem] md:rounded-[2rem] border-2 transition-all cursor-pointer flex flex-col sm:flex-row items-center sm:justify-between gap-4 group ${task.isDone ? 'bg-emerald-50 border-emerald-100 opacity-60' : 'bg-white border-slate-100 hover:border-purple-200 hover:shadow-md'}`}
+                className={`p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-white/10 transition-all cursor-pointer flex items-center justify-between gap-4 group ${task.isDone ? 'bg-white/5 opacity-40' : 'bg-white/10 hover:bg-white/20 shadow-sm'}`}
+                style={{ backdropFilter: 'blur(20px)' }}
               >
-                <div className="flex items-center gap-4 md:gap-6 w-full sm:w-auto">
-                  <div className={`transition-colors flex-shrink-0 ${task.isDone ? 'text-emerald-500' : 'text-slate-300 group-hover:text-purple-500'}`}>
+                <div className="flex items-center gap-4 md:gap-6 flex-1 min-w-0">
+                  <div className={`transition-colors flex-shrink-0 ${task.isDone ? 'text-slate-900' : 'text-slate-300 group-hover:text-slate-900'}`}>
                     {task.isDone ? <CheckCircle2 className="w-6 h-6 md:w-7 md:h-7" /> : <Circle className="w-6 h-6 md:w-7 md:h-7" />}
                   </div>
-                  <div className="text-left overflow-hidden">
-                    <p className={`font-black text-xs md:text-sm uppercase tracking-widest ${task.isDone ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+                  <div className="text-left truncate">
+                    <p className={`font-black text-[10px] md:text-sm uppercase tracking-[0.2em] truncate ${task.isDone ? 'line-through text-slate-400' : 'text-slate-900'}`}>
                       {task.title}
                     </p>
-                    <p className="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase truncate max-w-full">
+                    <p className="text-[8px] md:text-[10px] text-slate-400 font-bold uppercase mt-0.5 truncate">
                       {task.description || 'Tarefa estratégica da IA'}
                     </p>
                   </div>
                 </div>
-                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-purple-600 group-hover:text-white transition-all ml-auto sm:ml-0">
-                  <ArrowRight className="w-3.5 h-3.5 md:w-4 h-4" />
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-900/5 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm flex-shrink-0">
+                  <ArrowRight className="w-3 h-3 md:w-4 md:h-4" />
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Career Sidebar */}
-        <div className="space-y-8">
+        {/* Career Sidebar - Glass */}
+        <div className="space-y-10">
           
-          {/* AI Manager Floating Action - Light Sharp */}
-          <div className="p-6 rounded-[2rem] bg-white border border-purple-100 space-y-6 shadow-sm hover:shadow-md transition-all group">
-             <div className="flex items-center gap-3">
-               <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center group-hover:scale-110 transition-transform">
-                 <Sparkles size={20} className="text-purple-600" />
+          <div 
+            className="p-8 rounded-[3rem] bg-white/10 border border-white/20 space-y-8 shadow-sm group cursor-pointer hover:bg-white/20 transition-all"
+            style={{ backdropFilter: 'blur(20px)' }}
+          >
+             <div className="flex items-center gap-4">
+               <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                 <Sparkles size={20} />
                </div>
                <div>
-                 <p className="text-[10px] font-black uppercase tracking-widest text-purple-600">Sua Mentoria</p>
-                 <p className="font-bold text-sm text-slate-900">Conversar com {aiName}</p>
+                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Consultancy</p>
+                 <p className="font-bold text-sm text-slate-900">Talk to {aiName}</p>
                </div>
              </div>
              <p className="text-xs text-slate-500 font-medium leading-relaxed">
-               Dúvidas sobre roteiros, tendências ou sua próxima grande ideia? {aiName} está aqui para ajudar você a crescer.
+               Need help with scripts, trends or your next big idea? {aiName} is ready to help you grow.
              </p>
-             <Button className="w-full bg-slate-900 text-white hover:bg-purple-600 rounded-xl font-black h-12 transition-colors uppercase tracking-widest text-[10px]">
-               ABRIR CONSULTORIA
-             </Button>
+             <button className="w-full bg-slate-900 text-white hover:bg-slate-800 rounded-[1.5rem] font-black h-14 transition-all uppercase tracking-[0.3em] text-[10px] shadow-xl">
+               OPEN ADVISOR
+             </button>
           </div>
 
-          {/* Quick Metrics */}
-          <div className="p-8 rounded-[2rem] bg-white border border-slate-200 space-y-6">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Próximo Nível</h4>
-            <div className="space-y-2">
+          <div 
+            className="p-10 rounded-[3rem] bg-white/10 border border-white/20 space-y-8 shadow-sm"
+            style={{ backdropFilter: 'blur(20px)' }}
+          >
+            <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Next Level</h4>
+            <div className="space-y-4">
               <div className="flex justify-between items-end">
-                <span className="font-black text-2xl text-slate-800">PRATA</span>
-                <span className="text-[10px] font-black text-slate-400">Score 340/500</span>
+                <span className="font-black text-3xl text-slate-900 tracking-tighter">SILVER</span>
+                <span className="text-[10px] font-black text-slate-400">340 / 500</span>
               </div>
-              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-purple-600 w-[68%] rounded-full" />
+              <div className="h-2 w-full bg-slate-900/5 rounded-full overflow-hidden">
+                <div className="h-full bg-slate-900 w-[68%] rounded-full shadow-sm" />
               </div>
             </div>
-            <p className="text-[10px] text-slate-400 font-bold leading-relaxed uppercase">
-              Continue as missões diárias para desbloquear o selo de verificação e atrair marcas maiores.
+            <p className="text-[10px] text-slate-400 font-bold leading-relaxed uppercase tracking-widest">
+              Continue your daily missions to unlock verification.
             </p>
           </div>
 
         </div>
       </div>
     </div>
+
   );
 }

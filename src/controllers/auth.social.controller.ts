@@ -7,9 +7,9 @@ export class SocialAuthController {
     const userId = req.user!.id;
     
     const urls = {
-      instagram: `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${process.env.FRONTEND_URL}/auth/callback/instagram&scope=user_profile,user_media&response_type=code&state=${userId}`,
-      tiktok: `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${process.env.FRONTEND_URL}/auth/callback/tiktok&state=${userId}`,
-      youtube: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${process.env.FRONTEND_URL}/auth/callback/youtube&response_type=code&scope=https://www.googleapis.com/auth/youtube.readonly&state=${userId}&access_type=offline&prompt=consent`
+      instagram: `https://www.facebook.com/v19.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${process.env.NEXT_PUBLIC_API_URL}/integrations/instagram/callback&scope=instagram_basic,pages_show_list,pages_read_engagement&response_type=code&state=${userId}`,
+      tiktok: `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${process.env.NEXT_PUBLIC_API_URL}/integrations/tiktok/callback&state=${userId}`,
+      youtube: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${process.env.NEXT_PUBLIC_API_URL}/integrations/google/callback&response_type=code&scope=https://www.googleapis.com/auth/youtube.readonly&state=${userId}&access_type=offline&prompt=consent`
     };
 
     res.json(urls);
@@ -30,21 +30,32 @@ export class SocialAuthController {
       let platformId = '';
 
       if (platform === 'instagram') {
-        const tokenResponse = await axios.post('https://api.instagram.com/oauth/access_token', new URLSearchParams({
-          client_id: process.env.INSTAGRAM_CLIENT_ID!,
-          client_secret: process.env.INSTAGRAM_CLIENT_SECRET!,
-          grant_type: 'authorization_code',
-          redirect_uri: `${process.env.FRONTEND_URL}/auth/callback/instagram`,
-          code: code as string
-        }).toString(), {
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        const tokenResponse = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
+          params: {
+            client_id: process.env.INSTAGRAM_CLIENT_ID!,
+            client_secret: process.env.INSTAGRAM_CLIENT_SECRET!,
+            redirect_uri: `${process.env.NEXT_PUBLIC_API_URL}/integrations/instagram/callback`,
+            code: code as string
+          }
         });
 
         accessToken = tokenResponse.data.access_token;
-        platformId = tokenResponse.data.user_id.toString();
+        
+        const pagesResponse = await axios.get('https://graph.facebook.com/v19.0/me/accounts', {
+          params: {
+            fields: 'instagram_business_account{id,username}',
+            access_token: accessToken
+          }
+        });
 
-        const userResponse = await axios.get(`https://graph.instagram.com/me?fields=id,username&access_token=${accessToken}`);
-        username = userResponse.data.username;
+        const pageWithIg = pagesResponse.data.data.find((p: any) => p.instagram_business_account);
+        
+        if (!pageWithIg || !pageWithIg.instagram_business_account) {
+          throw new Error('Nenhuma conta do Instagram Profissional vinculada a uma Página do Facebook foi encontrada.');
+        }
+
+        username = pageWithIg.instagram_business_account.username;
+        platformId = pageWithIg.instagram_business_account.id;
       } else if (platform === 'tiktok') {
         const tokenResponse = await axios.post('https://open.tiktokapis.com/v2/oauth/token/', new URLSearchParams({
           client_key: process.env.TIKTOK_CLIENT_KEY!,

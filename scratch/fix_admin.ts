@@ -4,41 +4,43 @@ import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  const email = 'Alexsandrojunior144@gmail.com'.toLowerCase().trim();
-  const newPassword = 'Juninho1440@';
-  const passwordHash = await bcrypt.hash(newPassword, 12);
+  const email = 'alexsandrojunior144@gmail.com';
+  const password = 'Juninho1440@';
+  const role = 'ADMIN';
 
-  console.log(`🔐 Tentando restaurar acesso para: ${email}...`);
+  console.log(`🚀 Iniciando configuração do Admin: ${email}`);
 
-  const user = await prisma.user.upsert({
-    where: { email },
-    update: {
-      passwordHash,
-      role: 'ADMIN',
-      onboardingCompleted: true,
-      subscriptionStatus: 'ACTIVE'
-    },
-    create: {
-      email,
-      passwordHash,
-      role: 'ADMIN',
-      onboardingCompleted: true,
-      subscriptionStatus: 'ACTIVE'
-    },
-  });
+  try {
+    const passwordHash = await bcrypt.hash(password, 12);
 
-  console.log('✅ SUCESSO! Acesso restaurado.');
-  console.log(`📧 E-mail: ${user.email}`);
-  console.log(`🔑 Senha: ${newPassword}`);
-  console.log('---');
-  console.log('Agora, faça o deploy e tente logar novamente.');
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: {
+        passwordHash,
+        role,
+        onboardingCompleted: true,
+        subscriptionStatus: 'ACTIVE',
+      },
+      create: {
+        email,
+        passwordHash,
+        role,
+        onboardingCompleted: true,
+        subscriptionStatus: 'ACTIVE',
+      },
+    });
+
+    console.log('✅ Usuário Admin configurado com sucesso!');
+    console.log('Dados do usuário:', {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    });
+  } catch (error) {
+    console.error('❌ Erro ao configurar Admin:', error);
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
-main()
-  .catch(e => {
-    console.error('❌ Erro ao restaurar admin:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+main();

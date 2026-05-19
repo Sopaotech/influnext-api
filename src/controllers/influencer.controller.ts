@@ -123,7 +123,7 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
       bio:            z.string().optional(),
       city:           z.string().optional(),
       state:          z.string().max(2).optional(),
-      theme:          z.enum(['dark', 'light', 'system']).optional(),
+      theme:          z.string().optional(),
       accentColor:    z.string().optional(),
     });
 

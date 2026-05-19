@@ -2,13 +2,17 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 
 // Centralização da URL da API com Auto-Detecção
-let baseApiUrl = process.env.NEXT_PUBLIC_API_URL;
+const envApiUrl = process.env.NEXT_PUBLIC_API_URL;
+let baseApiUrl = envApiUrl;
 
-// Fallback Inteligente para Produção
-if (!baseApiUrl && typeof window !== 'undefined') {
-  if (window.location.hostname.includes('influnext.com')) {
-    baseApiUrl = 'https://api.influnext.com.br/v1'; // URL REAL que vi no seu print
-  } else {
+if (typeof window !== 'undefined') {
+  const isProductionDomain = window.location.hostname.includes('influnext.com');
+  
+  if (isProductionDomain) {
+    // Se estiver no domínio real, SEMPRE usa a API de produção
+    baseApiUrl = 'https://api.influnext.com.br/v1';
+  } else if (!baseApiUrl) {
+    // Se não houver URL definida e for local, usa o padrão
     baseApiUrl = 'http://localhost:4000/v1';
   }
 } else if (!baseApiUrl) {
@@ -16,7 +20,7 @@ if (!baseApiUrl && typeof window !== 'undefined') {
 }
 
 // Garantir que a URL termine com /v1
-if (!baseApiUrl.endsWith('/v1')) {
+if (baseApiUrl && !baseApiUrl.endsWith('/v1')) {
   baseApiUrl = baseApiUrl.endsWith('/') ? `${baseApiUrl}v1` : `${baseApiUrl}/v1`;
 }
 

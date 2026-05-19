@@ -10,8 +10,8 @@ export function BottomNav() {
 
   const navItems = [
     { name: 'Home', href: '/dashboard/influencer', icon: Home },
-    { name: 'Missões', href: '/dashboard/workspace', icon: Sparkles },
-    { name: 'Contratos', href: '/dashboard/contracts', icon: FileText },
+    { name: 'Missões', href: '/dashboard/workspace', icon: Sparkles, badgeCount: 2 },
+    { name: 'Mídia Kit', href: '/dashboard/mediakit', icon: FileText },
     { name: 'Mercado', href: '/dashboard/marketplace', icon: Search },
     { name: 'Perfil', href: '/dashboard/settings', icon: User },
   ];
@@ -29,10 +29,21 @@ export function BottomNav() {
                 isActive ? 'text-purple-500' : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
-              <div className={`relative ${isActive ? 'scale-110' : 'scale-100'} transition-transform duration-300`}>
-                <item.icon className="w-5 h-5" />
+              <div className={`relative ${isActive ? 'scale-110' : 'scale-100'} transition-all duration-500`}>
                 {isActive && (
-                  <div className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-purple-500 rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)] animate-pulse" />
+                  <div className="absolute inset-0 bg-purple-500/20 blur-xl rounded-full scale-150 animate-pulse" />
+                )}
+                <item.icon className={`w-5 h-5 relative z-10 ${isActive ? 'text-purple-400' : ''}`} />
+                
+                {/* Instagram Style Badge */}
+                {item.badgeCount && item.badgeCount > 0 && (
+                  <div className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] px-1 bg-rose-600 rounded-full flex items-center justify-center border-2 border-[#0d0b1a] shadow-lg z-20">
+                    <span className="text-[8px] text-white font-black leading-none">{item.badgeCount}</span>
+                  </div>
+                )}
+
+                {isActive && !item.badgeCount && (
+                  <div className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-purple-500 rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)] animate-pulse z-20" />
                 )}
               </div>
               <span className="text-[9px] font-black uppercase tracking-widest">{item.name}</span>
