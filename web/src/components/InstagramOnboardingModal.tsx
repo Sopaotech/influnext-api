@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Info, CheckCircle2, ChevronRight, Facebook, Instagram, Zap, Sparkles } from 'lucide-react';
+import { ShieldCheck, Info, CheckCircle2, ChevronRight, Sparkles } from 'lucide-react';
 
 interface InstagramOnboardingModalProps {
   isOpen: boolean;
