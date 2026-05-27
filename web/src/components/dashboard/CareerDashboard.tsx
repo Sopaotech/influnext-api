@@ -166,9 +166,40 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
             <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 flex items-center gap-3">
               <Calendar className="w-4 h-4" /> Daily Missions
             </h3>
-            <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">
-              {tasks.filter(t => t.isDone).length}/{tasks.length} Completed
-            </span>
+            <div className="flex items-center gap-4">
+              <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">
+                {tasks.filter(t => t.isDone).length}/{tasks.length} Completed
+              </span>
+              <button 
+                onClick={async () => {
+                  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                    toast.error('Seu navegador não suporta reconhecimento de voz.');
+                    return;
+                  }
+                  const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+                  const recognition = new SpeechRecognition();
+                  recognition.lang = 'pt-BR';
+                  recognition.start();
+                  toast('🎙️ Ouvindo... Fale sua tarefa.');
+
+                  recognition.onresult = async (event: any) => {
+                    const transcript = event.results[0][0].transcript;
+                    toast(`Processando: "${transcript}"...`);
+                    try {
+                      await api.post('/influencers/tasks/voice', { text: transcript });
+                      toast.success('Tarefa criada com sucesso pela Viak!');
+                      fetchCareerData(); // Recarrega as tarefas
+                    } catch {
+                      toast.error('Erro ao processar áudio.');
+                    }
+                  };
+                }}
+                className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-emerald-600 hover:scale-110 transition-all shadow-xl group relative"
+              >
+                <div className="absolute inset-0 rounded-full bg-emerald-500/20 group-hover:animate-ping"></div>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-mic"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+              </button>
+            </div>
           </div>
 
           <div className="space-y-3 md:space-y-4">

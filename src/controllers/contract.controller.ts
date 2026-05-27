@@ -215,6 +215,14 @@ export const releasePayment = async (req: Request, res: Response): Promise<void>
       return;
     }
 
+    if (userRole === UserRole.COMPANY) {
+      const company = await prisma.companyProfile.findUnique({ where: { userId } });
+      if (!company || company.id !== contract.companyId) {
+        res.status(403).json({ error: "Você não tem permissão para liberar pagamentos deste contrato." });
+        return;
+      }
+    }
+
     if (contract.escrowStatus !== 'UNDER_REVIEW' && contract.escrowStatus !== 'IN_PROGRESS') {
       res.status(400).json({ error: "Contrato não está pronto para liberação." });
       return;

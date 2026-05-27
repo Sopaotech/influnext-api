@@ -8,7 +8,10 @@ import {
   updateRateCard,
   getTasks,
   updateTask,
-  getDailyInsight
+  getDailyInsight,
+  createVoiceTask,
+  requestWithdraw,
+  getBalance
 } from '../controllers/influencer.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 
@@ -24,6 +27,7 @@ router.post('/mission/complete', authenticate, completeMission);
 
 // Novas Rotas de Carreira & IA Empresária
 router.get('/tasks', authenticate, getTasks);
+router.post('/tasks/voice', authenticate, createVoiceTask);
 router.patch('/tasks/:id', authenticate, updateTask);
 router.get('/daily-insight', authenticate, getDailyInsight);
 
@@ -31,4 +35,9 @@ router.get('/daily-insight', authenticate, getDailyInsight);
 router.get('/rate-card', authenticate, getRateCard);
 router.post('/rate-card', authenticate, updateRateCard);
 
+// Carteira & Saque PIX
+router.get('/balance', authenticate, getBalance);
+router.post('/withdraw', authenticate, requestWithdraw);
+
 export default router;
+

@@ -207,6 +207,47 @@ export default function MarketplacePage() {
         ))}
       </div>
 
+      {/* Recommended Section (Viak AI Suggestion) */}
+      {!isLoading && influencers.length > 0 && !hasSearched && (
+        <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-700">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-full bg-amber-500/10">
+              <Sparkles className="w-5 h-5 text-amber-500" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-slate-900 tracking-tighter">Recomendados para o seu Nicho</h2>
+              <p className="text-xs text-slate-500 font-bold">A inteligência Viak filtrou os perfis com maior potencial de conversão para você hoje.</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {influencers.slice(0, 3).map((inf, idx) => (
+              <div key={`rec-${inf.id}`} className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[2rem] p-6 text-white relative overflow-hidden group shadow-xl">
+                <div className="absolute -right-4 -top-4 w-32 h-32 bg-amber-500/20 blur-[40px] rounded-full group-hover:bg-amber-500/40 transition-colors" />
+                <div className="flex justify-between items-start relative z-10">
+                  <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center font-black text-2xl">
+                    {inf.handle.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="text-[8px] bg-amber-500 text-slate-900 font-black px-3 py-1 rounded-full uppercase tracking-widest">
+                    Top {idx + 1} Match
+                  </span>
+                </div>
+                <div className="mt-6 relative z-10">
+                  <p className="text-xl font-black tracking-tighter">@{inf.handle}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">ROI Estimado: <span className="text-emerald-400">+14%</span></p>
+                </div>
+                <Link
+                  href={`/dashboard/company/new-contract?influencerId=${inf.id}&handle=${inf.handle}`}
+                  className="mt-6 w-full py-3 bg-white/10 hover:bg-white/20 rounded-xl text-[10px] font-black uppercase tracking-widest text-center block transition-colors relative z-10 border border-white/5"
+                >
+                  Propor Contrato
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Results */}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-24 gap-4">

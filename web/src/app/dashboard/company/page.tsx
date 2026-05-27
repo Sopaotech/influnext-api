@@ -84,23 +84,23 @@ export default function CompanyDashboard() {
   );
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700 pb-20">
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700 pb-20 min-h-screen">
       
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-slate-100">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-zinc-800/50">
         <div>
           <div className="flex items-center gap-2 mb-2">
-             <div className="w-2 h-2 rounded-full bg-purple-600 animate-pulse" />
-             <span className="text-[10px] font-black text-purple-600 uppercase tracking-[0.3em]">Corporate_Intelligence_2026</span>
+             <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse shadow-[0_0_10px_2px_rgba(168,85,247,0.5)]" />
+             <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.3em]">Corporate_Intelligence_2026</span>
           </div>
-          <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight">
-            Gestão de <span className="text-slate-400">Investimentos</span>
+          <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">
+            Gestão de <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">Investimentos</span>
           </h1>
-          <p className="text-slate-500 font-medium text-sm">Monitore suas campanhas de influência e libere pagamentos em Escrow com segurança.</p>
+          <p className="text-zinc-400 font-medium text-sm mt-2">Monitore suas campanhas de influência e libere pagamentos em Escrow com segurança militar.</p>
         </div>
         <div className="flex">
           <Link 
             href="/dashboard/company/new-contract" 
-            className="flex items-center gap-2 bg-slate-900 hover:bg-purple-600 text-white px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-slate-900/10 transition-all"
+            className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-[0_0_20px_-5px_rgba(168,85,247,0.5)] hover:shadow-[0_0_25px_-5px_rgba(168,85,247,0.7)] transition-all"
           >
             Propor Novo Contrato
           </Link>
@@ -108,9 +108,15 @@ export default function CompanyDashboard() {
       </header>
 
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-        <MetricCard title="Investimento Escrow" value={`$${stats.totalInvested.toLocaleString('pt-BR')}`} icon={DollarSign} />
-        <MetricCard title="Contratos Ativos" value={stats.activeContracts} icon={FileText} />
-        <MetricCard title="Entregas na Fila" value={stats.pendingReviews} icon={AlertCircle} />
+        <div className="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-6 shadow-xl">
+          <MetricCard title="Investimento Escrow" value={`$${stats.totalInvested.toLocaleString('pt-BR')}`} icon={DollarSign} />
+        </div>
+        <div className="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-6 shadow-xl">
+          <MetricCard title="Contratos Ativos" value={stats.activeContracts} icon={FileText} />
+        </div>
+        <div className="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-6 shadow-xl">
+          <MetricCard title="Entregas na Fila" value={stats.pendingReviews} icon={AlertCircle} />
+        </div>
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -118,17 +124,17 @@ export default function CompanyDashboard() {
         {/* Painel de Qualidade (Aprovações Prioritárias) */}
         <div className="col-span-1 lg:col-span-1 space-y-6">
           <div className="flex items-center justify-between px-2">
-             <h2 className="text-xl font-black text-slate-900 flex items-center gap-2 uppercase tracking-tighter">
+             <h2 className="text-xl font-black text-white flex items-center gap-2 uppercase tracking-tighter">
                Ação Necessária 
              </h2>
-             <span className="bg-red-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md shadow-red-500/20">
+             <span className="bg-pink-500/20 text-pink-400 border border-pink-500/30 text-[10px] font-black px-3 py-1 rounded-full shadow-[0_0_10px_-2px_rgba(236,72,153,0.5)]">
                {pendingReviews.length}
              </span>
           </div>
           
           {pendingReviews.length === 0 ? (
-            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-12 text-center text-xs font-bold text-slate-400 shadow-sm">
-              <div className="flex justify-center mb-4"><CheckCircle className="w-10 h-10 text-emerald-500" /></div>
+            <div className="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2.5rem] p-12 text-center text-xs font-bold text-zinc-500 shadow-xl">
+              <div className="flex justify-center mb-4"><CheckCircle className="w-10 h-10 text-emerald-500/70 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" /></div>
               Sua fila de revisão está vazia.<br/>Nenhuma pendência no momento.
             </div>
           ) : (
@@ -148,37 +154,37 @@ export default function CompanyDashboard() {
         </div>
 
         {/* Lista de Contratos Ativos */}
-        <div className="col-span-1 lg:col-span-2 bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm flex flex-col">
-          <h2 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-2 uppercase tracking-tighter">
-            <FileText className="w-5 h-5 text-purple-600" /> Histórico de Contratos
+        <div className="col-span-1 lg:col-span-2 bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2.5rem] p-8 shadow-xl flex flex-col">
+          <h2 className="text-xl font-black text-white mb-8 flex items-center gap-2 uppercase tracking-tighter">
+            <FileText className="w-5 h-5 text-purple-400" /> Histórico de Contratos
           </h2>
           
           {contracts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center bg-slate-50 rounded-[2rem] border border-slate-100 border-dashed">
-              <div className="w-20 h-20 bg-white rounded-[1.5rem] flex items-center justify-center mb-6 shadow-sm border border-slate-100">
-                <FileText className="w-10 h-10 text-slate-300" />
+            <div className="flex flex-col items-center justify-center py-16 text-center bg-zinc-950/50 rounded-[2rem] border border-zinc-800/50 border-dashed">
+              <div className="w-20 h-20 bg-zinc-900 rounded-[1.5rem] flex items-center justify-center mb-6 shadow-sm border border-zinc-800">
+                <FileText className="w-10 h-10 text-zinc-600" />
               </div>
-              <h3 className="text-slate-900 text-lg font-black uppercase tracking-tight mb-2">Sua esteira está vazia</h3>
-              <p className="text-slate-500 text-sm font-medium max-w-md mb-8">
-                Descubra influenciadores de alta conversão validados por dados reais. Negocie e escale os seus resultados.
+              <h3 className="text-white text-lg font-black uppercase tracking-tight mb-2">Sua esteira está vazia</h3>
+              <p className="text-zinc-400 text-sm font-medium max-w-md mb-8">
+                Descubra influenciadores de alta conversão validados por dados reais. Negocie e escale os seus resultados com proteção total.
               </p>
               <Link 
                 href="/dashboard/marketplace"
-                className="px-8 py-4 bg-slate-900 hover:bg-purple-600 text-white font-black uppercase text-[10px] tracking-[0.2em] rounded-2xl transition-all"
+                className="px-8 py-4 bg-zinc-800 hover:bg-zinc-700 text-white font-black uppercase text-[10px] tracking-[0.2em] rounded-2xl transition-all border border-zinc-700"
               >
                 Procurar Influenciadores Agora
               </Link>
             </div>
           ) : (
-            <div className="rounded-[1.5rem] border border-slate-100 overflow-hidden bg-white flex-1">
+            <div className="rounded-[1.5rem] border border-zinc-800/60 overflow-hidden bg-zinc-950/50 flex-1">
               <Table>
-                <TableHeader className="bg-slate-50">
-                  <TableRow className="border-b-slate-100 hover:bg-transparent">
-                    <TableHead className="text-slate-400 font-black uppercase text-[10px] tracking-widest h-14 pl-6">Influenciador</TableHead>
-                    <TableHead className="text-slate-400 font-black uppercase text-[10px] tracking-widest h-14">Campanha</TableHead>
-                    <TableHead className="text-slate-400 font-black uppercase text-[10px] tracking-widest h-14">Orçamento</TableHead>
-                    <TableHead className="text-slate-400 font-black uppercase text-[10px] tracking-widest h-14">Escrow</TableHead>
-                    <TableHead className="text-right text-slate-400 font-black uppercase text-[10px] tracking-widest h-14 pr-6">Ação</TableHead>
+                <TableHeader className="bg-zinc-900">
+                  <TableRow className="border-b-zinc-800 hover:bg-transparent">
+                    <TableHead className="text-zinc-500 font-black uppercase text-[10px] tracking-widest h-14 pl-6">Influenciador</TableHead>
+                    <TableHead className="text-zinc-500 font-black uppercase text-[10px] tracking-widest h-14">Campanha</TableHead>
+                    <TableHead className="text-zinc-500 font-black uppercase text-[10px] tracking-widest h-14">Orçamento</TableHead>
+                    <TableHead className="text-zinc-500 font-black uppercase text-[10px] tracking-widest h-14">Escrow</TableHead>
+                    <TableHead className="text-right text-zinc-500 font-black uppercase text-[10px] tracking-widest h-14 pr-6">Ação</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -186,23 +192,23 @@ export default function CompanyDashboard() {
                     const lastCapture = contract.influencer.metricsHistory?.[0]?.capturedAt;
                     const isOutdated = lastCapture ? (new Date().getTime() - new Date(lastCapture).getTime() > 24 * 60 * 60 * 1000) : true;
                     return (
-                      <TableRow key={contract.id} className="border-b-slate-50 hover:bg-slate-50/50 transition-colors group">
-                        <TableCell className="font-black text-slate-900 py-6 pl-6">
+                      <TableRow key={contract.id} className="border-b-zinc-800/50 hover:bg-zinc-800/30 transition-colors group">
+                        <TableCell className="font-black text-white py-6 pl-6">
                           <div className="flex flex-col gap-1">
-                            <span className="group-hover:text-purple-600 transition-colors">@{contract.influencer.handle}</span>
+                            <span className="group-hover:text-purple-400 transition-colors">@{contract.influencer.handle}</span>
                             {isOutdated && (
-                              <span className="inline-flex w-max items-center gap-1 text-[8px] font-black uppercase bg-red-50 text-red-600 px-2 py-0.5 rounded-full border border-red-100">
+                              <span className="inline-flex w-max items-center gap-1 text-[8px] font-black uppercase bg-red-500/10 text-red-400 px-2 py-0.5 rounded-full border border-red-500/20">
                                 <AlertCircle className="w-2.5 h-2.5" /> Desatualizado
                               </span>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="text-slate-600 py-6 font-bold text-sm">{contract.title}</TableCell>
-                      <TableCell className="text-emerald-600 font-black py-6 tracking-tighter text-lg">${Number(contract.budget).toLocaleString('pt-BR')}</TableCell>
+                        <TableCell className="text-zinc-300 py-6 font-bold text-sm">{contract.title}</TableCell>
+                      <TableCell className="text-emerald-400 font-black py-6 tracking-tighter text-lg drop-shadow-[0_0_5px_rgba(52,211,153,0.3)]">${Number(contract.budget).toLocaleString('pt-BR')}</TableCell>
                       <TableCell className="py-6">
                         <div className="flex items-center gap-3">
                           <EscrowTimeline status={contract.escrowStatus} />
-                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">
+                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-tighter">
                             {statusMap[contract.escrowStatus] || contract.escrowStatus}
                           </span>
                         </div>
@@ -211,18 +217,18 @@ export default function CompanyDashboard() {
                         {contract.escrowStatus === 'DRAFT' && (
                           <button 
                             onClick={async () => {
-                              if (confirm('Confirmar recebimento manual deste pagamento?')) {
+                              if (confirm('Confirmar depósito Escrow para iniciar a campanha?')) {
                                 try {
                                   await api.post(`/contracts/${contract.id}/pay`);
                                   fetchDashboard();
                                 } catch (err) {
-                                  alert('Erro ao confirmar pagamento.');
+                                  alert('Erro ao confirmar depósito.');
                                 }
                               }
                             }}
-                            className="bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white border border-emerald-100 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+                            className="bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/30 hover:border-emerald-500 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-[0_0_10px_-2px_rgba(16,185,129,0.3)]"
                           >
-                            Pagar
+                            Depositar
                           </button>
                         )}
                       </TableCell>

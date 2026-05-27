@@ -32,10 +32,11 @@ export default function SettingsPage() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [rateCards, setRateCards] = useState<any[]>([]);
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
   const [authUrls, setAuthUrls] = useState<any>(null);
-  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  const [showAllBgs, setShowAllBgs] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -139,6 +140,30 @@ export default function SettingsPage() {
         return;
      }
      window.location.href = url;
+  };
+
+  const handleSyncMetrics = async () => {
+    if (connectedPlatforms.length === 0) {
+      toast.error('Nenhuma plataforma conectada para sincronizar.');
+      return;
+    }
+    setIsSyncing(true);
+    try {
+      const res = await api.post('/integrations/sync-metrics');
+      const { results } = res.data;
+      const synced = Object.entries(results)
+        .filter(([, v]) => v === 'synced')
+        .map(([k]) => k)
+        .join(', ');
+      toast.success(`✦ Métricas sincronizadas: ${synced}`, {
+        description: 'Seus dados de seguidores e perfil foram atualizados.'
+      });
+      await fetchIntegrations();
+    } catch {
+      toast.error('Erro ao sincronizar métricas. Tente novamente.');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   if (loading) {
@@ -303,91 +328,81 @@ export default function SettingsPage() {
         {/* Right Column: Appearance & Socials */}
         <div className="space-y-10">
           
-          {/* BACKGROUND SELECTOR - THE NEW STUFF */}
-          <section className="bg-white/10 border border-white/20 rounded-[3rem] p-8 space-y-8 shadow-sm" style={{ backdropFilter: 'blur(30px)' }}>
+          {/* BACKGROUND SELECTOR */}
+          <section className="bg-white/10 border border-white/20 rounded-[3rem] p-8 space-y-6 shadow-sm" style={{ backdropFilter: 'blur(30px)' }}>
              <div className="flex items-center gap-3">
                <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-lg">
                   <ImageIcon size={18} />
                </div>
                <div>
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Aesthetic Store</h3>
-                  <p className="text-xs font-bold text-slate-900">Tema do seu Dashboard</p>
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Plano de Fundo</h3>
+                  <p className="text-xs font-bold text-slate-900">Personalize seu espaço visual</p>
                </div>
              </div>
-             <div className="space-y-10">
-                {['Aura Premium', 'World Explorer', 'Minimalist Life'].map(category => {
-                   const categoryBgs = BACKGROUNDS.filter(bg => bg.category === category);
-                   const isExpanded = expandedCategories.includes(category);
-                   const visibleBgs = isExpanded ? categoryBgs : categoryBgs.slice(0, 2);
 
-                   return (
-                    <div key={category} className="space-y-4">
-                       <div className="flex items-center justify-between px-1">
-                          <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-l-2 border-slate-900 pl-3">{category}</h4>
-                          {categoryBgs.length > 2 && (
-                             <button 
-                               type="button"
-                               onClick={() => setExpandedCategories(prev => 
-                                 isExpanded ? prev.filter(c => c !== category) : [...prev, category]
-                               )}
-                               className="text-[9px] font-black uppercase tracking-widest text-slate-900 hover:bg-slate-900 hover:text-white px-4 py-1.5 rounded-full border border-slate-900/10 transition-all"
-                             >
-                                {isExpanded ? 'Recolher' : 'Ver Mais'}
-                             </button>
-                          )}
-                       </div>
-                       
-                       <div className={`grid gap-4 transition-all duration-500 ${isExpanded ? 'grid-cols-3' : 'grid-cols-2'}`}>
-                          {visibleBgs.map((bg) => (
-                             <button
-                               key={bg.id}
-                               type="button"
-                               onClick={() => {
-                                  setSelectedBg(bg.url);
-                                  window.dispatchEvent(new CustomEvent('theme-updated', { detail: { theme: bg.url } }));
-                                  toast.info(`✦ Background ${bg.name} selecionado!`);
-                               }}
-                               className={`
-                                 relative group rounded-[2rem] overflow-hidden transition-all duration-500 
-                                 ${isExpanded ? 'aspect-square' : 'aspect-[4/3]'}
-                                 ${selectedBg === bg.url ? 'ring-4 ring-slate-900 scale-[0.98] shadow-2xl z-10' : 'ring-1 ring-white/10 opacity-70 hover:opacity-100 hover:scale-[1.02]'}
-                               `}
-                             >
-                                <img src={bg.url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                                   <span className="text-[8px] font-black text-white uppercase tracking-widest truncate w-full">{bg.name}</span>
-                                </div>
-                                {selectedBg === bg.url && (
-                                  <div className="absolute top-2 right-2 p-1.5 bg-slate-900 text-white rounded-full shadow-lg">
-                                     <CheckCircle2 size={12} />
-                                  </div>
-                                )}
-                             </button>
-                          ))}
-                       </div>
-                    </div>
-                   );
-                })}
-             </div>
+             {/* Grid de backgrounds — Custom Pic sempre primeiro */}
+             <div className="grid grid-cols-3 gap-3">
 
-                 {/* Botão de Custom Upload (+) */}
+               {/* 1º: Custom Pic (sempre visível, sempre primeiro) */}
+               <button
+                 type="button"
+                 onClick={() => {
+                   const url = window.prompt('Cole a URL da sua imagem de fundo personalizada:');
+                   if (url && url.startsWith('http')) {
+                     setSelectedBg(url);
+                     window.dispatchEvent(new CustomEvent('theme-updated', { detail: { theme: url } }));
+                     toast.success('✦ Fundo personalizado aplicado!');
+                   }
+                 }}
+                 className="relative flex flex-col items-center justify-center rounded-[1.5rem] aspect-[4/3] border-2 border-dashed border-slate-300/50 bg-white/10 hover:bg-white/20 hover:border-slate-400/60 transition-all group"
+               >
+                 <div className="w-8 h-8 rounded-full bg-slate-900/10 flex items-center justify-center text-slate-600 group-hover:scale-110 group-hover:bg-slate-900 group-hover:text-white transition-all">
+                   <span className="text-xl font-light leading-none">+</span>
+                 </div>
+                 <span className="text-[8px] font-black uppercase tracking-widest text-slate-500 mt-2">Custom Pic</span>
+               </button>
+
+               {/* Backgrounds da biblioteca (3 visíveis por padrão, todos se expandido) */}
+               {(showAllBgs ? BACKGROUNDS : BACKGROUNDS.slice(0, 5)).map((bg) => (
                  <button
+                   key={bg.id}
                    type="button"
                    onClick={() => {
-                     const url = window.prompt("Insira a URL da imagem para seu fundo personalizado:");
-                     if (url && url.startsWith('http')) {
-                       setSelectedBg(url);
-                       window.dispatchEvent(new CustomEvent('theme-updated', { detail: { theme: url } }));
-                       toast.success("Background personalizado aplicado!");
-                     }
+                     setSelectedBg(bg.url);
+                     window.dispatchEvent(new CustomEvent('theme-updated', { detail: { theme: bg.url } }));
+                     toast.info(`✦ ${bg.name} selecionado!`);
                    }}
-                   className="flex flex-col items-center justify-center rounded-3xl aspect-[4/3] border-4 border-dashed border-white/20 bg-white/5 hover:bg-white/10 hover:border-white/40 transition-all group"
+                   className={`relative group rounded-[1.5rem] overflow-hidden aspect-[4/3] transition-all duration-300 ${
+                     selectedBg === bg.url
+                       ? 'ring-[3px] ring-slate-900 scale-[0.97] shadow-2xl z-10'
+                       : 'ring-1 ring-white/10 opacity-75 hover:opacity-100 hover:scale-[1.03] hover:shadow-lg'
+                   }`}
                  >
-                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-slate-400 group-hover:scale-110 transition-transform">
-                       <span className="text-2xl font-light">+</span>
-                    </div>
-                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 mt-3">Custom Pic</span>
+                   <img src={bg.url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={bg.name} />
+                   {/* Overlay de contraste — garante legibilidade das letras do sistema sobre qualquer imagem */}
+                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-transparent" />
+                   {/* Nome no hover */}
+                   <div className="absolute inset-0 flex items-end p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                     <span className="text-[7px] font-black text-white uppercase tracking-widest truncate drop-shadow-lg">{bg.name}</span>
+                   </div>
+                   {/* Check mark quando selecionado */}
+                   {selectedBg === bg.url && (
+                     <div className="absolute top-2 right-2 p-1 bg-slate-900 text-white rounded-full shadow-lg">
+                       <CheckCircle2 size={10} />
+                     </div>
+                   )}
                  </button>
+               ))}
+             </div>
+
+             {/* Botão Ver Mais / Recolher */}
+             <button
+               type="button"
+               onClick={() => setShowAllBgs(prev => !prev)}
+               className="w-full py-3 rounded-2xl border border-white/20 bg-white/5 hover:bg-white/15 text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-all"
+             >
+               {showAllBgs ? `Recolher ↑` : `Ver mais fundos (${BACKGROUNDS.length - 5} restantes) ↓`}
+             </button>
           </section>
 
           {/* Social Platforms Glass Card */}

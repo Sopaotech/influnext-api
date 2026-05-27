@@ -104,6 +104,24 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
       return;
     }
 
+    let instagramFollowers = 0;
+    let instagramProfilePicture = null;
+
+    if (instagramBusinessId) {
+      try {
+        const detailsResponse = await axios.get(`https://graph.facebook.com/v20.0/${instagramBusinessId}`, {
+          params: {
+            fields: 'followers_count,profile_picture_url,username',
+            access_token: longLivedToken
+          }
+        });
+        instagramFollowers = detailsResponse.data.followers_count || 0;
+        instagramProfilePicture = detailsResponse.data.profile_picture_url || null;
+      } catch (err) {
+        console.warn('[INSTAGRAM] Falha ao buscar detalhes adicionais do perfil', err);
+      }
+    }
+
     const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
 
     if (influencer) {
@@ -119,16 +137,22 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
           platformName: 'INSTAGRAM',
           platformId: instagramBusinessId,
           username: instagramUsername,
+          profilePicture: instagramProfilePicture,
+          followersCount: instagramFollowers,
           accessToken: longLivedToken,
           isActive: true
         },
         update: {
           platformId: instagramBusinessId,
           username: instagramUsername,
+          profilePicture: instagramProfilePicture,
+          followersCount: instagramFollowers,
           accessToken: longLivedToken,
           isActive: true
         }
       });
+      
+      await ScoringService.calculateAndPersist(influencer.id);
     }
     
     res.redirect(`${process.env.FRONTEND_URL}/dashboard/settings?status=success&platform=instagram`);
@@ -164,6 +188,26 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
 
       const { access_token, open_id } = tokenResponse.data;
 
+      // Buscar dados reais do perfil TikTok
+      let tiktokUsername = `${influencer.handle}_tt`;
+      let tiktokFollowers = 0;
+      let tiktokAvatar: string | null = null;
+
+      try {
+        const profileResponse = await axios.get('https://open.tiktokapis.com/v2/user/info/', {
+          params: { fields: 'open_id,display_name,avatar_url,follower_count' },
+          headers: { Authorization: `Bearer ${access_token}` }
+        });
+        const profileData = profileResponse.data?.data?.user;
+        if (profileData) {
+          tiktokUsername = profileData.display_name || tiktokUsername;
+          tiktokFollowers = profileData.follower_count || 0;
+          tiktokAvatar = profileData.avatar_url || null;
+        }
+      } catch (err) {
+        console.warn('[TIKTOK] Falha ao buscar perfil adicional, usando defaults.', err);
+      }
+
       await prisma.socialPlatform.upsert({
         where: {
           influencerId_platformName: {
@@ -175,12 +219,17 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
           influencerId: influencer.id,
           platformName: 'TIKTOK',
           platformId: open_id,
-          username: `${influencer.handle}_tt`,
+          username: tiktokUsername,
+          profilePicture: tiktokAvatar,
+          followersCount: tiktokFollowers,
           accessToken: access_token,
           isActive: true
         },
         update: {
           platformId: open_id,
+          username: tiktokUsername,
+          profilePicture: tiktokAvatar,
+          followersCount: tiktokFollowers,
           accessToken: access_token,
           isActive: true
         }
@@ -191,7 +240,82 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
     
     res.redirect(`${process.env.FRONTEND_URL}/dashboard/settings?status=success&platform=tiktok`);
   } catch (error) {
+    console.error('[TIKTOK] Erro no callback:', error);
     res.redirect(`${process.env.FRONTEND_URL}/dashboard/settings?status=error`);
+  }
+};
+
+/**
+ * POST /integrations/sync-metrics
+ * Re-sincroniza métricas de todas as plataformas conectadas (Instagram + TikTok)
+ * Usar periodicamente ou sob demanda antes de uma apresentação.
+ */
+export const syncPlatformMetrics = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const influencer = await prisma.influencerProfile.findUnique({
+      where: { userId },
+      include: { platforms: { where: { isActive: true } } }
+    });
+
+    if (!influencer) {
+      res.status(404).json({ error: 'Perfil não encontrado.' });
+      return;
+    }
+
+    const results: Record<string, string> = {};
+
+    for (const platform of influencer.platforms) {
+      try {
+        if (platform.platformName === 'INSTAGRAM' && platform.accessToken && platform.platformId) {
+          const detailsResponse = await axios.get(`https://graph.facebook.com/v20.0/${platform.platformId}`, {
+            params: {
+              fields: 'followers_count,media_count,profile_picture_url,username',
+              access_token: platform.accessToken
+            }
+          });
+
+          await prisma.socialPlatform.update({
+            where: { id: platform.id },
+            data: {
+              followersCount: detailsResponse.data.followers_count || platform.followersCount,
+              profilePicture: detailsResponse.data.profile_picture_url || platform.profilePicture,
+              username: detailsResponse.data.username || platform.username
+            }
+          });
+          results['INSTAGRAM'] = 'synced';
+        }
+
+        if (platform.platformName === 'TIKTOK' && platform.accessToken) {
+          const profileResponse = await axios.get('https://open.tiktokapis.com/v2/user/info/', {
+            params: { fields: 'display_name,avatar_url,follower_count' },
+            headers: { Authorization: `Bearer ${platform.accessToken}` }
+          });
+          const profileData = profileResponse.data?.data?.user;
+          if (profileData) {
+            await prisma.socialPlatform.update({
+              where: { id: platform.id },
+              data: {
+                followersCount: profileData.follower_count || platform.followersCount,
+                profilePicture: profileData.avatar_url || platform.profilePicture,
+                username: profileData.display_name || platform.username
+              }
+            });
+          }
+          results['TIKTOK'] = 'synced';
+        }
+      } catch (err) {
+        console.warn(`[SYNC] Falha ao sincronizar ${platform.platformName}:`, err);
+        results[platform.platformName] = 'error';
+      }
+    }
+
+    await ScoringService.calculateAndPersist(influencer.id);
+
+    res.json({ synced: true, results });
+  } catch (error) {
+    console.error('[SYNC] Erro geral ao sincronizar métricas:', error);
+    res.status(500).json({ error: 'Erro ao sincronizar métricas.' });
   }
 };
 

@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Sparkles, Wallet, LogOut, Bell, Settings, TrendingUp } from 'lucide-react';
 import { CareerDashboard } from '@/components/dashboard/CareerDashboard';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function InfluencerDashboard() {
   const [data, setData] = useState<any | null>(null);
@@ -74,9 +75,12 @@ export default function InfluencerDashboard() {
                     </span>
                  </div>
               </div>
-              <button className="rounded-full bg-slate-900 text-white font-black text-[9px] md:text-[10px] uppercase h-10 md:h-12 px-6 md:px-8 hover:bg-emerald-700 transition-colors shadow-xl">
+              <Link 
+                href="/dashboard/influencer/wallet"
+                className="rounded-full bg-slate-900 text-white font-black text-[9px] md:text-[10px] uppercase h-10 md:h-12 px-6 md:px-8 hover:bg-emerald-700 transition-colors shadow-xl flex items-center justify-center"
+              >
                 Sacar
-              </button>
+              </Link>
            </div>
 
            {/* Quick Stats Mini Card */}

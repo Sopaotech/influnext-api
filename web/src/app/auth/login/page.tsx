@@ -21,8 +21,8 @@ export default function LoginPage() {
 
   const cookieOptions: Cookies.CookieAttributes = {
     expires: 7,
-    secure: true, // Sempre secure em produção (HTTPS)
-    sameSite: 'none', // Necessário para cookies funcionarem entre domínios (Vercel -> Railway)
+    secure: process.env.NODE_ENV === 'production', // Só exige HTTPS em produção
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Lax localmente, None em prod (cross-domain)
     path: '/',
   };
 
