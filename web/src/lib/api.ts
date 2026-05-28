@@ -6,13 +6,13 @@ const envApiUrl = process.env.NEXT_PUBLIC_API_URL;
 let baseApiUrl = envApiUrl;
 
 if (typeof window !== 'undefined') {
-  const isProductionDomain = window.location.hostname.includes('influnext.com');
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   
-  if (isProductionDomain) {
-    // Se estiver no domínio real, SEMPRE usa a API de produção
-    baseApiUrl = 'https://api.influnext.com.br/v1';
+  if (!isLocalhost) {
+    // Se não for localhost (ex: cloudflare pages preview, etc), usa a API de produção
+    baseApiUrl = envApiUrl || 'https://api.influnext.com.br/v1';
   } else if (!baseApiUrl) {
-    // Se não houver URL definida e for local, usa o padrão
+    // Se for local e não houver env, usa o padrão local
     baseApiUrl = 'http://localhost:4000/v1';
   }
 } else if (!baseApiUrl) {
