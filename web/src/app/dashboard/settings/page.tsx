@@ -25,6 +25,37 @@ import {
 import { useTheme } from 'next-themes';
 import { BACKGROUNDS } from '@/lib/constants';
 
+// Helper function to compress images before upload
+const compressImage = (file: File, maxWidth = 1200, quality = 0.8): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject('No context');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => reject('Image load error');
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = () => reject('File read error');
+    reader.readAsDataURL(file);
+  });
+};
+
 export default function SettingsPage() {
   const [selectedBg, setSelectedBg] = useState(BACKGROUNDS[0].url);
   const [accentColor, setAccentColor] = useState('#a855f7');
@@ -216,18 +247,15 @@ export default function SettingsPage() {
                   <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" className="hidden" onChange={async (e) => {
                      const file = e.target.files?.[0];
                      if (!file) return;
-                     const reader = new FileReader();
-                     reader.onloadend = async () => {
-                       const base64Url = reader.result as string;
+                     try {
+                       toast.loading('Otimizando imagem...', { id: 'img-upload' });
+                       const base64Url = await compressImage(file, 800, 0.8);
                        setProfile({ ...profile, profileImageUrl: base64Url });
-                       toast.success('✦ Foto de perfil atualizada!');
-                       try {
-                         await api.patch('/influencers/profile', { profileImageUrl: base64Url });
-                       } catch (err) {
-                         toast.error('Erro ao salvar foto no servidor');
-                       }
-                     };
-                     reader.readAsDataURL(file);
+                       await api.patch('/influencers/profile', { profileImageUrl: base64Url });
+                       toast.success('✦ Foto de perfil atualizada!', { id: 'img-upload' });
+                     } catch (err) {
+                       toast.error('Erro ao salvar foto no servidor', { id: 'img-upload' });
+                     }
                   }} />
                 </label>
               </div>
@@ -363,22 +391,20 @@ export default function SettingsPage() {
                    type="file" 
                    accept="image/png, image/jpeg, image/jpg, image/webp" 
                    className="hidden" 
-                   onChange={(e) => {
+                   onChange={async (e) => {
                      const file = e.target.files?.[0];
                      if (!file) return;
-                     const reader = new FileReader();
-                     reader.onloadend = async () => {
-                       const base64Url = reader.result as string;
+                     try {
+                       toast.loading('Preparando fundo...', { id: 'bg-upload' });
+                       const base64Url = await compressImage(file, 1920, 0.7);
                        setSelectedBg(base64Url);
                        window.dispatchEvent(new CustomEvent('theme-updated', { detail: { theme: base64Url } }));
-                       toast.success('✦ Fundo personalizado aplicado!');
-                       try {
-                         await api.patch('/influencers/profile', { theme: base64Url });
-                       } catch (err) {
-                         console.error('Falha ao salvar bg automaticamente', err);
-                       }
-                     };
-                     reader.readAsDataURL(file);
+                       await api.patch('/influencers/profile', { theme: base64Url });
+                       toast.success('✦ Fundo personalizado aplicado!', { id: 'bg-upload' });
+                     } catch (err) {
+                       console.error('Falha ao salvar bg automaticamente', err);
+                       toast.error('Erro ao salvar o fundo de tela.', { id: 'bg-upload' });
+                     }
                    }}
                  />
                  <div className="w-8 h-8 rounded-full bg-slate-900/10 flex items-center justify-center text-slate-600 group-hover:scale-110 group-hover:bg-slate-900 group-hover:text-white transition-all">
@@ -440,7 +466,16 @@ export default function SettingsPage() {
              <div>
                 <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-1">Ecossistema Social</h3>
                 <p className="text-xs font-bold text-slate-900">Sincronize sua autoridade</p>
-               <div className="space-y-4">
+              <div className="space-y-4 mt-6">
+                
+                <div className="p-4 rounded-2xl border flex items-start gap-3 bg-blue-50/50 border-blue-100 text-blue-800 backdrop-blur-md">
+                   <div className="mt-0.5"><Sparkles className="w-4 h-4" /></div>
+                   <div className="space-y-1">
+                      <p className="text-[10px] md:text-xs font-black uppercase tracking-wider">Atenção: Integração Meta Oficial</p>
+                      <p className="text-[10px] md:text-[11px] leading-relaxed opacity-80 font-medium">A Meta não permite integrações de contas "pessoais". Para conectar o Instagram à InfluNext, seu perfil <strong>DEVE</strong> ser uma Conta Profissional vinculada a uma Página do Facebook. Por isso o botão abaixo abrirá o portal do Facebook.</p>
+                   </div>
+                </div>
+
                 {/* Instagram */}
                 <button 
                   type="button"
@@ -462,11 +497,11 @@ export default function SettingsPage() {
                           </svg>
                        </div>
                        <div className="text-left">
-                          <p className="text-xs font-black text-slate-900">Instagram</p>
+                          <p className="text-xs font-black text-blue-600">Meta: Insights Profissionais</p>
                           <p className={`text-[8px] font-bold uppercase tracking-widest ${
                             connectedPlatforms.includes('INSTAGRAM') ? 'text-green-600' : 'text-slate-400'
                           }`}>
-                            {connectedPlatforms.includes('INSTAGRAM') ? '✦ Sincronizado' : 'Conectar via Facebook'}
+                            {connectedPlatforms.includes('INSTAGRAM') ? '✦ Sincronizado' : 'Conectar Conta de Criador'}
                           </p>
                        </div>
                     </div>

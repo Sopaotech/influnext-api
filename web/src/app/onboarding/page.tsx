@@ -311,6 +311,14 @@ export default function OnboardingPage() {
               <p className={`${theme === 'light' ? 'text-slate-400' : 'text-zinc-500'} text-sm font-bold uppercase tracking-widest`}>Sincronize suas contas reais para maximizar seu score</p>
             </div>
 
+            <div className={`p-4 rounded-2xl border flex items-start gap-3 ${theme === 'light' ? 'bg-blue-50/50 border-blue-100 text-blue-800' : 'bg-blue-900/10 border-blue-800/30 text-blue-200'}`}>
+               <div className="mt-0.5"><Sparkles className="w-4 h-4" /></div>
+               <div className="space-y-1">
+                  <p className="text-[10px] md:text-xs font-black uppercase tracking-wider">Atenção: Integração Instagram / Meta</p>
+                  <p className="text-[10px] md:text-[11px] leading-relaxed opacity-80 font-medium">Para que a InfluNext colete suas métricas oficiais, a Meta exige que seu Instagram seja uma <strong>Conta Profissional/Criador</strong> vinculada a uma Página do Facebook. Por isso o sistema solicitará permissões via Facebook.</p>
+               </div>
+            </div>
+
             <div className="space-y-4">
                {/* Instagram Button */}
                <button 
@@ -318,18 +326,22 @@ export default function OnboardingPage() {
                  className={`w-full p-6 rounded-[2rem] border-2 flex items-center justify-between transition-all group ${connectedPlatforms.includes('INSTAGRAM') ? 'border-emerald-500 bg-emerald-500/5' : theme === 'light' ? 'border-slate-200 bg-white hover:border-rose-200' : 'border-rose-500/20 bg-rose-500/5 hover:border-rose-500/50'}`}
                >
                   <div className="flex items-center gap-6">
-                     <div className={`p-4 ${theme === 'light' ? 'bg-rose-50 text-rose-500 border-rose-100' : 'bg-rose-500/10 text-rose-400'} rounded-2xl border group-hover:scale-110 transition-transform`}>
-                        <InstagramIcon size={24} />
+                     <div className={`p-4 ${theme === 'light' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-blue-600/10 text-blue-400'} rounded-2xl border group-hover:scale-110 transition-transform`}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
+                          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                          <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
+                        </svg>
                      </div>
                      <div className="text-left">
-                        <p className="font-black text-sm uppercase tracking-widest">Instagram Official</p>
-                        <p className={`text-[10px] ${theme === 'light' ? 'text-slate-400' : 'text-zinc-500'} font-bold uppercase`}>Sincronizar Métricas & Audiência</p>
+                        <p className="font-black text-sm uppercase tracking-widest text-blue-600 dark:text-blue-400">Meta: Insights Profissionais</p>
+                        <p className={`text-[10px] ${theme === 'light' ? 'text-slate-500' : 'text-zinc-400'} font-bold uppercase`}>Conectar Conta de Criador (via Facebook)</p>
                      </div>
                   </div>
                   {connectedPlatforms.includes('INSTAGRAM') ? (
-                     <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                     <CheckCircle2 className="w-6 h-6 text-blue-500" />
                   ) : (
-                     <div className={`w-10 h-10 rounded-full ${theme === 'light' ? 'bg-slate-50 text-slate-400' : 'bg-white/5'} flex items-center justify-center group-hover:bg-rose-500 group-hover:text-white transition-all`}>
+                     <div className={`w-10 h-10 rounded-full ${theme === 'light' ? 'bg-blue-50 text-blue-500' : 'bg-blue-500/10 text-blue-400'} flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all`}>
                         <ArrowRight size={18} />
                      </div>
                   )}

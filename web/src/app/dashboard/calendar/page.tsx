@@ -239,31 +239,37 @@ function CalendarContent() {
                <Sparkles className="w-4 h-4 text-purple-500" /> Navegação Rápida
             </h3>
             
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
                {[
-                 { label: 'Hoje', id: 'today' },
-                 { label: 'Amanhã', id: 'tomorrow' },
-                 { label: 'Próximos', id: 'upcoming' }
-               ].map((tab) => (
+                 { label: 'Hoje', id: 'today', getDate: () => new Date() },
+                 { label: 'Amanhã', id: 'tomorrow', getDate: () => {
+                     const d = new Date();
+                     d.setDate(d.getDate() + 1);
+                     return d;
+                 } }
+               ].map((tab) => {
+                 const tabDate = tab.getDate();
+                 const isActive = selectedDay === tabDate.getDate() && 
+                                  currentDate.getMonth() === tabDate.getMonth() && 
+                                  currentDate.getFullYear() === tabDate.getFullYear();
+                 return (
                  <button 
                    key={tab.id}
                    onClick={() => {
-                     const date = new Date();
-                     if (tab.id === 'tomorrow') date.setDate(date.getDate() + 1);
-                     setCurrentDate(new Date(date.getFullYear(), date.getMonth(), 1));
-                     setSelectedDay(date.getDate());
-                     updateUrl(date);
+                     setCurrentDate(new Date(tabDate.getFullYear(), tabDate.getMonth(), 1));
+                     setSelectedDay(tabDate.getDate());
+                     updateUrl(tabDate);
                    }}
                    className={`py-2 text-[9px] font-black uppercase rounded-lg border transition-all ${
-                     (tab.id === 'today' && selectedDay === new Date().getDate()) ||
-                     (tab.id === 'tomorrow' && selectedDay === new Date().getDate() + 1)
+                     isActive
                        ? 'bg-purple-600 border-purple-500 text-white'
                        : 'bg-white/5 border-white/10 text-zinc-500 hover:text-zinc-300'
                    }`}
                  >
                    {tab.label}
                  </button>
-               ))}
+                 );
+               })}
             </div>
 
             <div className="space-y-4 pt-4 border-t border-white/[0.04]">

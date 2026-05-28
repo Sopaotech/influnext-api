@@ -19,6 +19,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   // Fundo dinâmico baseado no perfil
   const [bgUrl, setBgUrl] = useState(BACKGROUNDS[0].url);
+  const [profileImg, setProfileImg] = useState<string | null>(null);
 
   React.useEffect(() => {
     const fetchTheme = async () => {
@@ -28,6 +29,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const userTheme = res.data.userState?.theme;
         if (userTheme && userTheme.startsWith('http')) {
           setBgUrl(userTheme);
+        }
+        if (res.data.profile?.profileImageUrl) {
+          setProfileImg(res.data.profile.profileImageUrl);
         }
       } catch (err) {
         console.error('Erro ao carregar tema:', err);
@@ -95,11 +99,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <header className="md:hidden fixed top-0 left-0 right-0 z-[100] bg-white/5 backdrop-blur-xl border-b border-white/10 p-4 flex items-center justify-between">
         <Logo size="sm" href="/dashboard/influencer" />
         <div className="flex items-center gap-3">
-           <div className="w-8 h-8 rounded-full border border-white/20 p-0.5">
+           <Link href="/dashboard/settings" className="w-8 h-8 rounded-full border border-white/20 p-0.5 block hover:scale-110 transition-transform">
              <div className="w-full h-full rounded-full bg-white/20 overflow-hidden">
-               <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" className="w-full h-full" />
+               <img src={profileImg || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"} alt="User Profile" className="w-full h-full object-cover" />
              </div>
-           </div>
+           </Link>
         </div>
       </header>
 

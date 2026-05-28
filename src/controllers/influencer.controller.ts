@@ -227,6 +227,7 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
 
     res.json(updated);
   } catch (error) {
+    console.error('[INFLUENCER PROFILE] Erro ao atualizar perfil:', error);
     res.status(500).json({ error: "Erro ao atualizar perfil." });
   }
 };

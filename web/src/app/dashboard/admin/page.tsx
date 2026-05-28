@@ -5,7 +5,6 @@ import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { MetricCard } from '@/components/MetricCard';
 import { Users, DollarSign, FileText, AlertTriangle, ShieldCheck, Activity, TrendingUp, BarChart3, Sparkles, Zap, Brain, CheckCircle2, Eye, MessageSquare, LifeBuoy, Crown } from 'lucide-react';
-import { InstagramOnboardingModal } from '@/components/InstagramOnboardingModal';
 
 interface AdminStats {
   metrics: {
@@ -28,8 +27,6 @@ export default function AdminDashboard() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [grantIdentifier, setGrantIdentifier] = useState('');
   const [isGranting, setIsGranting] = useState(false);
-
-  const [isIgModalOpen, setIsIgModalOpen] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -228,7 +225,7 @@ export default function AdminDashboard() {
             </div>
             <div className="flex flex-wrap gap-4">
                <button 
-                 onClick={() => setIsIgModalOpen(true)}
+                 onClick={handleStartIgConnection}
                  className="px-6 py-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-2xl flex items-center gap-3 transition-all group"
                >
                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 flex items-center justify-center shadow-lg">
@@ -343,15 +340,6 @@ export default function AdminDashboard() {
            </div>
         </div>
       </div>
-
-      <InstagramOnboardingModal 
-        isOpen={isIgModalOpen}
-        onClose={() => setIsIgModalOpen(false)}
-        onConfirm={() => {
-          setIsIgModalOpen(false);
-          handleStartIgConnection();
-        }}
-      />
     </div>
   );
 }

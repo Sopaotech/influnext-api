@@ -222,7 +222,8 @@ export default function MediaKitPage() {
           </div>
        </section>
 
-      {/* Audience Demographics Section */}
+      {/* Audience Demographics Section - Only show if connected */}
+      {data?.platforms && data.platforms.length > 0 && (
       <section className="bg-white/60 backdrop-blur-xl border border-white/40 rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-10 shadow-sm relative z-10">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 md:mb-12 gap-4">
            <div className="space-y-1">
@@ -292,6 +293,7 @@ export default function MediaKitPage() {
            </div>
         </div>
       </section>
+      )}
 
       {/* Verified Platforms */}
       <section className="bg-slate-50 border border-slate-200 rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-10">
@@ -300,18 +302,31 @@ export default function MediaKitPage() {
             <p className="text-slate-500 text-xs md:text-sm font-medium max-w-sm">Métricas sincronizadas diretamente via API oficial para garantir 100% de integridade nos dados.</p>
          </div>
          <div className="flex flex-wrap justify-center gap-4">
-            <div className="px-4 md:px-6 py-3 md:py-4 bg-white border border-slate-200 rounded-2xl flex items-center gap-3 shadow-sm">
-               <Camera className="w-5 h-5 text-pink-600" />
+            {/* Instagram Node */}
+            <div className={`px-4 md:px-6 py-3 md:py-4 bg-white border border-slate-200 rounded-2xl flex items-center gap-3 shadow-sm ${data?.platforms?.some((p: any) => p.platform === 'INSTAGRAM') ? '' : 'opacity-40 grayscale'}`}>
+               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-pink-600">
+                 <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
+                 <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                 <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
+               </svg>
                <div>
                   <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400">Instagram</div>
-                  <div className="text-xs md:text-sm font-bold text-slate-800">Conectado</div>
+                  <div className="text-xs md:text-sm font-bold text-slate-800">
+                    {data?.platforms?.some((p: any) => p.platform === 'INSTAGRAM') ? 'Conectado' : 'Desconectado'}
+                  </div>
                </div>
             </div>
-            <div className="px-4 md:px-6 py-3 md:py-4 bg-white border border-slate-200 rounded-2xl flex items-center gap-3 opacity-40 grayscale">
-               <Zap className="w-5 h-5 text-slate-400" />
+            
+            {/* TikTok Node */}
+            <div className={`px-4 md:px-6 py-3 md:py-4 bg-white border border-slate-200 rounded-2xl flex items-center gap-3 shadow-sm ${data?.platforms?.some((p: any) => p.platform === 'TIKTOK') ? '' : 'opacity-40 grayscale'}`}>
+               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className={data?.platforms?.some((p: any) => p.platform === 'TIKTOK') ? "text-slate-900" : "text-slate-400"}>
+                 <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.23-2.5.83-5.06 2.82-6.52 1.39-1.04 3.18-1.54 4.93-1.39v4.06c-1.16-.1-2.35.15-3.32.84-.81.57-1.38 1.48-1.46 2.47-.09 1.14.36 2.3 1.18 3.08.79.76 1.93 1.14 3.04 1.05 1.54-.12 2.88-1.28 3.23-2.79.16-.67.24-1.37.24-2.06V.02z" />
+               </svg>
                <div>
                   <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400">TikTok</div>
-                  <div className="text-xs md:text-sm font-bold text-slate-800">Desconectado</div>
+                  <div className="text-xs md:text-sm font-bold text-slate-800">
+                    {data?.platforms?.some((p: any) => p.platform === 'TIKTOK') ? 'Conectado' : 'Desconectado'}
+                  </div>
                </div>
             </div>
          </div>
