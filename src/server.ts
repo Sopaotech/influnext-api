@@ -65,14 +65,14 @@ const startServer = async () => {
     const { ensureAdminExists } = await import('./lib/admin-init');
     await ensureAdminExists();
 
-    app.listen(PORT, '0.0.0.0', () => {
+    app.listen(PORT, () => {
       console.log(`🚀 INFLUNEXT ONLINE: Port ${PORT}`);
       console.log(`🌍 URL da API: https://api.influnext.com.br`);
     });
   } catch (error: any) {
     console.error('❌ FALHA CRÍTICA NO STARTUP:', error);
     // Tenta subir o servidor mesmo com erro no banco para podermos ver o erro via HTTP/Health
-    app.listen(PORT, '0.0.0.0', () => {
+    app.listen(PORT, () => {
       console.log(`⚠️ Servidor subiu com ERROS (Port ${PORT}). Verifique os logs.`);
     });
   }
