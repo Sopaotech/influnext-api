@@ -347,7 +347,7 @@ export default function SettingsPage() {
                <label className="relative flex flex-col items-center justify-center rounded-[1.5rem] aspect-[4/3] border-2 border-dashed border-slate-300/50 bg-white/10 hover:bg-white/20 hover:border-slate-400/60 transition-all group cursor-pointer">
                  <input 
                    type="file" 
-                   accept="image/*" 
+                   accept="image/png, image/jpeg, image/jpg, image/webp" 
                    className="hidden" 
                    onChange={(e) => {
                      const file = e.target.files?.[0];
