@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import Cookies from 'js-cookie';
-import { Home, FileText, Settings, LogOut, Menu, X, Sparkles, ShieldCheck, Store, LifeBuoy, Crown, Calendar, Search, MessageSquare, LayoutDashboard } from 'lucide-react';
+import { Home, FileText, Settings, LogOut, Menu, X, Sparkles, ShieldCheck, Store, LifeBuoy, Crown, Calendar, Search, MessageSquare, LayoutDashboard, TrendingUp } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
 import { Logo } from '@/components/Logo';
 import { BottomNav } from '@/components/BottomNav';
@@ -44,15 +44,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
 
   const handleLogout = () => {
-    const cookieOptions: Cookies.CookieAttributes = {
-      path: '/',
-      domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN || undefined,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    };
-    Cookies.remove('influnext_token', cookieOptions);
-    Cookies.remove('influnext_role', cookieOptions);
-    router.push('/auth/login');
+    // Força a remoção de cookies sem depender de domínio exato que pode falhar em dev vs prod
+    Cookies.remove('influnext_token', { path: '/' });
+    Cookies.remove('influnext_role', { path: '/' });
+    Cookies.remove('influnext_onboarding', { path: '/' });
+    
+    // Hard redirect para limpar estado do React
+    window.location.href = '/auth/login';
   };
 
   const [isAdmin, setIsAdmin] = useState(false);
@@ -69,6 +67,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'Marketplace', href: '/dashboard/marketplace', icon: Store },
     { name: 'Media Kit', href: '/dashboard/mediakit', icon: Sparkles }, 
     { name: 'Contratos', href: '/dashboard/contracts', icon: FileText },
+    { name: 'Relatórios', href: '/dashboard/reports', icon: TrendingUp },
     { name: 'Assistente', href: '/dashboard/support', icon: MessageSquare },
     ...(isAdmin ? [{ name: 'Admin Control', href: '/dashboard/admin', icon: ShieldCheck }] : []),
     { name: 'Ajustes', href: '/dashboard/settings', icon: Settings },

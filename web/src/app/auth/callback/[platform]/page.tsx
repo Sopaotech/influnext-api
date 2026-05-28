@@ -31,7 +31,7 @@ export default function SocialCallbackPage() {
       
       // Delay de 2 segundos para o usuário ver o feedback de sucesso premium
       setTimeout(() => {
-        router.push('/dashboard/influencer');
+        router.push(`/dashboard/settings?status=success&platform=${platform}`);
       }, 2000);
     } catch (error: any) {
       console.error('Erro no callback social:', error);
@@ -92,7 +92,7 @@ export default function SocialCallbackPage() {
                   Tentar Novamente
                 </button>
                 <button
-                  onClick={() => router.push('/dashboard/influencer')}
+                  onClick={() => router.push(`/dashboard/settings?status=error&platform=${platform}`)}
                   className="flex items-center justify-center gap-2 bg-zinc-800 text-zinc-300 font-bold py-4 rounded-2xl hover:bg-zinc-700 transition-all"
                 >
                   <ArrowLeft className="w-4 h-4" />

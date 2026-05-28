@@ -344,23 +344,29 @@ export default function SettingsPage() {
              <div className="grid grid-cols-3 gap-3">
 
                {/* 1º: Custom Pic (sempre visível, sempre primeiro) */}
-               <button
-                 type="button"
-                 onClick={() => {
-                   const url = window.prompt('Cole a URL da sua imagem de fundo personalizada:');
-                   if (url && url.startsWith('http')) {
-                     setSelectedBg(url);
-                     window.dispatchEvent(new CustomEvent('theme-updated', { detail: { theme: url } }));
-                     toast.success('✦ Fundo personalizado aplicado!');
-                   }
-                 }}
-                 className="relative flex flex-col items-center justify-center rounded-[1.5rem] aspect-[4/3] border-2 border-dashed border-slate-300/50 bg-white/10 hover:bg-white/20 hover:border-slate-400/60 transition-all group"
-               >
+               <label className="relative flex flex-col items-center justify-center rounded-[1.5rem] aspect-[4/3] border-2 border-dashed border-slate-300/50 bg-white/10 hover:bg-white/20 hover:border-slate-400/60 transition-all group cursor-pointer">
+                 <input 
+                   type="file" 
+                   accept="image/*" 
+                   className="hidden" 
+                   onChange={(e) => {
+                     const file = e.target.files?.[0];
+                     if (!file) return;
+                     const reader = new FileReader();
+                     reader.onloadend = () => {
+                       const base64Url = reader.result as string;
+                       setSelectedBg(base64Url);
+                       window.dispatchEvent(new CustomEvent('theme-updated', { detail: { theme: base64Url } }));
+                       toast.success('✦ Fundo personalizado aplicado!');
+                     };
+                     reader.readAsDataURL(file);
+                   }}
+                 />
                  <div className="w-8 h-8 rounded-full bg-slate-900/10 flex items-center justify-center text-slate-600 group-hover:scale-110 group-hover:bg-slate-900 group-hover:text-white transition-all">
                    <span className="text-xl font-light leading-none">+</span>
                  </div>
                  <span className="text-[8px] font-black uppercase tracking-widest text-slate-500 mt-2">Custom Pic</span>
-               </button>
+               </label>
 
                {/* Backgrounds da biblioteca (3 visíveis por padrão, todos se expandido) */}
                {(showAllBgs ? BACKGROUNDS : BACKGROUNDS.slice(0, 5)).map((bg) => (

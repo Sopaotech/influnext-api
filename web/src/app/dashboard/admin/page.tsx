@@ -43,6 +43,13 @@ export default function AdminDashboard() {
     }).catch(() => toast.error('Erro ao buscar URL de conexão.', { id }));
   };
 
+  const handleStartTikTokConnection = () => {
+    const id = toast.loading('Iniciando conexão com TikTok da Empresa...');
+    api.get('/auth/social/urls').then(res => {
+      if (res.data.tiktok) window.location.href = res.data.tiktok;
+    }).catch(() => toast.error('Erro ao buscar URL de conexão.', { id }));
+  };
+
   const fetchStats = async () => {
     try {
       const res = await api.get<AdminStats>('/admin/stats');
@@ -233,13 +240,18 @@ export default function AdminDashboard() {
                  </div>
                </button>
 
-               <button className="px-6 py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3 opacity-50 cursor-not-allowed">
-                 <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-slate-500" />
+               <button 
+                 onClick={handleStartTikTokConnection}
+                 className="px-6 py-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-2xl flex items-center gap-3 transition-all group"
+               >
+                 <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-400 to-blue-600 flex items-center justify-center">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M19.589 6.686a4.793 4.793 0 0 1-3.77-4.245V2h-3.445v13.672a2.896 2.896 0 0 1-2.891 2.891 2.896 2.896 0 0 1-2.891-2.891 2.896 2.896 0 0 1 2.891-2.891c.153 0 .3.013.443.037v-3.468a6.34 6.34 0 0 0-.443-.016 6.341 6.341 0 1 0 6.341 6.341V8.658a8.212 8.212 0 0 0 4.265 1.474V6.686z" fill="white" />
+                    </svg>
                  </div>
                  <div className="text-left">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Em Breve</div>
-                    <div className="text-sm font-bold text-slate-500">TikTok Enterprise</div>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-300">Conectar</div>
+                    <div className="text-sm font-bold">TikTok Enterprise</div>
                  </div>
                </button>
             </div>

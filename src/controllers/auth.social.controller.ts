@@ -6,10 +6,12 @@ export class SocialAuthController {
   static async getAuthUrls(req: Request, res: Response) {
     const userId = req.user!.id;
     
+    const frontendUrl = process.env.FRONTEND_URL || 'https://www.influnext.com.br';
+    
     const urls = {
-      instagram: `https://www.facebook.com/v19.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${process.env.NEXT_PUBLIC_API_URL}/integrations/instagram/callback&scope=instagram_basic,pages_show_list,pages_read_engagement&response_type=code&state=${userId}`,
-      tiktok: `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${process.env.NEXT_PUBLIC_API_URL}/integrations/tiktok/callback&state=${userId}`,
-      youtube: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${process.env.NEXT_PUBLIC_API_URL}/integrations/google/callback&response_type=code&scope=https://www.googleapis.com/auth/youtube.readonly&state=${userId}&access_type=offline&prompt=consent`
+      instagram: `https://www.facebook.com/v19.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/instagram&scope=instagram_basic,pages_show_list,pages_read_engagement&response_type=code&state=${userId}`,
+      tiktok: `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${frontendUrl}/auth/callback/tiktok&state=${userId}`,
+      youtube: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/youtube&response_type=code&scope=https://www.googleapis.com/auth/youtube.readonly&state=${userId}&access_type=offline&prompt=consent`
     };
 
     res.json(urls);
@@ -29,12 +31,14 @@ export class SocialAuthController {
       let username = '';
       let platformId = '';
 
+      const frontendUrl = process.env.FRONTEND_URL || 'https://www.influnext.com.br';
+
       if (platform === 'instagram') {
         const tokenResponse = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
           params: {
             client_id: process.env.INSTAGRAM_CLIENT_ID!,
             client_secret: process.env.INSTAGRAM_CLIENT_SECRET!,
-            redirect_uri: `${process.env.NEXT_PUBLIC_API_URL}/integrations/instagram/callback`,
+            redirect_uri: `${frontendUrl}/auth/callback/instagram`,
             code: code as string
           }
         });
@@ -62,7 +66,7 @@ export class SocialAuthController {
           client_secret: process.env.TIKTOK_CLIENT_SECRET!,
           code: code as string,
           grant_type: 'authorization_code',
-          redirect_uri: `${process.env.FRONTEND_URL}/auth/callback/tiktok`,
+          redirect_uri: `${frontendUrl}/auth/callback/tiktok`,
         }).toString(), {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         });
@@ -80,7 +84,7 @@ export class SocialAuthController {
           client_secret: process.env.GOOGLE_CLIENT_SECRET!,
           code: code as string,
           grant_type: 'authorization_code',
-          redirect_uri: `${process.env.FRONTEND_URL}/auth/callback/${platform}`,
+          redirect_uri: `${frontendUrl}/auth/callback/${platform}`,
         }).toString(), {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         });

@@ -21,7 +21,8 @@ app.use(cors({
 // Webhook da Stripe precisa do body cru (Buffer) ANTES do express.json() processar a requisição
 app.use('/v1/payments/webhook', express.raw({ type: 'application/json' }));
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use((req, res, next) => {
   console.log(`[REQUEST] ${req.method} ${req.url}`);
   next();
