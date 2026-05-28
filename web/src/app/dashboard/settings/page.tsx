@@ -12,7 +12,7 @@ import {
   Tag, 
   FileText, 
   Shield, 
-  Camera as InstagramIcon, 
+  Instagram as InstagramIcon, 
   Zap, 
   Globe, 
   Palette,
@@ -214,7 +214,22 @@ export default function SettingsPage() {
                 </div>
                 <label className="absolute bottom-0 right-0 p-3 bg-slate-900 text-white rounded-full shadow-xl cursor-pointer hover:bg-slate-800 transition-colors">
                   <Camera size={16} />
-                  <input type="file" className="hidden" />
+                  <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" className="hidden" onChange={async (e) => {
+                     const file = e.target.files?.[0];
+                     if (!file) return;
+                     const reader = new FileReader();
+                     reader.onloadend = async () => {
+                       const base64Url = reader.result as string;
+                       setProfile({ ...profile, profileImageUrl: base64Url });
+                       toast.success('✦ Foto de perfil atualizada!');
+                       try {
+                         await api.patch('/influencers/profile', { profileImageUrl: base64Url });
+                       } catch (err) {
+                         toast.error('Erro ao salvar foto no servidor');
+                       }
+                     };
+                     reader.readAsDataURL(file);
+                  }} />
                 </label>
               </div>
               <div className="space-y-2 text-center sm:text-left">
@@ -353,11 +368,16 @@ export default function SettingsPage() {
                      const file = e.target.files?.[0];
                      if (!file) return;
                      const reader = new FileReader();
-                     reader.onloadend = () => {
+                     reader.onloadend = async () => {
                        const base64Url = reader.result as string;
                        setSelectedBg(base64Url);
                        window.dispatchEvent(new CustomEvent('theme-updated', { detail: { theme: base64Url } }));
                        toast.success('✦ Fundo personalizado aplicado!');
+                       try {
+                         await api.patch('/influencers/profile', { theme: base64Url });
+                       } catch (err) {
+                         console.error('Falha ao salvar bg automaticamente', err);
+                       }
                      };
                      reader.readAsDataURL(file);
                    }}
@@ -373,10 +393,15 @@ export default function SettingsPage() {
                  <button
                    key={bg.id}
                    type="button"
-                   onClick={() => {
+                   onClick={async () => {
                      setSelectedBg(bg.url);
                      window.dispatchEvent(new CustomEvent('theme-updated', { detail: { theme: bg.url } }));
                      toast.info(`✦ ${bg.name} selecionado!`);
+                     try {
+                       await api.patch('/influencers/profile', { theme: bg.url });
+                     } catch (err) {
+                       console.error('Falha ao salvar bg automaticamente', err);
+                     }
                    }}
                    className={`relative group rounded-[1.5rem] overflow-hidden aspect-[4/3] transition-all duration-300 ${
                      selectedBg === bg.url
@@ -434,7 +459,7 @@ export default function SettingsPage() {
                           <InstagramIcon size={18} />
                        </div>
                        <div className="text-left">
-                          <p className="text-xs font-black text-slate-900">Instagram Professional</p>
+                          <p className="text-xs font-black text-slate-900">Instagram</p>
                           <p className={`text-[8px] font-bold uppercase tracking-widest ${
                             connectedPlatforms.includes('INSTAGRAM') ? 'text-green-600' : 'text-slate-400'
                           }`}>
@@ -471,7 +496,7 @@ export default function SettingsPage() {
                           </svg>
                        </div>
                        <div className="text-left">
-                          <p className="text-xs font-black text-slate-900">TikTok Creator</p>
+                          <p className="text-xs font-black text-slate-900">TikTok</p>
                           <p className={`text-[8px] font-bold uppercase tracking-widest ${
                             connectedPlatforms.includes('TIKTOK') ? 'text-green-600' : 'text-slate-400'
                           }`}>
@@ -506,7 +531,7 @@ export default function SettingsPage() {
                           <Zap size={18} />
                        </div>
                        <div className="text-left">
-                          <p className="text-xs font-black text-slate-900">YouTube Insights</p>
+                          <p className="text-xs font-black text-slate-900">YouTube Studios</p>
                           <p className={`text-[8px] font-bold uppercase tracking-widest ${
                             connectedPlatforms.includes('YOUTUBE') ? 'text-green-600' : 'text-slate-400'
                           }`}>
