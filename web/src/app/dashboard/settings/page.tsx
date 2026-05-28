@@ -12,7 +12,6 @@ import {
   Tag, 
   FileText, 
   Shield, 
-  Instagram as InstagramIcon, 
   Zap, 
   Globe, 
   Palette,
@@ -456,7 +455,11 @@ export default function SettingsPage() {
                        <div className={`p-3 rounded-xl shadow-lg transition-colors ${
                          connectedPlatforms.includes('INSTAGRAM') ? 'bg-green-500 text-white' : 'bg-slate-900 text-white'
                        }`}>
-                          <InstagramIcon size={18} />
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
+                            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                            <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
+                          </svg>
                        </div>
                        <div className="text-left">
                           <p className="text-xs font-black text-slate-900">Instagram</p>

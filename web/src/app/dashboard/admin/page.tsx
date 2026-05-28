@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { MetricCard } from '@/components/MetricCard';
-import { Users, DollarSign, FileText, AlertTriangle, ShieldCheck, Activity, TrendingUp, BarChart3, Sparkles, Zap, Brain, CheckCircle2, Eye, MessageSquare, LifeBuoy, Crown, Instagram } from 'lucide-react';
+import { Users, DollarSign, FileText, AlertTriangle, ShieldCheck, Activity, TrendingUp, BarChart3, Sparkles, Zap, Brain, CheckCircle2, Eye, MessageSquare, LifeBuoy, Crown } from 'lucide-react';
 import { InstagramOnboardingModal } from '@/components/InstagramOnboardingModal';
 
 interface AdminStats {
@@ -232,7 +232,11 @@ export default function AdminDashboard() {
                  className="px-6 py-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-2xl flex items-center gap-3 transition-all group"
                >
                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 flex items-center justify-center shadow-lg">
-                    <Instagram className="w-4 h-4 text-white" />
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                      <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
+                    </svg>
                  </div>
                  <div className="text-left">
                     <div className="text-[10px] font-black uppercase tracking-widest text-slate-300">Conectar</div>
