@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { MetricCard } from '@/components/MetricCard';
-import { Users, DollarSign, FileText, AlertTriangle, ShieldCheck, Activity, TrendingUp, BarChart3, Sparkles, Zap, Brain, CheckCircle2, Eye, MessageSquare, LifeBuoy, Crown } from 'lucide-react';
+import { Users, DollarSign, FileText, AlertTriangle, ShieldCheck, Activity, TrendingUp, BarChart3, Sparkles, Zap, Brain, CheckCircle2, Eye, MessageSquare, LifeBuoy, Crown, Instagram } from 'lucide-react';
 import { InstagramOnboardingModal } from '@/components/InstagramOnboardingModal';
 
 interface AdminStats {
@@ -231,8 +231,8 @@ export default function AdminDashboard() {
                  onClick={() => setIsIgModalOpen(true)}
                  className="px-6 py-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-2xl flex items-center gap-3 transition-all group"
                >
-                 <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-pink-600 flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4 text-white" />
+                 <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 flex items-center justify-center shadow-lg">
+                    <Instagram className="w-4 h-4 text-white" />
                  </div>
                  <div className="text-left">
                     <div className="text-[10px] font-black uppercase tracking-widest text-slate-300">Conectar</div>
@@ -244,8 +244,11 @@ export default function AdminDashboard() {
                  onClick={handleStartTikTokConnection}
                  className="px-6 py-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-2xl flex items-center gap-3 transition-all group"
                >
-                 <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-400 to-blue-600 flex items-center justify-center">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                 <div className="w-8 h-8 rounded-lg bg-black border border-white/10 flex items-center justify-center shadow-lg relative overflow-hidden">
+                    {/* Efeito Neon do TikTok nas bordas do botão interno */}
+                    <div className="absolute top-0 left-0 w-1/2 h-full bg-cyan-400/20 blur-[8px]" />
+                    <div className="absolute bottom-0 right-0 w-1/2 h-full bg-rose-500/20 blur-[8px]" />
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="relative z-10">
                       <path d="M19.589 6.686a4.793 4.793 0 0 1-3.77-4.245V2h-3.445v13.672a2.896 2.896 0 0 1-2.891 2.891 2.896 2.896 0 0 1-2.891-2.891 2.896 2.896 0 0 1 2.891-2.891c.153 0 .3.013.443.037v-3.468a6.34 6.34 0 0 0-.443-.016 6.341 6.341 0 1 0 6.341 6.341V8.658a8.212 8.212 0 0 0 4.265 1.474V6.686z" fill="white" />
                     </svg>
                  </div>
