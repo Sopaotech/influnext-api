@@ -13,6 +13,7 @@ import {
   FileText, 
   Shield, 
   Zap, 
+  Sparkles,
   Globe, 
   Palette,
   CreditCard,
