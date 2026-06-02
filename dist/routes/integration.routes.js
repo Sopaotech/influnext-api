@@ -8,6 +8,10 @@ const router = (0, express_1.Router)();
 router.get('/connected', auth_middleware_1.authenticate, integration_controller_1.getConnectedPlatforms);
 // Obter URLs de autorização
 router.get('/urls', auth_middleware_1.authenticate, integration_controller_1.getAuthUrls);
+// Sincronizar métricas de todas as plataformas (on-demand)
+router.post('/sync-metrics', auth_middleware_1.authenticate, integration_controller_1.syncPlatformMetrics);
+// Simulação de conexão (ex: Instagram/TikTok)
+router.post('/simulate', auth_middleware_1.authenticate, integration_controller_1.simulateInstagramConnection);
 // Callbacks (públicos, chamados pelas redes sociais)
 router.get('/instagram/callback', integration_controller_1.handleInstagramCallback);
 router.get('/tiktok/callback', integration_controller_1.handleTikTokCallback);

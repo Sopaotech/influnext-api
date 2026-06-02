@@ -74,16 +74,15 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+
+  manifest: '/manifest.json',
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/icon.png', type: 'image/png', sizes: '32x32' },
-      { url: '/apple-icon.png', type: 'image/png', sizes: '180x180' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' }
     ],
-    shortcut: '/favicon.ico',
-    apple: '/apple-icon.png',
-  },
-  manifest: '/manifest.json'
+    apple: '/icon.svg',
+  }
 };
 
 import { ThemeProvider } from "@/components/theme-provider";

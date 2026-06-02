@@ -177,6 +177,13 @@ const releasePayment = async (req, res) => {
             res.status(404).json({ error: "Contrato não encontrado." });
             return;
         }
+        if (userRole === roles_1.UserRole.COMPANY) {
+            const company = await prisma_1.prisma.companyProfile.findUnique({ where: { userId } });
+            if (!company || company.id !== contract.companyId) {
+                res.status(403).json({ error: "Você não tem permissão para liberar pagamentos deste contrato." });
+                return;
+            }
+        }
         if (contract.escrowStatus !== 'UNDER_REVIEW' && contract.escrowStatus !== 'IN_PROGRESS') {
             res.status(400).json({ error: "Contrato não está pronto para liberação." });
             return;

@@ -5,6 +5,7 @@ interface LogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   href?: string;
   className?: string;
+  textColor?: string;
 }
 
 const sizeMap = {
@@ -14,12 +15,13 @@ const sizeMap = {
   xl: 'h-24 md:h-32',
 };
 
-export function Logo({ size = 'md', href = '/', className = '' }: LogoProps) {
+export function Logo({ size = 'md', href = '/', className = '', textColor }: LogoProps) {
   const logoHeight = sizeMap[size];
+  const colorClass = textColor || "text-slate-900 dark:text-white";
 
   const content = (
     <div className={`relative select-none ${logoHeight} ${className} flex items-center gap-1`}>
-      <span className="text-xl md:text-2xl font-[900] tracking-[-0.05em] text-slate-900">
+      <span className={`text-xl md:text-2xl font-[900] tracking-[-0.05em] ${colorClass}`}>
         INFLUNE
       </span>
       {/* O "X" com Seta Estilizado da sua logo original */}
@@ -44,7 +46,7 @@ export function Logo({ size = 'md', href = '/', className = '' }: LogoProps) {
           />
         </svg>
       </div>
-      <span className="text-xl md:text-2xl font-[900] tracking-[-0.05em] text-slate-900 -ml-1">
+      <span className={`text-xl md:text-2xl font-[900] tracking-[-0.05em] ${colorClass} -ml-1`}>
         T
       </span>
     </div>

@@ -11,7 +11,8 @@ import {
   getDailyInsight,
   createVoiceTask,
   requestWithdraw,
-  getBalance
+  getBalance,
+  seedDemoBalance
 } from '../controllers/influencer.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 
@@ -38,6 +39,7 @@ router.post('/rate-card', authenticate, updateRateCard);
 // Carteira & Saque PIX
 router.get('/balance', authenticate, getBalance);
 router.post('/withdraw', authenticate, requestWithdraw);
+router.post('/seed-balance', authenticate, seedDemoBalance);
 
 export default router;
 

@@ -8,39 +8,39 @@ import { XCircle, Rocket, BarChart3, Zap, Brain, TrendingUp, ShieldCheck, Target
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const STATS = [
-  { value: '+3.200', label: 'Influencers Ativos' },
-  { value: '+480', label: 'Marcas Conectadas' },
-  { value: '360°', label: 'Gestão de Carreira' },
+  { value: '+3.200', label: 'Criadores Auditados' },
+  { value: '+480', label: 'Marcas Ativas' },
+  { value: '100% BRL', label: 'Saques Garantidos via PIX' },
 ];
 
 const PAIN_POINTS = [
-  'Não sabe quantos Stories, curtidas ou engajamento o influencer realmente gera',
-  'Gerencia campanha de R$ 10 mil por DM e planilha',
-  'Como influencer, não sabe o que postar, quando postar ou como crescer',
-  'Recebe briefing confuso e corre atrás do pagamento',
+  'Empresas: Cansadas de gastar verba com parcerias fracas, infladas por robôs e sem nenhum retorno financeiro.',
+  'Influenciadores: "Recebidos" não pagam boletos. Chega de permutas baratas; sua carreira exige contratos reais em dinheiro.',
+  'Empresas: "Seguidores" não pagam boleto. Apenas métricas de vaidade não trazem clientes reais para o seu negócio.',
+  'Influenciadores: Chega de perder tempo negociando por DM, lidando com calotes ou correndo atrás de pagamentos atrasados.',
 ];
 
 const CREATOR_FEATURES = [
-  { icon: Brain, text: 'Agenda inteligente com IA' },
-  { icon: Zap, text: 'Ideias de conteúdo geradas automaticamente' },
-  { icon: TrendingUp, text: 'Painel de crescimento em tempo real' },
-  { icon: Target, text: 'Fim do achismo — dados reais guiam tudo' },
-  { icon: BarChart3, text: 'Gestão profissional de negócio' },
+  { icon: Brain, text: 'IA Empresária: Roteiros e briefs otimizados de acordo com seu nicho' },
+  { icon: Zap, text: 'Ideias de conteúdo acionáveis e tendências semanais em tempo real' },
+  { icon: TrendingUp, text: 'Dados Auditados: Conecte seu perfil social e gere provas reais de valor' },
+  { icon: Target, text: 'Contratos Seguros: Garantia de pagamento na conta assim que entregar o post' },
+  { icon: BarChart3, text: 'Gestão Profissional: Seu workspace de carreira e finanças em um só lugar' },
 ];
 
 const BRAND_FEATURES = [
-  { icon: ShieldCheck, text: 'Dados reais antes de contratar' },
-  { icon: XCircle, text: 'Zero fraude — sistema anti-bot' },
-  { icon: CheckCircle2, text: 'Gestão sem burocracia, sem DM' },
-  { icon: TrendingUp, text: 'ROI em tempo real por campanha' },
-  { icon: Target, text: 'Escrow total — pague só após aprovação' },
+  { icon: ShieldCheck, text: 'Métricas de Verdade: Engajamento real, impressões e alcance sem PDFs falsificados' },
+  { icon: XCircle, text: 'Fim dos Bots: Auditoria contínua que limpa seguidores comprados' },
+  { icon: CheckCircle2, text: 'Sem DMs ou Planilhas: Envie briefs, aprove roteiros e pague na mesma tela' },
+  { icon: TrendingUp, text: 'ROI Rastreável: Acompanhe os resultados da campanha em tempo real' },
+  { icon: Target, text: 'Escrow Financeiro: O pagamento do criador fica retido até que você aprove o post' },
 ];
 
 const FLOW_STEPS = [
-  { label: 'Influencer', sub: 'com dados reais auditados' },
-  { label: 'Stories / Curtidas', sub: 'métricas verificadas' },
-  { label: 'Empresa decide', sub: 'com segurança total' },
-  { label: 'INFLUNEXT', sub: 'Conexão + Pagamento Escrow', highlight: true },
+  { label: '1. Auditoria de Dados', sub: 'Conexão real das redes sociais' },
+  { label: '2. Contratação Direta', sub: 'Envio de briefing claro e valores exatos' },
+  { label: '3. Garantia de Escrow', sub: 'Verba retida de forma segura na plataforma' },
+  { label: '4. Liberação e PIX', sub: 'Pagamento feito na aprovação do conteúdo', highlight: true },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -82,21 +82,17 @@ export default function LandingPageClient() {
           </div>
 
           <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-black tracking-[-0.04em] leading-[1.1] md:leading-[1.02] mb-6 md:mb-8 max-w-5xl text-slate-900">
-            Pare de contratar{' '}
-            <span className="text-slate-400">números.</span>
+            Pare de queimar verba com{' '}
+            <span className="text-slate-400">seguidores falsos.</span>
             <br className="hidden md:block" />
             Comece a contratar{' '}
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
-              resultados.
+              resultados reais.
             </span>
           </h1>
 
-          <p className="text-base md:text-xl text-slate-500 max-w-2xl mb-10 md:mb-12 leading-relaxed font-medium px-4 md:px-0">
-            A INFLUNEXT conecta marcas e influencers com{' '}
-            <span className="text-slate-900 font-semibold underline decoration-purple-500/30">dados reais</span>,
-            gestão profissional de carreira e{' '}
-            <span className="text-slate-900 font-semibold underline decoration-purple-500/30">segurança total</span>{' '}
-            — do comércio de bairro à multinacional.
+          <p className="text-base md:text-xl text-slate-500 max-w-3xl mb-10 md:mb-12 leading-relaxed font-medium px-4 md:px-0">
+            Chega de amadorismo no marketing de influência. A INFLUNEXT une <span className="text-slate-900 font-semibold underline decoration-purple-500/30">métricas 100% auditadas</span>, garantia de transações em <span className="text-slate-900 font-semibold underline decoration-purple-500/30">Escrow seguro</span> e inteligência de carreira para que criadores trabalhem focados em faturamento.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 mb-16 md:mb-20 w-full sm:w-auto px-6 sm:px-0">
@@ -293,11 +289,11 @@ export default function LandingPageClient() {
             <div className="relative z-10 text-center space-y-8 max-w-4xl mx-auto">
               <p className="text-purple-400 text-[11px] font-black uppercase tracking-[0.25em]">Chega de amadorismo</p>
 
-              <h2 className="text-4xl md:text-5xl lg:text-7xl font-black text-white tracking-[-0.04em] leading-tight">
-                O amadorismo está{' '}
-                <span className="text-red-400">custando caro.</span>
+              <h2 className="text-4xl md:text-5xl lg:text-7xl font-black text-white tracking-[-0.04em] leading-tight font-sans">
+                Seguidores não{' '}
+                <span className="text-red-400">pagam boleto.</span>
                 <br />
-                <span className="text-purple-400">Profissionaliza agora.</span>
+                <span className="text-purple-400">Recebidos também não.</span>
               </h2>
 
               <p className="text-slate-400 text-base md:text-xl leading-relaxed max-w-2xl mx-auto">

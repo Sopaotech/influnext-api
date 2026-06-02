@@ -50,7 +50,10 @@ export default function MarketplacePage() {
     setHasSearched(true);
     try {
       const params = new URLSearchParams();
-      if (query) params.set('q', query);
+      if (query) {
+        const cleanQuery = query.startsWith('@') ? query.slice(1) : query;
+        params.set('q', cleanQuery);
+      }
       if (city) params.set('city', city);
       if (state) params.set('state', state);
       if (niche && niche !== 'Todos') params.set('niche', niche);

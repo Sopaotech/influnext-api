@@ -5,12 +5,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, FileText, Sparkles, User, Search } from 'lucide-react';
 
-export function BottomNav() {
+export function BottomNav({ taskCount = 0 }: { taskCount?: number }) {
   const pathname = usePathname();
 
   const navItems = [
     { name: 'Home', href: '/dashboard/influencer', icon: Home },
-    { name: 'Missões', href: '/dashboard/workspace', icon: Sparkles, badgeCount: 2 },
+    { name: 'Missões', href: '/dashboard/workspace', icon: Sparkles, badgeCount: taskCount },
     { name: 'Mídia Kit', href: '/dashboard/mediakit', icon: FileText },
     { name: 'Mercado', href: '/dashboard/marketplace', icon: Search },
     { name: 'Perfil', href: '/dashboard/settings', icon: User },

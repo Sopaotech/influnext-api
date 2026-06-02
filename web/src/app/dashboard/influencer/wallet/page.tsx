@@ -16,6 +16,7 @@ export default function WalletPage() {
   const [amount, setAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingBalance, setIsLoadingBalance] = useState(true);
+  const [isInjectingDemo, setIsInjectingDemo] = useState(false);
   const [success, setSuccess] = useState(false);
   const [confirmedSecurity, setConfirmedSecurity] = useState(false);
   const [balanceData, setBalanceData] = useState<BalanceData>({
@@ -23,6 +24,22 @@ export default function WalletPage() {
     completedContracts: 0,
     currency: 'BRL'
   });
+
+  const handleInjectDemoBalance = async () => {
+    setIsInjectingDemo(true);
+    try {
+      await api.post('/influencers/seed-balance');
+      toast.success('✦ Saldo de demonstração injetado!', {
+        description: 'Um contrato COMPLETED de R$ 2.500,00 foi gerado.'
+      });
+      await fetchBalance();
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'Erro ao simular saldo.';
+      toast.error(msg);
+    } finally {
+      setIsInjectingDemo(false);
+    }
+  };
 
   useEffect(() => {
     fetchBalance();
@@ -164,13 +181,22 @@ export default function WalletPage() {
           <div className="flex items-center gap-3">
             <button
               type="button"
+              onClick={handleInjectDemoBalance}
+              disabled={isInjectingDemo}
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50 z-10 shadow-lg"
+              title="Simular Saldo para Demonstração"
+            >
+              {isInjectingDemo ? 'Gerando...' : 'Injetar Saldo Demo'}
+            </button>
+            <button
+              type="button"
               onClick={fetchBalance}
               disabled={isLoadingBalance}
-              className="p-3 bg-slate-800 rounded-full hover:bg-slate-700 transition-colors disabled:opacity-50"
+              className="p-3 bg-slate-800 rounded-full hover:bg-slate-700 transition-colors disabled:opacity-50 z-10"
             >
               <RefreshCw className={`w-4 h-4 text-slate-400 ${isLoadingBalance ? 'animate-spin' : ''}`} />
             </button>
-            <Wallet className="w-10 h-10 text-emerald-500/50 hidden sm:block" />
+            <Wallet className="w-10 h-10 text-emerald-500/50 hidden sm:block z-10" />
           </div>
         </div>
 

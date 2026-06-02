@@ -142,6 +142,9 @@ export interface InfluencerSearchItem {
 export const confirmContractPayment = (id: string) => api.post(`/contracts/${id}/pay`);
 export const approveDeliverable = (id: string) => api.patch(`/deliverables/${id}/approve`);
 export const rejectDeliverable = (id: string, reason: string) => api.patch(`/deliverables/${id}/reject`, { reason });
-export const searchInfluencers = (q: string) => api.get(`/influencers/search?q=${q}`);
+export const searchInfluencers = (q: string) => {
+  const cleanQ = q.startsWith('@') ? q.slice(1) : q;
+  return api.get(`/influencers/search?q=${cleanQ}`);
+};
 export const createContract = (data: any) => api.post('/contracts', data);
 export const getAdminStats = () => api.get<GlobalStats>('/admin/stats');

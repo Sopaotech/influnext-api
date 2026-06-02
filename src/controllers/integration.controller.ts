@@ -4,6 +4,11 @@ import { UserRole } from '../types/roles';
 import { ScoringService } from '../services/scoring.service';
 import axios from 'axios';
 
+const getFrontendUrl = () => {
+  const url = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
+  return url.endsWith('/') ? url.slice(0, -1) : url;
+};
+
 /**
  * Especialista: Implementação Robusta do Instagram Graph API (Business Login)
  * Suporte a Long-Lived Tokens e descoberta de conta via Página.
@@ -49,7 +54,7 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
     stateStr = state as string;
 
     if (!code || !stateStr) {
-      res.redirect(`${process.env.FRONTEND_URL}/dashboard/settings?status=error&error=invalid_params`);
+      res.redirect(`${getFrontendUrl()}/dashboard/settings?status=error&error=invalid_params`);
       return;
     }
 
@@ -108,8 +113,8 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
 
     if (!instagramBusinessId) {
       const redirectUrl = isFromOnboarding
-        ? `${process.env.FRONTEND_URL}/onboarding?status=error&error=no_business_account`
-        : `${process.env.FRONTEND_URL}/dashboard/settings?status=error&error=no_business_account`;
+        ? `${getFrontendUrl()}/onboarding?status=error&error=no_business_account`
+        : `${getFrontendUrl()}/dashboard/settings?status=error&error=no_business_account`;
       res.redirect(redirectUrl);
       return;
     }
@@ -171,15 +176,15 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
     }
     
     const redirectUrl = isFromOnboarding
-      ? `${process.env.FRONTEND_URL}/onboarding?status=success&platform=instagram`
-      : `${process.env.FRONTEND_URL}/dashboard/settings?status=success&platform=instagram`;
+      ? `${getFrontendUrl()}/onboarding?status=success&platform=instagram`
+      : `${getFrontendUrl()}/dashboard/settings?status=success&platform=instagram`;
     res.redirect(redirectUrl);
   } catch (error: any) {
     console.error('[INSTAGRAM] Erro no callback:', error.response?.data || error.message);
     const isFromOnboarding = stateStr.endsWith('_onboarding');
     const redirectUrl = isFromOnboarding
-      ? `${process.env.FRONTEND_URL}/onboarding?status=error`
-      : `${process.env.FRONTEND_URL}/dashboard/settings?status=error`;
+      ? `${getFrontendUrl()}/onboarding?status=error`
+      : `${getFrontendUrl()}/dashboard/settings?status=error`;
     res.redirect(redirectUrl);
   }
 };
@@ -279,7 +284,7 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
     stateStr = state as string;
 
     if (!code || !stateStr) {
-      res.redirect(`${process.env.FRONTEND_URL}/dashboard/settings?status=error&error=invalid_params`);
+      res.redirect(`${getFrontendUrl()}/dashboard/settings?status=error&error=invalid_params`);
       return;
     }
 
@@ -353,15 +358,15 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
     }
     
     const redirectUrl = isFromOnboarding
-      ? `${process.env.FRONTEND_URL}/onboarding?status=success&platform=tiktok`
-      : `${process.env.FRONTEND_URL}/dashboard/settings?status=success&platform=tiktok`;
+      ? `${getFrontendUrl()}/onboarding?status=success&platform=tiktok`
+      : `${getFrontendUrl()}/dashboard/settings?status=success&platform=tiktok`;
     res.redirect(redirectUrl);
   } catch (error) {
     console.error('[TIKTOK] Erro no callback:', error);
     const isFromOnboarding = stateStr.endsWith('_onboarding');
     const redirectUrl = isFromOnboarding
-      ? `${process.env.FRONTEND_URL}/onboarding?status=error`
-      : `${process.env.FRONTEND_URL}/dashboard/settings?status=error`;
+      ? `${getFrontendUrl()}/onboarding?status=error`
+      : `${getFrontendUrl()}/dashboard/settings?status=error`;
     res.redirect(redirectUrl);
   }
 };

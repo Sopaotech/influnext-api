@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { MissionService } from '../services/mission.service';
 import { CareerService } from '../services/career.service';
+import { AIService } from '../services/ai.service';
 import { Request, Response } from 'express';
 import { z } from 'zod';
 
@@ -71,36 +72,39 @@ export const createVoiceTask = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    // Usando a IA para extrair a intenção e data. Como é um MVP, faremos um parse rápido com a AIService
-    // ou um fallback inteligente caso a IA falhe.
-    const prompt = `Analise a seguinte frase ditada por voz: "${text}". 
-Extraia o título da tarefa e extraia quantos dias a partir de hoje ela deve ser agendada. 
-Responda EXATAMENTE neste formato JSON: {"title": "Titulo", "daysFromNow": 0}.
-Se a pessoa falou "hoje", daysFromNow é 0. Se falou "amanhã", é 1. Se falou um dia da semana que vem, calcule a distância aproximada em dias (ex: 2). Se não achar data, use 0.`;
-
+    // Usando o parser de linguagem natural da IA para extrair a intenção e data
     let title = text;
-    let daysFromNow = 0;
+    let scheduledDate = new Date();
 
     try {
-      const aiResponse = await CareerService.getDailyBusinessInsight(influencer.id); // Reusando o chat genérico para não criar loop infinito
-      // Para o MVP seguro de sexta: a gente já pega a string e salva direto no banco para evitar quebrar o JSON da IA, 
-      // mas vamos adicionar um "Agendado via IA" no título.
+      const parsedCommand = await AIService.parseNaturalCommand(text);
+      if (parsedCommand && parsedCommand.action === 'CREATE_TASK' && parsedCommand.data) {
+        if (parsedCommand.data.title) {
+          title = parsedCommand.data.title;
+        }
+        if (parsedCommand.data.scheduledDate) {
+          scheduledDate = new Date(parsedCommand.data.scheduledDate);
+        }
+      } else {
+        // Fallback heurístico inteligente
+        let daysFromNow = 0;
+        if (text.toLowerCase().includes('amanhã')) daysFromNow = 1;
+        if (text.toLowerCase().includes('depois de amanhã')) daysFromNow = 2;
+        scheduledDate.setDate(scheduledDate.getDate() + daysFromNow);
+      }
     } catch (e) {
-      // ignore
+      console.warn('[INFLUENCER] IA indisponível para comando de voz, usando fallback heurístico.');
+      let daysFromNow = 0;
+      if (text.toLowerCase().includes('amanhã')) daysFromNow = 1;
+      if (text.toLowerCase().includes('depois de amanhã')) daysFromNow = 2;
+      scheduledDate.setDate(scheduledDate.getDate() + daysFromNow);
     }
-
-    // Tratamento heurístico rápido para MVP enquanto o parser JSON da IA não está 100% calibrado
-    if (text.toLowerCase().includes('amanhã')) daysFromNow = 1;
-    if (text.toLowerCase().includes('depois de amanhã')) daysFromNow = 2;
-
-    const scheduledDate = new Date();
-    scheduledDate.setDate(scheduledDate.getDate() + daysFromNow);
 
     const task = await prisma.task.create({
       data: {
         influencerId: influencer.id,
-        title: text.substring(0, 50), // O título é a própria frase ditada ou a primeira parte dela
-        description: "Agendado via Comando de Voz (Viak)",
+        title: title.substring(0, 50),
+        description: "Agendado via Comando de Voz / IA",
         fromAI: true,
         isDone: false,
         scheduledDate
@@ -143,7 +147,8 @@ export const searchInfluencers = async (req: Request, res: Response): Promise<vo
     const where: any = {};
 
     if (q && q.length >= 1) {
-      where.handle = { contains: q, mode: 'insensitive' };
+      const cleanQ = q.startsWith('@') ? q.slice(1) : q;
+      where.handle = { contains: cleanQ, mode: 'insensitive' };
     }
 
     if (city) {
@@ -198,6 +203,8 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
       state:          z.string().max(2).optional(),
       theme:          z.string().optional(),
       accentColor:    z.string().optional(),
+      careerObjective: z.string().optional(),
+      onboardingCompleted: z.boolean().optional(),
     });
 
     const parsed = schema.safeParse(req.body);
@@ -206,7 +213,7 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    const { theme, accentColor, ...profileData } = parsed.data;
+    const { theme, accentColor, onboardingCompleted, ...profileData } = parsed.data;
 
     // Atualiza perfil do influenciador
     const updated = await prisma.influencerProfile.update({
@@ -214,14 +221,16 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
       data: profileData,
     });
 
-    // Atualiza preferências do usuário (se enviadas)
-    if (theme || accentColor) {
+    // Atualiza preferências e status do usuário (se enviados)
+    if (theme || accentColor || onboardingCompleted !== undefined) {
+      const userData: any = {};
+      if (theme) userData.theme = theme;
+      if (accentColor) userData.accentColor = accentColor;
+      if (onboardingCompleted !== undefined) userData.onboardingCompleted = onboardingCompleted;
+
       await prisma.user.update({
         where: { id: userId },
-        data: {
-          theme: theme as any,
-          accentColor
-        }
+        data: userData
       });
     }
 
@@ -350,15 +359,37 @@ export const requestWithdraw = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    // Calcular saldo disponível: soma dos netAmount de contratos COMPLETED
+    // Calcular ganhos totais dos contratos COMPLETED
     const completedContracts = await prisma.contract.findMany({
       where: { influencerId: influencer.id, escrowStatus: 'COMPLETED' },
       select: { netAmount: true, budget: true }
     });
 
-    const availableBalance = completedContracts.reduce((acc, c) => {
+    const totalEarned = completedContracts.reduce((acc, c) => {
       return acc + (c.netAmount || c.budget * 0.85); // 85% líquido se netAmount não definido
     }, 0);
+
+    // Calcular saques totais já feitos (não rejeitados e não cancelados)
+    const withdrawNotifications = await prisma.notification.findMany({
+      where: { userId, type: 'WITHDRAW_REQUEST' },
+      select: { metadata: true }
+    });
+
+    let totalWithdrawn = 0;
+    for (const notif of withdrawNotifications) {
+      if (notif.metadata) {
+        try {
+          const meta = JSON.parse(notif.metadata);
+          if (meta && meta.amount && meta.status !== 'REJECTED' && meta.status !== 'CANCELLED') {
+            totalWithdrawn += parseFloat(meta.amount);
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+    }
+
+    const availableBalance = Math.max(0, totalEarned - totalWithdrawn);
 
     if (withdrawAmount > availableBalance) {
       res.status(400).json({
@@ -416,9 +447,31 @@ export const getBalance = async (req: Request, res: Response): Promise<void> => 
       select: { netAmount: true, budget: true, title: true }
     });
 
-    const availableBalance = completedContracts.reduce((acc, c) => {
+    const totalEarned = completedContracts.reduce((acc, c) => {
       return acc + (c.netAmount || c.budget * 0.85);
     }, 0);
+
+    // Calcular saques totais já feitos (não rejeitados e não cancelados)
+    const withdrawNotifications = await prisma.notification.findMany({
+      where: { userId, type: 'WITHDRAW_REQUEST' },
+      select: { metadata: true }
+    });
+
+    let totalWithdrawn = 0;
+    for (const notif of withdrawNotifications) {
+      if (notif.metadata) {
+        try {
+          const meta = JSON.parse(notif.metadata);
+          if (meta && meta.amount && meta.status !== 'REJECTED' && meta.status !== 'CANCELLED') {
+            totalWithdrawn += parseFloat(meta.amount);
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+    }
+
+    const availableBalance = Math.max(0, totalEarned - totalWithdrawn);
 
     res.json({
       availableBalance: parseFloat(availableBalance.toFixed(2)),
@@ -427,6 +480,74 @@ export const getBalance = async (req: Request, res: Response): Promise<void> => 
     });
   } catch (error) {
     res.status(500).json({ error: 'Erro ao buscar saldo.' });
+  }
+};
+
+/**
+ * POST /v1/influencer/seed-balance
+ * Cria um contrato simulado para injetar saldo na carteira do influenciador logado
+ */
+export const seedDemoBalance = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    
+    const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
+    if (!influencer) {
+      res.status(404).json({ error: 'Perfil de influenciador não encontrado.' });
+      return;
+    }
+
+    // Tentar encontrar uma empresa existente para vincular o contrato
+    let company = await prisma.companyProfile.findFirst();
+    
+    // Se não houver nenhuma empresa no banco, cria uma de testes
+    if (!company) {
+      // Encontrar ou criar um usuário com role COMPANY
+      let companyUser = await prisma.user.findFirst({ where: { role: 'COMPANY' } });
+      if (!companyUser) {
+        companyUser = await prisma.user.create({
+          data: {
+            email: `company_demo_${Date.now()}@influnext.com.br`,
+            passwordHash: '$2b$10$wN1iNlEaXw5U/W6N22n/fe.7VqK5j5.5n.YxIeGvOqR.tHw2kY16y', // bcrypt para '123456'
+            role: 'COMPANY',
+            onboardingCompleted: true
+          }
+        });
+      }
+      company = await prisma.companyProfile.create({
+        data: {
+          userId: companyUser.id,
+          companyName: 'Marca Demonstrativa Ltda',
+          taxId: `123456780001${Math.floor(Math.random() * 90) + 10}`,
+          city: 'São Paulo',
+          state: 'SP',
+          segment: 'TECNOLOGIA'
+        }
+      });
+    }
+
+    // Criar o contrato de demonstração concluído
+    const contract = await prisma.contract.create({
+      data: {
+        companyId: company.id,
+        influencerId: influencer.id,
+        title: 'Campanha Demonstrativa de Engajamento v2.1',
+        briefing: 'Divulgação de posts demonstrativos no workspace para investidores.',
+        budget: 2500.00,
+        platformFee: 375.00, // 15% taxa
+        netAmount: 2125.00,  // 85% líquido
+        escrowStatus: 'COMPLETED'
+      }
+    });
+
+    res.json({
+      success: true,
+      message: 'Saldo demonstrativo injetado com sucesso!',
+      contract
+    });
+  } catch (error) {
+    console.error('[SEED_BALANCE] Erro ao injetar saldo:', error);
+    res.status(500).json({ error: 'Erro ao injetar saldo de demonstração.' });
   }
 };
 

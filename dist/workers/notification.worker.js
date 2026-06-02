@@ -18,3 +18,6 @@ exports.notificationWorker = new bullmq_1.Worker('notifications', async (job) =>
     console.log(`[NOTIFICAÇÃO] User ${userId}: ${message}`);
     return { success: true };
 }, { connection });
+exports.notificationWorker.on('error', () => {
+    // Ignora erro de conexão do Redis para não derrubar o host
+});

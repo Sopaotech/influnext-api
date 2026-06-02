@@ -44,40 +44,29 @@ const routes_1 = require("./routes");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 // Configuração de CORS Dinâmica para Multi-Domínio
-const allowedOriginsStr = process.env.ALLOWED_ORIGINS || 'http://localhost:3000,https://influnext.com.br,https://www.influnext.com.br';
+const allowedOriginsStr = process.env.ALLOWED_ORIGINS || 'http://localhost:3000,https://influnext.com.br,https://www.influnext.com.br,https://influnext.com,https://www.influnext.com';
 const ALLOWED_ORIGINS = allowedOriginsStr.split(',').map(origin => origin.trim());
 app.use((0, cors_1.default)({
-    origin: (origin, callback) => {
-        // Permite requisições sem origin (como mobile apps ou curl)
-        if (!origin)
-            return callback(null, true);
-        const isAllowed = ALLOWED_ORIGINS.includes(origin) ||
-            origin.endsWith('.vercel.app') ||
-            origin === 'https://influnext-api.vercel.app' ||
-            origin.includes('localhost');
-        if (isAllowed) {
-            callback(null, true);
-        }
-        else {
-            console.warn(`[CORS] Bloqueado: ${origin}`);
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: true, // Temporário: permite TUDO para diagnóstico
     credentials: true
 }));
 // Middleware de Analytics (Movido para ser carregado sob demanda)
-const analyticsMiddleware = (req, res, next) => {
-    if (req.path === '/' || req.path === '/health')
-        return next();
-    Promise.resolve().then(() => __importStar(require('./middlewares/analytics.middleware'))).then(m => m.trackPageView(req, res, next)).catch(() => next());
-};
-app.use(express_1.default.json());
-// Rota Stripe (Deve vir ANTES do json() global se possível, mas aqui usamos o raw body específico)
+// Webhook da Stripe precisa do body cru (Buffer) ANTES do express.json() processar a requisição
 app.use('/v1/payments/webhook', express_1.default.raw({ type: 'application/json' }));
-app.use(analyticsMiddleware);
-// Endpoint de Health Check Simples para o Railway (RAIZ) - DEVE VIR ANTES DE TUDO
-app.get('/', (req, res) => res.status(200).send('🚀 API ONLINE'));
-app.get('/health', (req, res) => res.status(200).json({ status: 'online' }));
+app.use(express_1.default.json({ limit: '50mb' }));
+app.use(express_1.default.urlencoded({ limit: '50mb', extended: true }));
+app.use((req, res, next) => {
+    console.log(`[REQUEST] ${req.method} ${req.url}`);
+    next();
+});
+// Endpoint de Health Check (CRÍTICO para o Railway)
+app.get('/', (req, res) => {
+    res.setHeader('Content-Type', 'text/plain');
+    res.status(200).send('🚀 API ONLINE');
+});
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'online', timestamp: new Date().toISOString() });
+});
 // Todas as suas rotas começarão com /v1
 app.use('/v1', routes_1.routes);
 // Tratamento de erros globais
@@ -93,6 +82,26 @@ process.on('uncaughtException', (error) => {
     console.error('❌ EXCEÇÃO:', error);
 });
 const PORT = Number(process.env.PORT) || 4000;
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 INFLUNEXT ONLINE: Port ${PORT}`);
-});
+const startServer = async () => {
+    try {
+        console.log('🔍 Verificando conexão com o banco de dados...');
+        const { prisma } = await Promise.resolve().then(() => __importStar(require('./lib/prisma')));
+        await prisma.$connect();
+        console.log('✅ Banco de dados conectado!');
+        // Garante que o administrador solicitado pelo usuário exista
+        const { ensureAdminExists } = await Promise.resolve().then(() => __importStar(require('./lib/admin-init')));
+        await ensureAdminExists();
+        app.listen(PORT, () => {
+            console.log(`🚀 INFLUNEXT ONLINE: Port ${PORT}`);
+            console.log(`🌍 URL da API: https://api.influnext.com.br`);
+        });
+    }
+    catch (error) {
+        console.error('❌ FALHA CRÍTICA NO STARTUP:', error);
+        // Tenta subir o servidor mesmo com erro no banco para podermos ver o erro via HTTP/Health
+        app.listen(PORT, () => {
+            console.log(`⚠️ Servidor subiu com ERROS (Port ${PORT}). Verifique os logs.`);
+        });
+    }
+};
+startServer();

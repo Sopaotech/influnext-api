@@ -4,7 +4,7 @@ import { ShieldCheck, Info, CheckCircle2, ChevronRight, Sparkles } from 'lucide-
 interface InstagramOnboardingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: (mode: 'real' | 'simulate') => void;
 }
 
 export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: InstagramOnboardingModalProps) {
@@ -80,18 +80,26 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
           </div>
 
           {/* Actions */}
-          <div className="flex flex-col md:flex-row gap-3 pt-4">
+          <div className="flex flex-col gap-3 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button 
+                onClick={() => onConfirm('real')}
+                className="flex-1 h-14 bg-slate-900 hover:bg-purple-600 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2 group"
+              >
+                Conexão Real <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+              <button 
+                onClick={() => onConfirm('simulate')}
+                className="flex-1 h-14 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-emerald-600/10 flex items-center justify-center gap-2 group"
+              >
+                Simular Conexão (Demo) <Sparkles className="w-4 h-4 animate-pulse" />
+              </button>
+            </div>
             <button 
               onClick={onClose}
-              className="flex-1 h-14 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all"
+              className="w-full h-12 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-bold text-[10px] uppercase tracking-widest rounded-2xl transition-all border border-slate-100"
             >
-              Agora Não
-            </button>
-            <button 
-              onClick={onConfirm}
-              className="flex-[2] h-14 bg-slate-900 hover:bg-purple-600 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2 group"
-            >
-              Entendi, vamos conectar <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              Agora Não / Voltar
             </button>
           </div>
 

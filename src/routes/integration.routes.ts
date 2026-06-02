@@ -1,5 +1,12 @@
 import { Router } from 'express';
-import { getAuthUrls, handleInstagramCallback, handleTikTokCallback, getConnectedPlatforms, syncPlatformMetrics } from '../controllers/integration.controller';
+import { 
+  getAuthUrls, 
+  handleInstagramCallback, 
+  handleTikTokCallback, 
+  getConnectedPlatforms, 
+  syncPlatformMetrics,
+  simulateInstagramConnection 
+} from '../controllers/integration.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -12,6 +19,9 @@ router.get('/urls', authenticate, getAuthUrls);
 
 // Sincronizar métricas de todas as plataformas (on-demand)
 router.post('/sync-metrics', authenticate, syncPlatformMetrics);
+
+// Simulação de conexão (ex: Instagram/TikTok)
+router.post('/simulate', authenticate, simulateInstagramConnection);
 
 // Callbacks (públicos, chamados pelas redes sociais)
 router.get('/instagram/callback', handleInstagramCallback);

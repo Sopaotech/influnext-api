@@ -12,9 +12,14 @@ router.get('/mission', auth_middleware_1.authenticate, influencer_controller_1.g
 router.post('/mission/complete', auth_middleware_1.authenticate, influencer_controller_1.completeMission);
 // Novas Rotas de Carreira & IA Empresária
 router.get('/tasks', auth_middleware_1.authenticate, influencer_controller_1.getTasks);
+router.post('/tasks/voice', auth_middleware_1.authenticate, influencer_controller_1.createVoiceTask);
 router.patch('/tasks/:id', auth_middleware_1.authenticate, influencer_controller_1.updateTask);
 router.get('/daily-insight', auth_middleware_1.authenticate, influencer_controller_1.getDailyInsight);
 // Tabela de Preços (Rate Card)
 router.get('/rate-card', auth_middleware_1.authenticate, influencer_controller_1.getRateCard);
 router.post('/rate-card', auth_middleware_1.authenticate, influencer_controller_1.updateRateCard);
+// Carteira & Saque PIX
+router.get('/balance', auth_middleware_1.authenticate, influencer_controller_1.getBalance);
+router.post('/withdraw', auth_middleware_1.authenticate, influencer_controller_1.requestWithdraw);
+router.post('/seed-balance', auth_middleware_1.authenticate, influencer_controller_1.seedDemoBalance);
 exports.default = router;

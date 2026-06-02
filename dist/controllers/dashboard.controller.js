@@ -8,7 +8,7 @@ const getInfluencerDashboard = async (req, res) => {
         let profile = await prisma_1.prisma.influencerProfile.findUnique({
             where: { userId },
             include: {
-                user: { select: { email: true, role: true, onboardingCompleted: true, subscriptionStatus: true, trialEndsAt: true } },
+                user: { select: { email: true, role: true, onboardingCompleted: true, subscriptionStatus: true, trialEndsAt: true, theme: true, accentColor: true } },
                 platforms: true,
                 contracts: {
                     where: { escrowStatus: { in: ['IN_PROGRESS', 'PENDING_PAYMENT', 'UNDER_REVIEW'] } },
@@ -17,7 +17,8 @@ const getInfluencerDashboard = async (req, res) => {
                 metricsHistory: { take: 30, orderBy: { capturedAt: 'desc' } },
                 tasks: { where: { isDone: false }, orderBy: { scheduledDate: 'asc' } },
                 trendVault: { where: { expiresAt: { gte: new Date() } }, orderBy: { createdAt: 'desc' } },
-                aiAnalyses: { take: 1, orderBy: { generatedAt: 'desc' } }
+                aiAnalyses: { take: 1, orderBy: { generatedAt: 'desc' } },
+                rateCards: true
             }
         });
         if (!profile) {
@@ -98,6 +99,7 @@ const getInfluencerDashboard = async (req, res) => {
             trendVault: profile.trendVault,
             metricsHistory: profile.metricsHistory,
             analysis: profile.aiAnalyses[0] || null,
+            rateCard: profile.rateCards,
         });
     }
     catch (error) {

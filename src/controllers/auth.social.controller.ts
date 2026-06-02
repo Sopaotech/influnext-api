@@ -6,7 +6,7 @@ export class SocialAuthController {
   static async getAuthUrls(req: Request, res: Response) {
     const userId = req.user!.id;
     
-    const frontendUrl = process.env.FRONTEND_URL || 'https://www.influnext.com.br';
+    const frontendUrl = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
     
     const urls = {
       instagram: `https://www.facebook.com/v19.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/instagram&scope=instagram_basic,pages_show_list,pages_read_engagement&response_type=code&state=${userId}`,
@@ -31,7 +31,7 @@ export class SocialAuthController {
       let username = '';
       let platformId = '';
 
-      const frontendUrl = process.env.FRONTEND_URL || 'https://www.influnext.com.br';
+      const frontendUrl = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
 
       if (platform === 'instagram') {
         const tokenResponse = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {

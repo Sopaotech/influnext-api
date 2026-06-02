@@ -7,7 +7,12 @@ import Cookies from 'js-cookie';
 import { Home, FileText, Settings, LogOut, Menu, X, Sparkles, ShieldCheck, Store, LifeBuoy, Crown, Calendar, Search, MessageSquare, LayoutDashboard, TrendingUp } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
 import { Logo } from '@/components/Logo';
-import { BottomNav } from '@/components/BottomNav';
+import dynamic from 'next/dynamic';
+
+const BottomNav = dynamic(
+  () => import('@/components/BottomNav').then(mod => mod.BottomNav),
+  { ssr: false }
+);
 
 import { api } from '@/lib/api';
 import { BACKGROUNDS } from '@/lib/constants';
@@ -20,6 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Fundo dinâmico baseado no perfil
   const [bgUrl, setBgUrl] = useState(BACKGROUNDS[0].url);
   const [profileImg, setProfileImg] = useState<string | null>(null);
+  const [taskCount, setTaskCount] = useState(0);
 
   React.useEffect(() => {
     const fetchTheme = async () => {
@@ -33,6 +39,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         if (res.data.profile?.profileImageUrl) {
           setProfileImg(res.data.profile.profileImageUrl);
         }
+        // Buscar count de tasks pendentes
+        const pendingCount = res.data.tasks?.filter((t: any) => !t.isDone).length || 0;
+        setTaskCount(pendingCount);
       } catch (err) {
         console.error('Erro ao carregar tema:', err);
       }
@@ -67,7 +76,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navItems = [
     { name: 'Home', href: '/dashboard/influencer', icon: Home },
     { name: 'Calendário', href: '/dashboard/calendar', icon: Calendar },
-    { name: 'Workspace', href: '/dashboard/workspace', icon: LayoutDashboard, special: true, badgeCount: 2 },
+    { name: 'Workspace', href: '/dashboard/workspace', icon: LayoutDashboard, special: true, badgeCount: taskCount },
     { name: 'Marketplace', href: '/dashboard/marketplace', icon: Store },
     { name: 'Media Kit', href: '/dashboard/mediakit', icon: Sparkles }, 
     { name: 'Contratos', href: '/dashboard/contracts', icon: FileText },
@@ -97,7 +106,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Mobile Header - Glass */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-[100] bg-white/5 backdrop-blur-xl border-b border-white/10 p-4 flex items-center justify-between">
-        <Logo size="sm" href="/dashboard/influencer" />
+        <Logo size="sm" href="/dashboard/influencer" textColor="text-white" />
         <div className="flex items-center gap-3">
            <Link href="/dashboard/settings" className="w-8 h-8 rounded-full border border-white/20 p-0.5 block hover:scale-110 transition-transform">
              <div className="w-full h-full rounded-full bg-white/20 overflow-hidden">
@@ -114,7 +123,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       >
         <div className="p-8">
           <div className="hidden md:flex items-center mb-12 px-2">
-            <Logo size="sm" href="/dashboard/influencer" />
+            <Logo size="sm" href="/dashboard/influencer" textColor="text-white" />
           </div>
           
           <nav className="space-y-1.5">
@@ -190,7 +199,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Mobile Navigation */}
       <div className="md:hidden">
-        <BottomNav />
+        <BottomNav taskCount={taskCount} />
       </div>
 
       <Toaster theme="light" position="bottom-right" />
