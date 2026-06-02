@@ -465,7 +465,7 @@ export default function OnboardingPage() {
       <InstagramOnboardingModal 
         isOpen={isIgModalOpen}
         onClose={() => setIsIgModalOpen(false)}
-        onConfirm={(mode) => {
+        onConfirm={(mode: 'real' | 'simulate') => {
           if (mode === 'real') {
             handleConnectReal();
           } else {
