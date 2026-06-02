@@ -16,6 +16,9 @@ export const getAuthUrls = async (req: Request, res: Response): Promise<void> =>
       res.status(401).json({ error: 'Usuário não autenticado' });
       return;
     }
+
+    const from = req.query.from as string;
+    const state = from === 'onboarding' ? `${userId}_onboarding` : userId;
     
     const scopes = [
       'instagram_basic',
@@ -25,9 +28,9 @@ export const getAuthUrls = async (req: Request, res: Response): Promise<void> =>
       'public_profile'
     ].join(',');
 
-    const instagramUrl = `https://www.facebook.com/v20.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${process.env.NEXT_PUBLIC_API_URL}/integrations/instagram/callback&scope=${scopes}&response_type=code&state=${userId}`;
+    const instagramUrl = `https://www.facebook.com/v20.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${process.env.NEXT_PUBLIC_API_URL}/integrations/instagram/callback&scope=${scopes}&response_type=code&state=${state}`;
     
-    const tiktokUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list,video.stats&response_type=code&redirect_uri=${process.env.NEXT_PUBLIC_API_URL}/integrations/tiktok/callback&state=${userId}`;
+    const tiktokUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list,video.stats&response_type=code&redirect_uri=${process.env.NEXT_PUBLIC_API_URL}/integrations/tiktok/callback&state=${state}`;
 
     res.json({
       instagram: instagramUrl,
@@ -40,14 +43,18 @@ export const getAuthUrls = async (req: Request, res: Response): Promise<void> =>
 };
 
 export const handleInstagramCallback = async (req: Request, res: Response): Promise<void> => {
+  let stateStr = '';
   try {
     const { code, state } = req.query;
-    const userId = state as string;
+    stateStr = state as string;
 
-    if (!code || !userId) {
+    if (!code || !stateStr) {
       res.redirect(`${process.env.FRONTEND_URL}/dashboard/settings?status=error&error=invalid_params`);
       return;
     }
+
+    const isFromOnboarding = stateStr.endsWith('_onboarding');
+    const userId = isFromOnboarding ? stateStr.replace('_onboarding', '') : stateStr;
 
     // 1. Short-Lived Access Token
     const tokenResponse = await axios.get('https://graph.facebook.com/v20.0/oauth/access_token', {
@@ -100,7 +107,10 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
     }
 
     if (!instagramBusinessId) {
-      res.redirect(`${process.env.FRONTEND_URL}/dashboard/settings?status=error&error=no_business_account`);
+      const redirectUrl = isFromOnboarding
+        ? `${process.env.FRONTEND_URL}/onboarding?status=error&error=no_business_account`
+        : `${process.env.FRONTEND_URL}/dashboard/settings?status=error&error=no_business_account`;
+      res.redirect(redirectUrl);
       return;
     }
 
@@ -152,25 +162,129 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
         }
       });
       
+      await prisma.influencerProfile.update({
+        where: { id: influencer.id },
+        data: { verifiedMetrics: true }
+      });
+      
       await ScoringService.calculateAndPersist(influencer.id);
     }
     
-    res.redirect(`${process.env.FRONTEND_URL}/dashboard/settings?status=success&platform=instagram`);
+    const redirectUrl = isFromOnboarding
+      ? `${process.env.FRONTEND_URL}/onboarding?status=success&platform=instagram`
+      : `${process.env.FRONTEND_URL}/dashboard/settings?status=success&platform=instagram`;
+    res.redirect(redirectUrl);
   } catch (error: any) {
     console.error('[INSTAGRAM] Erro no callback:', error.response?.data || error.message);
-    res.redirect(`${process.env.FRONTEND_URL}/dashboard/settings?status=error`);
+    const isFromOnboarding = stateStr.endsWith('_onboarding');
+    const redirectUrl = isFromOnboarding
+      ? `${process.env.FRONTEND_URL}/onboarding?status=error`
+      : `${process.env.FRONTEND_URL}/dashboard/settings?status=error`;
+    res.redirect(redirectUrl);
+  }
+};
+
+export const simulateInstagramConnection = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ error: 'Usuário não autenticado' });
+      return;
+    }
+
+    const influencer = await prisma.influencerProfile.findUnique({
+      where: { userId }
+    });
+
+    if (!influencer) {
+      res.status(404).json({ error: 'Perfil de influenciador não encontrado.' });
+      return;
+    }
+
+    // 1. Criar ou atualizar a SocialPlatform para o Instagram
+    const platformId = `simulated_ig_${Math.floor(100000 + Math.random() * 900000)}`;
+    const username = influencer.handle || `influencer_${influencer.id.substring(0, 5)}`;
+    const followersCount = 15430;
+    const profilePicture = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=150&q=80';
+
+    await prisma.socialPlatform.upsert({
+      where: {
+        influencerId_platformName: {
+          influencerId: influencer.id,
+          platformName: 'INSTAGRAM'
+        }
+      },
+      create: {
+        influencerId: influencer.id,
+        platformName: 'INSTAGRAM',
+        platformId,
+        username,
+        profilePicture,
+        followersCount,
+        accessToken: 'simulated_access_token_token',
+        isActive: true
+      },
+      update: {
+        platformId,
+        username,
+        profilePicture,
+        followersCount,
+        accessToken: 'simulated_access_token_token',
+        isActive: true
+      }
+    });
+
+    // 2. Criar MetricSnapshot realista
+    await prisma.metricSnapshot.create({
+      data: {
+        influencerId: influencer.id,
+        provider: 'INSTAGRAM',
+        followers: followersCount,
+        engagementRate: 4.75,
+        reachLast30Days: 48900,
+        avgViews: 9230,
+        integrityHash: `simulated_hash_${Math.random().toString(36).substring(7)}`
+      }
+    });
+
+    // 3. Atualizar verifiedMetrics e completar onboarding
+    await prisma.influencerProfile.update({
+      where: { id: influencer.id },
+      data: { verifiedMetrics: true }
+    });
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { onboardingCompleted: true }
+    });
+
+    // 4. Recalcular e persistir score
+    await ScoringService.calculateAndPersist(influencer.id);
+
+    res.json({
+      success: true,
+      onboardingCompleted: true,
+      platform: 'INSTAGRAM'
+    });
+  } catch (error) {
+    console.error('[SIMULATE] Erro ao simular conexão:', error);
+    res.status(500).json({ error: 'Erro ao simular conexão com o Instagram.' });
   }
 };
 
 export const handleTikTokCallback = async (req: Request, res: Response): Promise<void> => {
+  let stateStr = '';
   try {
     const { code, state } = req.query;
-    const userId = state as string;
+    stateStr = state as string;
 
-    if (!code || !userId) {
+    if (!code || !stateStr) {
       res.redirect(`${process.env.FRONTEND_URL}/dashboard/settings?status=error&error=invalid_params`);
       return;
     }
+
+    const isFromOnboarding = stateStr.endsWith('_onboarding');
+    const userId = isFromOnboarding ? stateStr.replace('_onboarding', '') : stateStr;
 
     const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
 
@@ -238,10 +352,17 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
       await ScoringService.calculateAndPersist(influencer.id);
     }
     
-    res.redirect(`${process.env.FRONTEND_URL}/dashboard/settings?status=success&platform=tiktok`);
+    const redirectUrl = isFromOnboarding
+      ? `${process.env.FRONTEND_URL}/onboarding?status=success&platform=tiktok`
+      : `${process.env.FRONTEND_URL}/dashboard/settings?status=success&platform=tiktok`;
+    res.redirect(redirectUrl);
   } catch (error) {
     console.error('[TIKTOK] Erro no callback:', error);
-    res.redirect(`${process.env.FRONTEND_URL}/dashboard/settings?status=error`);
+    const isFromOnboarding = stateStr.endsWith('_onboarding');
+    const redirectUrl = isFromOnboarding
+      ? `${process.env.FRONTEND_URL}/onboarding?status=error`
+      : `${process.env.FRONTEND_URL}/dashboard/settings?status=error`;
+    res.redirect(redirectUrl);
   }
 };
 

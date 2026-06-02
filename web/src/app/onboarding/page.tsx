@@ -24,10 +24,17 @@ import {
   AtSign
 } from 'lucide-react';
 import { toast } from 'sonner';
+import dynamic from 'next/dynamic';
+
+const InstagramOnboardingModal = dynamic(
+  () => import('@/components/InstagramOnboardingModal').then(mod => mod.InstagramOnboardingModal),
+  { ssr: false }
+);
 
 export default function OnboardingPage() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const [isIgModalOpen, setIsIgModalOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   
@@ -73,6 +80,26 @@ export default function OnboardingPage() {
     }
   };
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get('status');
+    const platform = params.get('platform');
+    
+    if (status === 'success' && platform === 'instagram') {
+      toast.success('✦ Instagram conectado com sucesso (Real)!');
+      fetchIntegrations();
+    } else if (status === 'success' && platform === 'tiktok') {
+      toast.success('✦ TikTok conectado com sucesso!');
+      fetchIntegrations();
+    } else if (status === 'error') {
+      const errorType = params.get('error');
+      const errorMsg = errorType === 'no_business_account'
+        ? 'Sua conta do Instagram não está vinculada a uma Página do Facebook ou não é Profissional.'
+        : 'Erro ao conectar com a rede social.';
+      toast.error(errorMsg);
+    }
+  }, []);
+
   const handleComplete = async () => {
     try {
       setIsSaving(true);
@@ -96,12 +123,51 @@ export default function OnboardingPage() {
   };
 
   const handleConnect = (url: string) => {
-    if (!url) {
-       toast.error('Configuração de API pendente no servidor.');
-       return;
+    if (!url || url === '#') {
+      toast.error('Configuração de API pendente no servidor.');
+      return;
     }
-    // Save current onboarding state to cookies/localStorage if needed before redirect
     window.location.href = url;
+  };
+
+  const handleConnectReal = () => {
+    api.get('/integrations/urls?from=onboarding')
+      .then(res => {
+        const url = res.data?.instagram;
+        if (!url || url === '#') {
+          toast.error('Configuração de API do Instagram pendente no servidor.');
+          return;
+        }
+        window.location.href = url;
+      })
+      .catch(() => {
+        toast.error('Erro ao obter link de conexão com o Instagram.');
+      });
+  };
+
+  const handleConnectSimulate = async () => {
+    try {
+      setIsSaving(true);
+      await api.post('/integrations/simulate');
+      Cookies.set('influnext_onboarding', 'true', { expires: 7 });
+      toast.success('✦ Instagram conectado com sucesso (Simulado)!');
+      
+      await api.patch('/influencers/profile', {
+        handle,
+        niche,
+        careerObjective,
+        theme,
+        accentColor,
+        onboardingCompleted: true
+      });
+      
+      router.push('/dashboard/influencer');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Erro ao simular conexão.');
+    } finally {
+      setIsSaving(false);
+      setIsIgModalOpen(false);
+    }
   };
 
   return (
@@ -322,7 +388,7 @@ export default function OnboardingPage() {
             <div className="space-y-4">
                {/* Instagram Button */}
                <button 
-                 onClick={() => handleConnect(authUrls?.instagram)}
+                 onClick={() => setIsIgModalOpen(true)}
                  className={`w-full p-6 rounded-[2rem] border-2 flex items-center justify-between transition-all group ${connectedPlatforms.includes('INSTAGRAM') ? 'border-emerald-500 bg-emerald-500/5' : theme === 'light' ? 'border-slate-200 bg-white hover:border-rose-200' : 'border-rose-500/20 bg-rose-500/5 hover:border-rose-500/50'}`}
                >
                   <div className="flex items-center gap-6">
@@ -396,6 +462,18 @@ export default function OnboardingPage() {
         <Rocket className={`w-4 h-4 ${theme === 'light' ? 'text-slate-900' : 'text-purple-500'}`} />
         <span className={`text-[10px] font-black tracking-[0.4em] ${theme === 'light' ? 'text-slate-900' : 'text-zinc-500'} uppercase`}>InfluNext // Neural_Experience_2026</span>
       </div>
+      <InstagramOnboardingModal 
+        isOpen={isIgModalOpen}
+        onClose={() => setIsIgModalOpen(false)}
+        onConfirm={(mode) => {
+          if (mode === 'real') {
+            handleConnectReal();
+          } else {
+            handleConnectSimulate();
+          }
+        }}
+      />
+
     </div>
   );
 }
