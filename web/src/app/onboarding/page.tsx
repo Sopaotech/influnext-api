@@ -26,7 +26,7 @@ import {
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 
-const InstagramOnboardingModal = dynamic(
+const InstagramOnboardingModal = dynamic<any>(
   () => import('@/components/InstagramOnboardingModal').then(mod => mod.InstagramOnboardingModal),
   { ssr: false }
 );
