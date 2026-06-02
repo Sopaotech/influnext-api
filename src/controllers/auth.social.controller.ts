@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import axios from 'axios';
+import { ScoringService } from '../services/scoring.service';
 
 export class SocialAuthController {
   static async getAuthUrls(req: Request, res: Response) {
@@ -19,17 +20,25 @@ export class SocialAuthController {
 
   static async handleCallback(req: Request, res: Response) {
     const { platform } = req.params;
-    const { code, state } = req.query; // state contém o userId
+    const { code, state } = req.query; // state contém o userId ou userId_onboarding
 
     if (!code || !state) {
       res.status(400).json({ error: 'Código ou estado ausente.' });
       return;
     }
 
+    const stateStr = state as string;
+    const isFromOnboarding = stateStr.endsWith('_onboarding');
+    const userId = isFromOnboarding ? stateStr.replace('_onboarding', '') : stateStr;
+
     try {
       let accessToken = '';
       let username = '';
       let platformId = '';
+      let instagramFollowers = 0;
+      let instagramProfilePicture: string | null = null;
+      let tiktokFollowers = 0;
+      let tiktokAvatar: string | null = null;
 
       const frontendUrl = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
 
@@ -43,7 +52,19 @@ export class SocialAuthController {
           }
         });
 
-        accessToken = tokenResponse.data.access_token;
+        const shortLivedToken = tokenResponse.data.access_token;
+        
+        // 2. Long-Lived Access Token (60 dias)
+        const longLivedResponse = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
+          params: {
+            grant_type: 'fb_exchange_token',
+            client_id: process.env.INSTAGRAM_CLIENT_ID!,
+            client_secret: process.env.INSTAGRAM_CLIENT_SECRET!,
+            fb_exchange_token: shortLivedToken
+          }
+        });
+
+        accessToken = longLivedResponse.data.access_token || shortLivedToken;
         
         const pagesResponse = await axios.get('https://graph.facebook.com/v19.0/me/accounts', {
           params: {
@@ -55,11 +76,25 @@ export class SocialAuthController {
         const pageWithIg = pagesResponse.data.data.find((p: any) => p.instagram_business_account);
         
         if (!pageWithIg || !pageWithIg.instagram_business_account) {
-          throw new Error('Nenhuma conta do Instagram Profissional vinculada a uma Página do Facebook foi encontrada.');
+          throw new Error('Nenhuma conta do Instagram Profissional/Criador vinculada a uma Página do Facebook foi encontrada.');
         }
 
         username = pageWithIg.instagram_business_account.username;
         platformId = pageWithIg.instagram_business_account.id;
+
+        // Buscar dados reais do perfil Instagram
+        try {
+          const detailsResponse = await axios.get(`https://graph.facebook.com/v19.0/${platformId}`, {
+            params: {
+              fields: 'followers_count,profile_picture_url',
+              access_token: accessToken
+            }
+          });
+          instagramFollowers = detailsResponse.data.followers_count || 0;
+          instagramProfilePicture = detailsResponse.data.profile_picture_url || null;
+        } catch (err) {
+          console.warn('[INSTAGRAM] Falha ao buscar detalhes do perfil (followers/avatar). Usando padrões.', err);
+        }
       } else if (platform === 'tiktok') {
         const tokenResponse = await axios.post('https://open.tiktokapis.com/v2/oauth/token/', new URLSearchParams({
           client_key: process.env.TIKTOK_CLIENT_KEY!,
@@ -74,10 +109,20 @@ export class SocialAuthController {
         accessToken = tokenResponse.data.access_token;
         platformId = tokenResponse.data.open_id;
 
-        const userResponse = await axios.get('https://open.tiktokapis.com/v2/user/info/?fields=display_name,username,avatar_url', {
-          headers: { 'Authorization': `Bearer ${accessToken}` }
-        });
-        username = userResponse.data.data.user.username || userResponse.data.data.user.display_name;
+        try {
+          const userResponse = await axios.get('https://open.tiktokapis.com/v2/user/info/?fields=display_name,username,avatar_url,follower_count', {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+          });
+          const userObj = userResponse.data?.data?.user;
+          if (userObj) {
+            username = userObj.username || userObj.display_name || username;
+            tiktokAvatar = userObj.avatar_url || null;
+            tiktokFollowers = userObj.follower_count || 0;
+          }
+        } catch (err) {
+          console.warn('[TIKTOK] Falha ao buscar detalhes do usuário do TikTok', err);
+          username = `tiktok_user`;
+        }
       } else if (platform === 'google' || platform === 'youtube') {
         const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', new URLSearchParams({
           client_id: process.env.GOOGLE_CLIENT_ID!,
@@ -101,7 +146,7 @@ export class SocialAuthController {
       }
 
       const profile = await prisma.influencerProfile.findUnique({
-        where: { userId: state as string }
+        where: { userId }
       });
 
       if (!profile) {
@@ -120,6 +165,17 @@ export class SocialAuthController {
       let platformName = platform.toUpperCase();
       if (platformName === 'GOOGLE') platformName = 'YOUTUBE';
 
+      let followersCount = 0;
+      let profilePicture: string | null = null;
+
+      if (platformName === 'INSTAGRAM') {
+        followersCount = instagramFollowers;
+        profilePicture = instagramProfilePicture;
+      } else if (platformName === 'TIKTOK') {
+        followersCount = tiktokFollowers;
+        profilePicture = tiktokAvatar;
+      }
+
       await prisma.socialPlatform.upsert({
         where: {
           influencerId_platformName: {
@@ -131,6 +187,8 @@ export class SocialAuthController {
           accessToken,
           username: username,
           platformId: platformId,
+          followersCount,
+          profilePicture,
           isActive: true,
         },
         create: {
@@ -138,10 +196,20 @@ export class SocialAuthController {
           platformName: platformName,
           platformId: platformId,
           username: username,
+          followersCount,
+          profilePicture,
           accessToken,
           isActive: true
         }
       });
+
+      if (platformName === 'INSTAGRAM' || platformName === 'TIKTOK') {
+        await prisma.influencerProfile.update({
+          where: { id: profile.id },
+          data: { verifiedMetrics: true }
+        });
+        await ScoringService.calculateAndPersist(profile.id);
+      }
 
       res.json({ success: true, platform, username });
     } catch (error: any) {
