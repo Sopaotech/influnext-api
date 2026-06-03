@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { UserRole } from '../types/roles';
 import { ScoringService } from '../services/scoring.service';
+import { InstagramService } from '../services/instagram.service';
 import axios from 'axios';
 
 const getFrontendUrl = () => {
@@ -66,7 +67,7 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
       params: {
         client_id: process.env.INSTAGRAM_CLIENT_ID,
         client_secret: process.env.INSTAGRAM_CLIENT_SECRET,
-        redirect_uri: `${process.env.NEXT_PUBLIC_API_URL}/integrations/instagram/callback`,
+        redirect_uri: `${getFrontendUrl()}/auth/callback/instagram`,
         code: code as string
       }
     });
@@ -172,7 +173,9 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
         data: { verifiedMetrics: true }
       });
       
-      await ScoringService.calculateAndPersist(influencer.id);
+      InstagramService.syncInstagramData(influencer.id, longLivedToken, instagramBusinessId).catch(err => {
+        console.error('[INSTAGRAM] Falha na sincronização de dados reais pós-callback:', err);
+      });
     }
     
     const redirectUrl = isFromOnboarding
@@ -394,21 +397,7 @@ export const syncPlatformMetrics = async (req: Request, res: Response): Promise<
     for (const platform of influencer.platforms) {
       try {
         if (platform.platformName === 'INSTAGRAM' && platform.accessToken && platform.platformId) {
-          const detailsResponse = await axios.get(`https://graph.facebook.com/v20.0/${platform.platformId}`, {
-            params: {
-              fields: 'followers_count,media_count,profile_picture_url,username',
-              access_token: platform.accessToken
-            }
-          });
-
-          await prisma.socialPlatform.update({
-            where: { id: platform.id },
-            data: {
-              followersCount: detailsResponse.data.followers_count || platform.followersCount,
-              profilePicture: detailsResponse.data.profile_picture_url || platform.profilePicture,
-              username: detailsResponse.data.username || platform.username
-            }
-          });
+          await InstagramService.syncInstagramData(influencer.id, platform.accessToken, platform.platformId);
           results['INSTAGRAM'] = 'synced';
         }
 

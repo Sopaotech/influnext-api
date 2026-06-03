@@ -1,9 +1,10 @@
 import axios from 'axios';
 import { prisma } from '../lib/prisma';
+import { AuditorService } from './auditor.service';
 
 export class InstagramService {
-  private static readonly API_URL = 'https://graph.instagram.com';
-  
+  private static readonly API_URL = 'https://graph.facebook.com/v20.0';
+
   /**
    * Obtém um token de acesso de longa duração trocando um código de curta duração.
    */
@@ -17,30 +18,31 @@ export class InstagramService {
 
     try {
       // Passo 1: Trocar código pelo Token curto (Facebook Oauth Endpoint)
-      const form = new URLSearchParams();
-      form.append('client_id', clientId);
-      form.append('client_secret', clientSecret);
-      form.append('grant_type', 'authorization_code');
-      form.append('redirect_uri', redirectUri);
-      form.append('code', code);
+      const tokenResponse = await axios.get(`${this.API_URL}/oauth/access_token`, {
+        params: {
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: redirectUri,
+          code: code
+        }
+      });
 
-      const shortRes = await axios.post('https://api.instagram.com/oauth/access_token', form);
-      const shortToken = shortRes.data.access_token;
-      const userId = shortRes.data.user_id;
+      const shortToken = tokenResponse.data.access_token;
 
       // Passo 2: Trocar Token Curto por Token Longo (60 dias)
-      const longRes = await axios.get(`${this.API_URL}/access_token`, {
+      const longRes = await axios.get(`${this.API_URL}/oauth/access_token`, {
         params: {
-          grant_type: 'ig_exchange_token',
+          grant_type: 'fb_exchange_token',
+          client_id: clientId,
           client_secret: clientSecret,
-          access_token: shortToken
+          fb_exchange_token: shortToken
         }
       });
 
       return {
-        accessToken: longRes.data.access_token,
-        expiresIn: longRes.data.expires_in,
-        platformId: userId.toString()
+        accessToken: longRes.data.access_token || shortToken,
+        expiresIn: longRes.data.expires_in || 5184000,
+        platformId: '' // Será preenchido ao obter a conta comercial vinculada
       };
     } catch (error: any) {
       console.error('[INSTAGRAM SERVICE] Erro ao trocar token:', error.response?.data || error.message);
@@ -53,18 +55,212 @@ export class InstagramService {
    */
   static async fetchProfileData(accessToken: string) {
     try {
-      // Usando fields do Instagram Basic Display / Graph API
-      const res = await axios.get(`${this.API_URL}/me`, {
+      const res = await axios.get(`${this.API_URL}/me/accounts`, {
         params: {
-          fields: 'id,username,account_type,media_count',
+          fields: 'instagram_business_account{id,username,name,profile_picture_url,followers_count,media_count}',
           access_token: accessToken
         }
       });
-      
       return res.data;
     } catch (error: any) {
       console.error('[INSTAGRAM SERVICE] Erro ao buscar perfil:', error.response?.data || error.message);
       throw new Error('Falha ao obter dados do perfil do Instagram');
+    }
+  }
+
+  /**
+   * Sincroniza dados e métricas reais do Instagram Graph API para o Influenciador.
+   */
+  static async syncInstagramData(influencerId: string, accessToken: string, igBusinessId: string) {
+    console.log(`[INSTAGRAM_SYNC] Iniciando sincronização para o influenciador: ${influencerId}, conta comercial: ${igBusinessId}`);
+
+    try {
+      // 1. Obter informações básicas da conta comercial do Instagram
+      const profileRes = await axios.get(`${this.API_URL}/${igBusinessId}`, {
+        params: {
+          fields: 'followers_count,media_count,profile_picture_url,username,name',
+          access_token: accessToken
+        }
+      });
+
+      const profileData = profileRes.data;
+      const followers = profileData.followers_count || 0;
+      const profilePicture = profileData.profile_picture_url || null;
+      const username = profileData.username || 'instagram_user';
+
+      // 2. Buscar as últimas 15 mídias do usuário
+      const mediaRes = await axios.get(`${this.API_URL}/${igBusinessId}/media`, {
+        params: {
+          fields: 'id,caption,media_type,media_url,permalink,like_count,comments_count,timestamp',
+          limit: 15,
+          access_token: accessToken
+        }
+      });
+
+      const mediaList = mediaRes.data.data || [];
+      const postsWithInsights = [];
+
+      let totalPlays = 0;
+      let totalImpressions = 0;
+      let totalReach = 0;
+      let totalSaved = 0;
+      let totalShares = 0;
+      let videoCount = 0;
+      let imageCount = 0;
+
+      let sumLikes = 0;
+      let sumComments = 0;
+
+      // 3. Iterar e obter insights de engajamento para cada mídia
+      for (const media of mediaList) {
+        sumLikes += media.like_count || 0;
+        sumComments += media.comments_count || 0;
+
+        let plays = 0;
+        let impressions = 0;
+        let reach = 0;
+        let saved = 0;
+        let shares = 0;
+
+        try {
+          // Determina a query de insights baseada no tipo de mídia
+          let metricsQuery = '';
+          if (media.media_type === 'VIDEO') {
+            // Reels/Vídeos costumam usar plays, reach, saved, shares
+            metricsQuery = 'plays,reach,saved,shares';
+          } else {
+            // Imagens e Carrosséis usam impressions, reach, saved
+            metricsQuery = 'impressions,reach,saved';
+          }
+
+          const insightsRes = await axios.get(`${this.API_URL}/${media.id}/insights`, {
+            params: {
+              metric: metricsQuery,
+              access_token: accessToken
+            }
+          });
+
+          const insightsData = insightsRes.data.data || [];
+          
+          insightsData.forEach((item: any) => {
+            const val = item.values?.[0]?.value || 0;
+            if (item.name === 'plays') plays = val;
+            if (item.name === 'impressions') impressions = val;
+            if (item.name === 'reach') reach = val;
+            if (item.name === 'saved') saved = val;
+            if (item.name === 'shares') shares = val;
+          });
+
+        } catch (insightErr: any) {
+          // Fallback silencioso se o post não tiver insights ou for recente
+          console.warn(`[INSTAGRAM_SYNC] Falha ao obter insights do post ${media.id}:`, insightErr.response?.data || insightErr.message);
+          
+          // Caso seja um vídeo e falhe na busca de plays, tentamos buscar impressions/reach/saved genéricos
+          if (media.media_type === 'VIDEO') {
+            try {
+              const fallbackRes = await axios.get(`${this.API_URL}/${media.id}/insights`, {
+                params: {
+                  metric: 'reach,saved',
+                  access_token: accessToken
+                }
+              });
+              fallbackRes.data.data?.forEach((item: any) => {
+                const val = item.values?.[0]?.value || 0;
+                if (item.name === 'reach') reach = val;
+                if (item.name === 'saved') saved = val;
+              });
+            } catch (_) {}
+          }
+        }
+
+        if (media.media_type === 'VIDEO') {
+          totalPlays += plays || reach; // Se plays for 0, usa reach como estimativa de visualizações
+          videoCount++;
+        } else {
+          totalImpressions += impressions;
+          imageCount++;
+        }
+
+        totalReach += reach;
+        totalSaved += saved;
+        // Se as shares forem suportadas/retornadas, soma
+        totalShares += shares;
+
+        postsWithInsights.push({
+          id: media.id,
+          caption: media.caption || '',
+          mediaType: media.media_type,
+          mediaUrl: media.media_url || null,
+          permalink: media.permalink,
+          likeCount: media.like_count || 0,
+          commentCount: media.comments_count || 0,
+          plays: media.media_type === 'VIDEO' ? (plays || reach) : 0,
+          impressions: media.media_type !== 'VIDEO' ? impressions : 0,
+          reach,
+          saved,
+          shares,
+          timestamp: media.timestamp
+        });
+      }
+
+      // 4. Calcular métricas consolidadas
+      const postCount = mediaList.length || 1;
+      const avgViews = videoCount > 0 ? Math.round(totalPlays / videoCount) : (postCount > 0 ? Math.round(totalReach / postCount) : 0);
+      const reachLast30Days = totalReach;
+
+      // Calcular taxa de engajamento média por post: ((likes + comments + saves + shares) / followers) * 100
+      let avgEngagementPerPost = 0;
+      if (followers > 0 && mediaList.length > 0) {
+        const totalInteractions = sumLikes + sumComments + totalSaved + totalShares;
+        avgEngagementPerPost = ((totalInteractions / mediaList.length) / followers) * 100;
+      }
+
+      // Limitar a taxa de engajamento a 2 casas decimais
+      const engagementRate = Math.min(Math.round(avgEngagementPerPost * 100) / 100, 100);
+
+      const insightsJson = {
+        followers,
+        avgViews,
+        engagementRate,
+        reachLast30Days,
+        avgLikes: Math.round(sumLikes / postCount),
+        avgComments: Math.round(sumComments / postCount),
+        avgShares: Math.round(totalShares / postCount),
+        avgSaves: Math.round(totalSaved / postCount),
+        updatedAt: new Date().toISOString()
+      };
+
+      // 5. Salvar no Banco de Dados
+      await prisma.influencerProfile.update({
+        where: { id: influencerId },
+        data: {
+          profileImageUrl: profilePicture,
+          verifiedMetrics: true,
+          insights: JSON.stringify(insightsJson),
+          topPosts: JSON.stringify(postsWithInsights)
+        }
+      });
+
+      // Registrar o instantâneo de auditoria e disparar cálculo do InfluScore
+      await AuditorService.syncInstagramMetrics(influencerId, {
+        followers,
+        engagementRate,
+        reachLast30Days,
+        avgViews
+      });
+
+      console.log(`[INSTAGRAM_SYNC] Sincronização de ${username} finalizada com sucesso! Seguidores: ${followers}, Engajamento: ${engagementRate}%, Views: ${avgViews}`);
+
+      return {
+        success: true,
+        username,
+        followers,
+        engagementRate,
+        avgViews
+      };
+    } catch (err: any) {
+      console.error('[INSTAGRAM_SYNC] Erro na sincronização real de dados:', err.response?.data || err.message);
+      throw new Error(`Falha ao sincronizar métricas reais: ${err.message}`);
     }
   }
 }

@@ -75,14 +75,7 @@ export const metadata: Metadata = {
     },
   },
 
-  manifest: '/manifest.json',
-  icons: {
-    icon: [
-      { url: '/icon.svg', type: 'image/svg+xml' },
-      { url: '/favicon.ico', sizes: 'any' }
-    ],
-    apple: '/icon.svg',
-  }
+  manifest: '/manifest.json'
 };
 
 import { ThemeProvider } from "@/components/theme-provider";

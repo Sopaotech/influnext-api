@@ -1,4 +1,35 @@
 export const BACKGROUNDS = [
+  // Cores Sólidas Padrão
+  {
+    id: 'clean-white',
+    name: 'Branco Limpo',
+    url: '#ffffff',
+    category: 'Cores Sólidas'
+  },
+  {
+    id: 'deep-black',
+    name: 'Preto Absoluto',
+    url: '#09090b',
+    category: 'Cores Sólidas'
+  },
+  {
+    id: 'neutral-gray',
+    name: 'Cinza Neutro',
+    url: '#f8fafc',
+    category: 'Cores Sólidas'
+  },
+  {
+    id: 'premium-slate',
+    name: 'Chumbo Premium',
+    url: '#1e293b',
+    category: 'Cores Sólidas'
+  },
+  {
+    id: 'metallic-gray',
+    name: 'Cinza Metálico',
+    url: '#64748b',
+    category: 'Cores Sólidas'
+  },
   // Aura Premium
   {
     id: 'amalfi-coast',

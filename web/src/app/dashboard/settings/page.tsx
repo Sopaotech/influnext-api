@@ -108,7 +108,16 @@ export default function SettingsPage() {
     try {
       const res = await api.get('/dashboard/influencer'); 
       setProfile(res.data.profile);
-      if (res.data.userState?.theme) setSelectedBg(res.data.userState.theme);
+      if (res.data.userState?.theme) {
+        const theme = res.data.userState.theme;
+        if (theme === 'light' || theme === 'default') {
+          setSelectedBg('#ffffff');
+        } else if (theme === 'dark') {
+          setSelectedBg('#09090b');
+        } else {
+          setSelectedBg(theme);
+        }
+      }
       if (res.data.userState?.accentColor) setAccentColor(res.data.userState.accentColor);
     } catch (err: any) {
       if (err.response?.status !== 404) {
@@ -435,7 +444,11 @@ export default function SettingsPage() {
                        : 'ring-1 ring-white/10 opacity-75 hover:opacity-100 hover:scale-[1.03] hover:shadow-lg'
                    }`}
                  >
-                   <img src={bg.url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={bg.name} />
+                   {bg.url.startsWith('http') || bg.url.startsWith('/') || bg.url.startsWith('data:') ? (
+                     <img src={bg.url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={bg.name} />
+                   ) : (
+                     <div className="w-full h-full transition-transform duration-700 group-hover:scale-110" style={{ background: bg.url }} />
+                   )}
                    {/* Overlay de contraste — garante legibilidade das letras do sistema sobre qualquer imagem */}
                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-transparent" />
                    {/* Nome no hover */}

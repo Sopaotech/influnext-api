@@ -33,8 +33,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const res = await api.get('/dashboard/influencer');
         // Usar userState.theme que agora retornamos na API
         const userTheme = res.data.userState?.theme;
-        if (userTheme && userTheme.startsWith('http')) {
-          setBgUrl(userTheme);
+        if (userTheme) {
+          if (userTheme === 'light' || userTheme === 'default') {
+            setBgUrl('#ffffff');
+          } else if (userTheme === 'dark') {
+            setBgUrl('#09090b');
+          } else {
+            setBgUrl(userTheme);
+          }
         }
         if (res.data.profile?.profileImageUrl) {
           setProfileImg(res.data.profile.profileImageUrl);
@@ -50,7 +56,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     
     // Escutar por mudanças de tema via evento customizado (para SettingsPage)
     const handleThemeUpdate = (e: any) => {
-      if (e.detail?.theme) setBgUrl(e.detail.theme);
+      if (e.detail?.theme) {
+        const theme = e.detail.theme;
+        if (theme === 'light' || theme === 'default') {
+          setBgUrl('#ffffff');
+        } else if (theme === 'dark') {
+          setBgUrl('#09090b');
+        } else {
+          setBgUrl(theme);
+        }
+      }
     };
     window.addEventListener('theme-updated', handleThemeUpdate);
     return () => window.removeEventListener('theme-updated', handleThemeUpdate);
@@ -92,11 +107,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Background Layer - Dinâmico */}
       <div 
         className="fixed inset-0 z-0 transition-all duration-1000 ease-in-out scale-105"
-        style={{
-          backgroundImage: `url(${bgUrl})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
+        style={
+          bgUrl.startsWith('http') || bgUrl.startsWith('/') || bgUrl.startsWith('data:')
+            ? {
+                backgroundImage: `url(${bgUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }
+            : {
+                background: bgUrl,
+              }
+        }
       />
       
       {/* Overlay para suavizar o fundo e garantir contraste - Glassmorphism Adaptativo */}

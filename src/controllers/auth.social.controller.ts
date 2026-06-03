@@ -2,15 +2,17 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import axios from 'axios';
 import { ScoringService } from '../services/scoring.service';
+import { InstagramService } from '../services/instagram.service';
 
 export class SocialAuthController {
   static async getAuthUrls(req: Request, res: Response) {
     const userId = req.user!.id;
     
-    const frontendUrl = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
+    const rawFrontendUrl = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
+    const frontendUrl = rawFrontendUrl.endsWith('/') ? rawFrontendUrl.slice(0, -1) : rawFrontendUrl;
     
     const urls = {
-      instagram: `https://www.facebook.com/v19.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/instagram&scope=instagram_basic,pages_show_list,pages_read_engagement&response_type=code&state=${userId}`,
+      instagram: `https://www.facebook.com/v20.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/instagram&scope=instagram_basic,instagram_manage_insights,pages_show_list,pages_read_engagement&response_type=code&state=${userId}`,
       tiktok: `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${frontendUrl}/auth/callback/tiktok&state=${userId}`,
       youtube: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/youtube&response_type=code&scope=https://www.googleapis.com/auth/youtube.readonly&state=${userId}&access_type=offline&prompt=consent`
     };
@@ -40,10 +42,11 @@ export class SocialAuthController {
       let tiktokFollowers = 0;
       let tiktokAvatar: string | null = null;
 
-      const frontendUrl = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
+      const rawFrontendUrl = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
+      const frontendUrl = rawFrontendUrl.endsWith('/') ? rawFrontendUrl.slice(0, -1) : rawFrontendUrl;
 
       if (platform === 'instagram') {
-        const tokenResponse = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
+        const tokenResponse = await axios.get('https://graph.facebook.com/v20.0/oauth/access_token', {
           params: {
             client_id: process.env.INSTAGRAM_CLIENT_ID!,
             client_secret: process.env.INSTAGRAM_CLIENT_SECRET!,
@@ -55,7 +58,7 @@ export class SocialAuthController {
         const shortLivedToken = tokenResponse.data.access_token;
         
         // 2. Long-Lived Access Token (60 dias)
-        const longLivedResponse = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
+        const longLivedResponse = await axios.get('https://graph.facebook.com/v20.0/oauth/access_token', {
           params: {
             grant_type: 'fb_exchange_token',
             client_id: process.env.INSTAGRAM_CLIENT_ID!,
@@ -66,7 +69,7 @@ export class SocialAuthController {
 
         accessToken = longLivedResponse.data.access_token || shortLivedToken;
         
-        const pagesResponse = await axios.get('https://graph.facebook.com/v19.0/me/accounts', {
+        const pagesResponse = await axios.get('https://graph.facebook.com/v20.0/me/accounts', {
           params: {
             fields: 'instagram_business_account{id,username}',
             access_token: accessToken
@@ -84,7 +87,7 @@ export class SocialAuthController {
 
         // Buscar dados reais do perfil Instagram
         try {
-          const detailsResponse = await axios.get(`https://graph.facebook.com/v19.0/${platformId}`, {
+          const detailsResponse = await axios.get(`https://graph.facebook.com/v20.0/${platformId}`, {
             params: {
               fields: 'followers_count,profile_picture_url',
               access_token: accessToken
@@ -203,7 +206,12 @@ export class SocialAuthController {
         }
       });
 
-      if (platformName === 'INSTAGRAM' || platformName === 'TIKTOK') {
+      if (platformName === 'INSTAGRAM') {
+        // Executar sincronização real em background
+        InstagramService.syncInstagramData(profile.id, accessToken, platformId).catch(err => {
+          console.error('[INSTAGRAM] Falha na sincronização de dados reais:', err);
+        });
+      } else if (platformName === 'TIKTOK') {
         await prisma.influencerProfile.update({
           where: { id: profile.id },
           data: { verifiedMetrics: true }

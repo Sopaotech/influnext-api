@@ -24,7 +24,7 @@ model User {
   createdAt         DateTime  @default(now())
   
   // Preferências de Aparência
-  theme             String    @default("dark")  // "dark" | "light" | "system"
+  theme             String    @default("light")  // "dark" | "light" | "system"
   accentColor       String    @default("#a855f7")
 
   // SaaS e Assinaturas
