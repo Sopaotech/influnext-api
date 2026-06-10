@@ -94,7 +94,7 @@ export default function LandingPageClient() {
 
         <div className="relative z-10 flex flex-col items-center max-w-5xl">
           <Logo size="xxl" href={null} variant="light" />
-          <h1 className="text-4xl md:text-7xl font-black tracking-tight leading-[1.05] mt-8 mb-6 max-w-4xl">
+          <h1 className="text-[28px] xs:text-3xl sm:text-4xl md:text-7xl font-black tracking-tight leading-[1.1] md:leading-[1.05] mt-8 mb-6 max-w-4xl">
             Para influenciadores que geram vendas.<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-400 to-pink-400">Para marcas que buscam retorno.</span>
           </h1>
@@ -102,15 +102,6 @@ export default function LandingPageClient() {
           <p className="text-zinc-200 text-base md:text-xl max-w-2xl leading-relaxed mb-10">
             Profissionalize sua rotina com inteligência artificial, formalize contratos blindados em segundos e garanta o recebimento do seu cachê. A central de comando onde a influência local vira faturamento seguro.
           </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center w-full max-w-md">
-            <Link href="/auth/signup?type=influencer" className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-500 hover:to-pink-500 text-white px-8 py-4.5 rounded-2xl font-black text-xs uppercase tracking-wider transition-all shadow-2xl shadow-violet-600/30 hover:scale-[1.03] active:scale-95">
-              Criar Conta Grátis <ArrowRight className="w-4 h-4" />
-            </Link>
-            <a href="#preview" className="inline-flex items-center justify-center border border-white/10 hover:bg-white/5 text-white px-8 py-4.5 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all">
-              Acessar Demonstração
-            </a>
-          </div>
 
           {/* Stats Bar */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-16 mt-20 pt-10 border-t border-white/5 w-full max-w-4xl">
@@ -128,7 +119,7 @@ export default function LandingPageClient() {
       <section id="preview" className="relative w-full max-w-6xl mx-auto px-6 py-20">
          <div className="text-center mb-12">
             <p className="text-violet-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">✦ Controle Total</p>
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight">Campanhas, contratos e pagamentos.<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-pink-400">Tudo em uma única tela.</span></h2>
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight">Campanhas, contratos e pagamentos.<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-pink-400">Tudo em uma única tela.</span></h2>
             <p className="text-zinc-300 text-xs mt-4 max-w-xl mx-auto leading-relaxed">
                Acompanhe suas parcerias do início ao fim, controle prazos de entrega e garanta o recebimento seguro via Escrow sem burocracia.
             </p>
@@ -231,7 +222,7 @@ export default function LandingPageClient() {
       <section id="preview-ai" className="relative w-full max-w-6xl mx-auto px-6 pb-20">
          <div className="text-center mb-12">
             <p className="text-purple-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">✦ Inteligência & Consistência</p>
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight">O seu Mentor de IA e Rotina diária.<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Para você postar e faturar sem parar.</span></h2>
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight">O seu Mentor de IA e Rotina diária.<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Para você postar e faturar sem parar.</span></h2>
             <p className="text-zinc-300 text-xs mt-4 max-w-xl mx-auto leading-relaxed">
                Receba orientações estratégicas de engajamento do seu Mentor de IA e mantenha a consistência de publicações com um calendário de hábitos integrado.
             </p>
@@ -443,7 +434,7 @@ export default function LandingPageClient() {
           <div className="absolute inset-0 bg-gradient-to-t from-violet-600/5 to-transparent" />
           <div className="relative z-10 space-y-8 max-w-4xl mx-auto">
             <p className="text-violet-400 text-[10px] font-black uppercase tracking-[0.3em]">Pronto para profissionalizar sua carreira?</p>
-            <h2 className="text-5xl md:text-7xl font-black tracking-tight">
+            <h2 className="text-3xl sm:text-4xl md:text-7xl font-black tracking-tight">
               Transforme sua influência em um negócio.<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-pink-400">Mais contratos, zero estresse e cachê garantido.</span>
             </h2>
