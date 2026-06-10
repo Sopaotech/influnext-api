@@ -99,8 +99,8 @@ export default function LandingPageClient() {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-400 to-pink-400">Para marcas que buscam retorno</span>
           </h1>
           
-          <p className="text-zinc-200 text-base md:text-xl max-w-2xl leading-relaxed mb-10">
-            Profissionalize sua rotina com inteligência artificial, formalize contratos blindados em segundos e garanta o recebimento do seu cachê. A central de comando onde a influência local vira faturamento seguro.
+          <p className="text-zinc-200 text-base md:text-lg max-w-3xl leading-relaxed mb-10">
+            O fim das permutas sem valor e dos contratos baseados em promessas. A InfluNext é o primeiro ecossistema completo que profissionaliza e gerencia a rotina de criadores de conteúdo para atrair e fechar publicidades reais, enquanto fornece às marcas a segurança de contratar com pagamento via Escrow protegido e retorno real garantido por nossa Inteligência Artificial.
           </p>
 
           {/* Stats Bar */}
@@ -545,8 +545,8 @@ export default function LandingPageClient() {
               Transforme sua influência em um negócio<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-pink-400">Mais contratos, zero estresse e cachê garantido</span>
             </h2>
-            <p className="text-zinc-200 text-lg max-w-2xl mx-auto">
-              Crie sua conta gratuita em segundos. Profissionalize suas parcerias comerciais com contratos seguros e turbine suas campanhas usando nosso Mentor de IA.
+            <p className="text-zinc-200 text-base md:text-lg max-w-3xl mx-auto">
+              Crie sua conta em segundos e junte-se ao ecossistema que está transformando a influência local. Profissionalize sua rotina com inteligência artificial, garanta recebimentos sem atritos e entregue resultados reais de vendas.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Link href="/auth/signup?type=influencer" className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-500 hover:to-pink-500 text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-wider transition-all shadow-2xl shadow-violet-600/30 hover:scale-[1.03] active:scale-95">
