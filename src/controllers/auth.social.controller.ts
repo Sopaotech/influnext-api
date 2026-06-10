@@ -235,7 +235,7 @@ export class SocialAuthController {
               userId: newUser.id,
               handle: username,
               niche: 'Geral',
-              avatar: profilePicture
+              profileImageUrl: profilePicture
             }
           });
 

@@ -153,7 +153,8 @@ export default function LoginPage() {
           )}
 
           {step === 'credentials' ? (
-            <form onSubmit={handleLogin} className="space-y-5">
+            <>
+              <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-2">
                 <label className="block text-[9px] font-black text-zinc-500 uppercase tracking-[0.3em] ml-1">
                   E-mail Profissional
@@ -232,6 +233,7 @@ export default function LoginPage() {
                 <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400 group-hover:text-white transition-colors">TikTok</span>
               </button>
             </div>
+            </>
           ) : (
             <form onSubmit={handleVerify2FA} className="space-y-5">
               <div className="text-center space-y-2">
