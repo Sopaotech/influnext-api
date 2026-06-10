@@ -560,14 +560,29 @@ export const getBalance = async (req: Request, res: Response): Promise<void> => 
       res.json({
         availableBalance: 0,
         completedContracts: 0,
-        currency: 'BRL'
+        currency: 'BRL',
+        transactions: [],
+        monthlyData: [
+          { month: 'Jan', value: 0 },
+          { month: 'Fev', value: 0 },
+          { month: 'Mar', value: 0 },
+          { month: 'Abr', value: 0 },
+          { month: 'Mai', value: 0 },
+          { month: 'Jun', value: 0 },
+          { month: 'Jul', value: 0 },
+          { month: 'Ago', value: 0 },
+          { month: 'Set', value: 0 },
+          { month: 'Out', value: 0 },
+          { month: 'Nov', value: 0 },
+          { month: 'Dez', value: 0 }
+        ]
       });
       return;
     }
 
     const completedContracts = await prisma.contract.findMany({
       where: { influencerId: influencer.id, escrowStatus: 'COMPLETED' },
-      select: { netAmount: true, budget: true, title: true }
+      select: { id: true, netAmount: true, budget: true, title: true, createdAt: true }
     });
 
     const totalEarned = completedContracts.reduce((acc, c) => {
@@ -577,19 +592,68 @@ export const getBalance = async (req: Request, res: Response): Promise<void> => 
     // Calcular saques totais já feitos (não rejeitados e não cancelados)
     const withdrawNotifications = await prisma.notification.findMany({
       where: { userId, type: 'WITHDRAW_REQUEST' },
-      select: { metadata: true }
+      select: { id: true, createdAt: true, metadata: true, message: true }
     });
 
     let totalWithdrawn = 0;
+    const transactions: any[] = [];
+
+    // 1. Adicionar Contratos Concluídos como receitas
+    for (const c of completedContracts) {
+      const amount = Number(c.netAmount || c.budget * 0.85);
+      transactions.push({
+        id: `CTR-${c.id.substring(0, 4).toUpperCase()}`,
+        dateRaw: c.createdAt,
+        date: new Date(c.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }),
+        desc: c.title,
+        amount,
+        status: 'Concluído'
+      });
+    }
+
     for (const notif of withdrawNotifications) {
       if (notif.metadata) {
         try {
           const meta = JSON.parse(notif.metadata);
-          if (meta && meta.amount && meta.status !== 'REJECTED' && meta.status !== 'CANCELLED') {
-            totalWithdrawn += parseFloat(meta.amount);
+          if (meta && meta.amount) {
+            if (meta.status !== 'REJECTED' && meta.status !== 'CANCELLED') {
+              totalWithdrawn += parseFloat(meta.amount);
+            }
+            const statusMap: any = {
+              'PROCESSING': 'Processando',
+              'COMPLETED': 'Processado',
+              'REJECTED': 'Rejeitado',
+              'CANCELLED': 'Cancelado'
+            };
+            transactions.push({
+              id: `WD-${notif.id.substring(0, 4).toUpperCase()}`,
+              dateRaw: notif.createdAt,
+              date: new Date(notif.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }),
+              desc: 'Saque PIX para Conta Pessoal',
+              amount: -parseFloat(meta.amount),
+              status: statusMap[meta.status] || 'Processado'
+            });
           }
         } catch (e) {
           // ignore
+        }
+      }
+    }
+
+    // Ordenar transações por data decrescente
+    transactions.sort((a, b) => new Date(b.dateRaw).getTime() - new Date(a.dateRaw).getTime());
+
+    // Gerar faturamento mensal dinâmico com base nos contratos do ano corrente
+    const currentYear = new Date().getFullYear();
+    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const monthlyData = months.map(m => ({ month: m, value: 0 }));
+
+    for (const c of completedContracts) {
+      const date = new Date(c.createdAt);
+      if (date.getFullYear() === currentYear) {
+        const monthIndex = date.getMonth();
+        if (monthIndex >= 0 && monthIndex < 12) {
+          monthlyData[monthIndex].value += Number(c.netAmount || c.budget * 0.85);
         }
       }
     }
@@ -599,7 +663,9 @@ export const getBalance = async (req: Request, res: Response): Promise<void> => 
     res.json({
       availableBalance: parseFloat(availableBalance.toFixed(2)),
       completedContracts: completedContracts.length,
-      currency: 'BRL'
+      currency: 'BRL',
+      transactions,
+      monthlyData
     });
   } catch (error) {
     res.status(500).json({ error: 'Erro ao buscar saldo.' });

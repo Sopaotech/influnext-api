@@ -119,7 +119,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="p-4 md:p-10 max-w-7xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700 pb-20">
+    <div className="p-4 md:p-12 max-w-[1600px] mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700 pb-24">
       
       {/* Header */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-10 border-b border-white/[0.08]">
@@ -141,7 +141,7 @@ export default function AdminDashboard() {
       </header>
 
       {/* Metrics Row */}
-      <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         <MetricCard 
           title="Faturamento Bruto" 
           value={formatCurrency(data?.metrics?.revenue || 0)} 

@@ -140,13 +140,16 @@ export default function SignupClient() {
       const role = isInfluencer ? 'INFLUENCER' : 'COMPANY';
       const res = await api.post<any>('/auth/signup', { email, password, role });
 
-      // Signup only creates User; we need to login to get a token for step 2
       // Immediately login to get the JWT
       const loginRes = await api.post<any>('/auth/login', { email, password });
       Cookies.set('influnext_token', loginRes.data.token, cookieOptions);
       Cookies.set('influnext_role', loginRes.data.user.role, cookieOptions);
 
-      setStep(2);
+      if (loginRes.data.user.role === 'INFLUENCER') {
+        router.push('/onboarding');
+      } else {
+        setStep(2);
+      }
     } catch (err: any) {
       let msg = err.response?.data?.error;
       if (!msg && err.response?.data?.errors) {

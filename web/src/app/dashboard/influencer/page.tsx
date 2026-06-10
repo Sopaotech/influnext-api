@@ -100,7 +100,11 @@ export default function InfluencerDashboard() {
            }`}>
               <span className={`text-[8px] font-black uppercase tracking-[0.3em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Performance</span>
               <div className="flex items-center gap-2">
-                 <span className="text-lg md:text-2xl font-black tracking-tighter text-emerald-500">+R$ 12k</span>
+                 <span className="text-lg md:text-2xl font-black tracking-tighter text-emerald-500">
+                    {data?.kpis?.totalEarned && data.kpis.totalEarned > 0
+                      ? `+R$ ${data.kpis.totalEarned >= 1000 ? `${(data.kpis.totalEarned / 1000).toFixed(0)}k` : data.kpis.totalEarned}`
+                      : 'R$ 0'}
+                 </span>
                  <TrendingUp className="w-3 md:w-4 h-3 md:h-4 text-emerald-500" />
               </div>
            </div>

@@ -60,6 +60,19 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       select: { id: true, email: true, role: true, createdAt: true },
     });
 
+    if (role === 'INFLUENCER') {
+      const baseHandle = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
+      const suffix = Math.floor(1000 + Math.random() * 9000);
+      const handle = `${baseHandle}${suffix}`;
+      await prisma.influencerProfile.create({
+        data: {
+          userId: user.id,
+          handle,
+          niche: 'Geral',
+        }
+      });
+    }
+
     res.status(201).json({ message: 'Usuário criado com sucesso!', user });
   } catch (error) {
     console.error('[AUTH SIGNUP ERROR]:', error);

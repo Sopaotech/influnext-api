@@ -25,6 +25,12 @@ export default function ReportsPage() {
         ]);
         
         setBalance(balanceRes.data.availableBalance || 0);
+        if (balanceRes.data.monthlyData) {
+          setMonthlyData(balanceRes.data.monthlyData);
+        }
+        if (balanceRes.data.transactions) {
+          setTransactions(balanceRes.data.transactions);
+        }
         if (integrationsRes.data.platforms) {
           setConnectedPlatforms(integrationsRes.data.platforms || []);
         }
@@ -37,31 +43,26 @@ export default function ReportsPage() {
     fetchData();
   }, []);
 
-  // Dados Base (Mockados)
+  // Dados Base (Inicialmente zerados para novas contas)
   const baseMonthlyData = [
-    { month: 'Jan', value: 1200 },
-    { month: 'Fev', value: 1900 },
-    { month: 'Mar', value: 3000 },
-    { month: 'Abr', value: 2500 },
-    { month: 'Mai', value: 4200 },
-    { month: 'Jun', value: 3800 },
-    { month: 'Jul', value: 5500 },
-    { month: 'Ago', value: 6100 },
-    { month: 'Set', value: 4900 },
-    { month: 'Out', value: 7200 },
-    { month: 'Nov', value: 8500 },
-    { month: 'Dez', value: 9200 },
+    { month: 'Jan', value: 0 },
+    { month: 'Fev', value: 0 },
+    { month: 'Mar', value: 0 },
+    { month: 'Abr', value: 0 },
+    { month: 'Mai', value: 0 },
+    { month: 'Jun', value: 0 },
+    { month: 'Jul', value: 0 },
+    { month: 'Ago', value: 0 },
+    { month: 'Set', value: 0 },
+    { month: 'Out', value: 0 },
+    { month: 'Nov', value: 0 },
+    { month: 'Dez', value: 0 },
   ];
 
-  const baseTransactions = [
-    { id: 'TRX-982', date: '28 Maio 2026', desc: 'Campanha de Verão (Marca X)', amount: 4500.00, status: 'Concluído' },
-    { id: 'TRX-981', date: '15 Maio 2026', desc: 'Saque PIX para Conta Pessoal', amount: -2000.00, status: 'Processado' },
-    { id: 'TRX-980', date: '02 Maio 2026', desc: 'Post Patrocinado (Tech Corp)', amount: 1500.00, status: 'Concluído' },
-    { id: 'TRX-979', date: '25 Abr 2026', desc: 'Campanha Dia das Mães', amount: 8200.00, status: 'Concluído' },
-  ];
+  const baseTransactions: any[] = [];
 
-  const [monthlyData, setMonthlyData] = useState(baseMonthlyData);
-  const [transactions, setTransactions] = useState(baseTransactions);
+  const [monthlyData, setMonthlyData] = useState<any[]>(baseMonthlyData);
+  const [transactions, setTransactions] = useState<any[]>(baseTransactions);
 
   // Simulação de Filtro de Dados
   const handleFilter = () => {
@@ -193,8 +194,10 @@ export default function ReportsPage() {
                <div className="p-3 bg-emerald-500 text-white rounded-xl shadow-lg">
                   <DollarSign size={20} />
                </div>
-               <span className="flex items-center gap-1 text-xs font-black text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full">
-                 <ArrowUpRight size={14} /> +34%
+               <span className={`flex items-center gap-1 text-xs font-black px-3 py-1 rounded-full ${
+                 currentTotal > 0 ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-500 bg-white/5'
+               }`}>
+                 {currentTotal > 0 ? <><ArrowUpRight size={14} /> +34%</> : '0%'}
                </span>
             </div>
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">
@@ -211,13 +214,15 @@ export default function ReportsPage() {
                <div className="p-3 bg-purple-600 text-white rounded-xl shadow-lg">
                   <TrendingUp size={20} />
                </div>
-               <span className="flex items-center gap-1 text-xs font-black text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full">
-                 <ArrowUpRight size={14} /> +12%
+               <span className={`flex items-center gap-1 text-xs font-black px-3 py-1 rounded-full ${
+                 currentTotal > 0 ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-500 bg-white/5'
+               }`}>
+                 {currentTotal > 0 ? <><ArrowUpRight size={14} /> +12%</> : '0%'}
                </span>
             </div>
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">Crescimento de Base</p>
             <p className="text-4xl font-black text-white tracking-tighter">
-              +14.2K
+              {currentTotal > 0 ? '+14.2K' : '0'}
             </p>
          </div>
 
@@ -227,13 +232,15 @@ export default function ReportsPage() {
                <div className="p-3 bg-blue-600 text-white rounded-xl shadow-lg">
                   <Zap size={20} />
                </div>
-               <span className="flex items-center gap-1 text-xs font-black text-zinc-400 bg-white/10 px-3 py-1 rounded-full">
-                 Destaque
+               <span className={`flex items-center gap-1 text-xs font-black px-3 py-1 rounded-full ${
+                 transactions.length > 0 ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-500 bg-white/5'
+               }`}>
+                 {transactions.length > 0 ? 'Destaque' : 'Nenhum'}
                </span>
             </div>
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">Top Campanha (ROI)</p>
             <p className="text-xl font-black text-white tracking-tighter truncate">
-              {transactions[0]?.desc || 'Nenhuma no período'}
+              {transactions.filter(t => t.amount > 0)[0]?.desc || 'Nenhuma no período'}
             </p>
          </div>
       </div>

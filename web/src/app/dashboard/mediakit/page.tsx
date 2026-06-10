@@ -55,6 +55,13 @@ export default function MediaKitPage() {
     );
   }
 
+    const formatNumber = (num: number) => {
+    if (!num) return '0';
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1).replace('.0', '')}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1).replace('.0', '')}K`;
+    return num.toLocaleString('pt-BR');
+  };
+
   const profile = data?.profile;
   const kpis = data?.kpis;
 
@@ -140,9 +147,15 @@ export default function MediaKitPage() {
                   <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Audiência Total</p>
                   <h3 className="text-5xl font-black text-white tracking-tighter drop-shadow-sm">{kpis?.latestFollowers?.toLocaleString() || '0'}</h3>
                </div>
-               <div className="mt-4 flex items-center gap-2 text-emerald-400 font-black text-xs uppercase tracking-wider bg-emerald-500/10 w-fit px-3 py-1 rounded-full border border-emerald-500/20">
-                  <TrendingUp className="w-4 h-4" /> +12.4% MoM
-               </div>
+               {kpis?.latestFollowers && kpis.latestFollowers > 0 ? (
+                  <div className="mt-4 flex items-center gap-2 text-emerald-400 font-black text-xs uppercase tracking-wider bg-emerald-500/10 w-fit px-3 py-1 rounded-full border border-emerald-500/20">
+                     <TrendingUp className="w-4 h-4" /> +12.4% MoM
+                  </div>
+               ) : (
+                  <div className="mt-4 flex items-center gap-2 text-zinc-400 font-black text-[10px] uppercase tracking-widest bg-white/5 w-fit px-3 py-1 rounded-full border border-white/10">
+                     Sem crescimento
+                  </div>
+               )}
             </div>
 
             <div className="bg-black/35 backdrop-blur-md border border-white/5 rounded-[2.5rem] p-8 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 group">
@@ -164,7 +177,9 @@ export default function MediaKitPage() {
                </div>
                <div className="space-y-1">
                   <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Alcance 30 Dias</p>
-                  <h3 className="text-5xl font-black text-white tracking-tighter drop-shadow-sm">1.2M</h3>
+                  <h3 className="text-5xl font-black text-white tracking-tighter drop-shadow-sm">
+                    {formatNumber(kpis?.latestReach || 0)}
+                  </h3>
                </div>
             </div>
 
