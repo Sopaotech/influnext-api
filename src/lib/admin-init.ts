@@ -53,12 +53,38 @@ export async function ensureAdminExists() {
     });
 
     // Garantir que não haja outro perfil com o mesmo handle (único) antes de upsertar
-    await prisma.influencerProfile.deleteMany({
+    const duplicateProfile = await prisma.influencerProfile.findFirst({
       where: {
         handle: 'demo.influencer',
         userId: { not: influencerUser.id }
       }
     });
+
+    if (duplicateProfile) {
+      await prisma.socialPlatform.deleteMany({ where: { influencerId: duplicateProfile.id } });
+      await prisma.task.deleteMany({ where: { influencerId: duplicateProfile.id } });
+      await prisma.metricSnapshot.deleteMany({ where: { influencerId: duplicateProfile.id } });
+      await prisma.trendReference.deleteMany({ where: { influencerId: duplicateProfile.id } });
+      await prisma.aIAnalysis.deleteMany({ where: { influencerId: duplicateProfile.id } });
+      await prisma.rateCard.deleteMany({ where: { influencerId: duplicateProfile.id } });
+
+      const duplicateContracts = await prisma.contract.findMany({
+        where: { influencerId: duplicateProfile.id }
+      });
+      const contractIds = duplicateContracts.map(c => c.id);
+      if (contractIds.length > 0) {
+        await prisma.deliverable.deleteMany({
+          where: { contractId: { in: contractIds } }
+        });
+        await prisma.contract.deleteMany({
+          where: { id: { in: contractIds } }
+        });
+      }
+
+      await prisma.influencerProfile.delete({
+        where: { id: duplicateProfile.id }
+      });
+    }
 
     const influencerProfile = await prisma.influencerProfile.upsert({
       where: { userId: influencerUser.id },
@@ -91,12 +117,33 @@ export async function ensureAdminExists() {
     });
 
     // Garantir que não haja outro perfil com o mesmo taxId (único) antes de upsertar
-    await prisma.companyProfile.deleteMany({
+    const duplicateCompany = await prisma.companyProfile.findFirst({
       where: {
         taxId: '00.000.000/0001-91',
         userId: { not: companyUser.id }
       }
     });
+
+    if (duplicateCompany) {
+      await prisma.rateCard.deleteMany({ where: { companyId: duplicateCompany.id } });
+
+      const duplicateContracts = await prisma.contract.findMany({
+        where: { companyId: duplicateCompany.id }
+      });
+      const contractIds = duplicateContracts.map(c => c.id);
+      if (contractIds.length > 0) {
+        await prisma.deliverable.deleteMany({
+          where: { contractId: { in: contractIds } }
+        });
+        await prisma.contract.deleteMany({
+          where: { id: { in: contractIds } }
+        });
+      }
+
+      await prisma.companyProfile.delete({
+        where: { id: duplicateCompany.id }
+      });
+    }
 
     const companyProfile = await prisma.companyProfile.upsert({
       where: { userId: companyUser.id },
