@@ -26,8 +26,8 @@ import {
 
 const STATS = [
   { value: '+3.200', label: 'Criadores no Interior & Capitais' },
-  { value: 'R$ 0 Calotes', label: 'Garantia por Escrow Seguro' },
-  { value: '100% Auditado', label: 'Conexão via APIs Oficiais' },
+  { value: '100% Protegido', label: 'Pagamentos Garantidos via Escrow' },
+  { value: 'Métricas Reais', label: 'Validadas via APIs das Redes' },
 ];
 
 const FAQ = [
@@ -95,12 +95,12 @@ export default function LandingPageClient() {
           <Logo size="xxl" href={null} variant="light" />
           
           <h1 className="text-4xl md:text-7xl font-black tracking-tight leading-[1.05] mt-8 mb-6 max-w-4xl">
-            Seus seguidores não pagam boleto.<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-400 to-pink-400">A InfluNext sim.</span>
+            Seguidores não geram faturamento.<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-400 to-pink-400">Parcerias fechadas geram.</span>
           </h1>
           
           <p className="text-zinc-400 text-base md:text-xl max-w-2xl leading-relaxed mb-10">
-            Use seus influenciadores para fechar publis reais. Evite que sua empresa invista em seguidores falsos ou criadores que não cumprem o combinado. Uma plataforma segura para marcas e criadores, do briefing ao PIX final com garantia Escrow.
+            Use seus influenciadores para fechar parcerias reais. Evite que sua empresa invista em seguidores falsos ou criadores que não cumprem o combinado. Uma plataforma segura para marcas e criadores, do briefing ao pagamento final via PIX, com garantia Escrow.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center w-full max-w-md">
@@ -282,8 +282,8 @@ export default function LandingPageClient() {
           <div className="relative z-10 space-y-8 max-w-4xl mx-auto">
             <p className="text-violet-400 text-[10px] font-black uppercase tracking-[0.3em]">Pronto para o próximo nível?</p>
             <h2 className="text-5xl md:text-7xl font-black tracking-tight">
-              Seguidores não pagam boleto.<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-pink-400">A InfluNext paga.</span>
+              Seguidores não geram faturamento.<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-pink-400">Parcerias fechadas geram.</span>
             </h2>
             <p className="text-zinc-400 text-lg max-w-2xl mx-auto">
               Experimente grátis. Acelere seu crescimento local com inteligência artificial e garanta o seu faturamento seguro no final do mês.
