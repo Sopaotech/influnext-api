@@ -54,8 +54,29 @@ export const createContract = async (req: Request, res: Response): Promise<void>
     }
     // ────────────────────────────────────────────────────────────────────────
 
-    // ─── Cálculo do Take Rate (10%) ─────────────────────────────────────────
-    const platformFee = budget * PLATFORM_TAKE_RATE;
+    // Buscar o plano do influenciador contratado para definir a taxa dinâmica
+    const influencerProfile = await prisma.influencerProfile.findUnique({
+      where: { id: influencerId },
+      include: { user: { select: { subscriptionTier: true } } }
+    });
+
+    if (!influencerProfile) {
+      res.status(404).json({ error: "Perfil de influenciador não encontrado." });
+      return;
+    }
+
+    const tier = influencerProfile.user?.subscriptionTier || 'FREE';
+    let successFeeRate = 0.15;
+    if (tier === 'PRO') {
+      successFeeRate = 0.10;
+    } else if (tier === 'MASTER') {
+      successFeeRate = 0.05;
+    } else if (tier === 'ENTERPRISE') {
+      successFeeRate = 0.00;
+    }
+
+    // ─── Cálculo do Take Rate Dinâmico ──────────────────────────────────────
+    const platformFee = budget * successFeeRate;
     const netAmount   = budget - platformFee;
     // ────────────────────────────────────────────────────────────────────────
 
@@ -76,6 +97,7 @@ export const createContract = async (req: Request, res: Response): Promise<void>
           budget,
           platformFee,
           netAmount,
+          successFeeRate,
           escrowStatus: 'DRAFT',
           deliverables: {
             create: deliverables.map((d) => ({

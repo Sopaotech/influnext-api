@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Sparkles, BrainCircuit, Loader2, ClipboardList, Music, Terminal, Zap, Activity, Play, Mic, MicOff, Volume2, Crown, Lock, User } from 'lucide-react';
+import { Sparkles, BrainCircuit, Loader2, ClipboardList, Music, Terminal, Zap, Activity, Play, Mic, MicOff, Volume2, Crown, Lock, User, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
@@ -41,7 +41,50 @@ export default function AIWorkspacePage() {
   const [theme, setTheme] = useState<string>('dark');
   const [user, setUser] = useState<any>(null);
   const isTrialActive = user?.subscriptionStatus === 'TRIAL' && user?.trialEndsAt && new Date(user.trialEndsAt) > new Date();
-  const isPro = user?.role === 'ADMIN' || user?.subscriptionStatus === 'ACTIVE' || isTrialActive;
+  const isPro = user?.role === 'ADMIN' || user?.subscriptionStatus === 'ACTIVE' || isTrialActive || (user?.subscriptionTier && user?.subscriptionTier !== 'FREE');
+
+  // Registrar Convite de Evento Presencial
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [eventName, setEventName] = useState('');
+  const [eventBrand, setEventBrand] = useState('');
+  const [eventDate, setEventDate] = useState('');
+  const [eventDetails, setEventDetails] = useState('');
+  const [isRegisteringEvent, setIsRegisteringEvent] = useState(false);
+
+  const handleRegisterEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!eventName || !eventBrand || !eventDate) {
+      toast.error('Preencha os campos obrigatórios.');
+      return;
+    }
+
+    try {
+      setIsRegisteringEvent(true);
+      const prompt = `[PRESENÇA EM EVENTO] Recebi um convite para o evento de presença presencial '${eventName}' da marca '${eventBrand}' no dia ${eventDate}. Detalhes adicionais: ${eventDetails || 'Nenhum detalhe adicional'}. Como devo planejar minha cobertura, ideias de fotos e stories?`;
+      
+      // Adiciona a mensagem do usuário no chat
+      setChatMessages(prev => [...prev, { role: 'user', text: `Recebi um convite de presença no evento: "${eventName}" da marca "${eventBrand}" no dia ${eventDate}.` }]);
+      setIsChatting(true);
+      setIsEventModalOpen(false);
+
+      const res = await api.post('/ai/chat', { message: prompt });
+      
+      setChatMessages(prev => [...prev, { role: 'mentor', text: res.data.reply }]);
+      
+      // Limpar campos
+      setEventName('');
+      setEventBrand('');
+      setEventDate('');
+      setEventDetails('');
+      
+      toast.success('✦ Convite de evento registrado e enviado ao Mentor!');
+    } catch (err) {
+      toast.error('Erro ao enviar detalhes do evento ao Mentor.');
+    } finally {
+      setIsRegisteringEvent(false);
+      setIsChatting(false);
+    }
+  };
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -262,6 +305,14 @@ export default function AIWorkspacePage() {
           </div>
           
           <div className="flex items-center gap-4">
+             <Button
+               onClick={() => setIsEventModalOpen(true)}
+               className="bg-purple-600 hover:bg-purple-500 text-white border-2 border-purple-400/30 px-5 py-2.5 rounded-2xl flex items-center gap-2 transition-all shadow-xl shadow-purple-600/10 active:scale-95"
+             >
+                <Calendar className="w-4 h-4 text-purple-200" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Registrar Evento</span>
+             </Button>
+
              {connectedPlatforms.length === 0 ? (
                <Button 
                 onClick={() => router.push('/dashboard/settings')}
@@ -385,26 +436,6 @@ export default function AIWorkspacePage() {
             <section className={`border p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] relative flex flex-col h-[400px] md:h-[500px] shadow-sm ${
               isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
             }`}>
-              {!isPro && (
-                <div className="absolute inset-0 bg-black/70 backdrop-blur-md z-20 rounded-[2rem] md:rounded-[2.5rem] flex flex-col items-center justify-center p-6 text-center space-y-4 animate-in fade-in duration-300">
-                  <div className="w-14 h-14 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center shadow-lg shadow-purple-500/10">
-                    <BrainCircuit className="w-8 h-8 text-purple-400" />
-                  </div>
-                  <div className="space-y-1.5 max-w-sm">
-                    <span className="text-purple-400 text-[10px] font-black uppercase tracking-widest">Recurso Premium</span>
-                    <h3 className="text-xl font-black text-white tracking-tight">Cérebro de IA do {mentorName}</h3>
-                    <p className="text-[11px] text-zinc-400 font-bold leading-relaxed">
-                      Desbloqueie conversas ilimitadas com seu estrategista de negócios para receber roteiros personalizados de vídeo, scripts de publis e direcionamento estratégico de carreira.
-                    </p>
-                  </div>
-                  <Button 
-                    onClick={() => router.push('/dashboard/subscription')}
-                    className="bg-purple-600 hover:bg-purple-500 text-white font-black text-[10px] uppercase tracking-widest px-8 py-3 rounded-xl shadow-lg shadow-purple-900/30 transition-all border border-purple-500/30"
-                  >
-                    Upgrade para Pro
-                  </Button>
-                </div>
-              )}
               <div className={`flex items-center gap-3 mb-4 md:mb-6 text-[9px] md:text-[10px] font-black uppercase tracking-widest border-b pb-4 md:pb-6 ${
                 isDark ? 'text-zinc-500 border-white/5' : 'text-slate-400 border-slate-50'
               }`}>
@@ -447,6 +478,21 @@ export default function AIWorkspacePage() {
                 <div ref={chatEndRef} />
               </div>
  
+              {user?.subscriptionTier === 'FREE' && (
+                <div className="px-4 py-2.5 bg-purple-950/30 border border-purple-500/10 rounded-2xl mb-2 flex items-center justify-between animate-in slide-in-from-bottom-2 duration-500">
+                  <span className="text-[10px] font-black text-purple-300 uppercase tracking-widest flex items-center gap-2">
+                    <Crown className="w-3 h-3 text-purple-400" /> Mentor IA Limitado no Plano Gratuito
+                  </span>
+                  <Button 
+                    variant="link" 
+                    onClick={() => router.push('/dashboard/subscription')}
+                    className="text-[10px] font-black text-purple-400 hover:text-purple-300 uppercase p-0 h-auto flex items-center gap-1"
+                  >
+                    Upgrade para Pro ➔
+                  </Button>
+                </div>
+              )}
+
               <form onSubmit={handleSendMessage} className={`mt-4 flex gap-2 pt-4 border-t ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
                 <input 
                   type="text"
@@ -718,6 +764,89 @@ export default function AIWorkspacePage() {
            </Button>
          </div>
        )}
+      {/* Modal de Registro de Convite de Evento */}
+      {isEventModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="w-full max-w-lg bg-zinc-950/90 border border-white/10 rounded-[2.5rem] p-8 space-y-6 shadow-2xl shadow-purple-500/10 animate-in zoom-in-95 duration-300">
+            <div className="space-y-1.5">
+              <span className="text-purple-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5" /> Presença Confirmada
+              </span>
+              <h2 className="text-2xl font-black text-white tracking-tight">Registrar Convite de Evento</h2>
+              <p className="text-[11px] text-zinc-400 font-bold leading-relaxed">
+                Informe os detalhes do evento presencial. O seu Mentor de IA criará um roteiro sob medida de cobertura (pré, durante e pós-evento) para você postar e faturar.
+              </p>
+            </div>
+
+            <form onSubmit={handleRegisterEvent} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Nome do Evento *</label>
+                <input 
+                  type="text" 
+                  value={eventName}
+                  onChange={(e) => setEventName(e.target.value)}
+                  placeholder="Ex: Lançamento Coleção de Inverno" 
+                  required
+                  className="w-full bg-white/5 border border-white/5 focus:border-purple-500/30 rounded-xl px-4 py-3.5 text-xs text-white focus:outline-none placeholder:text-zinc-500 transition-all"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Marca Patrocinadora *</label>
+                  <input 
+                    type="text" 
+                    value={eventBrand}
+                    onChange={(e) => setEventBrand(e.target.value)}
+                    placeholder="Ex: Zara" 
+                    required
+                    className="w-full bg-white/5 border border-white/5 focus:border-purple-500/30 rounded-xl px-4 py-3.5 text-xs text-white focus:outline-none placeholder:text-zinc-500 transition-all"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Data do Evento *</label>
+                  <input 
+                    type="date" 
+                    value={eventDate}
+                    onChange={(e) => setEventDate(e.target.value)}
+                    required
+                    className="w-full bg-white/5 border border-white/5 focus:border-purple-500/30 rounded-xl px-4 py-3.5 text-xs text-white focus:outline-none placeholder:text-zinc-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">O que a marca te pediu? (Briefing)</label>
+                <textarea 
+                  value={eventDetails}
+                  onChange={(e) => setEventDetails(e.target.value)}
+                  placeholder="Ex: Comparecer à loja usando roupas da nova coleção, fazer stories mostrando as araras e postar uma foto no feed." 
+                  rows={3}
+                  className="w-full bg-white/5 border border-white/5 focus:border-purple-500/30 rounded-xl px-4 py-3.5 text-xs text-white focus:outline-none placeholder:text-zinc-500 transition-all resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button 
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEventModalOpen(false)}
+                  className="flex-1 border-white/5 hover:bg-white/5 text-white font-black text-[10px] uppercase tracking-widest py-4.5 rounded-xl h-11 transition-all"
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={isRegisteringEvent}
+                  className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-black text-[10px] uppercase tracking-widest py-4.5 rounded-xl h-11 transition-all shadow-lg shadow-purple-900/30"
+                >
+                  {isRegisteringEvent ? 'GERANDO ROTEIRO...' : 'GERAR ROTEIRO'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

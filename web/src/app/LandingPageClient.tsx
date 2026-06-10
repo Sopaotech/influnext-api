@@ -127,9 +127,11 @@ export default function LandingPageClient() {
       {/* MOCKUP PREVIEW (Despertar Curiosidade) */}
       <section id="preview" className="relative w-full max-w-6xl mx-auto px-6 py-20">
          <div className="text-center mb-12">
-            <p className="text-violet-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">✦ Por dentro da plataforma</p>
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight">O Escritório Digital do Criador de Sucesso</h2>
-            <p className="text-zinc-300 text-xs mt-3">Curioso para ver como funciona? Dê uma espiada na nossa interface de controle financeiro e tarefas:</p>
+            <p className="text-violet-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">✦ Controle Total</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight">Campanhas, contratos e pagamentos.<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-pink-400">Tudo em uma única tela.</span></h2>
+            <p className="text-zinc-300 text-xs mt-4 max-w-xl mx-auto leading-relaxed">
+               Acompanhe suas parcerias do início ao fim, controle prazos de entrega e garanta o recebimento seguro via Escrow sem burocracia.
+            </p>
          </div>
 
          {/* Dashboard Window Chrome Mockup */}

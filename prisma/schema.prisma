@@ -30,6 +30,10 @@ model User {
   // SaaS e Assinaturas
   onboardingCompleted Boolean @default(false)
   subscriptionStatus  String  @default("TRIAL") // "TRIAL" | "ACTIVE" | "INACTIVE"
+  subscriptionTier    String  @default("FREE")  // "FREE" | "PRO" | "MASTER" | "ENTERPRISE"
+  isFeatured          Boolean @default(false)
+  featuredUntil       DateTime?
+  credits             Int     @default(0)
   trialEndsAt         DateTime?
   stripeCustomerId    String?   @unique // ID do cliente na Stripe
   
@@ -173,6 +177,7 @@ model Contract {
   budget          Float
   platformFee     Float?
   netAmount       Float?
+  successFeeRate  Float          @default(0.15)
   escrowStatus    String         @default("DRAFT") // "DRAFT" | "PENDING_PAYMENT" | ...
   externalTxId    String?
   releaseTxId     String?        @unique

@@ -17,6 +17,21 @@ router.post('/generate', authenticate, async (req: Request, res: Response): Prom
       return;
     }
 
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { subscriptionTier: true } });
+    const userTier = user?.subscriptionTier || 'FREE';
+
+    // Se for FREE, limitar a no máximo 1 análise (a inicial de onboarding)
+    if (userTier === 'FREE') {
+      const count = await prisma.aIAnalysis.count({ where: { influencerId: profile.id } });
+      if (count >= 1) {
+        res.status(403).json({ 
+          error: 'tier_restricted',
+          message: 'Você atingiu o limite de análises do plano gratuito. Faça upgrade para o plano Pro para gerar análises semanais ilimitadas e acessar dados em tempo real!' 
+        });
+        return;
+      }
+    }
+
     const result = await AIService.generateWeeklyAnalysis(profile.id);
     res.status(201).json(result);
   } catch (err: unknown) {
@@ -58,6 +73,27 @@ router.post('/chat', authenticate, async (req: Request, res: Response): Promise<
 
     if (!profile) {
       res.status(404).json({ error: 'Apenas influenciadores têm acesso ao mentor.' });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { subscriptionTier: true } });
+    const userTier = user?.subscriptionTier || 'FREE';
+
+    if (userTier === 'FREE') {
+      if (message.includes('[PRESENÇA EM EVENTO]')) {
+        const reply = `Espetacular, sócio(a)! Eventos presenciais são minas de ouro para o seu posicionamento e autoridade. Como você está no plano Free, preparei um Roteiro de Cobertura Padrão de 3 Fases para você aplicar:
+
+1. 📸 Pré-Evento (Gere expectativa): Poste 2 Stories mostrando sua preparação, a escolha do look e a contagem regressiva marcando a marca patrocinadora.
+2. 🎥 No Evento (Gere desejo): Poste 3 a 5 Stories em tempo real. Faça 1 vídeo mostrando os bastidores do espaço, 1 foto com o look final destacado e 1 interação/depoimento curto.
+3. 📈 Pós-Evento (Gere prova social): Crie 1 post de feed compilando os melhores momentos com um gancho estratégico na legenda sobre networking.
+
+Para que eu crie um roteiro de scripts personalizado para este evento específico com ideias de fotos exclusivas para seu nicho, faça o upgrade para o plano Pro ou Master! 🚀`;
+        res.json({ reply, isLocked: false });
+        return;
+      }
+
+      const reply = `Olá, sócio(a)! Identifiquei que você está usando a versão gratuita da nossa Central de Comando. Como seu mentor de negócios, posso planejar e organizar toda a sua estratégia semanal básica e missões, mas para tirar dúvidas de execução em tempo real, gerar roteiros completos e ter chats ilimitados, você precisará assinar o plano Pro ou Master. Faça o upgrade agora para destravar todo o meu potencial! 🚀`;
+      res.json({ reply, isLocked: true });
       return;
     }
 
