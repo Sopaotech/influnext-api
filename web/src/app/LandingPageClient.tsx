@@ -25,11 +25,6 @@ import {
   Calendar
 } from 'lucide-react';
 
-const STATS = [
-  { value: '+3.200', label: 'Criadores no Interior & Capitais' },
-  { value: '100% Protegido', label: 'Pagamentos Garantidos via Escrow' },
-  { value: 'Métricas Reais', label: 'Validadas via APIs das Redes' },
-];
 
 const FAQ = [
   { 
@@ -103,14 +98,49 @@ export default function LandingPageClient() {
             O fim das permutas sem valor e dos contratos baseados em promessas. A InfluNext é o primeiro ecossistema completo que profissionaliza e gerencia a rotina de criadores de conteúdo para atrair e fechar publicidades reais, enquanto fornece às marcas a segurança de contratar com pagamento via Escrow protegido e retorno real garantido por nossa Inteligência Artificial.
           </p>
 
-          {/* Stats Bar */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-16 mt-20 pt-10 border-t border-white/5 w-full max-w-4xl">
-            {STATS.map((s, i) => (
-              <div key={i} className="flex flex-col items-center md:items-start gap-1">
-                <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-pink-400">{s.value}</span>
-                <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-wider">{s.label}</span>
+          {/* Crucial Benefits Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mt-20 pt-10 border-t border-white/5 w-full max-w-5xl relative z-10">
+            {/* Benefício 1: Gestão de Carreira */}
+            <div className="flex flex-col items-center md:items-start text-center md:text-left p-6 rounded-2xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.02] hover:border-violet-500/20 transition-all duration-300 gap-3">
+              <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
+                <Brain className="w-5 h-5" />
               </div>
-            ))}
+              <div>
+                <p className="text-[9px] font-black text-violet-400 uppercase tracking-widest mb-1">Criadores & Marcas</p>
+                <h4 className="text-sm font-bold text-white mb-2">Carreira & Rotina por IA</h4>
+                <p className="text-zinc-400 text-xs leading-relaxed font-bold">
+                  Nossa IA organiza a rotina do criador e gera roteiros locais virais, garantindo à marca postagens consistentes e alinhadas ao cronograma.
+                </p>
+              </div>
+            </div>
+
+            {/* Benefício 2: Negociação Racional */}
+            <div className="flex flex-col items-center md:items-start text-center md:text-left p-6 rounded-2xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.02] hover:border-pink-500/20 transition-all duration-300 gap-3">
+              <div className="w-10 h-10 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-400">
+                <BarChart3 className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[9px] font-black text-pink-400 uppercase tracking-widest mb-1">Decisão por Dados</p>
+                <h4 className="text-sm font-bold text-white mb-2">Acordos via Métricas Reais</h4>
+                <p className="text-zinc-400 text-xs leading-relaxed font-bold">
+                  Negociação justa baseada em dados reais de engajamento locais e público-alvo, eliminando fraudes e precificações arbitrárias.
+                </p>
+              </div>
+            </div>
+
+            {/* Benefício 3: Escrow de Pagamento Seguro */}
+            <div className="flex flex-col items-center md:items-start text-center md:text-left p-6 rounded-2xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.02] hover:border-emerald-500/20 transition-all duration-300 gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">Garantia Financeira</p>
+                <h4 className="text-sm font-bold text-white mb-2">Escrow 100% Protegido</h4>
+                <p className="text-zinc-400 text-xs leading-relaxed font-bold">
+                  O cachê é depositado em juízo antes de postar. O influenciador sabe que vai receber e a marca só libera o pagamento após postagem validada.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -374,11 +404,10 @@ export default function LandingPageClient() {
                <p className="text-zinc-300 text-xs leading-relaxed">
                   Convidado para um evento presencial? Registre o convite e nossa IA cria um roteiro completo de cobertura em 3 fases (Pré, Durante e Pós) para maximizar o engajamento e provar seu ROI.
 
-                  </p>
-               </div>
-            </div>
-         </div>
-      </section>
+                </p>
+             </div>
+          </div>
+       </section>
 
       {/* O PROBLEMA (Foco na dor do influenciador local e desintermediação) */}
       <section id="problema" className="w-full max-w-7xl mx-auto px-6 lg:px-16 py-20">

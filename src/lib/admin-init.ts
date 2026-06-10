@@ -52,6 +52,14 @@ export async function ensureAdminExists() {
       }
     });
 
+    // Garantir que não haja outro perfil com o mesmo handle (único) antes de upsertar
+    await prisma.influencerProfile.deleteMany({
+      where: {
+        handle: 'demo.influencer',
+        userId: { not: influencerUser.id }
+      }
+    });
+
     const influencerProfile = await prisma.influencerProfile.upsert({
       where: { userId: influencerUser.id },
       update: {},
@@ -79,6 +87,14 @@ export async function ensureAdminExists() {
         role: 'COMPANY',
         onboardingCompleted: true,
         subscriptionStatus: 'ACTIVE',
+      }
+    });
+
+    // Garantir que não haja outro perfil com o mesmo taxId (único) antes de upsertar
+    await prisma.companyProfile.deleteMany({
+      where: {
+        taxId: '00.000.000/0001-91',
+        userId: { not: companyUser.id }
       }
     });
 
