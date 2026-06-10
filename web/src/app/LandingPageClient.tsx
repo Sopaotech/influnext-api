@@ -94,7 +94,7 @@ export default function LandingPageClient() {
 
         <div className="relative z-10 flex flex-col items-center max-w-5xl">
           <Logo size="xxl" href={null} variant="light" />
-          <h1 className="text-2xl sm:text-4xl md:text-7xl font-black tracking-tighter leading-[1.0] md:leading-[0.95] mt-8 mb-6 max-w-4xl">
+          <h1 className="text-xl sm:text-4xl md:text-7xl font-black tracking-tighter leading-[1.0] md:leading-[0.95] mt-8 mb-6 max-w-4xl">
             Para influenciadores que geram vendas<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-400 to-pink-400">Para marcas que buscam retorno</span>
           </h1>
@@ -434,7 +434,7 @@ export default function LandingPageClient() {
           <div className="absolute inset-0 bg-gradient-to-t from-violet-600/5 to-transparent" />
           <div className="relative z-10 space-y-8 max-w-4xl mx-auto">
             <p className="text-violet-400 text-[10px] font-black uppercase tracking-[0.3em]">Pronto para profissionalizar sua carreira?</p>
-            <h2 className="text-2xl sm:text-4xl md:text-7xl font-black tracking-tighter leading-[1.0] md:leading-[0.95]">
+            <h2 className="text-xl sm:text-4xl md:text-7xl font-black tracking-tighter leading-[1.0] md:leading-[0.95]">
               Transforme sua influência em um negócio<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-pink-400">Mais contratos, zero estresse e cachê garantido</span>
             </h2>
