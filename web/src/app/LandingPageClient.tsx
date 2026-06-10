@@ -21,7 +21,8 @@ import {
   Eye,
   DollarSign,
   Layout,
-  MessageSquare
+  MessageSquare,
+  Calendar
 } from 'lucide-react';
 
 const STATS = [
@@ -52,6 +53,7 @@ const FAQ = [
 export default function LandingPageClient() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [scrolled, setScrolled] = useState(false);
+  const [activeTab, setActiveTab] = useState<'finance' | 'ai_habits'>('finance');
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
@@ -134,6 +136,22 @@ export default function LandingPageClient() {
             </p>
          </div>
 
+         {/* Tab Switcher */}
+         <div className="flex justify-center gap-4 mb-8">
+            <button 
+              onClick={() => setActiveTab('finance')}
+              className={`px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all duration-300 ${activeTab === 'finance' ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-lg shadow-violet-600/20' : 'bg-white/[0.02] border border-white/5 text-zinc-400 hover:text-white hover:bg-white/5'}`}
+            >
+               Finanças & Contratos
+            </button>
+            <button 
+              onClick={() => setActiveTab('ai_habits')}
+              className={`px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all duration-300 ${activeTab === 'ai_habits' ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-lg shadow-violet-600/20' : 'bg-white/[0.02] border border-white/5 text-zinc-400 hover:text-white hover:bg-white/5'}`}
+            >
+               Assistência de IA & Hábitos
+            </button>
+         </div>
+
          {/* Dashboard Window Chrome Mockup */}
          <div className="border border-white/10 rounded-[2rem] bg-black/40 overflow-hidden shadow-2xl relative shadow-violet-900/10">
             {/* Header chrome buttons */}
@@ -148,82 +166,183 @@ export default function LandingPageClient() {
             </div>
 
             {/* Dashboard Mockup Body */}
-            <div className="p-6 md:p-10 grid grid-cols-1 md:grid-cols-3 gap-6 opacity-85 hover:opacity-100 transition-opacity duration-300">
-               {/* Left Column: Wallet & Escrow Status */}
-               <div className="space-y-6">
-                  {/* Escrow Status Card */}
-                  <div className="p-6 rounded-3xl border border-green-500/20 bg-green-500/5 space-y-4">
-                     <div className="flex justify-between items-center">
-                        <span className="text-[8px] font-black text-green-400 uppercase tracking-widest">Escrow Ativo</span>
-                        <ShieldCheck className="text-green-400 w-5 h-5" />
-                     </div>
-                     <div>
-                        <p className="text-xs font-bold text-zinc-200">Garantia Retida em Juízo</p>
-                        <p className="text-3xl font-black text-white tracking-tighter mt-1">R$ 3.500,00</p>
-                     </div>
-                     <p className="text-[9px] text-zinc-300 leading-relaxed font-bold uppercase tracking-wider">
-                        Depósito Loreal Brasil SA verificado. Pagamento garantido assim que o Reels for postado.
-                     </p>
-                  </div>
-
-                  {/* Wallet Faturamento Card */}
-                  <div className="p-6 rounded-3xl border border-white/5 bg-white/[0.02] space-y-4">
-                     <div className="flex justify-between items-center">
-                        <span className="text-[8px] font-black text-zinc-350 uppercase tracking-widest">Saldo Disponível</span>
-                        <DollarSign className="text-zinc-400 w-4 h-4" />
-                     </div>
-                     <div>
-                        <p className="text-3xl font-black text-white tracking-tighter">R$ 4.250,00</p>
-                     </div>
-                     <div className="flex gap-2">
-                        <span className="text-[8px] bg-green-500/10 text-green-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Livre para Saque</span>
-                     </div>
-                  </div>
-               </div>
-
-               {/* Center Column: Deliverables & Campaign Tasks */}
-               <div className="p-6 rounded-3xl border border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent flex flex-col justify-between gap-6 md:col-span-2">
-                  <div className="space-y-4">
-                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center text-white">
-                           <Layout size={18} />
+            {activeTab === 'finance' ? (
+               <div className="p-6 md:p-10 grid grid-cols-1 md:grid-cols-3 gap-6 opacity-85 hover:opacity-100 transition-opacity duration-300">
+                  {/* Left Column: Wallet & Escrow Status */}
+                  <div className="space-y-6">
+                     {/* Escrow Status Card */}
+                     <div className="p-6 rounded-3xl border border-green-500/20 bg-green-500/5 space-y-4">
+                        <div className="flex justify-between items-center">
+                           <span className="text-[8px] font-black text-green-400 uppercase tracking-widest">Escrow Ativo</span>
+                           <ShieldCheck className="text-green-400 w-5 h-5" />
                         </div>
                         <div>
-                           <p className="text-[8px] font-black text-zinc-300 uppercase tracking-widest">Cronograma de Entrega</p>
-                           <p className="text-sm font-bold text-white">Entregáveis do Contrato Ativo</p>
+                           <p className="text-xs font-bold text-zinc-200">Garantia Retida em Juízo</p>
+                           <p className="text-3xl font-black text-white tracking-tighter mt-1">R$ 3.500,00</p>
                         </div>
+                        <p className="text-[9px] text-zinc-300 leading-relaxed font-bold uppercase tracking-wider">
+                           Depósito Loreal Brasil SA verificado. Pagamento garantido assim que o Reels for postado.
+                        </p>
                      </div>
 
-                     <div className="space-y-3">
-                        <div className="p-4 rounded-2xl bg-zinc-950/80 border border-white/5 space-y-2">
-                           <div className="flex justify-between items-center">
-                              <span className="text-[9px] font-black text-zinc-300 uppercase tracking-wider">Tarefa 1: Publicações Iniciais</span>
-                              <span className="text-[8px] bg-yellow-500/10 text-yellow-500 font-bold px-2 py-0.5 rounded">Em produção</span>
-                           </div>
-                           <p className="text-[10px] text-zinc-300 leading-relaxed font-bold">
-                              Preparar três posts para o produto total para a empresa Loreal Brasil SA.
-                           </p>
+                     {/* Wallet Faturamento Card */}
+                     <div className="p-6 rounded-3xl border border-white/5 bg-white/[0.02] space-y-4">
+                        <div className="flex justify-between items-center">
+                           <span className="text-[8px] font-black text-zinc-350 uppercase tracking-widest">Saldo Disponível</span>
+                           <DollarSign className="text-zinc-400 w-4 h-4" />
                         </div>
-
-                        <div className="p-4 rounded-2xl bg-zinc-950/80 border border-white/5 space-y-2">
-                           <div className="flex justify-between items-center">
-                              <span className="text-[9px] font-black text-zinc-300 uppercase tracking-wider">Tarefa 2: Stories Sequenciais</span>
-                              <span className="text-[8px] bg-green-500/10 text-green-500 font-bold px-2 py-0.5 rounded">Aprovado</span>
-                           </div>
-                           <p className="text-[10px] text-zinc-300 leading-relaxed font-bold">
-                              Criar um post de feed e quatro stories de engajamento demonstrando a aplicação real do produto.
-                           </p>
+                        <div>
+                           <p className="text-3xl font-black text-white tracking-tighter">R$ 4.250,00</p>
+                        </div>
+                        <div className="flex gap-2">
+                           <span className="text-[8px] bg-green-500/10 text-green-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Livre para Saque</span>
                         </div>
                      </div>
                   </div>
 
-                  {/* Simulated Status Footer */}
-                  <div className="border-t border-white/5 pt-4 flex items-center justify-between text-[10px] text-zinc-300">
-                     <span>Próximo prazo: 15 de Junho de 2026</span>
-                     <span className="font-bold text-white uppercase tracking-wider">Acompanhar Progresso</span>
+                  {/* Center Column: Deliverables & Campaign Tasks */}
+                  <div className="p-6 rounded-3xl border border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent flex flex-col justify-between gap-6 md:col-span-2">
+                     <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                           <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center text-white">
+                              <Layout size={18} />
+                           </div>
+                           <div>
+                              <p className="text-[8px] font-black text-zinc-300 uppercase tracking-widest">Cronograma de Entrega</p>
+                              <p className="text-sm font-bold text-white">Entregáveis do Contrato Ativo</p>
+                           </div>
+                        </div>
+
+                        <div className="space-y-3">
+                           <div className="p-4 rounded-2xl bg-zinc-950/80 border border-white/5 space-y-2">
+                              <div className="flex justify-between items-center">
+                                 <span className="text-[9px] font-black text-zinc-350 uppercase tracking-wider">Tarefa 1: Publicações Iniciais</span>
+                                 <span className="text-[8px] bg-yellow-500/10 text-yellow-500 font-bold px-2 py-0.5 rounded">Em produção</span>
+                              </div>
+                              <p className="text-[10px] text-zinc-300 leading-relaxed font-bold">
+                                 Preparar três posts para o produto total para a empresa Loreal Brasil SA.
+                              </p>
+                           </div>
+
+                           <div className="p-4 rounded-2xl bg-zinc-950/80 border border-white/5 space-y-2">
+                              <div className="flex justify-between items-center">
+                                 <span className="text-[9px] font-black text-zinc-300 uppercase tracking-wider">Tarefa 2: Stories Sequenciais</span>
+                                 <span className="text-[8px] bg-green-500/10 text-green-500 font-bold px-2 py-0.5 rounded">Aprovado</span>
+                              </div>
+                              <p className="text-[10px] text-zinc-300 leading-relaxed font-bold">
+                                 Criar um post de feed e quatro stories de engajamento demonstrando a aplicação real do produto.
+                              </p>
+                           </div>
+                        </div>
+                     </div>
+
+                     {/* Simulated Status Footer */}
+                     <div className="border-t border-white/5 pt-4 flex items-center justify-between text-[10px] text-zinc-300">
+                        <span>Próximo prazo: 15 de Junho de 2026</span>
+                        <span className="font-bold text-white uppercase tracking-wider">Acompanhar Progresso</span>
+                     </div>
                   </div>
                </div>
-            </div>
+            ) : (
+               <div className="p-6 md:p-10 grid grid-cols-1 md:grid-cols-3 gap-6 opacity-85 hover:opacity-100 transition-opacity duration-300">
+                  {/* Left Column: AI Assistant suggestions */}
+                  <div className="space-y-6">
+                     {/* AI Tip Card */}
+                     <div className="p-6 rounded-3xl border border-purple-500/20 bg-purple-500/5 space-y-4">
+                        <div className="flex justify-between items-center">
+                           <span className="text-[8px] font-black text-purple-400 uppercase tracking-widest">IA Estrategista</span>
+                           <Brain className="text-purple-400 w-5 h-5" />
+                        </div>
+                        <div>
+                           <p className="text-[10px] font-bold text-zinc-300">Análise de Engajamento:</p>
+                           <p className="text-sm font-bold text-white mt-1">Sua audiência local sobe +22% às quartas-feiras às 19h no interior.</p>
+                        </div>
+                        <p className="text-[8px] text-zinc-400 uppercase tracking-wider font-bold">
+                           Sugestão: Agendar Reels de moda local para quarta.
+                        </p>
+                     </div>
+
+                     {/* AI Strategy Box */}
+                     <div className="p-6 rounded-3xl border border-white/5 bg-white/[0.02] space-y-3">
+                        <div className="flex items-center justify-between">
+                           <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Métricas Ativas</span>
+                           <Zap className="text-yellow-500 w-4 h-4" />
+                        </div>
+                        <div className="space-y-2">
+                           <div className="flex justify-between text-[10px]">
+                              <span className="text-zinc-400">Público Alvo</span>
+                              <span className="font-bold text-emerald-400">94% Regional (SP)</span>
+                           </div>
+                           <div className="flex justify-between text-[10px]">
+                              <span className="text-zinc-400">Gancho Viral (Hook)</span>
+                              <span className="font-bold text-white">"3 Looks que parecem caros..."</span>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* Center/Right Column: Habits, Motivation & Task Calendar */}
+                  <div className="p-6 rounded-3xl border border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent flex flex-col justify-between gap-6 md:col-span-2">
+                     <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                           <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center text-white">
+                                 <Calendar size={18} className="text-purple-400" />
+                              </div>
+                              <div>
+                                 <p className="text-[8px] font-black text-zinc-350 uppercase tracking-widest">Rotina e Hábitos</p>
+                                 <p className="text-sm font-bold text-white">Calendário de Hábitos do Criador</p>
+                              </div>
+                           </div>
+                           <div className="text-right">
+                              <span className="text-[9px] bg-purple-500/10 text-purple-400 font-bold px-3 py-1 rounded-full uppercase tracking-wider">Força do Hábito: 85%</span>
+                           </div>
+                        </div>
+
+                        {/* Calendar Habits List */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                           <div className="p-4 rounded-2xl bg-zinc-950/85 border border-white/5 flex items-center justify-between">
+                              <div>
+                                 <p className="text-[9px] text-zinc-400 font-black uppercase">Segunda-feira</p>
+                                 <p className="text-xs font-bold text-white mt-0.5">Postar 3 Stories</p>
+                              </div>
+                              <span className="text-[8px] bg-emerald-500/10 text-emerald-400 font-bold px-2 py-0.5 rounded">Feito</span>
+                           </div>
+
+                           <div className="p-4 rounded-2xl bg-zinc-950/85 border border-white/5 flex items-center justify-between">
+                              <div>
+                                 <p className="text-[9px] text-zinc-400 font-black uppercase">Terça-feira</p>
+                                 <p className="text-xs font-bold text-white mt-0.5">Gravar 2 Reels</p>
+                              </div>
+                              <span className="text-[8px] bg-emerald-500/10 text-emerald-400 font-bold px-2 py-0.5 rounded">Feito</span>
+                           </div>
+
+                           <div className="p-4 rounded-2xl bg-zinc-950/85 border border-purple-500/30 bg-purple-500/5 flex items-center justify-between animate-pulse">
+                              <div>
+                                 <p className="text-[9px] text-purple-400 font-black uppercase">Quarta-feira (Hoje)</p>
+                                 <p className="text-xs font-bold text-white mt-0.5">Publicar Reels de Outono</p>
+                              </div>
+                              <span className="text-[8px] bg-yellow-500/10 text-yellow-500 font-bold px-2 py-0.5 rounded">Agendado</span>
+                           </div>
+
+                           <div className="p-4 rounded-2xl bg-zinc-950/40 border border-white/5 flex items-center justify-between opacity-50">
+                              <div>
+                                 <p className="text-[9px] text-zinc-400 font-black uppercase">Quinta-feira</p>
+                                 <p className="text-xs font-bold text-white mt-0.5">Responder Directs</p>
+                              </div>
+                              <span className="text-[8px] bg-zinc-800 text-zinc-400 font-bold px-2 py-0.5 rounded">Pendente</span>
+                           </div>
+                        </div>
+                     </div>
+
+                     {/* Motivation Bar */}
+                     <div className="border-t border-white/5 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[10px] text-zinc-300">
+                        <p className="font-bold text-white">🔥 Meta Semanal: 4/5 tarefas concluídas. Você está focado!</p>
+                        <span className="font-bold text-purple-400 uppercase tracking-widest">Ver Painel Completo</span>
+                     </div>
+                  </div>
+               </div>
+            )}
          </div>
       </section>
 
