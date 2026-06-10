@@ -4,6 +4,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { Loader2, AlertCircle, RefreshCw, ArrowLeft } from 'lucide-react';
+import Cookies from 'js-cookie';
 
 export default function SocialCallbackPage() {
   const router = useRouter();
@@ -26,9 +27,30 @@ export default function SocialCallbackPage() {
 
     setStatus('loading');
     try {
-      await api.get(`/auth/social/callback/${platform}?code=${code}&state=${state}`);
+      const res = await api.get<any>(`/auth/social/callback/${platform}?code=${code}&state=${state}`);
       setStatus('success');
       
+      if (res.data?.token) {
+        const cookieOptions = {
+          expires: 7,
+          secure: window.location.protocol === 'https:',
+          path: '/',
+        };
+        const user = res.data.user;
+        Cookies.set('influnext_token', res.data.token, cookieOptions);
+        Cookies.set('influnext_role', user.role, cookieOptions);
+        Cookies.set('influnext_onboarding', user.onboardingCompleted ? 'true' : 'false', cookieOptions);
+
+        setTimeout(() => {
+          if (!user.onboardingCompleted && user.role === 'INFLUENCER') {
+            router.push('/onboarding');
+          } else {
+            router.push('/dashboard/influencer');
+          }
+        }, 1500);
+        return;
+      }
+
       // Delay de 2 segundos para o usuário ver o feedback de sucesso premium
       setTimeout(() => {
         router.push(`/dashboard/settings?status=success&platform=${platform}`);

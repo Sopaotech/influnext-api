@@ -68,7 +68,7 @@ export default function ContractsPage() {
             <ShieldCheck className="w-5 h-5" />
             Central de Governança // Escrow_Active
           </div>
-          <h1 className="text-5xl font-black text-slate-900 tracking-tighter">
+          <h1 className="text-5xl font-black text-white tracking-tighter">
             Meus <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600">Contratos</span>
           </h1>
           <p className="text-zinc-400 text-xs font-bold uppercase tracking-[0.2em]">

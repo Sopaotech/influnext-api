@@ -18,7 +18,7 @@ export const getGrowthStrategy = async (req: Request, res: Response): Promise<vo
     ]);
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `Você é um consultor de crescimento de SaaS (Growth Hacker) especializado no mercado brasileiro.
     Você está ajudando o Alexsandro, o fundador do InfluNext, a escalar sua plataforma.
@@ -58,14 +58,44 @@ export const getGrowthStrategy = async (req: Request, res: Response): Promise<vo
 
 export const getAdminStats = async (req: Request, res: Response): Promise<void> => {
   try {
-    const [totalUsers, userBreakdown, totalContracts, marketplaceHealth, totalRevenue, totalViews] = await Promise.all([
+    const [
+      totalUsers,
+      userBreakdown,
+      totalContracts,
+      marketplaceHealth,
+      totalRevenue,
+      totalViews,
+      activeSubs,
+      canceledSubs,
+      pastDueSubs,
+      totalSubs,
+      activeUsers,
+      inactiveUsers
+    ] = await Promise.all([
       prisma.user.count(),
       prisma.user.groupBy({ by: ['role'], _count: { _all: true } }),
       prisma.contract.count(),
       prisma.contract.groupBy({ by: ['escrowStatus'], _count: { _all: true } }),
       prisma.contract.aggregate({ _sum: { platformFee: true, budget: true } }),
-      prisma.pageView.count()
+      prisma.pageView.count(),
+      prisma.subscription.count({ where: { status: 'active' } }),
+      prisma.subscription.count({ where: { status: 'canceled' } }),
+      prisma.subscription.count({ where: { status: 'past_due' } }),
+      prisma.subscription.count(),
+      prisma.user.count({ where: { subscriptionStatus: 'ACTIVE' } }),
+      prisma.user.count({ where: { subscriptionStatus: 'INACTIVE' } })
     ]);
+
+    const activeCount = activeSubs > 0 ? activeSubs : activeUsers;
+    const canceledCount = canceledSubs > 0 ? canceledSubs : inactiveUsers;
+    
+    const churnRate = (activeCount + canceledCount) > 0 
+      ? (canceledCount / (activeCount + canceledCount)) * 100 
+      : 0;
+
+    const defaultRate = totalSubs > 0 
+      ? (pastDueSubs / totalSubs) * 100 
+      : 0;
 
     res.json({
       metrics: {
@@ -74,7 +104,12 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
         marketplaceHealth,
         revenue: totalRevenue._sum.platformFee || 0,
         gmv: totalRevenue._sum.budget || 0,
-        pageViews: totalViews
+        pageViews: totalViews,
+        churnRate: Number(churnRate.toFixed(2)),
+        defaultRate: Number(defaultRate.toFixed(2)),
+        activeSubs,
+        canceledSubs,
+        pastDueSubs
       },
       status: 'OK',
       serverTime: new Date().toISOString()

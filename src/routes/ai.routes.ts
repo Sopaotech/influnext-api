@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { AIService } from '../services/ai.service';
 import { authenticate } from '../middlewares/auth.middleware';
 import { Request, Response } from 'express';
+import { prisma } from '../lib/prisma';
 
 const router = Router();
 
@@ -9,8 +10,6 @@ const router = Router();
 router.post('/generate', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
-    const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
     const profile = await prisma.influencerProfile.findUnique({ where: { userId }, select: { id: true } });
 
     if (!profile) {
@@ -30,8 +29,6 @@ router.post('/generate', authenticate, async (req: Request, res: Response): Prom
 router.get('/latest', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
-    const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
     const profile = await prisma.influencerProfile.findUnique({ where: { userId }, select: { id: true } });
 
     if (!profile) {
@@ -57,8 +54,6 @@ router.post('/chat', authenticate, async (req: Request, res: Response): Promise<
       return;
     }
 
-    const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
     const profile = await prisma.influencerProfile.findUnique({ where: { userId }, select: { id: true } });
 
     if (!profile) {

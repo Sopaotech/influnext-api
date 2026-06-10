@@ -1,345 +1,319 @@
 'use client';
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
-import { XCircle, Rocket, BarChart3, Zap, Brain, TrendingUp, ShieldCheck, Target, ArrowRight, CheckCircle2 } from 'lucide-react';
-
-// ─── Data ─────────────────────────────────────────────────────────────────────
+import { 
+  ArrowRight, 
+  CheckCircle2, 
+  XCircle, 
+  Zap, 
+  ShieldCheck, 
+  BarChart3, 
+  Brain, 
+  TrendingUp, 
+  Target, 
+  Rocket, 
+  Star, 
+  ChevronDown, 
+  Search, 
+  User,
+  Lock,
+  Eye,
+  DollarSign,
+  Layout,
+  MessageSquare
+} from 'lucide-react';
 
 const STATS = [
-  { value: '+3.200', label: 'Criadores Auditados' },
-  { value: '+480', label: 'Marcas Ativas' },
-  { value: '100% BRL', label: 'Saques Garantidos via PIX' },
+  { value: '+3.200', label: 'Criadores no Interior & Capitais' },
+  { value: 'R$ 0 Calotes', label: 'Garantia por Escrow Seguro' },
+  { value: '100% Auditado', label: 'Conexão via APIs Oficiais' },
 ];
 
-const PAIN_POINTS = [
-  'Empresas: Cansadas de gastar verba com parcerias fracas, infladas por robôs e sem nenhum retorno financeiro.',
-  'Influenciadores: "Recebidos" não pagam boletos. Chega de permutas baratas; sua carreira exige contratos reais em dinheiro.',
-  'Empresas: "Seguidores" não pagam boleto. Apenas métricas de vaidade não trazem clientes reais para o seu negócio.',
-  'Influenciadores: Chega de perder tempo negociando por DM, lidando com calotes ou correndo atrás de pagamentos atrasados.',
+const FAQ = [
+  { 
+    q: 'O que é o Escrow Seguro da InfluNext?', 
+    a: 'É um sistema de garantia financeira mútua. A marca deposita o orçamento em uma conta de garantia (escrow) retida pela plataforma. O influenciador produz protegido sabendo que o saldo existe, e o valor é liberado automaticamente assim que nossa IA audita a publicação e aprova o link do post.' 
+  },
+  { 
+    q: 'Por que o modelo híbrido de taxas transacionais diminui com o plano?', 
+    a: 'No plano Free, cobramos 15% de comissão por transação. No plano Pro (R$ 49/mês), a comissão cai para 10%. No plano Master (R$ 149/mês), cai para 5%. Criamos essa progressão de escala para que influenciadores profissionais e agências retenham muito mais lucro à medida que faturam alto.' 
+  },
+  { 
+    q: 'Como funciona a proteção contra calotes no interior?', 
+    a: 'Para comércios locais (clínicas, lojas e restaurantes), criamos o micro-escrow. A marca pode contratar campanhas de R$ 300 a R$ 1.500 com total segurança, garantindo que o dinheiro só saia do caixa quando o post local for entregue.' 
+  },
+  { 
+    q: 'O Mentor de IA analisa meus dados reais?', 
+    a: 'Sim! A IA analisa seu nicho, seu engajamento real do Instagram/TikTok/YouTube e os relatórios de onboarding. A partir disso, ela gera roteiros de alta conversão, e-mails de pitch comercial e analisa tendências específicas para a sua geolocalização.' 
+  },
 ];
-
-const CREATOR_FEATURES = [
-  { icon: Brain, text: 'IA Empresária: Roteiros e briefs otimizados de acordo com seu nicho' },
-  { icon: Zap, text: 'Ideias de conteúdo acionáveis e tendências semanais em tempo real' },
-  { icon: TrendingUp, text: 'Dados Auditados: Conecte seu perfil social e gere provas reais de valor' },
-  { icon: Target, text: 'Contratos Seguros: Garantia de pagamento na conta assim que entregar o post' },
-  { icon: BarChart3, text: 'Gestão Profissional: Seu workspace de carreira e finanças em um só lugar' },
-];
-
-const BRAND_FEATURES = [
-  { icon: ShieldCheck, text: 'Métricas de Verdade: Engajamento real, impressões e alcance sem PDFs falsificados' },
-  { icon: XCircle, text: 'Fim dos Bots: Auditoria contínua que limpa seguidores comprados' },
-  { icon: CheckCircle2, text: 'Sem DMs ou Planilhas: Envie briefs, aprove roteiros e pague na mesma tela' },
-  { icon: TrendingUp, text: 'ROI Rastreável: Acompanhe os resultados da campanha em tempo real' },
-  { icon: Target, text: 'Escrow Financeiro: O pagamento do criador fica retido até que você aprove o post' },
-];
-
-const FLOW_STEPS = [
-  { label: '1. Auditoria de Dados', sub: 'Conexão real das redes sociais' },
-  { label: '2. Contratação Direta', sub: 'Envio de briefing claro e valores exatos' },
-  { label: '3. Garantia de Escrow', sub: 'Verba retida de forma segura na plataforma' },
-  { label: '4. Liberação e PIX', sub: 'Pagamento feito na aprovação do conteúdo', highlight: true },
-];
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function LandingPageClient() {
-  return (
-    <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans">
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [scrolled, setScrolled] = useState(false);
 
-      {/* ── Navbar ─────────────────────────────────────────────────────────── */}
-      <nav className="w-full px-6 lg:px-12 py-5 flex justify-between items-center z-30 border-b border-slate-50 bg-white/80 backdrop-blur-xl sticky top-0">
-        <Logo size="md" href="/" />
-        <div className="flex items-center gap-2">
-          <Link href="/auth/login" className="text-slate-500 hover:text-slate-900 text-sm px-4 py-2 font-semibold transition-colors hidden sm:block">
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handler);
+    return () => window.removeEventListener('scroll', handler);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-[#050508] text-white flex flex-col font-sans overflow-x-hidden">
+
+      {/* NAV */}
+      <nav className={`w-full px-6 lg:px-16 py-5 flex justify-between items-center z-50 sticky top-0 transition-all duration-300 ${scrolled ? 'bg-[#050508]/95 backdrop-blur-xl border-b border-white/5 shadow-2xl shadow-black/80' : 'bg-transparent'}`}>
+        <Logo size="md" href="/" variant="light" />
+        
+        {/* Navigation Menu centered */}
+        <div className="hidden md:flex items-center gap-10 text-[10px] font-black uppercase tracking-widest text-zinc-400">
+          <a href="#como-funciona" className="hover:text-white transition-colors">Como Funciona</a>
+          <a href="#preview" className="hover:text-white transition-colors">Visualizar Painel</a>
+          <a href="#problema" className="hover:text-white transition-colors">O Problema</a>
+        </div>
+        
+        {/* Right controls */}
+        <div className="flex items-center gap-4">
+          <Link href="/auth/login" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-colors px-2.5 py-1.5">
             Entrar
           </Link>
-          <Link href="/auth/signup?type=influencer" className="bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-900 text-sm px-4 py-2.5 rounded-xl font-bold transition-all">
-            Criar conta
-          </Link>
-          <Link href="/auth/signup?type=company" className="bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-purple-600/20">
-            Para Marcas
+          
+          <Link href="/auth/signup?type=influencer" className="text-[10px] font-black uppercase tracking-widest bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-500 hover:to-pink-500 text-white px-5 py-2.5 rounded-full transition-all shadow-lg shadow-violet-600/20">
+            Cadastrar
           </Link>
         </div>
       </nav>
 
-      <main className="flex-1 flex flex-col items-center relative overflow-hidden">
+      {/* HERO */}
+      <section className="relative w-full min-h-[95vh] flex flex-col items-center justify-center text-center px-6 pt-12 pb-24 overflow-hidden">
+        {/* bg glows */}
+        <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full bg-violet-600/10 blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-0 left-[20%] w-[500px] h-[400px] rounded-full bg-pink-600/8 blur-[100px] pointer-events-none" />
 
-        {/* Atmospheric bg - Lighter and softer, optimized for performance */}
-        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-          <div className="absolute top-[-10%] left-[10%] w-[80vw] md:w-[800px] h-[60vh] md:h-[600px] rounded-full bg-purple-100/30 blur-[80px] md:blur-[150px]" />
-          <div className="absolute top-[50%] right-[-10%] w-[60vw] md:w-[600px] h-[50vh] md:h-[500px] rounded-full bg-violet-50/30 blur-[60px] md:blur-[130px]" />
-        </div>
-
-        {/* ── HERO ───────────────────────────────────────────────────────────── */}
-        <section className="w-full max-w-7xl mx-auto px-6 lg:px-12 pt-24 md:pt-36 pb-20 flex flex-col items-center text-center z-10">
-
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-50 border border-purple-100 text-purple-600 text-[11px] font-bold uppercase tracking-[0.2em] mb-10">
-            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
-            A plataforma de influência mais séria do Brasil
-          </div>
-
-          <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-black tracking-[-0.04em] leading-[1.1] md:leading-[1.02] mb-6 md:mb-8 max-w-5xl text-slate-900">
-            Pare de queimar verba com{' '}
-            <span className="text-slate-400">seguidores falsos.</span>
-            <br className="hidden md:block" />
-            Comece a contratar{' '}
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
-              resultados reais.
-            </span>
+        <div className="relative z-10 flex flex-col items-center max-w-5xl">
+          <Logo size="xxl" href={null} variant="light" />
+          
+          <h1 className="text-4xl md:text-7xl font-black tracking-tight leading-[1.05] mt-8 mb-6 max-w-4xl">
+            Seus seguidores não pagam boleto.<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-400 to-pink-400">A InfluNext sim.</span>
           </h1>
-
-          <p className="text-base md:text-xl text-slate-500 max-w-3xl mb-10 md:mb-12 leading-relaxed font-medium px-4 md:px-0">
-            Chega de amadorismo no marketing de influência. A INFLUNEXT une <span className="text-slate-900 font-semibold underline decoration-purple-500/30">métricas 100% auditadas</span>, garantia de transações em <span className="text-slate-900 font-semibold underline decoration-purple-500/30">Escrow seguro</span> e inteligência de carreira para que criadores trabalhem focados em faturamento.
+          
+          <p className="text-zinc-400 text-base md:text-xl max-w-2xl leading-relaxed mb-10">
+            Use seus influenciadores para fechar publis reais. Evite que sua empresa invista em seguidores falsos ou criadores que não cumprem o combinado. Uma plataforma segura para marcas e criadores, do briefing ao PIX final com garantia Escrow.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 mb-16 md:mb-20 w-full sm:w-auto px-6 sm:px-0">
-            <Link
-              href="/auth/signup?type=influencer"
-              className="inline-flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-2xl font-bold text-sm uppercase tracking-wider transition-all shadow-xl shadow-purple-600/20 hover:scale-[1.02] active:scale-95"
-            >
-              Começar agora <ArrowRight className="w-4 h-4" />
+          <div className="flex flex-col sm:flex-row gap-4 justify-center w-full max-w-md">
+            <Link href="/auth/signup?type=influencer" className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-500 hover:to-pink-500 text-white px-8 py-4.5 rounded-2xl font-black text-xs uppercase tracking-wider transition-all shadow-2xl shadow-violet-600/30 hover:scale-[1.03] active:scale-95">
+              Criar Conta Grátis <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link
-              href="/auth/signup?type=company"
-              className="inline-flex items-center justify-center border border-slate-200 hover:bg-slate-50 text-slate-900 px-8 py-4 rounded-2xl font-bold text-sm uppercase tracking-wider transition-all"
-            >
-              Sou uma Marca →
-            </Link>
+            <a href="#preview" className="inline-flex items-center justify-center border border-white/10 hover:bg-white/5 text-white px-8 py-4.5 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all">
+              Acessar Demonstração
+            </a>
           </div>
 
-          {/* Metrics bar - Stacks on mobile */}
-          <div className="w-full max-w-2xl border border-slate-100 bg-white shadow-xl shadow-purple-500/5 rounded-2xl flex flex-col md:grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100">
-            {STATS.map(s => (
-              <div key={s.label} className="flex flex-col items-center py-4 md:py-5 px-4">
-                <span className="text-xl md:text-3xl font-black text-slate-900 tracking-tight">
-                  {s.value}
-                </span>
-                <span className="text-[9px] md:text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-1 text-center">{s.label}</span>
+          {/* Stats Bar */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-16 mt-20 pt-10 border-t border-white/5 w-full max-w-4xl">
+            {STATS.map((s, i) => (
+              <div key={i} className="flex flex-col items-center md:items-start gap-1">
+                <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-pink-400">{s.value}</span>
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">{s.label}</span>
               </div>
             ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* ── A FERIDA ───────────────────────────────────────────────────────── */}
-        <section className="w-full max-w-7xl mx-auto px-6 lg:px-12 pb-24 z-10">
-          <div className="bg-slate-50 border border-slate-100 rounded-3xl p-8 md:p-12 space-y-8 shadow-inner">
+      {/* MOCKUP PREVIEW (Despertar Curiosidade) */}
+      <section id="preview" className="relative w-full max-w-6xl mx-auto px-6 py-20">
+         <div className="text-center mb-12">
+            <p className="text-violet-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">✦ Por dentro da plataforma</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight">O Escritório Digital do Criador de Sucesso</h2>
+            <p className="text-zinc-500 text-xs mt-3">Curioso para ver como funciona? Dê uma espiada na nossa interface de controle financeiro e tarefas:</p>
+         </div>
 
-            <div className="space-y-2 text-center md:text-left">
-              <p className="text-red-500 text-[11px] font-black uppercase tracking-[0.25em]">⚠ Você ainda faz isso?</p>
-              <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
-                Se você respondeu <span className="text-red-500">SIM</span> para qualquer um destes…
-              </h2>
-              <p className="text-slate-500 text-sm">…você está deixando dinheiro e crescimento na mesa todo dia.</p>
+         {/* Dashboard Window Chrome Mockup */}
+         <div className="border border-white/10 rounded-[2rem] bg-black/40 overflow-hidden shadow-2xl relative shadow-violet-900/10">
+            {/* Header chrome buttons */}
+            <div className="h-12 border-b border-white/5 px-6 flex items-center justify-between bg-zinc-950/60">
+               <div className="flex gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                  <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                  <div className="w-3 h-3 rounded-full bg-green-500/80" />
+               </div>
+               <div className="text-[9px] font-bold text-zinc-600 tracking-widest uppercase">dashboard.influnext.com</div>
+               <div className="w-12" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {PAIN_POINTS.map((pain, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-4 p-5 bg-white border border-red-100 rounded-2xl group hover:border-red-200 transition-all shadow-sm"
-                >
-                  <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-slate-700 font-medium leading-relaxed">{pain}</p>
-                </div>
-              ))}
-            </div>
+            {/* Dashboard Mockup Body */}
+            <div className="p-6 md:p-10 grid grid-cols-1 md:grid-cols-3 gap-6 opacity-85 hover:opacity-100 transition-opacity duration-300">
+               {/* Left Column: Wallet & Escrow Status */}
+               <div className="space-y-6">
+                  {/* Escrow Status Card */}
+                  <div className="p-6 rounded-3xl border border-green-500/20 bg-green-500/5 space-y-4">
+                     <div className="flex justify-between items-center">
+                        <span className="text-[8px] font-black text-green-400 uppercase tracking-widest">Escrow Ativo</span>
+                        <ShieldCheck className="text-green-400 w-5 h-5" />
+                     </div>
+                     <div>
+                        <p className="text-xs font-bold text-zinc-400">Garantia Retida em Juízo</p>
+                        <p className="text-3xl font-black text-white tracking-tighter mt-1">R$ 3.500,00</p>
+                     </div>
+                     <p className="text-[9px] text-zinc-500 leading-relaxed font-bold uppercase tracking-wider">
+                        Depósito Loreal Brasil SA verificado. Pagamento garantido assim que o Reels for postado.
+                     </p>
+                  </div>
 
-            <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p className="text-slate-500 text-sm font-semibold">
-                Isso tem solução. E ela chama-se <span className="text-slate-900 font-black">InfluNext</span>.
-              </p>
-              <Link
-                href="/auth/signup?type=influencer"
-                className="inline-flex items-center gap-2 text-sm font-black text-purple-600 hover:text-purple-700 transition-colors uppercase tracking-wider"
-              >
-                Quero resolver isso agora <ArrowRight className="w-4 h-4" />
+                  {/* Wallet Faturamento Card */}
+                  <div className="p-6 rounded-3xl border border-white/5 bg-white/[0.02] space-y-4">
+                     <div className="flex justify-between items-center">
+                        <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Saldo Disponível</span>
+                        <DollarSign className="text-zinc-400 w-4 h-4" />
+                     </div>
+                     <div>
+                        <p className="text-3xl font-black text-white tracking-tighter">R$ 4.250,00</p>
+                     </div>
+                     <div className="flex gap-2">
+                        <span className="text-[8px] bg-green-500/10 text-green-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Livre para Saque</span>
+                     </div>
+                  </div>
+               </div>
+
+               {/* Center Column: Deliverables & Campaign Tasks */}
+               <div className="p-6 rounded-3xl border border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent flex flex-col justify-between gap-6 md:col-span-2">
+                  <div className="space-y-4">
+                     <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center text-white">
+                           <Layout size={18} />
+                        </div>
+                        <div>
+                           <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Cronograma de Entrega</p>
+                           <p className="text-sm font-bold text-white">Entregáveis do Contrato Ativo</p>
+                        </div>
+                     </div>
+
+                     <div className="space-y-3">
+                        <div className="p-4 rounded-2xl bg-zinc-950/80 border border-white/5 space-y-2">
+                           <div className="flex justify-between items-center">
+                              <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wider">Tarefa 1: Publicações Iniciais</span>
+                              <span className="text-[8px] bg-yellow-500/10 text-yellow-500 font-bold px-2 py-0.5 rounded">Em produção</span>
+                           </div>
+                           <p className="text-[10px] text-zinc-500 leading-relaxed font-bold">
+                              Preparar três posts para o produto total para a empresa Loreal Brasil SA.
+                           </p>
+                        </div>
+
+                        <div className="p-4 rounded-2xl bg-zinc-950/80 border border-white/5 space-y-2">
+                           <div className="flex justify-between items-center">
+                              <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wider">Tarefa 2: Stories Sequenciais</span>
+                              <span className="text-[8px] bg-green-500/10 text-green-500 font-bold px-2 py-0.5 rounded">Aprovado</span>
+                           </div>
+                           <p className="text-[10px] text-zinc-500 leading-relaxed font-bold">
+                              Criar um post de feed e quatro stories de engajamento demonstrando a aplicação real do produto.
+                           </p>
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* Simulated Status Footer */}
+                  <div className="border-t border-white/5 pt-4 flex items-center justify-between text-[10px] text-zinc-500">
+                     <span>Próximo prazo: 15 de Junho de 2026</span>
+                     <span className="font-bold text-white uppercase tracking-wider">Acompanhar Progresso</span>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </section>
+
+      {/* O PROBLEMA (Foco na dor do influenciador local e desintermediação) */}
+      <section id="problema" className="w-full max-w-7xl mx-auto px-6 lg:px-16 py-20">
+        <div className="border border-red-500/10 bg-red-500/5 rounded-[3rem] p-8 md:p-14">
+          <p className="text-red-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">⚠ A dura realidade que ninguém te conta</p>
+          <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-10 leading-tight">
+            Se você está no interior ou é micro-influenciador,<br />
+            <span className="text-red-400">você é explorado.</span>
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              'Micro-influenciadores locais com 5.000 seguidores hiper-engajados trabalhando por "permuta de lanche" enquanto marcas faturam em cima do seu alcance.',
+              'Contratos fechados via WhatsApp que viram calote. Sem garantia jurídica, você Houston, produz, posta e torce para a marca pagar.',
+              'Marcas locais que têm medo de contratar publicidade porque não confiam se o influenciador realmente vai postar nas datas corretas.',
+              'Ausência completa de relatórios profissionais: sem saber ROI ou retenção, você não consegue cobrar o valor justo pelo seu trabalho.',
+            ].map((pain, i) => (
+              <div key={i} className="flex items-start gap-4 p-6 bg-white/[0.01] border border-red-500/10 rounded-2xl">
+                <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-zinc-300 font-medium leading-relaxed">{pain}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-8 pt-8 border-t border-red-500/10 text-center">
+             <p className="text-zinc-400 text-sm">
+                A InfluNext profissionaliza essa relação. Conectamos criadores locais a marcas locais sob um ecossistema de **segurança contratual mútua**.
+             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="w-full max-w-4xl mx-auto px-6 lg:px-16 py-20">
+        <div className="text-center mb-16">
+          <p className="text-violet-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">Dúvidas</p>
+          <h2 className="text-4xl font-black tracking-tight">Perguntas frequentes.</h2>
+        </div>
+        <div className="space-y-3">
+          {FAQ.map((item, i) => (
+            <div key={i} className="border border-white/5 bg-white/[0.02] rounded-2xl overflow-hidden">
+              <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full flex items-center justify-between p-6 text-left">
+                <span className="font-bold text-sm text-white">{item.q}</span>
+                <ChevronDown className={`w-4 h-4 text-zinc-500 flex-shrink-0 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
+              </button>
+              {openFaq === i && (
+                <div className="px-6 pb-6 text-zinc-400 text-sm leading-relaxed border-t border-white/5 pt-4">{item.a}</div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA FINAL */}
+      <section className="w-full max-w-7xl mx-auto px-6 lg:px-16 py-12 pb-28">
+        <div className="relative rounded-[3rem] overflow-hidden bg-gradient-to-br from-violet-900/80 via-[#0a0a1a] to-pink-900/40 border border-violet-500/20 p-12 md:p-24 text-center">
+          <div className="absolute inset-0 bg-gradient-to-t from-violet-600/5 to-transparent" />
+          <div className="relative z-10 space-y-8 max-w-4xl mx-auto">
+            <p className="text-violet-400 text-[10px] font-black uppercase tracking-[0.3em]">Pronto para o próximo nível?</p>
+            <h2 className="text-5xl md:text-7xl font-black tracking-tight">
+              Seguidores não pagam boleto.<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-pink-400">A InfluNext paga.</span>
+            </h2>
+            <p className="text-zinc-400 text-lg max-w-2xl mx-auto">
+              Experimente grátis. Acelere seu crescimento local com inteligência artificial e garanta o seu faturamento seguro no final do mês.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+              <Link href="/auth/signup?type=influencer" className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-500 hover:to-pink-500 text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-wider transition-all shadow-2xl shadow-violet-600/30 hover:scale-[1.03] active:scale-95">
+                Criar conta grátis <ArrowRight className="w-5 h-5" />
+              </Link>
+              <Link href="/auth/login" className="inline-flex items-center justify-center border border-white/10 hover:bg-white/5 text-white px-12 py-5 rounded-2xl font-bold text-sm uppercase tracking-wider transition-all">
+                Já tenho conta
               </Link>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* ── ECOSYSTEM FLOW ─────────────────────────────────────────────────── */}
-        <section className="w-full max-w-7xl mx-auto px-6 lg:px-12 pb-24 z-10">
-          <div className="text-center mb-12 space-y-2">
-            <p className="text-purple-600 text-[11px] font-black uppercase tracking-[0.25em]">Como o Ecossistema Funciona</p>
-            <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">O fluxo que elimina o risco</h2>
-          </div>
-
-          <div className="flex flex-col md:flex-row items-center justify-center gap-4">
-            {FLOW_STEPS.map((step, i) => (
-              <React.Fragment key={i}>
-                <div className={`flex flex-col items-center text-center p-6 rounded-2xl min-w-[180px] transition-all ${step.highlight
-                  ? 'bg-white border-2 border-purple-200 shadow-xl shadow-purple-500/10'
-                  : 'bg-white border border-slate-100 shadow-sm'
-                }`}>
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black mb-3 ${step.highlight ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                    {i + 1}
-                  </div>
-                  <p className={`font-black text-sm ${step.highlight ? 'text-purple-600' : 'text-slate-900'}`}>{step.label}</p>
-                  <p className="text-[10px] text-slate-400 font-semibold mt-1 max-w-[120px]">{step.sub}</p>
-                </div>
-
-                {i < FLOW_STEPS.length - 1 && (
-                  <div className="flex items-center justify-center w-8 md:w-12 h-8 md:h-auto my-2 md:my-0 flex-shrink-0">
-                    <ArrowRight className="w-5 h-5 text-slate-200 rotate-90 md:rotate-0" />
-                  </div>
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-        </section>
-
-        {/* ── O ABRAÇO: CREATOR + BRAND ──────────────────────────────────────── */}
-        <section className="w-full max-w-7xl mx-auto px-6 lg:px-12 pb-24 z-10">
-          <div className="text-center mb-12 space-y-2">
-            <p className="text-purple-600 text-[11px] font-black uppercase tracking-[0.25em]">A Proposta de Valor</p>
-            <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
-              Dois lados. Um ecossistema. Resultado real.
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            {/* Creator Side */}
-            <div className="relative bg-white border border-slate-100 hover:border-purple-200 rounded-[2.5rem] p-8 md:p-10 overflow-hidden group transition-all duration-500 shadow-sm hover:shadow-xl hover:shadow-purple-500/5">
-              <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-purple-50 blur-[80px] group-hover:bg-purple-100 transition-all" />
-              <div className="relative z-10 space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-purple-600 flex items-center justify-center shadow-lg shadow-purple-600/20">
-                    <Rocket className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest">Para Influencers</p>
-                    <h3 className="text-xl font-black text-slate-900">Workspace de Carreira</h3>
-                  </div>
-                </div>
-
-                <p className="text-slate-500 text-sm leading-relaxed">
-                  Pare de improvisar. Nossa IA gerencia sua carreira em tempo real — você foca em criar, a plataforma cuida do resto.
-                </p>
-
-                <ul className="space-y-3">
-                  {CREATOR_FEATURES.map(({ icon: Icon, text }) => (
-                    <li key={text} className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center flex-shrink-0">
-                        <Icon className="w-3.5 h-3.5 text-purple-600" />
-                      </div>
-                      <span className="text-sm text-slate-600 font-medium">{text}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <Link
-                  href="/auth/signup?type=influencer"
-                  className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3.5 rounded-xl font-bold text-sm transition-all"
-                >
-                  Quero meu Workspace <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-            </div>
-
-            {/* Brand Side */}
-            <div className="relative bg-white border border-slate-100 hover:border-blue-200 rounded-[2.5rem] p-8 md:p-10 overflow-hidden group transition-all duration-500 shadow-sm hover:shadow-xl hover:shadow-blue-500/5">
-              <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-blue-50 blur-[80px] group-hover:bg-blue-100 transition-all" />
-              <div className="relative z-10 space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/20">
-                    <BarChart3 className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Para Marcas</p>
-                    <h3 className="text-xl font-black text-slate-900">Marketplace com Escrow</h3>
-                  </div>
-                </div>
-
-                <p className="text-slate-500 text-sm leading-relaxed">
-                  Contrate com dados. Pague com segurança. Acompanhe o ROI. Sem planilha, sem DM, sem surpresa.
-                </p>
-
-                <ul className="space-y-3">
-                  {BRAND_FEATURES.map(({ icon: Icon, text }) => (
-                    <li key={text} className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
-                        <Icon className="w-3.5 h-3.5 text-blue-600" />
-                      </div>
-                      <span className="text-sm text-slate-600 font-medium">{text}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <Link
-                  href="/auth/signup?type=company"
-                  className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3.5 rounded-xl font-bold text-sm transition-all"
-                >
-                  Quero contratar com segurança <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── CTA FINAL ──────────────────────────────────────────────────────── */}
-        <section className="w-full max-w-7xl mx-auto px-6 lg:px-12 pb-28 z-10">
-          <div className="relative rounded-[3rem] overflow-hidden bg-slate-900 p-8 md:p-16 lg:p-24 shadow-2xl">
-            <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-purple-600/20 to-transparent" />
-            
-            <div className="relative z-10 text-center space-y-8 max-w-4xl mx-auto">
-              <p className="text-purple-400 text-[11px] font-black uppercase tracking-[0.25em]">Chega de amadorismo</p>
-
-              <h2 className="text-4xl md:text-5xl lg:text-7xl font-black text-white tracking-[-0.04em] leading-tight font-sans">
-                Seguidores não{' '}
-                <span className="text-red-400">pagam boleto.</span>
-                <br />
-                <span className="text-purple-400">Recebidos também não.</span>
-              </h2>
-
-              <p className="text-slate-400 text-base md:text-xl leading-relaxed max-w-2xl mx-auto">
-                Seja você uma marca que quer{' '}
-                <span className="text-white font-semibold">resultado real</span>{' '}
-                ou um criador que quer ser{' '}
-                <span className="text-white font-semibold">levado a sério</span>{' '}
-                — o seu lugar é aqui.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-                <Link
-                  href="/auth/signup?type=influencer"
-                  className="inline-flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-10 py-5 rounded-2xl font-black text-base uppercase tracking-wider transition-all shadow-xl shadow-purple-600/30 hover:scale-105 active:scale-95"
-                >
-                  Começar agora, é grátis <ArrowRight className="w-5 h-5" />
-                </Link>
-                <Link
-                  href="/auth/login"
-                  className="border border-white/10 hover:bg-white/5 text-white px-10 py-5 rounded-2xl font-bold text-sm uppercase tracking-wider transition-all"
-                >
-                  Já tenho conta
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
-
-      </main>
-
-      {/* ── Footer ─────────────────────────────────────────────────────────────── */}
-      <footer className="w-full border-t border-slate-50 py-12 px-6 lg:px-12 bg-white">
+      {/* FOOTER */}
+      <footer className="w-full border-t border-white/5 py-14 px-6 lg:px-16 bg-[#050508]">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex flex-col items-center md:items-start gap-2">
-            <Logo size="sm" href="/" />
-            <p className="text-slate-400 text-xs">© 2026 InfluNext. Todos os direitos reservados.</p>
+            <Logo size="sm" href="/" variant="light" />
+            <p className="text-zinc-600 text-[11px]">© 2026 InfluNext. Todos os direitos reservados.</p>
           </div>
-          
-          <div className="flex gap-8 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
-            <Link href="/auth/login" className="hover:text-purple-600 transition-colors">Entrar</Link>
-            <Link href="/auth/signup" className="hover:text-purple-600 transition-colors">Cadastrar</Link>
-            <Link href="/dashboard/marketplace" className="hover:text-purple-600 transition-colors">Marketplace</Link>
+          <div className="flex gap-8 text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
+            <Link href="/auth/login" className="hover:text-violet-400 transition-colors">Entrar</Link>
+            <Link href="/auth/signup" className="hover:text-violet-400 transition-colors">Cadastrar</Link>
+            <Link href="/dashboard/marketplace" className="hover:text-violet-400 transition-colors">Marketplace</Link>
           </div>
-
-          <div className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-slate-50 border border-slate-100 text-[10px] font-black text-slate-400 tracking-wider">
-            🛡️ TECNOLOGIA IA & ESCROW — FEITO NO BRASIL
+          <div className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/5 bg-white/[0.02] text-[9px] font-black text-zinc-600 tracking-wider">
+            🛡️ ESCROW SEGURO · IA BRASILEIRA · FEITO NO BRASIL
           </div>
         </div>
       </footer>

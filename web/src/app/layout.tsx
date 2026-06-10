@@ -23,58 +23,43 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "InfluNext — A Plataforma #1 de Gestão para Influenciadores de Elite",
+    default: "InfluNext — Influência que Gera Resultado Real",
     template: "%s | InfluNext"
   },
-  description: "Transforme sua influência em um negócio de alto nível. Gestão estratégica, Media Kit dinâmico, pagamentos seguros com Escrow e suporte de IA para criadores e marcas.",
-  keywords: ["marketing de influência", "gestão de carreira influenciador", "pagamento seguro escrow", "media kit digital", "influenciadores de elite", "IA para criadores", "InfluNext"],
+  description: "A plataforma que une criadores verificados e marcas sérias com métricas auditadas, contratos inteligentes e Escrow seguro. Chega de calote. Chega de permuta.",
+  keywords: ["marketing de influência", "influenciadores verificados", "escrow pagamento influencer", "plataforma influencer brasil", "gestão influenciador", "IA criadores conteúdo", "InfluNext"],
   authors: [{ name: "InfluNext Team" }],
   creator: "InfluNext",
   publisher: "InfluNext",
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
+  formatDetection: { email: false, address: false, telephone: false },
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://influnext.com.br'),
-  alternates: {
-    canonical: '/',
+  alternates: { canonical: '/' },
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
   },
   openGraph: {
-    title: "InfluNext — O Futuro do Marketing de Influência",
-    description: "Conecte marcas e influenciadores com segurança total e Inteligência Artificial.",
+    title: "InfluNext — A plataforma que une Influenciadores e Marcas com segurança real",
+    description: "Métricas auditadas, Escrow financeiro e IA para criadores e marcas que levam influência a sério.",
     url: 'https://influnext.com.br',
     siteName: 'InfluNext',
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'InfluNext Pro Max Dashboard',
-      },
-    ],
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'InfluNext — Influência que Gera Resultado' }],
     locale: 'pt_BR',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: "InfluNext — Seu Escritório Digital Neural",
-    description: "Gestão estratégica para criadores que buscam o próximo nível.",
+    title: "InfluNext — Influência que Gera Resultado Real",
+    description: "Métricas auditadas, Escrow e IA. A plataforma mais séria do Brasil para criadores e marcas.",
     images: ['/og-image.png'],
     creator: '@influnext',
   },
   robots: {
     index: true,
     follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
+    googleBot: { index: true, follow: true, 'max-video-preview': -1, 'max-image-preview': 'large', 'max-snippet': -1 },
   },
-
   manifest: '/manifest.json'
 };
 
@@ -118,9 +103,10 @@ export default function RootLayout({
         />
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableThemeOnChange={false}
+          defaultTheme="dark"
+          forcedTheme="dark"
+          enableSystem={false}
+          disableThemeOnChange
           disableTransitionOnChange
         >
           <AppearanceManager />

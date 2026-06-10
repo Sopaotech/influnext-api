@@ -108,15 +108,9 @@ export default function CompanyDashboard() {
       </header>
 
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-        <div className="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-6 shadow-xl">
-          <MetricCard title="Investimento Escrow" value={`$${stats.totalInvested.toLocaleString('pt-BR')}`} icon={DollarSign} />
-        </div>
-        <div className="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-6 shadow-xl">
-          <MetricCard title="Contratos Ativos" value={stats.activeContracts} icon={FileText} />
-        </div>
-        <div className="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-6 shadow-xl">
-          <MetricCard title="Entregas na Fila" value={stats.pendingReviews} icon={AlertCircle} />
-        </div>
+        <MetricCard title="Investimento Escrow" value={`$${stats.totalInvested.toLocaleString('pt-BR')}`} icon={DollarSign} />
+        <MetricCard title="Contratos Ativos" value={stats.activeContracts} icon={FileText} />
+        <MetricCard title="Entregas na Fila" value={stats.pendingReviews} icon={AlertCircle} />
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

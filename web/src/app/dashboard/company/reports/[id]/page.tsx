@@ -121,7 +121,7 @@ export default function CampaignReportPage({ params }: { params: { id: string } 
         </div>
       </header>
 
-      {/* Viak AI Analysis Box */}
+      {/* InfluNext AI Analysis Box */}
       <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-8 rounded-[2rem] text-white relative overflow-hidden shadow-2xl">
         <div className="absolute right-0 top-0 w-64 h-64 bg-purple-500/20 blur-[60px] rounded-full" />
         <div className="relative z-10 flex items-start gap-4">
@@ -129,7 +129,7 @@ export default function CampaignReportPage({ params }: { params: { id: string } 
             <Sparkles className="w-6 h-6 text-purple-400" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-xs font-black text-purple-400 uppercase tracking-widest">Inteligência Viak Analisa:</h3>
+            <h3 className="text-xs font-black text-purple-400 uppercase tracking-widest">Inteligência InfluNext Analisa:</h3>
             <p className="text-lg md:text-xl font-medium text-slate-200 leading-relaxed">
               "Excelente escolha! Esta campanha com <span className="text-white font-black">@{influencerHandle}</span> superou a média de engajamento do segmento em <span className="text-white font-black">15%</span>. O custo por clique estimado ficou em R$ {cpc}, gerando um alto potencial de conversão e retorno para o seu negócio."
             </p>

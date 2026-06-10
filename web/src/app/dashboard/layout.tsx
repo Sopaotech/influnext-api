@@ -22,62 +22,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Fundo dinâmico baseado no perfil
-  const [bgUrl, setBgUrl] = useState(BACKGROUNDS[0].url);
+  // Fundo dinâmico baseado no perfil - Forçado para Dark Theme Premium
   const [profileImg, setProfileImg] = useState<string | null>(null);
   const [taskCount, setTaskCount] = useState(0);
+  const isDark = true;
 
   React.useEffect(() => {
     const fetchTheme = async () => {
       try {
         const res = await api.get('/dashboard/influencer');
-        // Usar userState.theme que agora retornamos na API
-        const userTheme = res.data.userState?.theme;
-        if (userTheme) {
-          if (userTheme === 'light' || userTheme === 'default') {
-            setBgUrl('#ffffff');
-          } else if (userTheme === 'dark') {
-            setBgUrl('#09090b');
-          } else {
-            setBgUrl(userTheme);
-          }
-        }
         if (res.data.profile?.profileImageUrl) {
           setProfileImg(res.data.profile.profileImageUrl);
         }
-        // Buscar count de tasks pendentes
         const pendingCount = res.data.tasks?.filter((t: any) => !t.isDone).length || 0;
         setTaskCount(pendingCount);
+
+        // Verificação de Paywall para planos expirados/inativos
+        const userState = res.data.profile?.user;
+        if (userState && userState.role !== 'ADMIN') {
+          const isExpired = userState.subscriptionStatus === 'INACTIVE' || 
+            (userState.subscriptionStatus === 'TRIAL' && userState.trialEndsAt && new Date() > new Date(userState.trialEndsAt));
+          
+          if (isExpired && pathname !== '/dashboard/subscription' && pathname !== '/dashboard/settings') {
+            router.push('/dashboard/subscription');
+          }
+        }
       } catch (err) {
-        console.error('Erro ao carregar tema:', err);
+        console.error('Erro ao carregar dados:', err);
       }
     };
     fetchTheme();
-    
-    // Escutar por mudanças de tema via evento customizado (para SettingsPage)
-    const handleThemeUpdate = (e: any) => {
-      if (e.detail?.theme) {
-        const theme = e.detail.theme;
-        if (theme === 'light' || theme === 'default') {
-          setBgUrl('#ffffff');
-        } else if (theme === 'dark') {
-          setBgUrl('#09090b');
-        } else {
-          setBgUrl(theme);
-        }
-      }
-    };
-    window.addEventListener('theme-updated', handleThemeUpdate);
-    return () => window.removeEventListener('theme-updated', handleThemeUpdate);
-  }, []);
+  }, [pathname, router]);
 
   const handleLogout = () => {
-    // Força a remoção de cookies sem depender de domínio exato que pode falhar em dev vs prod
     Cookies.remove('influnext_token', { path: '/' });
     Cookies.remove('influnext_role', { path: '/' });
     Cookies.remove('influnext_onboarding', { path: '/' });
-    
-    // Hard redirect para limpar estado do React
     window.location.href = '/auth/login';
   };
 
@@ -102,35 +82,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ];
 
   return (
-    <div className="min-h-screen relative flex text-slate-900 font-sans selection:bg-slate-900/10 overflow-hidden">
+    <div className="min-h-screen relative flex font-sans selection:bg-slate-900/10 overflow-hidden text-white">
       
-      {/* Background Layer - Dinâmico */}
-      <div 
-        className="fixed inset-0 z-0 transition-all duration-1000 ease-in-out scale-105"
-        style={
-          bgUrl.startsWith('http') || bgUrl.startsWith('/') || bgUrl.startsWith('data:')
-            ? {
-                backgroundImage: `url(${bgUrl})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-              }
-            : {
-                background: bgUrl,
-              }
-        }
-      />
+      {/* Background Layer - Solid Slate base */}
+      <div className="fixed inset-0 z-0 bg-[#050508]" />
       
-      {/* Overlay para suavizar o fundo e garantir contraste - Glassmorphism Adaptativo */}
-      <div className="fixed inset-0 z-0 bg-white/10 backdrop-blur-[2px]" />
-      <div className="fixed inset-0 z-0 bg-gradient-to-tr from-white/20 via-transparent to-white/20" />
-      <div className="fixed inset-0 z-0 shadow-[inset_0_0_200px_rgba(255,255,255,0.2)] pointer-events-none" />
+      {/* Premium Atmospheric Background Glows & Subtle Grid */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        {/* Main violet glow — top center */}
+        <div className="absolute top-[-15%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] rounded-full bg-violet-600/10 blur-[130px]" />
+        {/* Pink accent — bottom right */}
+        <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-pink-600/6 blur-[110px]" />
+        {/* Subtle grid texture */}
+        <div
+          className="absolute inset-0 opacity-[0.015]"
+          style={{
+            backgroundImage: 'linear-gradient(rgba(139,92,246,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.3) 1px, transparent 1px)',
+            backgroundSize: '60px 60px',
+          }}
+        />
+      </div>
 
       {/* Mobile Header - Glass */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-[100] bg-white/5 backdrop-blur-xl border-b border-white/10 p-4 flex items-center justify-between">
-        <Logo size="sm" href="/dashboard/influencer" textColor="text-white" />
+      <header className={`md:hidden fixed top-0 left-0 right-0 z-[100] border-b p-4 flex items-center justify-between transition-all duration-500 ${isDark ? 'bg-black/45 backdrop-blur-xl border-white/5' : 'bg-white/5 backdrop-blur-xl border-white/10'}`}>
+        <Logo size="sm" href="/dashboard/influencer" variant="light" />
         <div className="flex items-center gap-3">
            <Link href="/dashboard/settings" className="w-8 h-8 rounded-full border border-white/20 p-0.5 block hover:scale-110 transition-transform">
-             <div className="w-full h-full rounded-full bg-white/20 overflow-hidden">
+             <div className={`w-full h-full rounded-full overflow-hidden ${isDark ? 'bg-white/10' : 'bg-white/20'}`}>
                <img src={profileImg || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"} alt="User Profile" className="w-full h-full object-cover" />
              </div>
            </Link>
@@ -139,12 +117,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Sidebar - Glassmorphism */}
       <aside 
-        className="hidden md:flex relative z-10 h-screen w-[220px] bg-white/5 border-r border-white/10 flex flex-col justify-between shadow-sm"
+        className={`hidden md:flex relative z-10 h-screen w-[220px] border-r flex flex-col justify-between shadow-sm transition-all duration-500 ${isDark ? 'bg-black/40 border-white/5' : 'bg-white/5 border-white/10'}`}
         style={{ backdropFilter: 'blur(30px)' }}
       >
         <div className="p-8">
           <div className="hidden md:flex items-center mb-12 px-2">
-            <Logo size="sm" href="/dashboard/influencer" textColor="text-white" />
+            <Logo size="sm" href="/dashboard/influencer" variant="light" />
           </div>
           
           <nav className="space-y-1.5">
@@ -158,44 +136,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   className={`
                     flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-500 group relative
                     ${isActive 
-                      ? 'bg-slate-900 text-white shadow-lg' 
-                      : 'text-slate-500 hover:text-slate-900 hover:bg-white/10'}
+                      ? (isDark ? 'bg-white text-slate-950 shadow-lg' : 'bg-slate-900 text-white shadow-lg') 
+                      : (isDark ? 'text-zinc-400 hover:text-white hover:bg-white/5' : 'text-slate-500 hover:text-slate-900 hover:bg-white/10')}
                   `}
                 >
                   {isActive ? (
-                    <item.icon className="w-4 h-4 text-white" />
+                    <item.icon className={`w-4 h-4 ${isDark ? 'text-slate-950' : 'text-white'}`} />
                   ) : (
                     <div className="relative">
-                      <item.icon className="w-4 h-4 text-slate-400 group-hover:text-slate-900" />
-                      {item.badgeCount && item.badgeCount > 0 && (
-                        <div className="absolute -top-2 -right-2 min-w-[14px] h-[14px] px-1 bg-rose-600 rounded-full flex items-center justify-center border-2 border-white/50 shadow-sm">
-                          <span className="text-[7px] text-white font-black leading-none">{item.badgeCount}</span>
-                        </div>
-                      )}
+                      <item.icon className={`w-4 h-4 ${isDark ? 'text-zinc-400 group-hover:text-white' : 'text-slate-400 group-hover:text-slate-900'}`} />
+                      {item.badgeCount !== undefined && item.badgeCount > 0 ? (
+                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-rose-600 rounded-full border border-slate-950 shadow-sm animate-pulse" />
+                      ) : null}
                     </div>
                   )}
                   
-                  <span className={`text-[10px] font-black uppercase tracking-[0.2em] drop-shadow-sm ${isActive ? 'opacity-100' : 'opacity-80 group-hover:opacity-100 text-slate-600'}`}>
+                  <span className={`text-[10px] font-black uppercase tracking-[0.2em] drop-shadow-sm ${isActive ? 'opacity-100' : `opacity-80 group-hover:opacity-100 ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}`}>
                     {item.name}
                   </span>
 
                   {/* Badge redundante para destaque visual no modo Ativo, se necessário */}
-                  {isActive && item.badgeCount && item.badgeCount > 0 && (
-                    <span className="absolute top-2 right-4 flex h-2 w-2">
+                  {isActive && item.badgeCount !== undefined && item.badgeCount > 0 ? (
+                    <span className="absolute top-2 right-4 flex h-1.5 w-1.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-rose-500"></span>
                     </span>
-                  )}
+                  ) : null}
                 </Link>
               );
             })}
           </nav>
         </div>
         
-        <div className="p-8 border-t border-white/5 space-y-8">
+        <div className={`p-8 border-t space-y-8 transition-colors duration-500 ${isDark ? 'border-white/5' : 'border-white/5'}`}>
           <button 
             onClick={handleLogout} 
-            className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-rose-600 transition-all group"
+            className={`w-full flex items-center gap-3 px-4 py-3 text-[10px] font-black uppercase tracking-[0.3em] transition-all group ${isDark ? 'text-zinc-400 hover:text-rose-500' : 'text-slate-400 hover:text-rose-600'}`}
           >
             <LogOut className="w-4 h-4 group-hover:-translate-x-1" />
             Sair
@@ -207,9 +183,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <main className="flex-1 relative z-10 w-full h-screen pt-16 md:pt-0 overflow-y-auto custom-scrollbar">
         <div className="min-h-full">
           {isAdmin && (
-            <Link href="/dashboard/admin" className="block bg-slate-900 text-white px-6 py-2 flex items-center justify-center gap-2">
-               <ShieldCheck className="w-4 h-4" />
-               <span className="text-[9px] font-black uppercase tracking-[0.25em]">Painel Admin</span>
+            <Link href="/dashboard/admin" className="block w-full py-2.5 bg-gradient-to-r from-violet-900/30 via-pink-950/10 to-violet-900/30 border-b border-violet-500/10 hover:from-violet-900/50 hover:to-violet-900/50 transition-all text-center">
+               <span className="inline-flex items-center justify-center gap-2 text-[10px] font-black text-violet-300 uppercase tracking-[0.3em]">
+                  <ShieldCheck className="w-3.5 h-3.5" /> Painel de Controle Admin
+               </span>
             </Link>
           )}
           <div className="p-4 md:p-10">
@@ -223,7 +200,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <BottomNav taskCount={taskCount} />
       </div>
 
-      <Toaster theme="light" position="bottom-right" />
+      <Toaster theme={isDark ? 'dark' : 'light'} position="bottom-right" />
       
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {

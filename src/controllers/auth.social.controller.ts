@@ -3,6 +3,19 @@ import { prisma } from '../lib/prisma';
 import axios from 'axios';
 import { ScoringService } from '../services/scoring.service';
 import { InstagramService } from '../services/instagram.service';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
+import { v4 as uuidv4 } from 'uuid';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_change_me';
+
+function signFullToken(user: { id: string; role: string; email: string }) {
+  return jwt.sign(
+    { id: user.id, role: user.role, email: user.email },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+}
 
 export class SocialAuthController {
   static async getAuthUrls(req: Request, res: Response) {
@@ -20,9 +33,22 @@ export class SocialAuthController {
     res.json(urls);
   }
 
+  static async getPublicAuthUrls(req: Request, res: Response) {
+    const rawFrontendUrl = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
+    const frontendUrl = rawFrontendUrl.endsWith('/') ? rawFrontendUrl.slice(0, -1) : rawFrontendUrl;
+    
+    const urls = {
+      instagram: `https://www.facebook.com/v20.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/instagram&scope=instagram_basic,instagram_manage_insights,pages_show_list,pages_read_engagement&response_type=code&state=register_instagram`,
+      tiktok: `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${frontendUrl}/auth/callback/tiktok&state=register_tiktok`,
+      youtube: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/youtube&response_type=code&scope=https://www.googleapis.com/auth/youtube.readonly&state=register_youtube&access_type=offline&prompt=consent`
+    };
+
+    res.json(urls);
+  }
+
   static async handleCallback(req: Request, res: Response) {
     const { platform } = req.params;
-    const { code, state } = req.query; // state contém o userId ou userId_onboarding
+    const { code, state } = req.query; // state contém o userId, userId_onboarding, ou register_platform
 
     if (!code || !state) {
       res.status(400).json({ error: 'Código ou estado ausente.' });
@@ -30,8 +56,12 @@ export class SocialAuthController {
     }
 
     const stateStr = state as string;
-    const isFromOnboarding = stateStr.endsWith('_onboarding');
-    const userId = isFromOnboarding ? stateStr.replace('_onboarding', '') : stateStr;
+    const isRegister = stateStr.startsWith('register_');
+    const isFromOnboarding = !isRegister && stateStr.endsWith('_onboarding');
+    let userId = '';
+    if (!isRegister) {
+      userId = isFromOnboarding ? stateStr.replace('_onboarding', '') : stateStr;
+    }
 
     try {
       let accessToken = '';
@@ -148,23 +178,7 @@ export class SocialAuthController {
         platformId = channel.id;
       }
 
-      const profile = await prisma.influencerProfile.findUnique({
-        where: { userId }
-      });
-
-      if (!profile) {
-        res.status(404).json({ error: 'Perfil não encontrado.' });
-        return;
-      }
-
-      // Atualizar handle do perfil se for a primeira conexão
-      if (!profile.handle || profile.handle.startsWith('user_')) {
-        await prisma.influencerProfile.update({
-          where: { id: profile.id },
-          data: { handle: username }
-        });
-      }
-
+      let profile;
       let platformName = platform.toUpperCase();
       if (platformName === 'GOOGLE') platformName = 'YOUTUBE';
 
@@ -177,6 +191,74 @@ export class SocialAuthController {
       } else if (platformName === 'TIKTOK') {
         followersCount = tiktokFollowers;
         profilePicture = tiktokAvatar;
+      }
+
+      if (isRegister) {
+        // 1. Procurar se já existe essa plataforma social conectada
+        const existingPlatform = await prisma.socialPlatform.findFirst({
+          where: {
+            platformId: platformId,
+            platformName: platformName
+          },
+          include: {
+            influencer: {
+              include: {
+                user: true
+              }
+            }
+          }
+        });
+
+        if (existingPlatform && existingPlatform.influencer) {
+          profile = existingPlatform.influencer;
+          userId = profile.userId;
+        } else {
+          // 2. Criar novo usuário e perfil
+          const tempEmail = `${username.toLowerCase()}_${Math.floor(1000 + Math.random() * 9000)}@influnext.temp`;
+          const tempPassword = uuidv4();
+          const passwordHash = await bcrypt.hash(tempPassword, 12);
+
+          const newUser = await prisma.user.create({
+            data: {
+              email: tempEmail,
+              passwordHash,
+              role: 'INFLUENCER',
+              onboardingCompleted: false,
+              theme: 'dark',
+              subscriptionStatus: 'TRIAL',
+              trialEndsAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
+            }
+          });
+
+          profile = await prisma.influencerProfile.create({
+            data: {
+              userId: newUser.id,
+              handle: username,
+              niche: 'Geral',
+              avatar: profilePicture
+            }
+          });
+
+          userId = newUser.id;
+        }
+      } else {
+        const foundProfile = await prisma.influencerProfile.findUnique({
+          where: { userId }
+        });
+
+        if (!foundProfile) {
+          res.status(404).json({ error: 'Perfil não encontrado.' });
+          return;
+        }
+        profile = foundProfile;
+      }
+
+      // Atualizar handle do perfil se for a primeira conexão
+      if (!profile.handle || profile.handle.startsWith('user_')) {
+        await prisma.influencerProfile.update({
+          where: { id: profile.id },
+          data: { handle: username }
+        });
       }
 
       await prisma.socialPlatform.upsert({
@@ -217,6 +299,24 @@ export class SocialAuthController {
           data: { verifiedMetrics: true }
         });
         await ScoringService.calculateAndPersist(profile.id);
+      }
+
+      if (isRegister) {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        const token = signFullToken(user as any);
+        res.json({
+          success: true,
+          token,
+          user: {
+            id: user!.id,
+            email: user!.email,
+            role: user!.role,
+            onboardingCompleted: user!.onboardingCompleted
+          },
+          platform,
+          username
+        });
+        return;
       }
 
       res.json({ success: true, platform, username });

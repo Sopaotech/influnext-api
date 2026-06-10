@@ -67,6 +67,7 @@ const createVoiceTask = async (req, res) => {
         // Usando o parser de linguagem natural da IA para extrair a intenção e data
         let title = text;
         let scheduledDate = new Date();
+        let parsedSuccessfully = false;
         try {
             const parsedCommand = await ai_service_1.AIService.parseNaturalCommand(text);
             if (parsedCommand && parsedCommand.action === 'CREATE_TASK' && parsedCommand.data) {
@@ -76,25 +77,53 @@ const createVoiceTask = async (req, res) => {
                 if (parsedCommand.data.scheduledDate) {
                     scheduledDate = new Date(parsedCommand.data.scheduledDate);
                 }
-            }
-            else {
-                // Fallback heurístico inteligente
-                let daysFromNow = 0;
-                if (text.toLowerCase().includes('amanhã'))
-                    daysFromNow = 1;
-                if (text.toLowerCase().includes('depois de amanhã'))
-                    daysFromNow = 2;
-                scheduledDate.setDate(scheduledDate.getDate() + daysFromNow);
+                parsedSuccessfully = true;
             }
         }
         catch (e) {
             console.warn('[INFLUENCER] IA indisponível para comando de voz, usando fallback heurístico.');
+        }
+        if (!parsedSuccessfully) {
+            // Fallback heurístico inteligente para comandos em Português
             let daysFromNow = 0;
-            if (text.toLowerCase().includes('amanhã'))
+            const lowerText = text.toLowerCase();
+            if (lowerText.includes('amanhã')) {
                 daysFromNow = 1;
-            if (text.toLowerCase().includes('depois de amanhã'))
+            }
+            else if (lowerText.includes('depois de amanhã')) {
                 daysFromNow = 2;
+            }
             scheduledDate.setDate(scheduledDate.getDate() + daysFromNow);
+            // Tentar extrair hora (ex: "às 16h", "às 4 da tarde", "às 15:30", "às 4 horas")
+            const hourRegex = /(?:às|as)\s*(\d{1,2})(?::(\d{2}))?\s*(?:h|horas)?\s*(da tarde|da noite)?/i;
+            const match = text.match(hourRegex);
+            if (match) {
+                let hours = parseInt(match[1]);
+                const minutes = match[2] ? parseInt(match[2]) : 0;
+                const period = match[3];
+                if (period && (period.includes('tarde') || period.includes('noite')) && hours < 12) {
+                    hours += 12;
+                }
+                scheduledDate.setHours(hours, minutes, 0, 0);
+            }
+            else {
+                scheduledDate.setHours(14, 0, 0, 0); // Padrão 14h
+            }
+            // Tentar extrair um título limpo
+            let cleanTitle = text
+                .replace(/(?:por favor|agendar|marcar|criar|tarefa|reunião|compromisso)/gi, '')
+                .replace(/(?:amanhã|hoje|depois de amanhã)/gi, '')
+                .replace(/(?:às|as)\s*\d{1,2}(?::\d{2})?\s*(?:h|horas)?\s*(?:da manhã|da tarde|da noite)?/gi, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            if (cleanTitle) {
+                // Capitalizar primeira letra
+                cleanTitle = cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1);
+                title = `Reunião: ${cleanTitle}`;
+            }
+            else {
+                title = "Reunião Agendada";
+            }
         }
         const task = await prisma_1.prisma.task.create({
             data: {
@@ -140,7 +169,8 @@ const searchInfluencers = async (req, res) => {
         // Must have at least one filter or return all (for marketplace initial load)
         const where = {};
         if (q && q.length >= 1) {
-            where.handle = { contains: q, mode: 'insensitive' };
+            const cleanQ = q.startsWith('@') ? q.slice(1) : q;
+            where.handle = { contains: cleanQ, mode: 'insensitive' };
         }
         if (city) {
             where.city = { contains: city, mode: 'insensitive' };
@@ -181,6 +211,7 @@ exports.searchInfluencers = searchInfluencers;
 const updateProfile = async (req, res) => {
     try {
         const userId = req.user.id;
+        const role = req.user.role;
         const schema = zod_1.z.object({
             handle: zod_1.z.string().optional(),
             niche: zod_1.z.string().optional(),
@@ -191,7 +222,15 @@ const updateProfile = async (req, res) => {
             theme: zod_1.z.string().optional(),
             accentColor: zod_1.z.string().optional(),
             careerObjective: zod_1.z.string().optional(),
+            aiInterview: zod_1.z.string().optional(),
             onboardingCompleted: zod_1.z.boolean().optional(),
+            // Company specific fields
+            companyName: zod_1.z.string().optional(),
+            taxId: zod_1.z.string().optional(),
+            segment: zod_1.z.string().optional(),
+            employeeCount: zod_1.z.string().optional(),
+            campaignBudget: zod_1.z.string().optional(),
+            logoUrl: zod_1.z.string().nullable().optional(),
         });
         const parsed = schema.safeParse(req.body);
         if (!parsed.success) {
@@ -199,11 +238,61 @@ const updateProfile = async (req, res) => {
             return;
         }
         const { theme, accentColor, onboardingCompleted, ...profileData } = parsed.data;
-        // Atualiza perfil do influenciador
-        const updated = await prisma_1.prisma.influencerProfile.update({
-            where: { userId },
-            data: profileData,
-        });
+        let updated;
+        if (role === 'COMPANY') {
+            const companyData = {};
+            if (profileData.companyName)
+                companyData.companyName = profileData.companyName;
+            else if (profileData.handle)
+                companyData.companyName = profileData.handle;
+            if (profileData.segment)
+                companyData.segment = profileData.segment;
+            else if (profileData.niche)
+                companyData.segment = profileData.niche;
+            if (profileData.logoUrl !== undefined)
+                companyData.logoUrl = profileData.logoUrl;
+            else if (profileData.profileImageUrl !== undefined)
+                companyData.logoUrl = profileData.profileImageUrl;
+            if (profileData.bio !== undefined)
+                companyData.bio = profileData.bio;
+            if (profileData.city !== undefined)
+                companyData.city = profileData.city;
+            if (profileData.state !== undefined)
+                companyData.state = profileData.state;
+            if (profileData.taxId !== undefined)
+                companyData.taxId = profileData.taxId;
+            if (profileData.employeeCount !== undefined)
+                companyData.employeeCount = profileData.employeeCount;
+            if (profileData.campaignBudget !== undefined)
+                companyData.campaignBudget = profileData.campaignBudget;
+            updated = await prisma_1.prisma.companyProfile.update({
+                where: { userId },
+                data: companyData,
+            });
+        }
+        else {
+            const influencerData = {};
+            if (profileData.handle)
+                influencerData.handle = profileData.handle;
+            if (profileData.niche)
+                influencerData.niche = profileData.niche;
+            if (profileData.profileImageUrl !== undefined)
+                influencerData.profileImageUrl = profileData.profileImageUrl;
+            if (profileData.bio !== undefined)
+                influencerData.bio = profileData.bio;
+            if (profileData.city !== undefined)
+                influencerData.city = profileData.city;
+            if (profileData.state !== undefined)
+                influencerData.state = profileData.state;
+            if (profileData.careerObjective !== undefined)
+                influencerData.careerObjective = profileData.careerObjective;
+            if (profileData.aiInterview !== undefined)
+                influencerData.aiInterview = profileData.aiInterview;
+            updated = await prisma_1.prisma.influencerProfile.update({
+                where: { userId },
+                data: influencerData,
+            });
+        }
         // Atualiza preferências e status do usuário (se enviados)
         if (theme || accentColor || onboardingCompleted !== undefined) {
             const userData = {};
@@ -221,7 +310,7 @@ const updateProfile = async (req, res) => {
         res.json(updated);
     }
     catch (error) {
-        console.error('[INFLUENCER PROFILE] Erro ao atualizar perfil:', error);
+        console.error('[PROFILE] Erro ao atualizar perfil:', error);
         res.status(500).json({ error: "Erro ao atualizar perfil." });
     }
 };
@@ -264,6 +353,19 @@ exports.completeMission = completeMission;
 const getRateCard = async (req, res) => {
     try {
         const userId = req.user.id;
+        const role = req.user.role;
+        if (role === 'COMPANY') {
+            const company = await prisma_1.prisma.companyProfile.findUnique({
+                where: { userId },
+                include: { rateCards: true }
+            });
+            if (!company) {
+                res.status(404).json({ error: "Perfil não encontrado." });
+                return;
+            }
+            res.json(company.rateCards);
+            return;
+        }
         const influencer = await prisma_1.prisma.influencerProfile.findUnique({
             where: { userId },
             include: { rateCards: true }
@@ -282,11 +384,7 @@ exports.getRateCard = getRateCard;
 const updateRateCard = async (req, res) => {
     try {
         const userId = req.user.id;
-        const influencer = await prisma_1.prisma.influencerProfile.findUnique({ where: { userId } });
-        if (!influencer) {
-            res.status(404).json({ error: "Perfil não encontrado." });
-            return;
-        }
+        const role = req.user.role;
         const schema = zod_1.z.array(zod_1.z.object({
             serviceName: zod_1.z.string(),
             price: zod_1.z.number(),
@@ -295,6 +393,29 @@ const updateRateCard = async (req, res) => {
         const parsed = schema.safeParse(req.body);
         if (!parsed.success) {
             res.status(400).json({ error: "Dados inválidos." });
+            return;
+        }
+        if (role === 'COMPANY') {
+            const company = await prisma_1.prisma.companyProfile.findUnique({ where: { userId } });
+            if (!company) {
+                res.status(404).json({ error: "Perfil não encontrado." });
+                return;
+            }
+            await prisma_1.prisma.$transaction([
+                prisma_1.prisma.rateCard.deleteMany({ where: { companyId: company.id } }),
+                prisma_1.prisma.rateCard.createMany({
+                    data: parsed.data.map(item => ({
+                        companyId: company.id,
+                        ...item
+                    }))
+                })
+            ]);
+            res.json({ message: "Tabela de preços atualizada!" });
+            return;
+        }
+        const influencer = await prisma_1.prisma.influencerProfile.findUnique({ where: { userId } });
+        if (!influencer) {
+            res.status(404).json({ error: "Perfil não encontrado." });
             return;
         }
         // Resetar e recriar para simplificar o MVP (ou fazer update/upsert individual)
@@ -412,7 +533,12 @@ const getBalance = async (req, res) => {
         const userId = req.user.id;
         const influencer = await prisma_1.prisma.influencerProfile.findUnique({ where: { userId } });
         if (!influencer) {
-            res.status(404).json({ error: 'Perfil não encontrado.' });
+            // Retorna saldo zero em vez de 404 para contas que não são influenciadores (como Admin ou Company)
+            res.json({
+                availableBalance: 0,
+                completedContracts: 0,
+                currency: 'BRL'
+            });
             return;
         }
         const completedContracts = await prisma_1.prisma.contract.findMany({

@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 
 const INFLUENCER_NICHES = [
   'Moda & Estilo', 'Fitness & Saúde', 'Gastronomia', 'Tech & Gadgets',
-  'Gamer', 'Música', 'Arte & Design', 'Lifestyle', 'Viagem',
+  'Gamer', 'Música', 'Arte & Design', 'Lifestyle', 'Viagem', 'Serviços (Fotógrafos, Editores, etc.)',
   'Finanças', 'Educação', 'Humor & Entretenimento', 'Esportes',
   'Beleza & Skincare', 'Negócios & Empreendedorismo', 'Família & Maternidade',
 ];
@@ -82,6 +82,14 @@ export default function SignupClient() {
   const typeParam = searchParams.get('type') || 'influencer';
 
   const [userType, setUserType] = useState(typeParam);
+  const [socialUrls, setSocialUrls] = useState<any>(null);
+
+  React.useEffect(() => {
+    api.get('/auth/social/public-urls')
+      .then(res => setSocialUrls(res.data))
+      .catch(err => console.error('Erro ao carregar URLs sociais públicas:', err));
+  }, []);
+
   const [step, setStep] = useState(1);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -266,6 +274,52 @@ export default function SignupClient() {
           {/* Form Step 1 */}
           {step === 1 && (
             <form onSubmit={handleStep1Submit} className="space-y-6">
+              {isInfluencer && socialUrls && (
+                <div className="space-y-4">
+                  <div className="relative flex py-2 items-center">
+                    <div className="flex-grow border-t border-slate-200/50"></div>
+                    <span className="flex-shrink mx-4 text-[9px] font-black uppercase text-slate-400 tracking-[0.2em]">Cadastrar via Rede Social</span>
+                    <div className="flex-grow border-t border-slate-200/50"></div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (socialUrls.instagram) window.location.href = socialUrls.instagram;
+                      }}
+                      className="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center gap-2.5 font-black text-[10px] uppercase tracking-wider hover:bg-white/10 transition-all text-slate-900 shadow-sm"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-pink-500">
+                        <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
+                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                        <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
+                      </svg>
+                      Instagram
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (socialUrls.tiktok) window.location.href = socialUrls.tiktok;
+                      }}
+                      className="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center gap-2.5 font-black text-[10px] uppercase tracking-wider hover:bg-white/10 transition-all text-slate-900 shadow-sm"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-900 dark:text-white">
+                        <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"></path>
+                      </svg>
+                      TikTok
+                    </button>
+                  </div>
+
+                  <div className="relative flex py-2 items-center">
+                    <div className="flex-grow border-t border-slate-200/50"></div>
+                    <span className="flex-shrink mx-4 text-[9px] font-black uppercase text-slate-400 tracking-[0.2em]">ou via e-mail</span>
+                    <div className="flex-grow border-t border-slate-200/50"></div>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <label className="block text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] ml-2">E-mail Profissional</label>
                 <input

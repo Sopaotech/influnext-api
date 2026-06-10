@@ -2,69 +2,89 @@ import React from 'react';
 import Link from 'next/link';
 
 interface LogoProps {
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-  href?: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
+  href?: string | null;
   className?: string;
-  textColor?: string;
+  variant?: 'auto' | 'light' | 'dark';
 }
 
-const sizeMap = {
-  sm: 'h-6 md:h-8',
-  md: 'h-10 md:h-12',
-  lg: 'h-16 md:h-20',
-  xl: 'h-24 md:h-32',
+const fontSizeMap = {
+  sm: 'text-[13px]',
+  md: 'text-2xl',
+  lg: 'text-3xl',
+  xl: 'text-5xl',
+  xxl: 'text-7xl md:text-8xl'
 };
 
-export function Logo({ size = 'md', href = '/', className = '', textColor }: LogoProps) {
-  const logoHeight = sizeMap[size];
-  const colorClass = textColor || "text-slate-900 dark:text-white";
+const iconSizeMap = {
+  sm: 18,
+  md: 28,
+  lg: 36,
+  xl: 56,
+  xxl: 96
+};
+
+function SpeedometerIcon({ size, className = '' }: { size: number; className?: string }) {
+  const uid = `speed-${size}`;
+  const height = size * 0.75; // Aspect ratio of the speedometer viewBox (32x24)
+  return (
+    <svg
+      width={size}
+      height={height}
+      viewBox="0 0 32 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+      style={{ display: 'block', flexShrink: 0 }}
+    >
+      <defs>
+        <linearGradient id={uid} x1="0" y1="24" x2="32" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#8b5cf6" />
+          <stop offset="100%" stopColor="#ec4899" />
+        </linearGradient>
+      </defs>
+      {/* Outer gauge arc (240 degrees) */}
+      <path
+        d="M 7.3 21 A 10 10 0 1 1 24.7 21"
+        stroke={`url(#${uid})`}
+        strokeWidth="3.2"
+        strokeLinecap="round"
+        fill="none"
+      />
+      {/* Needle pointing to top-right (around 45 degrees) */}
+      <path
+        d="M 16 16 L 21.5 10.5"
+        stroke={`url(#${uid})`}
+        strokeWidth="2.8"
+        strokeLinecap="round"
+      />
+      {/* Needle Cap / Center Pin */}
+      <circle cx="16" cy="16" r="2" fill={`url(#${uid})`} />
+    </svg>
+  );
+}
+
+export function Logo({ size = 'md', href = '/', className = '', variant = 'auto' }: LogoProps) {
+  const fontSize = fontSizeMap[size];
+  const iconSize = iconSizeMap[size];
+
+  const textColor =
+    variant === 'light' ? 'text-white'
+    : variant === 'dark' ? 'text-slate-900'
+    : 'text-slate-900 dark:text-white';
 
   const content = (
-    <div className={`relative select-none ${logoHeight} ${className} flex items-center gap-2`}>
-      {/* Ícone Oficial de Crescimento / Dashboard */}
-      <div className="h-[90%] aspect-square flex items-center justify-center">
-        <svg viewBox="0 0 64 64" className="h-full w-full overflow-visible" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="logo-chart-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#7C3AED" />
-              <stop offset="100%" stopColor="#3B82F6" />
-            </linearGradient>
-          </defs>
-          <g transform="translate(6, 10)">
-            {/* Barras verticais */}
-            <rect x="6" y="24" width="6" height="18" rx="1.5" fill="url(#logo-chart-gradient)" opacity="0.6" />
-            <rect x="16" y="16" width="6" height="26" rx="1.5" fill="url(#logo-chart-gradient)" opacity="0.7" />
-            <rect x="26" y="22" width="6" height="20" rx="1.5" fill="url(#logo-chart-gradient)" opacity="0.8" />
-            <rect x="36" y="10" width="6" height="32" rx="1.5" fill="url(#logo-chart-gradient)" opacity="0.9" />
-            <rect x="46" y="2" width="6" height="40" rx="1.5" fill="url(#logo-chart-gradient)" />
-
-            {/* Seta de Tendência */}
-            <path 
-              d="M -2,32 L 8,20 L 18,10 L 28,18 L 40,2 L 50,-8" 
-              stroke="url(#logo-chart-gradient)" 
-              strokeWidth="5" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-              fill="none" 
-            />
-            
-            {/* Cabeça da Seta */}
-            <polygon 
-              points="40,-12 56,-14 50,4" 
-              fill="#3B82F6" 
-            />
-          </g>
-        </svg>
-      </div>
-
-      {/* Nome da Marca com Outfit e Gradiente */}
-      <span className={`text-xl md:text-2xl font-[900] tracking-[-0.03em] ${colorClass} flex items-center font-sans`}>
+    <span className={`inline-flex flex-col items-center select-none ${className}`}>
+      {/* Vertically stacked speedometer icon */}
+      <SpeedometerIcon size={iconSize} className="mb-0" />
+      <span className={`font-black tracking-tighter leading-none ${fontSize} ${textColor}`}>
         Influ
-        <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#7C3AED] to-[#3B82F6] ml-0.5">
+        <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-pink-500">
           Next
         </span>
       </span>
-    </div>
+    </span>
   );
 
   if (href) {
@@ -74,6 +94,6 @@ export function Logo({ size = 'md', href = '/', className = '', textColor }: Log
       </Link>
     );
   }
-
-  return <div className="inline-flex">{content}</div>;
+  return <span className="inline-flex">{content}</span>;
 }
+

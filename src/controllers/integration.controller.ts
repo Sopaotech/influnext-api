@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import { UserRole } from '../types/roles';
 import { ScoringService } from '../services/scoring.service';
 import { InstagramService } from '../services/instagram.service';
+import { AIService } from '../services/ai.service';
 import axios from 'axios';
 
 const getFrontendUrl = () => {
@@ -209,27 +210,48 @@ export const simulateInstagramConnection = async (req: Request, res: Response): 
       return;
     }
 
-    // 1. Criar ou atualizar a SocialPlatform para o Instagram
-    const platformId = `simulated_ig_${Math.floor(100000 + Math.random() * 900000)}`;
-    const username = influencer.handle || `influencer_${influencer.id.substring(0, 5)}`;
-    const followersCount = 15430;
-    const profilePicture = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=150&q=80';
+    const platform = (req.body.platform || 'INSTAGRAM').toUpperCase();
+    const inputUsername = req.body.username || influencer.handle || `influencer_${influencer.id.substring(0, 5)}`;
+    const username = inputUsername.startsWith('@') ? inputUsername.slice(1) : inputUsername;
 
+    let followersCount = 15430;
+    let engagementRate = 4.75;
+    let avgViews = 9230;
+    let reachLast30Days = 48900;
+    let profilePicture = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=150&q=80';
+
+    if (platform === 'TIKTOK') {
+      followersCount = 32800;
+      engagementRate = 8.2;
+      avgViews = 18400;
+      reachLast30Days = 110200;
+      profilePicture = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=150&q=80';
+    } else if (platform === 'YOUTUBE') {
+      followersCount = 8500;
+      engagementRate = 6.1;
+      avgViews = 4500;
+      reachLast30Days = 24000;
+      profilePicture = 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=150&q=80';
+    }
+
+    const platformId = `simulated_${platform.toLowerCase()}_${Math.floor(100000 + Math.random() * 900000)}`;
+
+    // 1. Criar ou atualizar a SocialPlatform
     await prisma.socialPlatform.upsert({
       where: {
         influencerId_platformName: {
           influencerId: influencer.id,
-          platformName: 'INSTAGRAM'
+          platformName: platform
         }
       },
       create: {
         influencerId: influencer.id,
-        platformName: 'INSTAGRAM',
+        platformName: platform,
         platformId,
         username,
         profilePicture,
         followersCount,
-        accessToken: 'simulated_access_token_token',
+        accessToken: `simulated_access_token_${platform.toLowerCase()}`,
         isActive: true
       },
       update: {
@@ -237,7 +259,7 @@ export const simulateInstagramConnection = async (req: Request, res: Response): 
         username,
         profilePicture,
         followersCount,
-        accessToken: 'simulated_access_token_token',
+        accessToken: `simulated_access_token_${platform.toLowerCase()}`,
         isActive: true
       }
     });
@@ -246,11 +268,11 @@ export const simulateInstagramConnection = async (req: Request, res: Response): 
     await prisma.metricSnapshot.create({
       data: {
         influencerId: influencer.id,
-        provider: 'INSTAGRAM',
+        provider: platform,
         followers: followersCount,
-        engagementRate: 4.75,
-        reachLast30Days: 48900,
-        avgViews: 9230,
+        engagementRate,
+        reachLast30Days,
+        avgViews,
         integrityHash: `simulated_hash_${Math.random().toString(36).substring(7)}`
       }
     });
@@ -269,14 +291,21 @@ export const simulateInstagramConnection = async (req: Request, res: Response): 
     // 4. Recalcular e persistir score
     await ScoringService.calculateAndPersist(influencer.id);
 
+    // 5. Gerar análise proativa e de onboarding da IA de forma assíncrona
+    AIService.generateWeeklyAnalysis(influencer.id).catch((err) => {
+      console.error('[SIMULATE] Erro ao disparar análise pós-conexão simulada:', err);
+    });
+
     res.json({
       success: true,
       onboardingCompleted: true,
-      platform: 'INSTAGRAM'
+      platform,
+      username,
+      followersCount
     });
   } catch (error) {
     console.error('[SIMULATE] Erro ao simular conexão:', error);
-    res.status(500).json({ error: 'Erro ao simular conexão com o Instagram.' });
+    res.status(500).json({ error: 'Erro ao simular conexão com a plataforma social.' });
   }
 };
 
@@ -443,7 +472,8 @@ export const getConnectedPlatforms = async (req: Request, res: Response): Promis
     });
 
     if (!influencer) {
-      res.status(404).json({ error: "Perfil não encontrado." });
+      // Retorna array vazio em vez de 404 para contas que não são influenciadores (como Admin ou Company)
+      res.json({ platforms: [] });
       return;
     }
 

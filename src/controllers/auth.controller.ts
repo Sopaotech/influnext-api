@@ -407,3 +407,135 @@ export const forceAdminAccess = async (req: Request, res: Response): Promise<voi
     res.status(500).json({ error: 'Erro ao forçar admin.' });
   }
 };
+
+export const socialLogin = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { platform, username: rawUsername, gender, niche } = req.body;
+    if (!platform || !rawUsername) {
+      res.status(400).json({ error: 'Plataforma e username são obrigatórios.' });
+      return;
+    }
+
+    const username = rawUsername.startsWith('@') ? rawUsername.slice(1) : rawUsername;
+    const email = `${username.toLowerCase()}@social.influnext.com`;
+
+    let user = await prisma.user.findUnique({
+      where: { email },
+      include: { influencer: true }
+    }) as any;
+
+    if (!user) {
+      // 1. Criar o User
+      const passwordHash = await bcrypt.hash('simulated_social_pwd_2026', 12);
+      user = await prisma.user.create({
+        data: {
+          email,
+          passwordHash,
+          role: 'INFLUENCER',
+          theme: 'dark',
+          accentColor: '#a855f7',
+          onboardingCompleted: true,
+          subscriptionStatus: 'ACTIVE',
+        },
+        include: { influencer: true }
+      }) as any;
+
+      // 2. Criar o InfluencerProfile
+      const aiInterview = JSON.stringify({
+        dream: 'Trabalhar com grandes marcas',
+        followersGoal: '100.000 seguidores',
+        incomeTarget: 'Publis/Parcerias',
+        difficulty: 'Consistência de posts',
+        experience: 'De 6 meses a 2 anos',
+        availability: 'Tardes (12h às 18h)',
+        frequency: '3 vezes por semana',
+        boughtFollowers: 'Não, todo o crescimento foi orgânico',
+        gender: gender || 'feminino'
+      });
+
+      const profile = await prisma.influencerProfile.create({
+        data: {
+          userId: user.id,
+          handle: username,
+          niche: niche || 'Lifestyle',
+          careerObjective: 'CONTRACTS',
+          aiInterview,
+          influScore: 78,
+          scoreClass: 'SILVER',
+          verifiedMetrics: true,
+        }
+      });
+
+      // 3. Criar a SocialPlatform correspondente
+      const platformName = platform.toUpperCase();
+      let followersCount = 15430;
+      let engagementRate = 4.75;
+      let avgViews = 9230;
+      let reachLast30Days = 48900;
+      let profilePicture = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=150&q=80';
+
+      if (platformName === 'TIKTOK') {
+        followersCount = 32800;
+        engagementRate = 8.2;
+        avgViews = 18400;
+        reachLast30Days = 110200;
+        profilePicture = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=150&q=80';
+      }
+
+      await prisma.socialPlatform.create({
+        data: {
+          influencerId: profile.id,
+          platformName,
+          platformId: `simulated_${platformName.toLowerCase()}_${Math.floor(100000 + Math.random() * 900000)}`,
+          username,
+          profilePicture,
+          followersCount,
+          accessToken: `simulated_access_token_${platformName.toLowerCase()}`,
+          isActive: true
+        }
+      });
+
+      // 4. Criar MetricSnapshot correspondente
+      await prisma.metricSnapshot.create({
+        data: {
+          influencerId: profile.id,
+          provider: platformName,
+          followers: followersCount,
+          engagementRate,
+          reachLast30Days,
+          avgViews,
+          integrityHash: `simulated_hash_${Math.random().toString(36).substring(7)}`
+        }
+      });
+
+      // Recalcular score
+      import('../services/scoring.service').then(({ ScoringService }) => {
+        ScoringService.calculateAndPersist(profile.id).catch(err => console.error('[AUTH SOCIAL] Scoring Error:', err));
+      });
+
+      // Gerar análise de IA em background
+      import('../services/ai.service').then(({ AIService }) => {
+        AIService.generateWeeklyAnalysis(profile.id).catch(err => console.error('[AUTH SOCIAL] AI Error:', err));
+      });
+
+      user.influencer = profile;
+    }
+
+    const token = signFullToken(user);
+
+    res.status(200).json({
+      message: 'Login social bem-sucedido!',
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        scoreDecayed: 0,
+        onboardingCompleted: true
+      }
+    });
+  } catch (error) {
+    console.error('[AUTH SOCIAL LOGIN ERROR]:', error);
+    res.status(500).json({ error: 'Erro interno no servidor ao autenticar via rede social.' });
+  }
+};

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getMyContracts = exports.releasePayment = exports.confirmPayment = exports.createContract = void 0;
+exports.getContractById = exports.getMyContracts = exports.releasePayment = exports.confirmPayment = exports.createContract = void 0;
 const roles_1 = require("../types/roles");
 const prisma_1 = require("../lib/prisma");
 const zod_1 = require("zod");
@@ -262,3 +262,43 @@ const getMyContracts = async (req, res) => {
     }
 };
 exports.getMyContracts = getMyContracts;
+const getContractById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+        const userRole = req.user.role;
+        const contract = await prisma_1.prisma.contract.findUnique({
+            where: { id },
+            include: {
+                influencer: true,
+                company: true,
+                deliverables: true
+            }
+        });
+        if (!contract) {
+            res.status(404).json({ error: "Contrato não encontrado." });
+            return;
+        }
+        // Validação de permissão de visualização
+        if (userRole === roles_1.UserRole.COMPANY) {
+            const company = await prisma_1.prisma.companyProfile.findUnique({ where: { userId } });
+            if (!company || contract.companyId !== company.id) {
+                res.status(403).json({ error: "Você não tem permissão para visualizar este contrato." });
+                return;
+            }
+        }
+        else if (userRole === roles_1.UserRole.INFLUENCER) {
+            const influencer = await prisma_1.prisma.influencerProfile.findUnique({ where: { userId } });
+            if (!influencer || contract.influencerId !== influencer.id) {
+                res.status(403).json({ error: "Você não tem permissão para visualizar este contrato." });
+                return;
+            }
+        }
+        res.json(contract);
+    }
+    catch (error) {
+        console.error('[CONTRACT] Erro ao buscar contrato por ID:', error);
+        res.status(500).json({ error: "Erro ao buscar contrato." });
+    }
+};
+exports.getContractById = getContractById;

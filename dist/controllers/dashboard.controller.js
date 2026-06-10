@@ -82,6 +82,7 @@ const getInfluencerDashboard = async (req, res) => {
                 dailyMission: profile.dailyMission,
                 missionCompleted: profile.missionCompleted,
                 profileProgress: progress,
+                aiInterview: profile.aiInterview,
             },
             kpis: {
                 influScore: profile.influScore,
@@ -119,7 +120,8 @@ const getCompanyDashboard = async (req, res) => {
         const company = await prisma_1.prisma.companyProfile.findUnique({
             where: { userId },
             include: {
-                user: { select: { onboardingCompleted: true, subscriptionStatus: true, trialEndsAt: true } },
+                user: { select: { email: true, role: true, onboardingCompleted: true, subscriptionStatus: true, trialEndsAt: true, theme: true, accentColor: true } },
+                rateCards: true,
                 contracts: {
                     include: {
                         deliverables: true,
@@ -149,7 +151,32 @@ const getCompanyDashboard = async (req, res) => {
                 .filter((c) => c.escrowStatus === 'IN_PROGRESS')
                 .reduce((sum, c) => sum + Number(c.budget), 0),
         };
-        res.json({ stats, userState: company.user, contracts: company.contracts });
+        res.json({
+            stats,
+            userState: company.user,
+            contracts: company.contracts,
+            profile: {
+                id: company.id,
+                handle: company.companyName,
+                niche: company.segment,
+                profileImageUrl: company.logoUrl || null,
+                influScore: 100,
+                scoreClass: 'GOLD',
+                dailyMission: 'Garantir parcerias de sucesso',
+                missionCompleted: false,
+                profileProgress: 80,
+                companyName: company.companyName,
+                taxId: company.taxId,
+                city: company.city,
+                state: company.state,
+                segment: company.segment,
+                employeeCount: company.employeeCount,
+                campaignBudget: company.campaignBudget,
+                logoUrl: company.logoUrl || null,
+                bio: company.bio || null,
+            },
+            rateCards: company.rateCards || [],
+        });
     }
     catch (error) {
         console.error('[DASHBOARD] Erro ao carregar company:', error);

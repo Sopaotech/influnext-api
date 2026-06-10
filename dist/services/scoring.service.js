@@ -8,16 +8,56 @@ class ScoringService {
      * Cálculo matemático dinâmico do InfluScore
      * Pesos: Seguidores (30%), Engajamento (40%), Consistência (20%), Rating (10%)
      */
-    static calculate(followers, engagement, consistency, rating) {
-        // fScore: Logarítmico (valoriza crescimento orgânico em diferentes escalas)
-        const fScore = Math.min(300, (Math.log10(followers + 1) / 6) * 300); // 30% do total (1000)
-        // eScore: Linear baseado em 5% como meta ideal
-        const eScore = Math.min(400, (engagement / 5) * 400); // 40% do total
-        // cScore: Consistência (base 0-1)
-        const cScore = consistency * 200; // 20% do total
-        // rScore: Rating (base 0-5)
-        const rScore = (rating / 5) * 100; // 10% do total
-        return Math.round(fScore + eScore + cScore + rScore);
+    /**
+     * Cálculo matemático dinâmico e auditado do InfluScore.
+     * Pesos: Nível de Seguidores Normalizado (25%), Engajamento por Nicho/Tamanho (45%),
+     * Consistência/Missões (15%), Reputação/Ratings & Campanhas Concluídas (15%).
+     * Contém fator redutor de autenticidade (penalização de seguidores falsos).
+     */
+    static calculate(followers, engagement, consistency, rating, completedContracts = 0) {
+        // 1. FScore: Normalização por Tier (evita penalizar micro-influenciadores de alto engajamento)
+        let fScore = 0;
+        if (followers <= 10000) {
+            // Nano Tier (0 - 10k): peso máximo de 120
+            fScore = Math.min(120, (followers / 10000) * 120);
+        }
+        else if (followers <= 100000) {
+            // Micro Tier (10k - 100k): peso máximo de 180
+            fScore = 120 + ((followers - 10000) / 90000) * 60;
+        }
+        else if (followers <= 1000000) {
+            // Macro Tier (100k - 1M): peso máximo de 220
+            fScore = 180 + ((followers - 100000) / 900000) * 40;
+        }
+        else {
+            // Mega Tier (Acima de 1M): peso máximo de 250
+            fScore = 220 + Math.min(30, (followers / 10000000) * 30);
+        }
+        // 2. EScore: Engajamento por Nicho/Tamanho (Meta ideal ajustada por Tier)
+        let targetEngagement = 5.0; // Padrão Geral (5%)
+        if (followers < 10000)
+            targetEngagement = 8.0; // Nano precisa de engajamento maior
+        else if (followers < 100000)
+            targetEngagement = 5.0; // Micro
+        else if (followers < 1000000)
+            targetEngagement = 3.0; // Macro
+        else
+            targetEngagement = 1.5; // Mega
+        let baseEScore = Math.min(450, (engagement / targetEngagement) * 450);
+        // Fator de Autenticidade (Anti-Followers Comprados)
+        // Se a proporção de engajamento em relação aos seguidores for excessivamente baixa, penaliza
+        // Exemplo: 100k seguidores com 0.1% de engajamento indica bots/seguidores comprados
+        const ratio = (engagement * 10000) / (followers + 1);
+        const authenticityFactor = Math.max(0.3, Math.min(1.0, ratio));
+        const eScore = baseEScore * authenticityFactor;
+        // 3. CScore: Consistência (base 0-1) - peso máximo de 150
+        const cScore = consistency * 150;
+        // 4. RScore: Reputação e Sucesso Comercial (Ratings & Contratos Concluídos) - peso máximo de 150
+        const baseRatingScore = (rating / 5) * 100; // Máximo 100 pontos para nota
+        const campaignBonus = Math.min(50, completedContracts * 10); // +10 pontos por contrato concluído (máx 50)
+        const rScore = baseRatingScore + campaignBonus;
+        // O score final é limitado a 1000 (sem contar o bônus semanal de trends)
+        return Math.min(1000, Math.round(fScore + eScore + cScore + rScore));
     }
     static getTier(score) {
         if (score <= 300)
@@ -45,13 +85,16 @@ class ScoringService {
                 select: { influScore: true, scoreClass: true, userId: true },
             }),
         ]);
-        if (!latestMetric || !profile)
+        if (!profile)
             return;
+        // Se não houver métricas reais registradas ainda, usamos baseline mínimo
+        const followers = latestMetric?.followers || 1000;
+        const engagement = latestMetric?.engagementRate || 2.5;
         // Baseline para novas contas até que dados históricos de contratos sejam acumulados
         const consistency = 1.0; // Baseline: 100% (Novos usuários começam com reputação limpa)
         const rating = 5.0; // Baseline: 5.0 estrelas
-        let score = this.calculate(latestMetric.followers, latestMetric.engagementRate, consistency, rating);
-        // Bônus Trend Seeker
+        let score = this.calculate(followers, engagement, consistency, rating, completedContracts);
+        // Bônus Trend Seeker (+50 se fizer posts de trends)
         const trendBonus = await this.calculateTrendSeekerBonus(influencerId);
         score += trendBonus;
         const scoreClass = this.getTier(score);

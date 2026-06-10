@@ -36,14 +36,53 @@ export class AIService {
       // Alterado para 'gemini-1.5-flash-latest' para maior compatibilidade ou fallback para 'gemini-pro'
       let model;
       try {
-        model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+        model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       } catch (err) {
         model = genAI.getGenerativeModel({ model: "gemini-pro" });
       }
 
-      const prompt = `Você é um gestor de carreira "Workaholic" e altamente lógico do INFLUNEXT. 
-      Seu objetivo é lucro e crescimento. Seja direto, seco e focado em metas. 
-      Evite elogios vazios. Se o score está baixo, cobre resultados. Se está alto, cobre escala.
+      let interviewContext = '';
+      let gender = 'masculino';
+      let mentorName = 'Vincenzo';
+      let pronounGuidelines = 'Trate o influenciador como "sócio" (no masculino) e aja como um estrategista homem (Vincenzo).';
+
+      if (influencer.aiInterview) {
+        try {
+          const interviewObj = JSON.parse(influencer.aiInterview);
+          if (interviewObj.gender === 'feminino') {
+            gender = 'feminino';
+            mentorName = 'Valentina';
+            pronounGuidelines = 'Trate a influenciadora como "sócia" (no feminino), use termos direcionados ao público feminino (preparada, campeã) e aja como uma estrategista mulher de negócios de sucesso (Valentina).';
+          }
+          interviewContext = `
+      SONHOS E METAS DO CRIADOR (ENTREVISTA IA):
+      - Gênero / Identificação: ${interviewObj.gender || 'Não especificado'}
+      - Sonho principal: ${interviewObj.dream || 'Não especificado'}
+      - Meta de seguidores em 1 ano: ${interviewObj.followersGoal || 'Não especificada'}
+      - Fonte de renda desejada: ${interviewObj.incomeTarget || 'Não especificada'}
+      - Maior desafio atual: ${interviewObj.difficulty || 'Não especificado'}
+      - Tempo de experiência: ${interviewObj.experience || 'Não especificado'}
+      - Horários disponíveis de criação: ${interviewObj.availability || 'Não especificado'}
+      - Frequência de postagem: ${interviewObj.frequency || 'Não especificada'}
+      - Histórico de compra de seguidores: ${interviewObj.boughtFollowers || 'Não especificado'}
+          `;
+        } catch (_) {}
+      }
+
+      const getObjectiveLabelPt = (obj: string) => {
+        const map: any = {
+          'SALES': 'Vendas & Consultas (converter seguidores em clientes)',
+          'FAME': 'Fama & Engajamento (crescimento explosivo e reconhecimento)',
+          'CONTRACTS': 'Contratos & Marcas (atrair marcas para parcerias e publis)',
+          'AUTHORITY': 'Autoridade & Nicho (ser a maior referência no tema)'
+        };
+        return map[obj] || 'Crescimento Geral';
+      };
+
+      const prompt = `Você é o/a ${mentorName}, Estrategista-Chefe de Monetização e mentor(a) de negócios do INFLUNEXT. 
+      Seu objetivo é lucro, geração de receita e escala profissional do(a) influenciador(a). Lembre-se: "recebidos não pagam boletos". Seja direto, focado em metas reais de caixa e fale de igual para igual como um(a) sócio(a) de negócios confiável.
+      DIRETRIZ DE GÊNERO E ABORDAGEM: ${pronounGuidelines}
+      Evite elogios vazios. Se o score está baixo, cobre resultados. Se está alto, cobre escala. Aja como um(a) parceiro(a) exigente e orientador(a) para que ele(a) aja como uma empresa independente (como uma banda que toca sozinha).
 
       DADOS EM TEMPO REAL (SCANNER):
       Audios: ${trends.trendingAudios.join(', ')}
@@ -52,20 +91,27 @@ export class AIService {
       MEMÓRIA ANTI-REPETIÇÃO E PERFORMANCE:
       O influenciador já executou estas tarefas recentemente: ${recentTasks.map(t => `${t.title} (Perf: ${t.performanceMultiplier ? t.performanceMultiplier.toFixed(1) + 'x' : 'N/A'})`).join(', ')}.
       É ESTRITAMENTE PROIBIDO sugerir ideias semelhantes às que falharam (Perf < 1.0).
-      Se uma ideia falhou, seja brutalmente honesto: "Esse não rendeu o esperado. O algoritmo está frio para esse tema, vamos mudar a estratégia para [TEMA NOVO]."
+      Se uma ideia falhou, seja brutalmente honesto: "Sócio(a), esse tema anterior não rendeu. O algoritmo está frio para isso, vou traçar algo novo para nós."
       Inove baseado no que funcionou (Perf > 1.2).
 
       DADOS DO CRIADOR:
       Handle: @${influencer.handle}
       Nicho: ${influencer.niche || 'Geral'}
-      Objetivo Principal: ${influencer.careerObjective || 'Crescimento Geral'}
+      Objetivo Principal: ${getObjectiveLabelPt(influencer.careerObjective || '')}
       InfluScore: ${influencer.influScore}
+      ${interviewContext}
 
       TAREFA:
-      1. Saudação: Direta e focada em negócios. (Ex: "Foco no caixa, @${influencer.handle}. Temos trabalho.")
-      2. 3 Trends: Baseados nos audios do SCANNER, focados em atingir o objetivo de ${influencer.careerObjective}.
-      3. 3 Sugestões de Vídeos: Inovadores, focados em ${influencer.careerObjective}.
-      4. 3 Tarefas Práticas: Para execução imediata para atingir o objetivo.
+      1. Saudação: Direta, focada em negócios e assinada/falada por você, ${mentorName}. (Ex: "${mentorName} aqui, @${influencer.handle}. Foco no caixa, temos trabalho hoje.")
+      2. 3 Trends: Baseados nos audios do SCANNER, focados em atingir o objetivo de ${getObjectiveLabelPt(influencer.careerObjective || '')}.
+      Observação: Adapte a saudação, as sugestões e tarefas ao perfil do influenciador, considerando as seguintes perspectivas complementares do seu papel de marketing e mentoria:
+      - O Empresário: Foco em fechar contratos, negociar valores de publis, atrair marcas compatíveis e monetização direta.
+      - O Ajudante: Foco em constância, criação prática de conteúdo, ideias de roteiros, estudos e organização diária do trabalho.
+      - Gestão de Carreira e Conexão Humana: Foco forte em gestão de carreira e conexão com a audiência. Você DEVE incluir nas tarefas sugeridas (suggestedTasks) a recomendação de postar stories aleatórios e espontâneos (ex: bastidores do dia a dia, rotina sem intenção comercial direta, ou momentos reais sem roteiro) para engajar e humanizar a marca pessoal do criador, lembrando-o de que nem tudo deve ser publis/vendas.
+      Use o Sonho Principal e a Meta de Seguidores como norteador das tarefas propostas.
+      3. 3 Sugestões de Vídeos: Inovadores, focados em ${getObjectiveLabelPt(influencer.careerObjective || '')}.
+      4. 3 Tarefas Práticas: Para execução imediata para atingir o objetivo, garantindo que pelo menos uma delas seja focada em gestão de carreira / stories espontâneos de engajamento diário.
+      Importante: Responda obrigatoriamente em português do Brasil, sem utilizar termos em inglês desnecessários nas tarefas, títulos e descrições.
 
       Responda em JSON puro:
       {
@@ -315,24 +361,44 @@ export class AIService {
     try {
       const influencer = await prisma.influencerProfile.findUnique({
         where: { id: influencerId },
-        select: { handle: true, niche: true, influScore: true }
+        select: { handle: true, niche: true, influScore: true, aiInterview: true }
       });
 
       if (!influencer) throw new Error('Influenciador não encontrado.');
 
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+      let gender = 'masculino';
+      let mentorName = 'Vincenzo';
+      let pronounGuidelines = 'Trate o influenciador como "sócio" (no masculino) e aja como um estrategista homem (Vincenzo).';
 
-      const prompt = `Você é o Estrategista-Chefe de Monetização e Crescimento da INFLUNEXT.
+      if (influencer.aiInterview) {
+        try {
+          const parsed = JSON.parse(influencer.aiInterview);
+          if (parsed.gender === 'feminino') {
+            gender = 'feminino';
+            mentorName = 'Valentina';
+            pronounGuidelines = 'Trate a influenciadora como "sócia" (no feminino), use termos direcionados ao público feminino (preparada, campeã) e aja como uma estrategista mulher de negócios de sucesso (Valentina).';
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+       const prompt = `Você é o/a ${mentorName}, Estrategista-Chefe de Monetização e Crescimento da INFLUNEXT.
 O usuário @${influencer.handle} atua no nicho de ${influencer.niche} e possui um InfluScore de ${influencer.influScore}/100.
 A mensagem do influenciador: "${message}".
 
 REGRAS DE OURO (SISTEMA):
-1. NUNCA revele que você é uma IA, um "agente", ou um robô. NUNCA use saudações como "Olá, eu sou a IA". Aja como o cérebro estratégico humano e oculto por trás do perfil.
-2. ENTREGUE TRABALHO PRONTO: Se o usuário pedir ideia de conteúdo, NÃO DÊ apenas a ideia. ESCREVA o ROTEIRO COMPLETO (com Hook matador de 3 segundos, direção visual e Call to Action).
-3. SE FOR SOBRE PARCERIAS: Gere e-mails ou mensagens de "Pitch" (prospecção de marcas) prontas para ele copiar e colar. Use gatilhos mentais e técnicas de negociação (ex: prova social, escassez).
-4. SE FOR DÚVIDA GERAL: Responda com frameworks acionáveis (passo a passo de 1 a 3). Nada de motivação barata. Foco em ROI, crescimento explosivo e engenharia de retenção (algoritmo).
-5. Assuma um tom "Dark Premium": Profissional, brutalmente honesto, elitista e focado em lucro.`;
+1. SEU NOME É ${mentorName.toUpperCase()}. Apresente-se e aja sempre sob este nome de forma confiante, direta e humana. Você é o(a) gestor(a) de carreira parceiro(a) (o/a "sócio(a) de negócios") do(a) influenciador(a). Fale de igual para igual ("vamos vencer juntos", "nosso plano").
+2. DIRETRIZ DE GÊNERO E ABORDAGEM: ${pronounGuidelines}
+3. NUNCA revele ou admita que você é uma Inteligência Artificial, um modelo de linguagem, robô, agente virtual ou bot. Se o usuário perguntar se você é uma IA, brinque ou desconverse com firmeza corporativa: "Eu sou o/a ${mentorName}, seu/sua estrategista de carreira e sócio(a) na InfluNext. O resto é detalhe de engenharia. O que importa é o nosso plano de escala. Vamos focar no que dá lucro."
+4. FILOSOFIA INFLUNEXT: Lembre-se sempre de que "recebidos não pagam boletos". O objetivo central do influenciador é o lucro e a monetização de sua imagem, agindo como uma empresa profissional e independente (como uma banda que toca sozinha). Direcione toda resposta para vendas, contratos de patrocínio reais e escala financeira, e não apenas métricas de vaidade ou curtidas.
+5. ENTREGUE TRABALHO PRONTO: Se o usuário pedir ideia de conteúdo (inclusive ideias para TikTok ou Reels), NÃO DÊ apenas a sugestão vaga. ESCREVA o ROTEIRO COMPLETO (com Hook matador de 3 segundos, direção visual e Call to Action).
+6. SE FOR SOBRE PARCERIAS: Gere e-mails ou mensagens de "Pitch" (prospecção de marcas) prontas para ele copiar e colar. Use gatilhos mentais e técnicas de negociação (ex: prova social, escassez).
+7. SE FOR DÚVIDA GERAL: Responda com frameworks acionáveis (passo a passo de 1 a 3). Nada de motivação barata ou clichês vazios. Foco em ROI, crescimento explosivo e engenharia de distribuição orgânica (algoritmo).
+8. Assuma um tom "Dark Premium": Profissional, brutalmente honesto, executivo, exigente e focado em lucro.`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -355,7 +421,7 @@ REGRAS DE OURO (SISTEMA):
 
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
       const prompt = `Você é um Especialista em Marketing de Influência do INFLUNEXT.
 Sua tarefa é gerar um BRIEFING TÉCNICO E CRIATIVO para uma marca que deseja contratar o influenciador @${influencerHandle}.
@@ -383,65 +449,144 @@ Responda apenas com o texto do briefing, formatado em Markdown simples.`;
    * Interpreta comandos em linguagem natural e retorna uma intenção estruturada.
    */
   static async parseNaturalCommand(message: string): Promise<{ action: string; data?: any }> {
+    // 1. Função auxiliar de parsing local baseada em RegEx (serve como parser nativo rápido e robusto)
+    const runLocalParser = (msgStr: string) => {
+      const msg = msgStr.toLowerCase();
+      
+      const creationKeywords = [
+        'marcar', 'agendar', 'reunião', 'meeting', 'call', 'colocar', 'adicionar',
+        'lembrar', 'post', 'gravar', 'entrevista', 'aniversário', 'fazer', 'live',
+        'publicar', 'criar', 'cronograma'
+      ];
+      
+      const isCreation = creationKeywords.some(keyword => msg.includes(keyword)) || 
+                         /(?:dia|no dia)\s+\d+/i.test(msg); // se contiver "dia X" ou "no dia X"
+      
+      if (isCreation) {
+        let targetDate = new Date();
+        
+        if (msg.includes('amanhã')) {
+          targetDate.setDate(targetDate.getDate() + 1);
+        } else if (msg.includes('hoje')) {
+          // Mantém hoje
+        } else {
+          const dayMatch = msg.match(/(?:dia|no dia)\s+(\d+)/);
+          if (dayMatch) {
+            const targetDay = parseInt(dayMatch[1], 10);
+            if (targetDay < targetDate.getDate()) {
+              // Se o dia especificado já passou no mês atual, assume o próximo mês
+              targetDate.setMonth(targetDate.getMonth() + 1);
+            }
+            targetDate.setDate(targetDay);
+          }
+        }
+        
+        // Tentar extrair horário: "às 15:30", "às 15h", "15:30", "15h"
+        const timeMatch = msg.match(/(?:às\s+)?(\d{1,2})(?::|h)(\d{2})?/);
+        if (timeMatch) {
+          const hours = parseInt(timeMatch[1], 10);
+          const minutes = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;
+          targetDate.setHours(hours, minutes, 0, 0);
+        } else {
+          // Default para 12:00:00 local
+          targetDate.setHours(12, 0, 0, 0);
+        }
+        
+        let title = msgStr;
+        // Limpar prefixos e verbos comuns
+        const cleanRegex = /^(agendar|marcar|colocar|adicionar|criar|lembrar|programar|fazer)\s+(uma|um|de|para)?\s*/i;
+        title = title.replace(cleanRegex, '');
+        
+        // Limpar indicações de data e hora do título
+        title = title.replace(/(?:no\s+)?dia\s+\d+/gi, '');
+        title = title.replace(/(?:às\s+)?\d{1,2}(?::|h)\d{0,2}/gi, '');
+        title = title.replace(/\b(amanhã|hoje)\b/gi, '');
+        
+        // Limpar espaços extras
+        title = title.trim();
+        
+        if (title.length > 0) {
+          title = title.charAt(0).toUpperCase() + title.slice(1);
+        } else {
+          title = 'Tarefa Agendada';
+        }
+        
+        return {
+          action: 'CREATE_TASK',
+          data: {
+            title,
+            scheduledDate: targetDate.toISOString()
+          }
+        };
+      }
+      return null;
+    };
+
     const apiKey = process.env.GEMINI_API_KEY;
     
+    // Se não tiver chave, tenta usar o parser local inteligente
     if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
-       // Mock básico para desenvolvimento local
-       const msg = message.toLowerCase();
-       if (msg.includes('marcar') || msg.includes('agendar') || msg.includes('reunião') || msg.includes('meeting') || msg.includes('call')) {
-          return { 
-            action: 'CREATE_TASK', 
-            data: { 
-              title: message.length > 30 ? 'Compromisso Agendado' : message, 
-              scheduledDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-              description: 'Agendado via comando de voz/texto InfluNext AI.'
-            } 
-          };
-       }
+       const localResult = runLocalParser(message);
+       if (localResult) return localResult;
        return { action: 'UNKNOWN' };
     }
 
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-      const prompt = `Você é o interpretador de comandos do InfluNext Elite v2.1. 
-Sua tarefa é extrair a intenção do usuário de uma mensagem de texto e retornar um JSON puro.
+      const prompt = `Você é o interpretador de comandos inteligentes do calendário do InfluNext Elite v2.1.
+Sua tarefa é ler a mensagem do usuário (que pode ser em áudio transcrito ou texto), extrair a ação desejada e retornar APENAS um JSON no formato especificado abaixo. Não inclua nenhuma outra palavra, comentário ou bloco de código markdown, retorne apenas o objeto JSON limpo.
 
-Hoje é: ${new Date().toISOString()}
+Hoje é: ${new Date().toISOString()} (Mês atual: ${new Date().getMonth() + 1}, Ano atual: ${new Date().getFullYear()})
 
-REGRAS:
-1. Se o usuário quiser agendar, marcar ou criar uma tarefa, evento ou reunião, use action: "CREATE_TASK".
-2. Identifique se é uma reunião (meeting, call, papo, meet) e inclua isso no título se necessário.
-3. Tente extrair o título e a data correta. Se ele disser "amanhã", "hoje", "sexta", calcule a data correta a partir de hoje.
-4. Se o usuário quiser saber o status de algo ou pedir uma análise, use action: "ANALYZE_REQUEST".
-5. Se o usuário quiser deletar ou cancelar algo, use action: "DELETE_TASK".
-6. Se não entender, use action: "UNKNOWN".
+REGRAS DE PROCESSAMENTO:
+1. Se o usuário quiser agendar, marcar, programar ou registrar qualquer tarefa, aniversário, evento, post ou compromisso, use a action "CREATE_TASK".
+2. Tente extrair o título mais representativo da tarefa. Por exemplo:
+   - "agendar entrevista no dia 15" -> Título: "Entrevista"
+   - "colocar aniversário de Maria no dia 12" -> Título: "Aniversário de Maria"
+   - "agendar post dia 10 sobre moda" -> Título: "Postar: Moda"
+3. Calcule a data de agendamento (scheduledDate) no formato ISO de forma precisa:
+   - Se disser "amanhã", adicione 1 dia à data atual.
+   - Se disser "hoje", use o dia atual.
+   - Se disser "dia X" ou "no dia X" (ex: "dia 15"), use o dia X do mês atual. Se o dia X já passou no mês atual, use o dia X do próximo mês.
+   - Se houver menção a horário (ex: "às 15h", "às 15:30", "14:00"), configure as horas e minutos corretamente na data ISO calculada (em fuso local/UTC). Se não houver horário especificado, defina para as 12:00:00 da data alvo.
+4. Se o usuário quiser cancelar ou remover algo, use a action "DELETE_TASK".
+5. Se não entender ou for algo genérico que não seja criação de compromisso, use a action "UNKNOWN".
 
-EXEMPLO 1:
-Input: "marcar live para amanhã às 15h"
-Output: { "action": "CREATE_TASK", "data": { "title": "Live", "scheduledDate": "2024-05-06T15:00:00.000Z" } }
+FORMATO DO JSON DE RETORNO:
+{
+  "action": "CREATE_TASK",
+  "data": {
+    "title": "Título extraído do compromisso",
+    "scheduledDate": "2026-06-15T15:00:00.000Z"
+  }
+}
 
-EXEMPLO 2:
-Input: "agendar reunião com a marca X na sexta-feira às 10:00"
-Output: { "action": "CREATE_TASK", "data": { "title": "Reunião: Marca X", "scheduledDate": "2024-05-10T10:00:00.000Z" } }
-
-Input: "${message}"
-Output:`;
+Mensagem do usuário: "${message}"
+JSON de retorno:`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text().replace(/```json|```/g, '').trim();
       
       try {
-        return JSON.parse(text);
+        const parsed = JSON.parse(text);
+        if (parsed.action && parsed.action !== 'UNKNOWN') {
+          return parsed;
+        }
       } catch {
-        return { action: 'UNKNOWN' };
+        // Fallback para o parser local se falhar na serialização JSON do Gemini
       }
     } catch (error) {
       console.error('[AI PARSER] Erro:', error);
-      return { action: 'UNKNOWN' };
     }
+
+    // Fallback final: se Gemini falhar, der erro ou retornar UNKNOWN, roda o parser local de Regex
+    const finalLocal = runLocalParser(message);
+    if (finalLocal) return finalLocal;
+
+    return { action: 'UNKNOWN' };
   }
 
   /**
@@ -460,7 +605,7 @@ Output:`;
 
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
       const prompt = `Você é a IA Empresária do InfluNext. 
       Gere uma frase curta, impactante e motivacional para @${influencer.handle}.

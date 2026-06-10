@@ -42,6 +42,7 @@ export default function InfluencerDashboard() {
   }
 
   const escrowBalance = data?.kpis?.escrowBalance ?? 0;
+  const isDark = true;
 
   return (
     <div className="space-y-8 md:space-y-12 pb-20">
@@ -53,15 +54,19 @@ export default function InfluencerDashboard() {
             <Sparkles className="w-3 md:w-4 h-3 md:h-4 text-slate-400 animate-pulse" />
             <span className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Gestão Inteligente</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl md:text-7xl font-black tracking-tighter text-slate-900 leading-none drop-shadow-[0_2px_8px_rgba(255,255,255,0.4)]">
-            Escritório <span className="text-slate-500 font-medium italic">Digital</span>
+          <h1 className={`text-3xl sm:text-4xl md:text-7xl font-black tracking-tighter leading-none ${isDark ? 'text-white' : 'text-slate-900 drop-shadow-[0_2px_8px_rgba(255,255,255,0.4)]'}`}>
+            Escritório <span className={`${isDark ? 'text-zinc-400' : 'text-slate-500'} font-medium italic`}>Digital</span>
           </h1>
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-end gap-4 w-full lg:w-auto">
            {/* Total Earnings Card */}
            <div 
-             className="bg-white/40 border border-white/50 px-5 md:px-8 py-4 md:py-6 rounded-[2rem] md:rounded-[2.5rem] flex items-center justify-between sm:justify-start gap-4 md:gap-6 shadow-xl hover:bg-white/60 transition-all group w-full sm:w-auto"
+             className={`px-5 md:px-8 py-4 md:py-6 rounded-[2rem] md:rounded-[2.5rem] flex items-center justify-between sm:justify-start gap-4 md:gap-6 shadow-xl transition-all group w-full sm:w-auto ${
+               isDark 
+                 ? 'bg-black/35 border border-white/5 hover:bg-black/50 text-white' 
+                 : 'bg-white/40 border border-white/50 hover:bg-white/60 text-slate-900'
+             }`}
              style={{ backdropFilter: 'blur(30px)' }}
            >
               <div className="flex items-center gap-3 md:gap-4">
@@ -69,25 +74,33 @@ export default function InfluencerDashboard() {
                     <Wallet className="w-4 md:w-5 h-4 md:h-5" />
                  </div>
                  <div className="text-left">
-                    <span className="text-[8px] md:text-[9px] font-black text-emerald-700 uppercase tracking-widest block mb-0.5">Saldo Disponível</span>
-                    <span className="text-xl md:text-3xl font-black text-slate-900 tracking-tighter">
+                    <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest block mb-0.5 ${isDark ? 'text-emerald-450' : 'text-emerald-700'}`}>Saldo Disponível</span>
+                    <span className={`text-xl md:text-3xl font-black tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(escrowBalance)}
                     </span>
                  </div>
               </div>
               <Link 
                 href="/dashboard/influencer/wallet"
-                className="rounded-full bg-slate-900 text-white font-black text-[9px] md:text-[10px] uppercase h-10 md:h-12 px-6 md:px-8 hover:bg-emerald-700 transition-colors shadow-xl flex items-center justify-center"
+                className={`rounded-full font-black text-[9px] md:text-[10px] uppercase h-10 md:h-12 px-6 md:px-8 transition-colors shadow-xl flex items-center justify-center ${
+                  isDark 
+                    ? 'bg-white text-slate-950 hover:bg-emerald-600 hover:text-white' 
+                    : 'bg-slate-900 text-white hover:bg-emerald-700'
+                }`}
               >
                 Sacar
               </Link>
            </div>
 
            {/* Quick Stats Mini Card */}
-           <div className="bg-slate-900 text-white px-5 md:px-8 py-4 md:py-6 rounded-[2rem] md:rounded-[2.5rem] flex flex-row sm:flex-col items-center sm:items-start justify-between sm:justify-center gap-1 shadow-2xl min-w-[140px] md:min-w-[180px]">
-              <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">Performance</span>
+           <div className={`px-5 md:px-8 py-4 md:py-6 rounded-[2rem] md:rounded-[2.5rem] flex flex-row sm:flex-col items-center sm:items-start justify-between sm:justify-center gap-1 shadow-2xl min-w-[140px] md:min-w-[180px] ${
+             isDark 
+               ? 'bg-white text-slate-950' 
+               : 'bg-slate-900 text-white'
+           }`}>
+              <span className={`text-[8px] font-black uppercase tracking-[0.3em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Performance</span>
               <div className="flex items-center gap-2">
-                 <span className="text-lg md:text-2xl font-black tracking-tighter text-emerald-400">+R$ 12k</span>
+                 <span className="text-lg md:text-2xl font-black tracking-tighter text-emerald-500">+R$ 12k</span>
                  <TrendingUp className="w-3 md:w-4 h-3 md:h-4 text-emerald-500" />
               </div>
            </div>
@@ -98,7 +111,8 @@ export default function InfluencerDashboard() {
       <CareerDashboard influencer={{
         id: data?.profile?.id,
         careerObjective: data?.profile?.careerObjective || 'GROWTH',
-        influScore: data?.kpis?.influScore || 0
+        influScore: data?.kpis?.influScore || 0,
+        theme: data?.userState?.theme
       }} />
 
       {/* Footer Branding - Transparent */}

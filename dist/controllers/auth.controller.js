@@ -77,7 +77,7 @@ const signup = async (req, res) => {
         }
         const passwordHash = await bcrypt_1.default.hash(password, 12);
         const user = await prisma_1.prisma.user.create({
-            data: { email, passwordHash, role },
+            data: { email, passwordHash, role, theme: 'light' },
             select: { id: true, email: true, role: true, createdAt: true },
         });
         res.status(201).json({ message: 'Usuário criado com sucesso!', user });

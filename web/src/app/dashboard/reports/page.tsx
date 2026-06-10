@@ -1,10 +1,13 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { TrendingUp, ArrowUpRight, DollarSign, Activity, FileText, Download, Calendar, Filter, Zap } from 'lucide-react';
 import { api } from '@/lib/api';
 
 export default function ReportsPage() {
+  const router = useRouter();
   const [balance, setBalance] = useState(0);
+  const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Filtros de Data
@@ -13,17 +16,25 @@ export default function ReportsPage() {
   const [isFiltering, setIsFiltering] = useState(false);
 
   useEffect(() => {
-    const fetchBalance = async () => {
+    const fetchData = async () => {
       try {
-        const res = await api.get('/influencers/balance');
-        setBalance(res.data.availableBalance || 0);
+        setIsLoading(true);
+        const [balanceRes, integrationsRes] = await Promise.all([
+          api.get('/influencers/balance'),
+          api.get('/integrations/connected')
+        ]);
+        
+        setBalance(balanceRes.data.availableBalance || 0);
+        if (integrationsRes.data.platforms) {
+          setConnectedPlatforms(integrationsRes.data.platforms || []);
+        }
       } catch (err) {
-        console.error('Erro ao buscar balanço:', err);
+        console.error('Erro ao buscar dados do relatório:', err);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchBalance();
+    fetchData();
   }, []);
 
   // Dados Base (Mockados)
@@ -95,6 +106,40 @@ export default function ReportsPage() {
     );
   }
 
+  if (connectedPlatforms.length === 0) {
+    return (
+      <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-10 pb-24 animate-in fade-in duration-1000">
+        <header className="space-y-1">
+          <div className="flex items-center gap-3 mb-2">
+             <div className="h-1.5 w-12 bg-emerald-500 rounded-full" />
+              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em]">Analytics Engine</span>
+          </div>
+          <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter">
+            Relatórios <span className="text-zinc-500 italic">& Growth</span>
+          </h1>
+        </header>
+
+        <div className="border border-white/5 rounded-[3rem] p-12 md:p-24 bg-black/35 backdrop-blur-md shadow-xl space-y-6 flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center shadow-lg text-purple-400 animate-bounce">
+            <Activity size={32} />
+          </div>
+          <div className="space-y-2 max-w-md">
+            <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Nenhum Canal Integrado</h2>
+            <p className="text-zinc-400 text-sm font-medium leading-relaxed">
+              Seus gráficos de faturamento, evolução de audiência e extratos de campanhas estão aguardando conexão. Conecte suas redes sociais para rastrear suas métricas dinâmicas.
+            </p>
+          </div>
+          <button 
+            onClick={() => router.push('/dashboard/settings')}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-purple-600/20 active:scale-95"
+          >
+            Sincronizar Redes Sociais
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-10 pb-24 animate-in fade-in duration-1000">
       
@@ -103,38 +148,38 @@ export default function ReportsPage() {
         <div className="space-y-1">
           <div className="flex items-center gap-3 mb-2">
              <div className="h-1.5 w-12 bg-emerald-500 rounded-full" />
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Analytics Engine</span>
+              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em]">Analytics Engine</span>
           </div>
-          <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter">
-            Relatórios <span className="text-slate-400 italic">& Growth</span>
+          <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter">
+            Relatórios <span className="text-zinc-500 italic">& Growth</span>
           </h1>
         </div>
         
         {/* Painel de Filtros de Data */}
         <div className="flex flex-col sm:flex-row items-center gap-3">
-          <div className="flex items-center gap-2 bg-white/60 border border-slate-200 rounded-2xl px-4 py-2 shadow-sm" style={{ backdropFilter: 'blur(20px)' }}>
-             <Calendar size={14} className="text-slate-500" />
+          <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-2xl px-4 py-2 shadow-sm" style={{ backdropFilter: 'blur(20px)' }}>
+             <Calendar size={14} className="text-zinc-400" />
              <input 
                type="date" 
-               className="bg-transparent text-[11px] font-black text-slate-700 focus:outline-none" 
+               className="bg-transparent text-[11px] font-black text-white focus:outline-none [color-scheme:dark]" 
                value={startDate} 
                onChange={e => setStartDate(e.target.value)} 
              />
-             <span className="text-slate-400 text-[9px] font-black uppercase">Até</span>
+             <span className="text-zinc-500 text-[9px] font-black uppercase">Até</span>
              <input 
                type="date" 
-               className="bg-transparent text-[11px] font-black text-slate-700 focus:outline-none" 
+               className="bg-transparent text-[11px] font-black text-white focus:outline-none [color-scheme:dark]" 
                value={endDate} 
                onChange={e => setEndDate(e.target.value)} 
              />
              <button 
                onClick={handleFilter}
-               className="ml-2 bg-slate-900 text-white p-1.5 rounded-lg hover:bg-purple-600 transition-colors"
+               className="ml-2 bg-white/10 text-white p-1.5 rounded-lg hover:bg-purple-600 transition-colors"
              >
                 <Filter size={12} />
              </button>
           </div>
-          <button className="flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl">
+          <button className="flex items-center gap-2 bg-white/10 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/15 transition-all shadow-xl">
             <Download size={14} /> Exportar
           </button>
         </div>
@@ -143,7 +188,7 @@ export default function ReportsPage() {
       {/* KPIs */}
       <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 transition-opacity duration-300 ${isFiltering ? 'opacity-50' : 'opacity-100'}`}>
          {/* Faturamento Anual / Período */}
-         <div className="bg-white/40 border border-white/50 p-6 rounded-[2rem] shadow-xl" style={{ backdropFilter: 'blur(30px)' }}>
+         <div className="bg-black/35 border border-white/5 p-6 rounded-[2rem] shadow-xl" style={{ backdropFilter: 'blur(30px)' }}>
             <div className="flex items-center justify-between mb-4">
                <div className="p-3 bg-emerald-500 text-white rounded-xl shadow-lg">
                   <DollarSign size={20} />
@@ -152,16 +197,16 @@ export default function ReportsPage() {
                  <ArrowUpRight size={14} /> +34%
                </span>
             </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-1">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">
               {startDate && endDate ? 'Faturamento no Período' : 'Faturamento Total (Est.)'}
             </p>
-            <p className="text-4xl font-black text-slate-900 tracking-tighter">
+            <p className="text-4xl font-black text-white tracking-tighter">
               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(currentTotal + balance)}
             </p>
          </div>
 
          {/* Crescimento de Audiência */}
-         <div className="bg-white/40 border border-white/50 p-6 rounded-[2rem] shadow-xl" style={{ backdropFilter: 'blur(30px)' }}>
+         <div className="bg-black/35 border border-white/5 p-6 rounded-[2rem] shadow-xl" style={{ backdropFilter: 'blur(30px)' }}>
             <div className="flex items-center justify-between mb-4">
                <div className="p-3 bg-purple-600 text-white rounded-xl shadow-lg">
                   <TrendingUp size={20} />
@@ -170,24 +215,24 @@ export default function ReportsPage() {
                  <ArrowUpRight size={14} /> +12%
                </span>
             </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-1">Crescimento de Base</p>
-            <p className="text-4xl font-black text-slate-900 tracking-tighter">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">Crescimento de Base</p>
+            <p className="text-4xl font-black text-white tracking-tighter">
               +14.2K
             </p>
          </div>
 
          {/* Melhor Campanha do Período */}
-         <div className="bg-white/40 border border-white/50 p-6 rounded-[2rem] shadow-xl" style={{ backdropFilter: 'blur(30px)' }}>
+         <div className="bg-black/35 border border-white/5 p-6 rounded-[2rem] shadow-xl" style={{ backdropFilter: 'blur(30px)' }}>
             <div className="flex items-center justify-between mb-4">
                <div className="p-3 bg-blue-600 text-white rounded-xl shadow-lg">
                   <Zap size={20} />
                </div>
-               <span className="flex items-center gap-1 text-xs font-black text-slate-500 bg-slate-200 px-3 py-1 rounded-full">
+               <span className="flex items-center gap-1 text-xs font-black text-zinc-400 bg-white/10 px-3 py-1 rounded-full">
                  Destaque
                </span>
             </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-1">Top Campanha (ROI)</p>
-            <p className="text-xl font-black text-slate-900 tracking-tighter truncate">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">Top Campanha (ROI)</p>
+            <p className="text-xl font-black text-white tracking-tighter truncate">
               {transactions[0]?.desc || 'Nenhuma no período'}
             </p>
          </div>
@@ -198,7 +243,7 @@ export default function ReportsPage() {
         <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 blur-[100px] rounded-full pointer-events-none" />
         
         <div className="relative z-10">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-1">Desenvolvimento</h3>
+          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-1">Desenvolvimento</h3>
           <p className="text-xl md:text-2xl font-black text-white mb-10">Curva de Faturamento</p>
           
           <div className="h-64 flex items-end gap-2 md:gap-4 mt-8">
@@ -207,7 +252,7 @@ export default function ReportsPage() {
               return (
                 <div key={idx} className="flex-1 flex flex-col items-center justify-end gap-3 group/bar">
                   {/* Tooltip escondido */}
-                  <div className="opacity-0 group-hover/bar:opacity-100 transition-opacity bg-white text-slate-900 text-xs font-black px-3 py-2 rounded-xl mb-2 whitespace-nowrap shadow-xl translate-y-2 group-hover/bar:translate-y-0 duration-300 z-20 relative">
+                  <div className="opacity-0 group-hover/bar:opacity-100 transition-opacity bg-slate-850 text-white border border-white/5 text-xs font-black px-3 py-2 rounded-xl mb-2 whitespace-nowrap shadow-xl translate-y-2 group-hover/bar:translate-y-0 duration-300 z-20 relative">
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.value)}
                   </div>
                   {/* Barra do gráfico */}
@@ -218,7 +263,7 @@ export default function ReportsPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-transparent to-emerald-400/50" />
                   </div>
                   {/* Mês */}
-                  <span className="text-[9px] font-black uppercase text-slate-500">{data.month}</span>
+                  <span className="text-[9px] font-black uppercase text-zinc-500">{data.month}</span>
                 </div>
               );
             })}
@@ -227,50 +272,50 @@ export default function ReportsPage() {
       </div>
 
       {/* Histórico de Transações */}
-      <div className={`bg-white/60 border border-white/50 rounded-[3rem] p-8 md:p-10 shadow-xl transition-opacity duration-300 ${isFiltering ? 'opacity-50' : 'opacity-100'}`} style={{ backdropFilter: 'blur(30px)' }}>
+      <div className={`bg-black/35 border border-white/5 rounded-[3rem] p-8 md:p-10 shadow-xl transition-opacity duration-300 ${isFiltering ? 'opacity-50' : 'opacity-100'}`} style={{ backdropFilter: 'blur(30px)' }}>
         <div className="flex items-center gap-3 mb-8">
-           <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-lg">
+           <div className="w-10 h-10 rounded-2xl bg-white/10 text-white flex items-center justify-center shadow-lg">
               <FileText size={18} />
            </div>
            <div>
-              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">
                 {startDate && endDate ? `Extrato: ${startDate} até ${endDate}` : 'Extrato Geral'}
               </h3>
-              <p className="text-lg font-black text-slate-900">Histórico de Transações</p>
+              <p className="text-lg font-black text-white">Histórico de Transações</p>
            </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-200">
-                <th className="py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">ID</th>
-                <th className="py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Data</th>
-                <th className="py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Descrição</th>
-                <th className="py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Status</th>
-                <th className="py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Valor</th>
+              <tr className="border-b border-white/10">
+                <th className="py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">ID</th>
+                <th className="py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Data</th>
+                <th className="py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Descrição</th>
+                <th className="py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Status</th>
+                <th className="py-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 text-right">Valor</th>
               </tr>
             </thead>
             <tbody>
               {transactions.length > 0 ? transactions.map((trx, idx) => (
-                <tr key={idx} className="border-b border-slate-100 hover:bg-white/50 transition-colors">
-                  <td className="py-5 text-xs font-bold text-slate-500">{trx.id}</td>
-                  <td className="py-5 text-xs font-bold text-slate-500">{trx.date}</td>
-                  <td className="py-5 text-sm font-black text-slate-800">{trx.desc}</td>
+                <tr key={idx} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                  <td className="py-5 text-xs font-bold text-zinc-500">{trx.id}</td>
+                  <td className="py-5 text-xs font-bold text-zinc-500">{trx.date}</td>
+                  <td className="py-5 text-sm font-black text-zinc-200">{trx.desc}</td>
                   <td className="py-5">
                     <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
-                      trx.status === 'Concluído' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'
+                      trx.status === 'Concluído' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-white/10 text-zinc-400'
                     }`}>
                       {trx.status}
                     </span>
                   </td>
-                  <td className={`py-5 text-right font-black ${trx.amount > 0 ? 'text-emerald-600' : 'text-slate-900'}`}>
+                  <td className={`py-5 text-right font-black ${trx.amount > 0 ? 'text-emerald-400' : 'text-white'}`}>
                     {trx.amount > 0 ? '+' : ''}{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(trx.amount)}
                   </td>
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan={5} className="py-10 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <td colSpan={5} className="py-10 text-center text-[10px] font-black uppercase tracking-widest text-zinc-500">
                     Nenhuma transação encontrada neste período.
                   </td>
                 </tr>
@@ -281,7 +326,7 @@ export default function ReportsPage() {
 
         {transactions.length > 0 && (
           <div className="mt-8 flex justify-center">
-            <button className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-slate-900 transition-colors">
+            <button className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-white transition-colors">
               Carregar Mais Transações ↓
             </button>
           </div>

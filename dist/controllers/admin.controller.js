@@ -17,7 +17,7 @@ const getGrowthStrategy = async (req, res) => {
             prisma_1.prisma.contract.aggregate({ _sum: { platformFee: true } })
         ]);
         const genAI = new generative_ai_1.GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         const prompt = `Você é um consultor de crescimento de SaaS (Growth Hacker) especializado no mercado brasileiro.
     Você está ajudando o Alexsandro, o fundador do InfluNext, a escalar sua plataforma.
     
@@ -54,14 +54,28 @@ const getGrowthStrategy = async (req, res) => {
 exports.getGrowthStrategy = getGrowthStrategy;
 const getAdminStats = async (req, res) => {
     try {
-        const [totalUsers, userBreakdown, totalContracts, marketplaceHealth, totalRevenue, totalViews] = await Promise.all([
+        const [totalUsers, userBreakdown, totalContracts, marketplaceHealth, totalRevenue, totalViews, activeSubs, canceledSubs, pastDueSubs, totalSubs, activeUsers, inactiveUsers] = await Promise.all([
             prisma_1.prisma.user.count(),
             prisma_1.prisma.user.groupBy({ by: ['role'], _count: { _all: true } }),
             prisma_1.prisma.contract.count(),
             prisma_1.prisma.contract.groupBy({ by: ['escrowStatus'], _count: { _all: true } }),
             prisma_1.prisma.contract.aggregate({ _sum: { platformFee: true, budget: true } }),
-            prisma_1.prisma.pageView.count()
+            prisma_1.prisma.pageView.count(),
+            prisma_1.prisma.subscription.count({ where: { status: 'active' } }),
+            prisma_1.prisma.subscription.count({ where: { status: 'canceled' } }),
+            prisma_1.prisma.subscription.count({ where: { status: 'past_due' } }),
+            prisma_1.prisma.subscription.count(),
+            prisma_1.prisma.user.count({ where: { subscriptionStatus: 'ACTIVE' } }),
+            prisma_1.prisma.user.count({ where: { subscriptionStatus: 'INACTIVE' } })
         ]);
+        const activeCount = activeSubs > 0 ? activeSubs : activeUsers;
+        const canceledCount = canceledSubs > 0 ? canceledSubs : inactiveUsers;
+        const churnRate = (activeCount + canceledCount) > 0
+            ? (canceledCount / (activeCount + canceledCount)) * 100
+            : 0;
+        const defaultRate = totalSubs > 0
+            ? (pastDueSubs / totalSubs) * 100
+            : 0;
         res.json({
             metrics: {
                 totalUsers: userBreakdown,
@@ -69,7 +83,12 @@ const getAdminStats = async (req, res) => {
                 marketplaceHealth,
                 revenue: totalRevenue._sum.platformFee || 0,
                 gmv: totalRevenue._sum.budget || 0,
-                pageViews: totalViews
+                pageViews: totalViews,
+                churnRate: Number(churnRate.toFixed(2)),
+                defaultRate: Number(defaultRate.toFixed(2)),
+                activeSubs,
+                canceledSubs,
+                pastDueSubs
             },
             status: 'OK',
             serverTime: new Date().toISOString()

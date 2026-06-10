@@ -84,6 +84,7 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
         dailyMission: profile.dailyMission,
         missionCompleted: profile.missionCompleted,
         profileProgress: progress,
+        aiInterview: profile.aiInterview,
       },
       kpis: {
         influScore: profile.influScore,
@@ -122,7 +123,8 @@ export const getCompanyDashboard = async (req: Request, res: Response): Promise<
     const company = await prisma.companyProfile.findUnique({
       where: { userId },
       include: {
-        user: { select: { onboardingCompleted: true, subscriptionStatus: true, trialEndsAt: true } },
+        user: { select: { email: true, role: true, onboardingCompleted: true, subscriptionStatus: true, trialEndsAt: true, theme: true, accentColor: true } },
+        rateCards: true,
         contracts: {
           include: {
             deliverables: true,
@@ -155,7 +157,32 @@ export const getCompanyDashboard = async (req: Request, res: Response): Promise<
         .reduce((sum: number, c: any) => sum + Number(c.budget), 0),
     };
 
-    res.json({ stats, userState: company.user, contracts: company.contracts });
+    res.json({ 
+      stats, 
+      userState: company.user, 
+      contracts: company.contracts,
+      profile: {
+        id: company.id,
+        handle: company.companyName,
+        niche: company.segment,
+        profileImageUrl: (company as any).logoUrl || null,
+        influScore: 100,
+        scoreClass: 'GOLD',
+        dailyMission: 'Garantir parcerias de sucesso',
+        missionCompleted: false,
+        profileProgress: 80,
+        companyName: company.companyName,
+        taxId: company.taxId,
+        city: company.city,
+        state: company.state,
+        segment: company.segment,
+        employeeCount: company.employeeCount,
+        campaignBudget: company.campaignBudget,
+        logoUrl: (company as any).logoUrl || null,
+        bio: (company as any).bio || null,
+      },
+      rateCards: (company as any).rateCards || [],
+    });
   } catch (error) {
     console.error('[DASHBOARD] Erro ao carregar company:', error);
     res.status(500).json({ error: 'Erro ao carregar dashboard.' });

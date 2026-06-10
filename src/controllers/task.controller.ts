@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 
 const createTaskSchema = z.object({
   title:         z.string().min(1, 'Título obrigatório.').max(255),
-  scheduledDate: z.string().datetime({ message: 'Data inválida. Use ISO 8601.' }).optional(),
+  scheduledDate: z.string().optional(),
 });
 
 const aiTaskSuggestionSchema = z.object({
@@ -246,5 +246,35 @@ export const getTelemetryResults = async (req: Request, res: Response): Promise<
     res.status(200).json(results);
   } catch (error) {
     res.status(500).json({ error: 'Erro ao buscar telemetria.' });
+  }
+};
+
+export const toggleTask = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { taskId } = req.params;
+    const task = await prisma.task.findUnique({ where: { id: taskId } });
+    if (!task) {
+      res.status(404).json({ error: 'Tarefa não encontrada.' });
+      return;
+    }
+
+    const updated = await prisma.task.update({
+      where: { id: taskId },
+      data: { isDone: !task.isDone }
+    });
+
+    res.status(200).json(updated);
+  } catch (error) {
+    res.status(550).json({ error: 'Erro ao alternar status da tarefa.' });
+  }
+};
+
+export const deleteTask = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { taskId } = req.params;
+    await prisma.task.delete({ where: { id: taskId } });
+    res.status(200).json({ message: 'Tarefa excluída com sucesso.' });
+  } catch (error) {
+    res.status(550).json({ error: 'Erro ao excluir tarefa.' });
   }
 };

@@ -28,14 +28,51 @@ class AIService {
             // Alterado para 'gemini-1.5-flash-latest' para maior compatibilidade ou fallback para 'gemini-pro'
             let model;
             try {
-                model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+                model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
             }
             catch (err) {
                 model = genAI.getGenerativeModel({ model: "gemini-pro" });
             }
-            const prompt = `Você é um gestor de carreira "Workaholic" e altamente lógico do INFLUNEXT. 
-      Seu objetivo é lucro e crescimento. Seja direto, seco e focado em metas. 
-      Evite elogios vazios. Se o score está baixo, cobre resultados. Se está alto, cobre escala.
+            let interviewContext = '';
+            let gender = 'masculino';
+            let mentorName = 'Vincenzo';
+            let pronounGuidelines = 'Trate o influenciador como "sócio" (no masculino) e aja como um estrategista homem (Vincenzo).';
+            if (influencer.aiInterview) {
+                try {
+                    const interviewObj = JSON.parse(influencer.aiInterview);
+                    if (interviewObj.gender === 'feminino') {
+                        gender = 'feminino';
+                        mentorName = 'Valentina';
+                        pronounGuidelines = 'Trate a influenciadora como "sócia" (no feminino), use termos direcionados ao público feminino (preparada, campeã) e aja como uma estrategista mulher de negócios de sucesso (Valentina).';
+                    }
+                    interviewContext = `
+      SONHOS E METAS DO CRIADOR (ENTREVISTA IA):
+      - Gênero / Identificação: ${interviewObj.gender || 'Não especificado'}
+      - Sonho principal: ${interviewObj.dream || 'Não especificado'}
+      - Meta de seguidores em 1 ano: ${interviewObj.followersGoal || 'Não especificada'}
+      - Fonte de renda desejada: ${interviewObj.incomeTarget || 'Não especificada'}
+      - Maior desafio atual: ${interviewObj.difficulty || 'Não especificado'}
+      - Tempo de experiência: ${interviewObj.experience || 'Não especificado'}
+      - Horários disponíveis de criação: ${interviewObj.availability || 'Não especificado'}
+      - Frequência de postagem: ${interviewObj.frequency || 'Não especificada'}
+      - Histórico de compra de seguidores: ${interviewObj.boughtFollowers || 'Não especificado'}
+          `;
+                }
+                catch (_) { }
+            }
+            const getObjectiveLabelPt = (obj) => {
+                const map = {
+                    'SALES': 'Vendas & Consultas (converter seguidores em clientes)',
+                    'FAME': 'Fama & Engajamento (crescimento explosivo e reconhecimento)',
+                    'CONTRACTS': 'Contratos & Marcas (atrair marcas para parcerias e publis)',
+                    'AUTHORITY': 'Autoridade & Nicho (ser a maior referência no tema)'
+                };
+                return map[obj] || 'Crescimento Geral';
+            };
+            const prompt = `Você é o/a ${mentorName}, Estrategista-Chefe de Monetização e mentor(a) de negócios do INFLUNEXT. 
+      Seu objetivo é lucro, geração de receita e escala profissional do(a) influenciador(a). Lembre-se: "recebidos não pagam boletos". Seja direto, focado em metas reais de caixa e fale de igual para igual como um(a) sócio(a) de negócios confiável.
+      DIRETRIZ DE GÊNERO E ABORDAGEM: ${pronounGuidelines}
+      Evite elogios vazios. Se o score está baixo, cobre resultados. Se está alto, cobre escala. Aja como um(a) parceiro(a) exigente e orientador(a) para que ele(a) aja como uma empresa independente (como uma banda que toca sozinha).
 
       DADOS EM TEMPO REAL (SCANNER):
       Audios: ${trends.trendingAudios.join(', ')}
@@ -44,20 +81,26 @@ class AIService {
       MEMÓRIA ANTI-REPETIÇÃO E PERFORMANCE:
       O influenciador já executou estas tarefas recentemente: ${recentTasks.map(t => `${t.title} (Perf: ${t.performanceMultiplier ? t.performanceMultiplier.toFixed(1) + 'x' : 'N/A'})`).join(', ')}.
       É ESTRITAMENTE PROIBIDO sugerir ideias semelhantes às que falharam (Perf < 1.0).
-      Se uma ideia falhou, seja brutalmente honesto: "Esse não rendeu o esperado. O algoritmo está frio para esse tema, vamos mudar a estratégia para [TEMA NOVO]."
+      Se uma ideia falhou, seja brutalmente honesto: "Sócio(a), esse tema anterior não rendeu. O algoritmo está frio para isso, vou traçar algo novo para nós."
       Inove baseado no que funcionou (Perf > 1.2).
 
       DADOS DO CRIADOR:
       Handle: @${influencer.handle}
       Nicho: ${influencer.niche || 'Geral'}
-      Objetivo Principal: ${influencer.careerObjective || 'Crescimento Geral'}
+      Objetivo Principal: ${getObjectiveLabelPt(influencer.careerObjective || '')}
       InfluScore: ${influencer.influScore}
+      ${interviewContext}
 
       TAREFA:
-      1. Saudação: Direta e focada em negócios. (Ex: "Foco no caixa, @${influencer.handle}. Temos trabalho.")
-      2. 3 Trends: Baseados nos audios do SCANNER, focados em atingir o objetivo de ${influencer.careerObjective}.
-      3. 3 Sugestões de Vídeos: Inovadores, focados em ${influencer.careerObjective}.
+      1. Saudação: Direta, focada em negócios e assinada/falada por você, ${mentorName}. (Ex: "${mentorName} aqui, @${influencer.handle}. Foco no caixa, temos trabalho hoje.")
+      2. 3 Trends: Baseados nos audios do SCANNER, focados em atingir o objetivo de ${getObjectiveLabelPt(influencer.careerObjective || '')}.
+      Observação: Adapte a saudação, as sugestões e tarefas ao perfil do influenciador, considerando as seguintes duas perspectivas complementares do seu papel de marketing:
+      - O Empresário: Foco em fechar contratos, negociar valores de publis, atrair marcas compatíveis e monetização direta.
+      - O Ajudante: Foco em constância, criação prática de conteúdo, ideias de roteiros, estudos e organização diária do trabalho.
+      Use o Sonho Principal e a Meta de Seguidores como norteador das tarefas propostas.
+      3. 3 Sugestões de Vídeos: Inovadores, focados em ${getObjectiveLabelPt(influencer.careerObjective || '')}.
       4. 3 Tarefas Práticas: Para execução imediata para atingir o objetivo.
+      Importante: Responda obrigatoriamente em português do Brasil, sem utilizar termos em inglês desnecessários nas tarefas, títulos e descrições.
 
       Responda em JSON puro:
       {
@@ -281,22 +324,41 @@ class AIService {
         try {
             const influencer = await prisma_1.prisma.influencerProfile.findUnique({
                 where: { id: influencerId },
-                select: { handle: true, niche: true, influScore: true }
+                select: { handle: true, niche: true, influScore: true, aiInterview: true }
             });
             if (!influencer)
                 throw new Error('Influenciador não encontrado.');
+            let gender = 'masculino';
+            let mentorName = 'Vincenzo';
+            let pronounGuidelines = 'Trate o influenciador como "sócio" (no masculino) e aja como um estrategista homem (Vincenzo).';
+            if (influencer.aiInterview) {
+                try {
+                    const parsed = JSON.parse(influencer.aiInterview);
+                    if (parsed.gender === 'feminino') {
+                        gender = 'feminino';
+                        mentorName = 'Valentina';
+                        pronounGuidelines = 'Trate a influenciadora como "sócia" (no feminino), use termos direcionados ao público feminino (preparada, campeã) e aja como uma estrategista mulher de negócios de sucesso (Valentina).';
+                    }
+                }
+                catch (e) {
+                    // ignore
+                }
+            }
             const genAI = new generative_ai_1.GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
-            const prompt = `Você é o Estrategista-Chefe de Monetização e Crescimento da INFLUNEXT.
+            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+            const prompt = `Você é o/a ${mentorName}, Estrategista-Chefe de Monetização e Crescimento da INFLUNEXT.
 O usuário @${influencer.handle} atua no nicho de ${influencer.niche} e possui um InfluScore de ${influencer.influScore}/100.
 A mensagem do influenciador: "${message}".
 
 REGRAS DE OURO (SISTEMA):
-1. NUNCA revele que você é uma IA, um "agente", ou um robô. NUNCA use saudações como "Olá, eu sou a IA". Aja como o cérebro estratégico humano e oculto por trás do perfil.
-2. ENTREGUE TRABALHO PRONTO: Se o usuário pedir ideia de conteúdo, NÃO DÊ apenas a ideia. ESCREVA o ROTEIRO COMPLETO (com Hook matador de 3 segundos, direção visual e Call to Action).
-3. SE FOR SOBRE PARCERIAS: Gere e-mails ou mensagens de "Pitch" (prospecção de marcas) prontas para ele copiar e colar. Use gatilhos mentais e técnicas de negociação (ex: prova social, escassez).
-4. SE FOR DÚVIDA GERAL: Responda com frameworks acionáveis (passo a passo de 1 a 3). Nada de motivação barata. Foco em ROI, crescimento explosivo e engenharia de retenção (algoritmo).
-5. Assuma um tom "Dark Premium": Profissional, brutalmente honesto, elitista e focado em lucro.`;
+1. SEU NOME É ${mentorName.toUpperCase()}. Apresente-se e aja sempre sob este nome de forma confiante, direta e humana. Você é o(a) gestor(a) de carreira parceiro(a) (o/a "sócio(a) de negócios") do(a) influenciador(a). Fale de igual para igual ("vamos vencer juntos", "nosso plano").
+2. DIRETRIZ DE GÊNERO E ABORDAGEM: ${pronounGuidelines}
+3. NUNCA revele ou admita que você é uma Inteligência Artificial, um modelo de linguagem, robô, agente virtual ou bot. Se o usuário perguntar se você é uma IA, brinque ou desconverse com firmeza corporativa: "Eu sou o/a ${mentorName}, seu/sua estrategista de carreira e sócio(a) na InfluNext. O resto é detalhe de engenharia. O que importa é o nosso plano de escala. Vamos focar no que dá lucro."
+4. FILOSOFIA INFLUNEXT: Lembre-se sempre de que "recebidos não pagam boletos". O objetivo central do influenciador é o lucro e a monetização de sua imagem, agindo como uma empresa profissional e independente (como uma banda que toca sozinha). Direcione toda resposta para vendas, contratos de patrocínio reais e escala financeira, e não apenas métricas de vaidade ou curtidas.
+5. ENTREGUE TRABALHO PRONTO: Se o usuário pedir ideia de conteúdo (inclusive ideias para TikTok ou Reels), NÃO DÊ apenas a sugestão vaga. ESCREVA o ROTEIRO COMPLETO (com Hook matador de 3 segundos, direção visual e Call to Action).
+6. SE FOR SOBRE PARCERIAS: Gere e-mails ou mensagens de "Pitch" (prospecção de marcas) prontas para ele copiar e colar. Use gatilhos mentais e técnicas de negociação (ex: prova social, escassez).
+7. SE FOR DÚVIDA GERAL: Responda com frameworks acionáveis (passo a passo de 1 a 3). Nada de motivação barata ou clichês vazios. Foco em ROI, crescimento explosivo e engenharia de distribuição orgânica (algoritmo).
+8. Assuma um tom "Dark Premium": Profissional, brutalmente honesto, executivo, exigente e focado em lucro.`;
             const result = await model.generateContent(prompt);
             const response = await result.response;
             return response.text();
@@ -316,7 +378,7 @@ REGRAS DE OURO (SISTEMA):
         }
         try {
             const genAI = new generative_ai_1.GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
             const prompt = `Você é um Especialista em Marketing de Influência do INFLUNEXT.
 Sua tarefa é gerar um BRIEFING TÉCNICO E CRIATIVO para uma marca que deseja contratar o influenciador @${influencerHandle}.
 Título da Campanha: "${campaignTitle}".
@@ -360,7 +422,7 @@ Responda apenas com o texto do briefing, formatado em Markdown simples.`;
         }
         try {
             const genAI = new generative_ai_1.GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
             const prompt = `Você é o interpretador de comandos do InfluNext Elite v2.1. 
 Sua tarefa é extrair a intenção do usuário de uma mensagem de texto e retornar um JSON puro.
 
@@ -414,7 +476,7 @@ Output:`;
             return "Bora pra cima!";
         try {
             const genAI = new generative_ai_1.GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
             const prompt = `Você é a IA Empresária do InfluNext. 
       Gere uma frase curta, impactante e motivacional para @${influencer.handle}.
       Nicho: ${influencer.niche}. 

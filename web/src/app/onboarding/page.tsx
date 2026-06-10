@@ -46,6 +46,31 @@ export default function OnboardingPage() {
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
   const [careerObjective, setCareerObjective] = useState('');
 
+  // States da Entrevista com a IA
+  const [interviewStep, setInterviewStep] = useState(1);
+  const [dream, setDream] = useState('');
+  const [followersGoal, setFollowersGoal] = useState('');
+  const [incomeTarget, setIncomeTarget] = useState('');
+  const [difficulty, setDifficulty] = useState('');
+  const [experience, setExperience] = useState('');
+  const [availability, setAvailability] = useState('');
+  const [frequency, setFrequency] = useState('');
+  const [boughtFollowers, setBoughtFollowers] = useState('');
+  const [gender, setGender] = useState('');
+
+  const getDerivedObjective = () => {
+    if (dream === 'Trabalhar com grandes marcas' || dream === 'Viver de publis/parcerias') {
+      return 'CONTRACTS';
+    }
+    if (dream === 'Ser a maior referência do meu nicho') {
+      return 'AUTHORITY';
+    }
+    if (dream === 'Alcançar independência financeira') {
+      return 'SALES';
+    }
+    return 'FAME';
+  };
+
   const objectives = [
     { id: 'SALES', name: 'Vendas & Consultas', description: 'Foco em converter seguidores em clientes reais.', icon: Zap },
     { id: 'FAME', name: 'Fama & Engajamento', description: 'Foco em crescimento explosivo e reconhecimento.', icon: Sparkles },
@@ -103,10 +128,23 @@ export default function OnboardingPage() {
   const handleComplete = async () => {
     try {
       setIsSaving(true);
+      const derivedObj = getDerivedObjective();
+      const interviewPayload = JSON.stringify({
+        dream,
+        followersGoal,
+        incomeTarget,
+        difficulty,
+        experience,
+        availability,
+        frequency,
+        boughtFollowers,
+        gender
+      });
       await api.patch('/influencers/profile', {
         handle,
         niche,
-        careerObjective,
+        careerObjective: derivedObj,
+        aiInterview: interviewPayload,
         theme,
         accentColor,
         onboardingCompleted: true
@@ -152,10 +190,22 @@ export default function OnboardingPage() {
       Cookies.set('influnext_onboarding', 'true', { expires: 7 });
       toast.success('✦ Instagram conectado com sucesso (Simulado)!');
       
+      const derivedObj = getDerivedObjective();
+      const interviewPayload = JSON.stringify({
+        dream,
+        followersGoal,
+        incomeTarget,
+        difficulty,
+        experience,
+        availability,
+        frequency,
+        boughtFollowers
+      });
       await api.patch('/influencers/profile', {
         handle,
         niche,
-        careerObjective,
+        careerObjective: derivedObj,
+        aiInterview: interviewPayload,
         theme,
         accentColor,
         onboardingCompleted: true
@@ -318,48 +368,340 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* STEP 4: CAREER OBJECTIVE */}
+        {/* STEP 4: CAREER INTERVIEW */}
         {step === 4 && (
-          <div className="space-y-10 animate-in fade-in slide-in-from-right-8 duration-700">
+          <div className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-700">
             <div className="space-y-2">
-              <h2 className="text-3xl font-black tracking-tight uppercase">Objetivo_Estratégico</h2>
-              <p className={`${theme === 'light' ? 'text-slate-400' : 'text-zinc-500'} text-sm font-bold uppercase tracking-widest`}>O que você quer alcançar no InfluNext?</p>
+              <div className="flex items-center gap-2 mb-1">
+                <Sparkles className="w-4 h-4 text-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em]">
+                  Entrevista de Alinhamento IA // Pergunta {interviewStep} de 9
+                </span>
+              </div>
+              <h2 className="text-2xl md:text-3xl font-black tracking-tight uppercase">
+                {interviewStep === 1 && "Qual o seu maior sonho?"}
+                {interviewStep === 2 && "Sua meta de seguidores"}
+                {interviewStep === 3 && "Sua fonte de renda principal"}
+                {interviewStep === 4 && "Seu maior desafio hoje"}
+                {interviewStep === 5 && "Tempo atuando como influenciador?"}
+                {interviewStep === 6 && "Seus horários mais disponíveis?"}
+                {interviewStep === 7 && "Frequência de produção de conteúdo?"}
+                {interviewStep === 8 && "Já realizou compra de seguidores?"}
+                {interviewStep === 9 && "Como você se identifica / Gênero?"}
+              </h2>
+              <p className={`${theme === 'light' ? 'text-slate-400' : 'text-zinc-500'} text-xs font-bold uppercase tracking-widest`}>
+                {interviewStep === 1 && "Defina o norte do seu posicionamento estratégico"}
+                {interviewStep === 2 && "Onde você planeja estar em 12 meses?"}
+                {interviewStep === 3 && "Qual modelo de monetização você quer priorizar?"}
+                {interviewStep === 4 && "Onde a IA deve agir com mais intensidade?"}
+                {interviewStep === 5 && "Seu nível de maturidade e experiência no mercado"}
+                {interviewStep === 6 && "Qual o melhor momento para sua rotina de criação?"}
+                {interviewStep === 7 && "Constância e ritmo de postagem desejados"}
+                {interviewStep === 8 && "Seja sincero. A IA usará isso para reajustar o alcance real."}
+                {interviewStep === 9 && "O estrategista de IA adaptará o nome (Vincenzo/Valentina) e pronomes de tratamento"}
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-4">
-              {objectives.map((obj) => (
-                <button 
-                  key={obj.id}
-                  onClick={() => setCareerObjective(obj.id)}
-                  className={`p-6 rounded-[1.5rem] border-2 text-left flex items-center gap-6 transition-all ${careerObjective === obj.id ? 'border-purple-500 bg-purple-500/5' : theme === 'light' ? 'border-slate-200 bg-white hover:border-purple-200' : 'border-zinc-800 bg-transparent opacity-60 hover:opacity-100'}`}
-                >
-                  <div className={`w-14 h-14 ${theme === 'light' ? 'bg-purple-50 text-purple-600' : 'bg-purple-500/10 text-purple-400'} rounded-2xl flex items-center justify-center border ${theme === 'light' ? 'border-purple-100' : 'border-purple-500/20'}`}>
-                    <obj.icon className="w-7 h-7" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-black text-sm uppercase tracking-widest">{obj.name}</p>
-                    <p className={`text-[11px] ${theme === 'light' ? 'text-slate-500' : 'text-zinc-400'} font-medium`}>{obj.description}</p>
-                  </div>
-                  {careerObjective === obj.id && (
-                    <CheckCircle2 className="w-6 h-6 text-purple-500" />
-                  )}
-                </button>
-              ))}
+            {/* Questions Wizard */}
+            <div className="space-y-4 min-h-[260px]">
+              {interviewStep === 1 && (
+                <div className="grid grid-cols-1 gap-3">
+                  {[
+                    "Viver de publis/parcerias",
+                    "Trabalhar com grandes marcas",
+                    "Alcançar independência financeira",
+                    "Ser a maior referência do meu nicho"
+                  ].map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => setDream(option)}
+                      className={`p-5 rounded-[1.2rem] border-2 text-left flex items-center justify-between transition-all ${
+                        dream === option
+                          ? 'border-emerald-500 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400'
+                          : theme === 'light'
+                          ? 'border-slate-200 bg-white hover:border-slate-300'
+                          : 'border-zinc-800 bg-transparent hover:border-zinc-700'
+                      }`}
+                    >
+                      <span className="font-bold text-xs md:text-sm uppercase tracking-wide">{option}</span>
+                      {dream === option && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {interviewStep === 2 && (
+                <div className="grid grid-cols-1 gap-3">
+                  {[
+                    "10.000 seguidores",
+                    "50.000 seguidores",
+                    "100.000 seguidores",
+                    "500.000+ seguidores"
+                  ].map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => setFollowersGoal(option)}
+                      className={`p-5 rounded-[1.2rem] border-2 text-left flex items-center justify-between transition-all ${
+                        followersGoal === option
+                          ? 'border-emerald-500 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400'
+                          : theme === 'light'
+                          ? 'border-slate-200 bg-white hover:border-slate-300'
+                          : 'border-zinc-800 bg-transparent hover:border-zinc-700'
+                      }`}
+                    >
+                      <span className="font-bold text-xs md:text-sm uppercase tracking-wide">{option}</span>
+                      {followersGoal === option && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {interviewStep === 3 && (
+                <div className="grid grid-cols-1 gap-3">
+                  {[
+                    "Publis/Parcerias",
+                    "Infoprodutos / Mentorias",
+                    "AdSense / Visualizações",
+                    "Afiliados / Vendas"
+                  ].map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => setIncomeTarget(option)}
+                      className={`p-5 rounded-[1.2rem] border-2 text-left flex items-center justify-between transition-all ${
+                        incomeTarget === option
+                          ? 'border-emerald-500 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400'
+                          : theme === 'light'
+                          ? 'border-slate-200 bg-white hover:border-slate-300'
+                          : 'border-zinc-800 bg-transparent hover:border-zinc-700'
+                      }`}
+                    >
+                      <span className="font-bold text-xs md:text-sm uppercase tracking-wide">{option}</span>
+                      {incomeTarget === option && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {interviewStep === 4 && (
+                <div className="grid grid-cols-1 gap-3">
+                  {[
+                    "Consistência de posts",
+                    "Entender o algoritmo",
+                    "Negociar com marcas",
+                    "Qualidade dos vídeos"
+                  ].map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => setDifficulty(option)}
+                      className={`p-5 rounded-[1.2rem] border-2 text-left flex items-center justify-between transition-all ${
+                        difficulty === option
+                          ? 'border-emerald-500 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400'
+                          : theme === 'light'
+                          ? 'border-slate-200 bg-white hover:border-slate-300'
+                          : 'border-zinc-800 bg-transparent hover:border-zinc-700'
+                      }`}
+                    >
+                      <span className="font-bold text-xs md:text-sm uppercase tracking-wide">{option}</span>
+                      {difficulty === option && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {interviewStep === 5 && (
+                <div className="grid grid-cols-1 gap-3">
+                  {[
+                    "Menos de 6 meses",
+                    "De 6 meses a 2 anos",
+                    "Mais de 2 anos"
+                  ].map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => setExperience(option)}
+                      className={`p-5 rounded-[1.2rem] border-2 text-left flex items-center justify-between transition-all ${
+                        experience === option
+                          ? 'border-emerald-500 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400'
+                          : theme === 'light'
+                          ? 'border-slate-200 bg-white hover:border-slate-300'
+                          : 'border-zinc-800 bg-transparent hover:border-zinc-700'
+                      }`}
+                    >
+                      <span className="font-bold text-xs md:text-sm uppercase tracking-wide">{option}</span>
+                      {experience === option && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {interviewStep === 6 && (
+                <div className="grid grid-cols-1 gap-3">
+                  {[
+                    "Manhãs (8h às 12h)",
+                    "Tardes (12h às 18h)",
+                    "Noites (18h às 22h)",
+                    "Finais de semana"
+                  ].map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => setAvailability(option)}
+                      className={`p-5 rounded-[1.2rem] border-2 text-left flex items-center justify-between transition-all ${
+                        availability === option
+                          ? 'border-emerald-500 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400'
+                          : theme === 'light'
+                          ? 'border-slate-200 bg-white hover:border-slate-300'
+                          : 'border-zinc-800 bg-transparent hover:border-zinc-700'
+                      }`}
+                    >
+                      <span className="font-bold text-xs md:text-sm uppercase tracking-wide">{option}</span>
+                      {availability === option && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {interviewStep === 7 && (
+                <div className="grid grid-cols-1 gap-3">
+                  {[
+                    "Diariamente (várias vezes)",
+                    "3 vezes por semana",
+                    "Uma vez por semana"
+                  ].map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => setFrequency(option)}
+                      className={`p-5 rounded-[1.2rem] border-2 text-left flex items-center justify-between transition-all ${
+                        frequency === option
+                          ? 'border-emerald-500 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400'
+                          : theme === 'light'
+                          ? 'border-slate-200 bg-white hover:border-slate-300'
+                          : 'border-zinc-800 bg-transparent hover:border-zinc-700'
+                      }`}
+                    >
+                      <span className="font-bold text-xs md:text-sm uppercase tracking-wide">{option}</span>
+                      {frequency === option && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {interviewStep === 8 && (
+                <div className="grid grid-cols-1 gap-3">
+                  {[
+                    "Não, todo o crescimento foi orgânico",
+                    "Sim, já comprei seguidores no passado",
+                    "Prefiro não responder"
+                  ].map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => setBoughtFollowers(option)}
+                      className={`p-5 rounded-[1.2rem] border-2 text-left flex items-center justify-between transition-all ${
+                        boughtFollowers === option
+                          ? 'border-emerald-500 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400'
+                          : theme === 'light'
+                          ? 'border-slate-200 bg-white hover:border-slate-300'
+                          : 'border-zinc-800 bg-transparent hover:border-zinc-700'
+                      }`}
+                    >
+                      <span className="font-bold text-xs md:text-sm uppercase tracking-wide">{option}</span>
+                      {boughtFollowers === option && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {interviewStep === 9 && (
+                <div className="grid grid-cols-1 gap-3">
+                  {[
+                    { value: "masculino", label: "Masculino (Seu Estrategista será Vincenzo)" },
+                    { value: "feminino", label: "Feminino (Sua Estrategista será Valentina)" }
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => setGender(option.value)}
+                      className={`p-5 rounded-[1.2rem] border-2 text-left flex items-center justify-between transition-all ${
+                        gender === option.value
+                          ? 'border-emerald-500 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400'
+                          : theme === 'light'
+                          ? 'border-slate-200 bg-white hover:border-slate-300'
+                          : 'border-zinc-800 bg-transparent hover:border-zinc-700'
+                      }`}
+                    >
+                      <span className="font-bold text-xs md:text-sm uppercase tracking-wide">{option.label}</span>
+                      {gender === option.value && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
+            {/* Bottom Actions */}
             <div className="flex gap-4 pt-4">
-              <Button onClick={() => setStep(3)} variant="outline" className={`h-14 px-10 rounded-2xl ${theme === 'light' ? 'border-slate-200 bg-white text-slate-400' : 'border-white/[0.05] bg-white/[0.02] text-zinc-500'} font-black tracking-widest uppercase text-[10px]`}>Voltar</Button>
-              <Button 
+              <Button
                 onClick={() => {
-                   if (!careerObjective) {
-                      toast.error('Escolha um objetivo para a IA começar a trabalhar.');
-                      return;
-                   }
-                   setStep(5);
-                }} 
-                className="h-14 flex-1 rounded-[1.5rem] bg-purple-600 hover:bg-purple-500 font-black shadow-[0_15px_30px_rgba(124,58,237,0.3)] transition-all"
+                  if (interviewStep > 1) {
+                    setInterviewStep(interviewStep - 1);
+                  } else {
+                    setStep(3);
+                  }
+                }}
+                variant="outline"
+                className={`h-14 px-10 rounded-2xl ${
+                  theme === 'light'
+                    ? 'border-slate-200 bg-white text-slate-400'
+                    : 'border-white/[0.05] bg-white/[0.02] text-zinc-500'
+                } font-black tracking-widest uppercase text-[10px]`}
               >
-                CONFIGURAR IA
+                Voltar
+              </Button>
+
+              <Button
+                onClick={() => {
+                  if (interviewStep === 1 && !dream) {
+                    toast.error('Por favor, selecione seu sonho.');
+                    return;
+                  }
+                  if (interviewStep === 2 && !followersGoal) {
+                    toast.error('Por favor, selecione sua meta.');
+                    return;
+                  }
+                  if (interviewStep === 3 && !incomeTarget) {
+                    toast.error('Por favor, selecione sua fonte de renda.');
+                    return;
+                  }
+                  if (interviewStep === 4 && !difficulty) {
+                    toast.error('Por favor, selecione seu maior desafio.');
+                    return;
+                  }
+                  if (interviewStep === 5 && !experience) {
+                    toast.error('Por favor, selecione seu tempo de atuação.');
+                    return;
+                  }
+                  if (interviewStep === 6 && !availability) {
+                    toast.error('Por favor, selecione seus horários disponíveis.');
+                    return;
+                  }
+                  if (interviewStep === 7 && !frequency) {
+                    toast.error('Por favor, selecione sua frequência de posts.');
+                    return;
+                  }
+                  if (interviewStep === 8 && !boughtFollowers) {
+                    toast.error('Por favor, responda sobre compra de seguidores.');
+                    return;
+                  }
+                  if (interviewStep === 9 && !gender) {
+                    toast.error('Por favor, selecione como se identifica.');
+                    return;
+                  }
+
+                  if (interviewStep < 9) {
+                    setInterviewStep(interviewStep + 1);
+                  } else {
+                    setStep(5);
+                  }
+                }}
+                className="h-14 flex-1 rounded-[1.5rem] bg-slate-900 hover:bg-emerald-600 hover:text-white dark:bg-white dark:text-black font-black transition-all text-[10px] tracking-widest uppercase"
+              >
+                {interviewStep < 8 ? "Avançar" : "Configurar IA"}
               </Button>
             </div>
           </div>
@@ -377,14 +719,6 @@ export default function OnboardingPage() {
               <p className={`${theme === 'light' ? 'text-slate-400' : 'text-zinc-500'} text-sm font-bold uppercase tracking-widest`}>Sincronize suas contas reais para maximizar seu score</p>
             </div>
 
-            <div className={`p-4 rounded-2xl border flex items-start gap-3 ${theme === 'light' ? 'bg-blue-50/50 border-blue-100 text-blue-800' : 'bg-blue-900/10 border-blue-800/30 text-blue-200'}`}>
-               <div className="mt-0.5"><Sparkles className="w-4 h-4" /></div>
-               <div className="space-y-1">
-                  <p className="text-[10px] md:text-xs font-black uppercase tracking-wider">Atenção: Integração Instagram / Meta</p>
-                  <p className="text-[10px] md:text-[11px] leading-relaxed opacity-80 font-medium">Para que a InfluNext colete suas métricas oficiais, a Meta exige que seu Instagram seja uma <strong>Conta Profissional/Criador</strong> vinculada a uma Página do Facebook. Por isso o sistema solicitará permissões via Facebook.</p>
-               </div>
-            </div>
-
             <div className="space-y-4">
                {/* Instagram Button */}
                <button 
@@ -395,13 +729,13 @@ export default function OnboardingPage() {
                      <div className={`p-4 ${theme === 'light' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-blue-600/10 text-blue-400'} rounded-2xl border group-hover:scale-110 transition-transform`}>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
-                          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                          <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
+                           <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                           <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
                         </svg>
                      </div>
                      <div className="text-left">
-                        <p className="font-black text-sm uppercase tracking-widest text-blue-600 dark:text-blue-400">Meta: Insights Profissionais</p>
-                        <p className={`text-[10px] ${theme === 'light' ? 'text-slate-500' : 'text-zinc-400'} font-bold uppercase`}>Conectar Conta de Criador (via Facebook)</p>
+                        <p className="font-black text-sm uppercase tracking-widest text-blue-600 dark:text-blue-400">Conectar Instagram</p>
+                        <p className={`text-[10px] ${theme === 'light' ? 'text-slate-500' : 'text-zinc-400'} font-bold uppercase`}>Sincronizar conta e métricas</p>
                      </div>
                   </div>
                   {connectedPlatforms.includes('INSTAGRAM') ? (

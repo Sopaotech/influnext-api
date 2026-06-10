@@ -249,6 +249,16 @@ export class InstagramService {
         avgViews
       });
 
+      // Disparar geração da estratégia IA pós-sincronização de dados reais de forma assíncrona
+      try {
+        const { AIService } = require('./ai.service');
+        AIService.generateWeeklyAnalysis(influencerId).catch((err: any) => {
+          console.error('[INSTAGRAM_SYNC] Erro ao disparar análise pós-sync:', err);
+        });
+      } catch (requireErr) {
+        console.error('[INSTAGRAM_SYNC] Erro ao carregar AIService dinamicamente:', requireErr);
+      }
+
       console.log(`[INSTAGRAM_SYNC] Sincronização de ${username} finalizada com sucesso! Seguidores: ${followers}, Engajamento: ${engagementRate}%, Views: ${avgViews}`);
 
       return {

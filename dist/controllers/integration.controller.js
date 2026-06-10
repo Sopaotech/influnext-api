@@ -6,7 +6,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getConnectedPlatforms = exports.syncPlatformMetrics = exports.handleTikTokCallback = exports.simulateInstagramConnection = exports.handleInstagramCallback = exports.getAuthUrls = void 0;
 const prisma_1 = require("../lib/prisma");
 const scoring_service_1 = require("../services/scoring.service");
+const instagram_service_1 = require("../services/instagram.service");
+const ai_service_1 = require("../services/ai.service");
 const axios_1 = __importDefault(require("axios"));
+const getFrontendUrl = () => {
+    const url = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
+    return url.endsWith('/') ? url.slice(0, -1) : url;
+};
 /**
  * Especialista: Implementação Robusta do Instagram Graph API (Business Login)
  * Suporte a Long-Lived Tokens e descoberta de conta via Página.
@@ -27,8 +33,8 @@ const getAuthUrls = async (req, res) => {
             'pages_read_engagement',
             'public_profile'
         ].join(',');
-        const instagramUrl = `https://www.facebook.com/v20.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${process.env.NEXT_PUBLIC_API_URL}/integrations/instagram/callback&scope=${scopes}&response_type=code&state=${state}`;
-        const tiktokUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list,video.stats&response_type=code&redirect_uri=${process.env.NEXT_PUBLIC_API_URL}/integrations/tiktok/callback&state=${state}`;
+        const instagramUrl = `https://www.facebook.com/v20.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${getFrontendUrl()}/auth/callback/instagram&scope=${scopes}&response_type=code&state=${state}`;
+        const tiktokUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list,video.stats&response_type=code&redirect_uri=${getFrontendUrl()}/auth/callback/tiktok&state=${state}`;
         res.json({
             instagram: instagramUrl,
             tiktok: tiktokUrl,
@@ -46,7 +52,7 @@ const handleInstagramCallback = async (req, res) => {
         const { code, state } = req.query;
         stateStr = state;
         if (!code || !stateStr) {
-            res.redirect(`${process.env.FRONTEND_URL}/dashboard/settings?status=error&error=invalid_params`);
+            res.redirect(`${getFrontendUrl()}/dashboard/settings?status=error&error=invalid_params`);
             return;
         }
         const isFromOnboarding = stateStr.endsWith('_onboarding');
@@ -56,7 +62,7 @@ const handleInstagramCallback = async (req, res) => {
             params: {
                 client_id: process.env.INSTAGRAM_CLIENT_ID,
                 client_secret: process.env.INSTAGRAM_CLIENT_SECRET,
-                redirect_uri: `${process.env.NEXT_PUBLIC_API_URL}/integrations/instagram/callback`,
+                redirect_uri: `${getFrontendUrl()}/auth/callback/instagram`,
                 code: code
             }
         });
@@ -95,8 +101,8 @@ const handleInstagramCallback = async (req, res) => {
         }
         if (!instagramBusinessId) {
             const redirectUrl = isFromOnboarding
-                ? `${process.env.FRONTEND_URL}/onboarding?status=error&error=no_business_account`
-                : `${process.env.FRONTEND_URL}/dashboard/settings?status=error&error=no_business_account`;
+                ? `${getFrontendUrl()}/onboarding?status=error&error=no_business_account`
+                : `${getFrontendUrl()}/dashboard/settings?status=error&error=no_business_account`;
             res.redirect(redirectUrl);
             return;
         }
@@ -149,19 +155,21 @@ const handleInstagramCallback = async (req, res) => {
                 where: { id: influencer.id },
                 data: { verifiedMetrics: true }
             });
-            await scoring_service_1.ScoringService.calculateAndPersist(influencer.id);
+            instagram_service_1.InstagramService.syncInstagramData(influencer.id, longLivedToken, instagramBusinessId).catch(err => {
+                console.error('[INSTAGRAM] Falha na sincronização de dados reais pós-callback:', err);
+            });
         }
         const redirectUrl = isFromOnboarding
-            ? `${process.env.FRONTEND_URL}/onboarding?status=success&platform=instagram`
-            : `${process.env.FRONTEND_URL}/dashboard/settings?status=success&platform=instagram`;
+            ? `${getFrontendUrl()}/onboarding?status=success&platform=instagram`
+            : `${getFrontendUrl()}/dashboard/settings?status=success&platform=instagram`;
         res.redirect(redirectUrl);
     }
     catch (error) {
         console.error('[INSTAGRAM] Erro no callback:', error.response?.data || error.message);
         const isFromOnboarding = stateStr.endsWith('_onboarding');
         const redirectUrl = isFromOnboarding
-            ? `${process.env.FRONTEND_URL}/onboarding?status=error`
-            : `${process.env.FRONTEND_URL}/dashboard/settings?status=error`;
+            ? `${getFrontendUrl()}/onboarding?status=error`
+            : `${getFrontendUrl()}/dashboard/settings?status=error`;
         res.redirect(redirectUrl);
     }
 };
@@ -180,26 +188,45 @@ const simulateInstagramConnection = async (req, res) => {
             res.status(404).json({ error: 'Perfil de influenciador não encontrado.' });
             return;
         }
-        // 1. Criar ou atualizar a SocialPlatform para o Instagram
-        const platformId = `simulated_ig_${Math.floor(100000 + Math.random() * 900000)}`;
-        const username = influencer.handle || `influencer_${influencer.id.substring(0, 5)}`;
-        const followersCount = 15430;
-        const profilePicture = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=150&q=80';
+        const platform = (req.body.platform || 'INSTAGRAM').toUpperCase();
+        const inputUsername = req.body.username || influencer.handle || `influencer_${influencer.id.substring(0, 5)}`;
+        const username = inputUsername.startsWith('@') ? inputUsername.slice(1) : inputUsername;
+        let followersCount = 15430;
+        let engagementRate = 4.75;
+        let avgViews = 9230;
+        let reachLast30Days = 48900;
+        let profilePicture = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=150&q=80';
+        if (platform === 'TIKTOK') {
+            followersCount = 32800;
+            engagementRate = 8.2;
+            avgViews = 18400;
+            reachLast30Days = 110200;
+            profilePicture = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=150&q=80';
+        }
+        else if (platform === 'YOUTUBE') {
+            followersCount = 8500;
+            engagementRate = 6.1;
+            avgViews = 4500;
+            reachLast30Days = 24000;
+            profilePicture = 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=150&q=80';
+        }
+        const platformId = `simulated_${platform.toLowerCase()}_${Math.floor(100000 + Math.random() * 900000)}`;
+        // 1. Criar ou atualizar a SocialPlatform
         await prisma_1.prisma.socialPlatform.upsert({
             where: {
                 influencerId_platformName: {
                     influencerId: influencer.id,
-                    platformName: 'INSTAGRAM'
+                    platformName: platform
                 }
             },
             create: {
                 influencerId: influencer.id,
-                platformName: 'INSTAGRAM',
+                platformName: platform,
                 platformId,
                 username,
                 profilePicture,
                 followersCount,
-                accessToken: 'simulated_access_token_token',
+                accessToken: `simulated_access_token_${platform.toLowerCase()}`,
                 isActive: true
             },
             update: {
@@ -207,7 +234,7 @@ const simulateInstagramConnection = async (req, res) => {
                 username,
                 profilePicture,
                 followersCount,
-                accessToken: 'simulated_access_token_token',
+                accessToken: `simulated_access_token_${platform.toLowerCase()}`,
                 isActive: true
             }
         });
@@ -215,11 +242,11 @@ const simulateInstagramConnection = async (req, res) => {
         await prisma_1.prisma.metricSnapshot.create({
             data: {
                 influencerId: influencer.id,
-                provider: 'INSTAGRAM',
+                provider: platform,
                 followers: followersCount,
-                engagementRate: 4.75,
-                reachLast30Days: 48900,
-                avgViews: 9230,
+                engagementRate,
+                reachLast30Days,
+                avgViews,
                 integrityHash: `simulated_hash_${Math.random().toString(36).substring(7)}`
             }
         });
@@ -234,26 +261,35 @@ const simulateInstagramConnection = async (req, res) => {
         });
         // 4. Recalcular e persistir score
         await scoring_service_1.ScoringService.calculateAndPersist(influencer.id);
+        // 5. Gerar análise proativa e de onboarding da IA de forma assíncrona
+        ai_service_1.AIService.generateWeeklyAnalysis(influencer.id).catch((err) => {
+            console.error('[SIMULATE] Erro ao disparar análise pós-conexão simulada:', err);
+        });
         res.json({
             success: true,
             onboardingCompleted: true,
-            platform: 'INSTAGRAM'
+            platform,
+            username,
+            followersCount
         });
     }
     catch (error) {
         console.error('[SIMULATE] Erro ao simular conexão:', error);
-        res.status(500).json({ error: 'Erro ao simular conexão com o Instagram.' });
+        res.status(500).json({ error: 'Erro ao simular conexão com a plataforma social.' });
     }
 };
 exports.simulateInstagramConnection = simulateInstagramConnection;
 const handleTikTokCallback = async (req, res) => {
+    let stateStr = '';
     try {
         const { code, state } = req.query;
-        const userId = state;
-        if (!code || !userId) {
-            res.redirect(`${process.env.FRONTEND_URL}/dashboard/settings?status=error&error=invalid_params`);
+        stateStr = state;
+        if (!code || !stateStr) {
+            res.redirect(`${getFrontendUrl()}/dashboard/settings?status=error&error=invalid_params`);
             return;
         }
+        const isFromOnboarding = stateStr.endsWith('_onboarding');
+        const userId = isFromOnboarding ? stateStr.replace('_onboarding', '') : stateStr;
         const influencer = await prisma_1.prisma.influencerProfile.findUnique({ where: { userId } });
         if (influencer) {
             const tokenResponse = await axios_1.default.post('https://open.tiktokapis.com/v2/oauth/token/', new URLSearchParams({
@@ -311,11 +347,18 @@ const handleTikTokCallback = async (req, res) => {
             });
             await scoring_service_1.ScoringService.calculateAndPersist(influencer.id);
         }
-        res.redirect(`${process.env.FRONTEND_URL}/dashboard/settings?status=success&platform=tiktok`);
+        const redirectUrl = isFromOnboarding
+            ? `${getFrontendUrl()}/onboarding?status=success&platform=tiktok`
+            : `${getFrontendUrl()}/dashboard/settings?status=success&platform=tiktok`;
+        res.redirect(redirectUrl);
     }
     catch (error) {
         console.error('[TIKTOK] Erro no callback:', error);
-        res.redirect(`${process.env.FRONTEND_URL}/dashboard/settings?status=error`);
+        const isFromOnboarding = stateStr.endsWith('_onboarding');
+        const redirectUrl = isFromOnboarding
+            ? `${getFrontendUrl()}/onboarding?status=error`
+            : `${getFrontendUrl()}/dashboard/settings?status=error`;
+        res.redirect(redirectUrl);
     }
 };
 exports.handleTikTokCallback = handleTikTokCallback;
@@ -339,20 +382,7 @@ const syncPlatformMetrics = async (req, res) => {
         for (const platform of influencer.platforms) {
             try {
                 if (platform.platformName === 'INSTAGRAM' && platform.accessToken && platform.platformId) {
-                    const detailsResponse = await axios_1.default.get(`https://graph.facebook.com/v20.0/${platform.platformId}`, {
-                        params: {
-                            fields: 'followers_count,media_count,profile_picture_url,username',
-                            access_token: platform.accessToken
-                        }
-                    });
-                    await prisma_1.prisma.socialPlatform.update({
-                        where: { id: platform.id },
-                        data: {
-                            followersCount: detailsResponse.data.followers_count || platform.followersCount,
-                            profilePicture: detailsResponse.data.profile_picture_url || platform.profilePicture,
-                            username: detailsResponse.data.username || platform.username
-                        }
-                    });
+                    await instagram_service_1.InstagramService.syncInstagramData(influencer.id, platform.accessToken, platform.platformId);
                     results['INSTAGRAM'] = 'synced';
                 }
                 if (platform.platformName === 'TIKTOK' && platform.accessToken) {
@@ -396,7 +426,8 @@ const getConnectedPlatforms = async (req, res) => {
             include: { platforms: true }
         });
         if (!influencer) {
-            res.status(404).json({ error: "Perfil não encontrado." });
+            // Retorna array vazio em vez de 404 para contas que não são influenciadores (como Admin ou Company)
+            res.json({ platforms: [] });
             return;
         }
         const platformNames = influencer.platforms

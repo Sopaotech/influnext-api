@@ -2,15 +2,29 @@ import React from 'react';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 selection:bg-purple-100 font-sans relative overflow-hidden">
-      {/* Background atmosphere unificado - Studio Aesthetic */}
+    <div className="min-h-screen bg-[#050508] flex flex-col justify-center py-12 sm:px-6 lg:px-8 selection:bg-violet-500/30 font-sans relative overflow-hidden">
+      
+      {/* Atmospheric background glows */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[1000px] h-[1000px] rounded-full bg-purple-200/20 blur-[150px]" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[800px] h-[800px] rounded-full bg-slate-200/30 blur-[120px]" />
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop')] opacity-[0.03] grayscale" />
+        {/* Main violet glow — top center */}
+        <div className="absolute top-[-15%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] rounded-full bg-violet-600/12 blur-[120px]" />
+        {/* Pink accent — bottom right */}
+        <div className="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-pink-600/8 blur-[100px]" />
+        {/* Subtle grid texture */}
+        <div
+          className="absolute inset-0 opacity-[0.025]"
+          style={{
+            backgroundImage: 'linear-gradient(rgba(139,92,246,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.3) 1px, transparent 1px)',
+            backgroundSize: '60px 60px',
+          }}
+        />
+        {/* Top gradient fade */}
+        <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#050508] to-transparent" />
+        {/* Bottom gradient fade */}
+        <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#050508] to-transparent" />
       </div>
 
-      <div className="relative z-10 sm:mx-auto sm:w-full sm:max-w-md">
+      <div className="relative z-10 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
         {children}
       </div>
     </div>

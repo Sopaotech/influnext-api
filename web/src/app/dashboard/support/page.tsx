@@ -53,15 +53,15 @@ export default function SupportPage() {
           <LifeBuoy className="w-4 h-4" />
           Central de Ajuda & Reporte
         </div>
-        <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Como podemos <span className="text-purple-600">ajudar?</span></h1>
-        <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Relate bugs, sugira melhorias ou peça suporte técnico.</p>
+        <h1 className="text-4xl font-black text-white tracking-tighter">Como podemos <span className="text-purple-400">ajudar?</span></h1>
+        <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest">Relate bugs, sugira melhorias ou peça suporte técnico.</p>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         
         {/* Formulário de Abertura */}
         <section className="space-y-6">
-           <form onSubmit={handleSubmit} className="bg-white border border-slate-100 rounded-[2.5rem] p-10 space-y-8 shadow-sm relative overflow-hidden group hover:border-purple-200 transition-all">
+           <form onSubmit={handleSubmit} className="bg-black/35 border border-white/5 rounded-[2.5rem] p-10 space-y-8 shadow-sm relative overflow-hidden group hover:border-purple-500/25 transition-all">
               <div className="absolute top-0 right-0 p-6 opacity-5">
                  <MessageSquare className="w-20 h-20 text-purple-500" />
               </div>
@@ -70,31 +70,31 @@ export default function SupportPage() {
                   <select 
                     value={form.category}
                     onChange={e => setForm({...form, category: e.target.value})}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-4 text-xs font-black text-slate-900 outline-none focus:border-purple-300 transition-all appearance-none cursor-pointer"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-xs font-black text-white outline-none focus:border-purple-300 transition-all appearance-none cursor-pointer [color-scheme:dark]"
                   >
-                     <option value="SUPPORT">Suporte de Conta</option>
-                     <option value="BUG">Relatar um Erro Técnico</option>
-                     <option value="FEATURE">Sugestão de Evolução</option>
+                     <option value="SUPPORT" className="bg-[#050508] text-white">Suporte de Conta</option>
+                     <option value="BUG" className="bg-[#050508] text-white">Relatar um Erro Técnico</option>
+                     <option value="FEATURE" className="bg-[#050508] text-white">Sugestão de Evolução</option>
                   </select>
               </div>
 
               <div className="space-y-2">
-                 <label className="text-[10px] font-black uppercase text-slate-400">Assunto</label>
+                 <label className="text-[10px] font-black uppercase text-zinc-500">Assunto</label>
                   <Input 
                     placeholder="Como podemos resumir seu pedido?"
                     value={form.subject}
                     onChange={e => setForm({...form, subject: e.target.value})}
-                    className="bg-slate-50 border-slate-100 h-12 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:border-purple-200"
+                    className="bg-white/5 border-white/10 h-12 text-xs font-bold text-white placeholder:text-zinc-500 focus:border-purple-200"
                   />
               </div>
 
               <div className="space-y-2">
-                 <label className="text-[10px] font-black uppercase text-slate-400">Mensagem Detalhada</label>
+                 <label className="text-[10px] font-black uppercase text-zinc-500">Mensagem Detalhada</label>
                   <textarea 
                     placeholder="Descreva detalhadamente sua necessidade para que nosso time possa agir rápido..."
                     value={form.message}
                     onChange={e => setForm({...form, message: e.target.value})}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-xs font-medium text-slate-900 min-h-[180px] outline-none focus:border-purple-200 transition-all placeholder:text-slate-400 resize-none"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-xs font-medium text-white min-h-[180px] outline-none focus:border-purple-200 transition-all placeholder:text-zinc-500 resize-none"
                   />
               </div>
 
@@ -114,30 +114,30 @@ export default function SupportPage() {
            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Meus Chamados</h3>
            <div className="space-y-8">
             <div className="space-y-2">
-               <h2 className="text-2xl font-black text-slate-900 tracking-tight">Seus Chamados</h2>
-               <p className="text-slate-500 text-sm font-medium">Acompanhe o status e as respostas do suporte.</p>
+               <h2 className="text-2xl font-black text-white tracking-tight">Seus Chamados</h2>
+               <p className="text-zinc-400 text-sm font-medium">Acompanhe o status e as respostas do suporte.</p>
             </div>
             
             <div className="space-y-4">
               {isLoading ? (
                 <div className="animate-pulse space-y-4">
-                   {[1,2,3].map(i => <div key={i} className="h-20 bg-zinc-900/50 rounded-2xl" />)}
+                   {[1,2,3].map(i => <div key={i} className="h-20 bg-white/5 rounded-2xl" />)}
                 </div>
               ) : tickets.length > 0 ? tickets.map((t) => (
-                <div key={t.id} className="p-6 bg-slate-50 border border-slate-100 rounded-3xl group hover:border-purple-300 transition-all shadow-sm">
+                <div key={t.id} className="p-6 bg-black/35 border border-white/5 rounded-3xl group hover:border-purple-500/25 transition-all shadow-sm">
                   <div className="flex items-center justify-between mb-4">
-                     <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${t.status === 'OPEN' ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                     <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${t.status === 'OPEN' ? 'bg-amber-500/10 text-amber-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
                         {t.status === 'OPEN' ? 'Em Aberto' : 'Resolvido'}
                      </span>
-                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Ref: #{t.id.slice(-6)}</p>
+                     <p className="text-[10px] font-black text-zinc-500 uppercase tracking-tighter">Ref: #{t.id.slice(-6)}</p>
                   </div>
-                  <h4 className="text-sm font-black text-slate-900 mb-1">{t.subject}</h4>
-                  <p className="text-xs text-slate-500 line-clamp-2">{t.message}</p>
+                  <h4 className="text-sm font-black text-white mb-1">{t.subject}</h4>
+                  <p className="text-xs text-zinc-400 line-clamp-2">{t.message}</p>
                 </div>
               )) : (
-                <div className="py-20 border-2 border-dashed border-slate-100 rounded-3xl flex flex-col items-center justify-center space-y-4">
-                  <LifeBuoy className="w-10 h-10 text-slate-200" />
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nenhum chamado aberto</p>
+                <div className="py-20 border-2 border-dashed border-white/5 rounded-3xl flex flex-col items-center justify-center space-y-4">
+                  <LifeBuoy className="w-10 h-10 text-zinc-700" />
+                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Nenhum chamado aberto</p>
                 </div>
               )}
             </div>

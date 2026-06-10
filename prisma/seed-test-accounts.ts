@@ -72,6 +72,72 @@ async function main() {
 
   console.log(`✅ Influenciador de Teste criado: ${influencerEmail} | Senha: 123456`);
 
+  // 3. Mock Service Providers (Fotógrafo, Editor, Social Media)
+  const serviceAccounts = [
+    {
+      email: 'fotografo@teste.com',
+      handle: 'pedro_ph',
+      city: 'São Paulo',
+      state: 'SP',
+      niche: 'Serviços (Fotógrafos, Editores, etc.)',
+      influScore: 82,
+      scoreClass: 'GOLD'
+    },
+    {
+      email: 'editor@teste.com',
+      handle: 'lucas_filmes',
+      city: 'Rio de Janeiro',
+      state: 'RJ',
+      niche: 'Serviços (Fotógrafos, Editores, etc.)',
+      influScore: 90,
+      scoreClass: 'PLATINUM'
+    },
+    {
+      email: 'socialmedia@teste.com',
+      handle: 'ana_social',
+      city: 'Belo Horizonte',
+      state: 'MG',
+      niche: 'Serviços (Fotógrafos, Editores, etc.)',
+      influScore: 75,
+      scoreClass: 'SILVER'
+    }
+  ];
+
+  for (const svc of serviceAccounts) {
+    const svcUser = await prisma.user.upsert({
+      where: { email: svc.email },
+      update: { passwordHash },
+      create: {
+        email: svc.email,
+        passwordHash,
+        role: 'INFLUENCER',
+        onboardingCompleted: true,
+        subscriptionStatus: 'ACTIVE',
+      }
+    });
+
+    await prisma.influencerProfile.upsert({
+      where: { userId: svcUser.id },
+      update: {
+        handle: svc.handle,
+        niche: svc.niche,
+        city: svc.city,
+        state: svc.state,
+      },
+      create: {
+        userId: svcUser.id,
+        handle: svc.handle,
+        city: svc.city,
+        state: svc.state,
+        niche: svc.niche,
+        influScore: svc.influScore,
+        scoreClass: svc.scoreClass,
+      }
+    });
+
+    console.log(`✅ Provedor de Serviço criado: ${svc.email} (@${svc.handle}) | Senha: 123456`);
+  }
+
   console.log('🚀 Contas de teste configuradas com sucesso!');
 }
 
