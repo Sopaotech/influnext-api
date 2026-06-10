@@ -222,9 +222,9 @@ export default function LandingPageClient() {
       <section id="preview-ai" className="relative w-full max-w-6xl mx-auto px-6 pb-20">
          <div className="text-center mb-12">
             <p className="text-purple-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">✦ Inteligência & Consistência</p>
-            <h2 className="text-xl sm:text-3xl md:text-5xl font-black tracking-tighter leading-[1.05] md:leading-[0.95]">O seu Mentor de IA e Rotina diária<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Para você postar e faturar sem parar</span></h2>
+            <h2 className="text-xl sm:text-3xl md:text-5xl font-black tracking-tighter leading-[1.05] md:leading-[0.95]">Consistência algorítmica com inteligência artificial<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Monetize cada publicação com ganchos validados</span></h2>
             <p className="text-zinc-300 text-xs mt-4 max-w-xl mx-auto leading-relaxed">
-               Receba orientações estratégicas de engajamento do seu Mentor de IA e mantenha a consistência de publicações com um calendário de hábitos integrado.
+               Receba orientações personalizadas por IA para seu nicho e mantenha a disciplina através de um calendário projetado para transformar visualizações em conversão de vendas.
             </p>
          </div>
 
@@ -373,112 +373,7 @@ export default function LandingPageClient() {
                <h3 className="text-lg font-black text-white">Radar de Eventos Físicos</h3>
                <p className="text-zinc-300 text-xs leading-relaxed">
                   Convidado para um evento presencial? Registre o convite e nossa IA cria um roteiro completo de cobertura em 3 fases (Pré, Durante e Pós) para maximizar o engajamento e provar seu ROI.
-               </p>
-            </div>
-          </div>
-      </section>
 
-      {/* MODELO DE MONETIZAÇÃO */}
-      <section id="monetizacao" className="w-full max-w-7xl mx-auto px-6 lg:px-16 py-20 relative">
-         {/* Background subtle glow */}
-         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] rounded-full bg-violet-600/5 blur-[120px] pointer-events-none" />
-
-         <div className="text-center mb-16 relative z-10">
-            <p className="text-violet-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">✦ Modelo de Negócios</p>
-            <h2 className="text-xl sm:text-3xl md:text-5xl font-black tracking-tighter leading-[1.05] md:leading-[0.95]">
-               Sustentabilidade & Escala<br />
-               <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-pink-400">Como nosso ecossistema gera valor</span>
-            </h2>
-            <p className="text-zinc-300 text-xs mt-4 max-w-xl mx-auto leading-relaxed">
-               Estrutura diversificada de receita projetada para acelerar a monetização e viabilizar a estabilidade financeira de criadores e marcas.
-            </p>
-         </div>
-
-         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
-            {/* Card 1: Taxa de Sucesso */}
-            <div className="relative bg-[#0b0b12] border border-white/5 rounded-[2.5rem] p-8 space-y-6 hover:bg-white/[0.03] hover:border-emerald-500/30 transition-all duration-500 overflow-hidden group">
-               {/* Inner glow on hover */}
-               <div className="absolute -inset-px bg-gradient-to-b from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[2.5rem]" />
-               
-               <div className="flex justify-between items-start">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform duration-500">
-                     <DollarSign className="w-6 h-6" />
-                  </div>
-                  <span className="text-[8px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
-                     Alto Potencial
-                  </span>
-               </div>
-               
-               <div className="space-y-2">
-                  <h3 className="text-lg font-black text-white group-hover:text-emerald-400 transition-colors duration-300">Taxa de Sucesso</h3>
-                  <p className="text-zinc-400 text-xs leading-relaxed font-bold">
-                     % sobre o valor do deal fechado e processado com segurança pela plataforma.
-                  </p>
-               </div>
-            </div>
-
-            {/* Card 2: Destaque Pago */}
-            <div className="relative bg-[#0b0b12] border border-white/5 rounded-[2.5rem] p-8 space-y-6 hover:bg-white/[0.03] hover:border-amber-500/30 transition-all duration-500 overflow-hidden group">
-               {/* Inner glow on hover */}
-               <div className="absolute -inset-px bg-gradient-to-b from-amber-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[2.5rem]" />
-               
-               <div className="flex justify-between items-start">
-                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform duration-500">
-                     <Zap className="w-6 h-6" />
-                  </div>
-                  <span className="text-[8px] bg-amber-500/10 border border-amber-500/20 text-amber-400 font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
-                     Rápido de Implementar
-                  </span>
-               </div>
-               
-               <div className="space-y-2">
-                  <h3 className="text-lg font-black text-white group-hover:text-amber-400 transition-colors duration-300">Destaque Pago</h3>
-                  <p className="text-zinc-400 text-xs leading-relaxed font-bold">
-                     Marcas e criadores pagam taxas avulsas para aparecer no topo dos matches e buscas.
-                  </p>
-               </div>
-            </div>
-
-            {/* Card 3: Relatório Avulso */}
-            <div className="relative bg-[#0b0b12] border border-white/5 rounded-[2.5rem] p-8 space-y-6 hover:bg-white/[0.03] hover:border-cyan-500/30 transition-all duration-500 overflow-hidden group">
-               {/* Inner glow on hover */}
-               <div className="absolute -inset-px bg-gradient-to-b from-cyan-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[2.5rem]" />
-               
-               <div className="flex justify-between items-start">
-                  <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform duration-500">
-                     <BarChart3 className="w-6 h-6" />
-                  </div>
-                  <span className="text-[8px] bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
-                     Complementar
-                  </span>
-               </div>
-               
-               <div className="space-y-2">
-                  <h3 className="text-lg font-black text-white group-hover:text-cyan-400 transition-colors duration-300">Relatório Avulso</h3>
-                  <p className="text-zinc-400 text-xs leading-relaxed font-bold">
-                     Venda unitária e sob demanda de análises profundas de perfil ou relatórios de campanhas.
-                  </p>
-               </div>
-            </div>
-
-            {/* Card 4: B2B Enterprise */}
-            <div className="relative bg-[#0b0b12] border border-white/5 rounded-[2.5rem] p-8 space-y-6 hover:bg-white/[0.03] hover:border-violet-500/30 transition-all duration-500 overflow-hidden group">
-               {/* Inner glow on hover */}
-               <div className="absolute -inset-px bg-gradient-to-b from-violet-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[2.5rem]" />
-               
-               <div className="flex justify-between items-start">
-                  <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400 group-hover:scale-110 transition-transform duration-500">
-                     <Target className="w-6 h-6" />
-                  </div>
-                  <span className="text-[8px] bg-violet-500/10 border border-violet-500/20 text-violet-400 font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
-                     Longo Prazo
-                  </span>
-               </div>
-               
-               <div className="space-y-2">
-                  <h3 className="text-lg font-black text-white group-hover:text-violet-400 transition-colors duration-300">B2B Enterprise</h3>
-                  <p className="text-zinc-400 text-xs leading-relaxed font-bold">
-                     Contrato anual recorrente para grandes marcas corporativas com elevado volume de campanhas.
                   </p>
                </div>
             </div>
