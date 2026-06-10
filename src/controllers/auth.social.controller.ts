@@ -5,7 +5,7 @@ import { ScoringService } from '../services/scoring.service';
 import { InstagramService } from '../services/instagram.service';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_change_me';
 
@@ -215,7 +215,7 @@ export class SocialAuthController {
         } else {
           // 2. Criar novo usuário e perfil
           const tempEmail = `${username.toLowerCase()}_${Math.floor(1000 + Math.random() * 9000)}@influnext.temp`;
-          const tempPassword = uuidv4();
+          const tempPassword = crypto.randomUUID();
           const passwordHash = await bcrypt.hash(tempPassword, 12);
 
           const newUser = await prisma.user.create({
