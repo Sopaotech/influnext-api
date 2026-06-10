@@ -67,7 +67,7 @@ export default function LandingPageClient() {
         <Logo size="md" href="/" variant="light" />
         
         {/* Navigation Menu centered */}
-        <div className="hidden md:flex items-center gap-10 text-[10px] font-black uppercase tracking-widest text-zinc-400">
+        <div className="hidden md:flex items-center gap-10 text-[10px] font-black uppercase tracking-widest text-zinc-200">
           <a href="#como-funciona" className="hover:text-white transition-colors">Como Funciona</a>
           <a href="#preview" className="hover:text-white transition-colors">Visualizar Painel</a>
           <a href="#problema" className="hover:text-white transition-colors">O Problema</a>
@@ -75,7 +75,7 @@ export default function LandingPageClient() {
         
         {/* Right controls */}
         <div className="flex items-center gap-4">
-          <Link href="/auth/login" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-colors px-2.5 py-1.5">
+          <Link href="/auth/login" className="text-[10px] font-black uppercase tracking-widest text-zinc-200 hover:text-white transition-colors px-2.5 py-1.5">
             Entrar
           </Link>
           
@@ -99,7 +99,7 @@ export default function LandingPageClient() {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-400 to-pink-400">Parcerias fechadas geram.</span>
           </h1>
           
-          <p className="text-zinc-400 text-base md:text-xl max-w-2xl leading-relaxed mb-10">
+          <p className="text-zinc-200 text-base md:text-xl max-w-2xl leading-relaxed mb-10">
             Use seus influenciadores para fechar parcerias reais. Evite que sua empresa invista em seguidores falsos ou criadores que não cumprem o combinado. Uma plataforma segura para marcas e criadores, do briefing ao pagamento final via PIX, com garantia Escrow.
           </p>
 
@@ -117,7 +117,7 @@ export default function LandingPageClient() {
             {STATS.map((s, i) => (
               <div key={i} className="flex flex-col items-center md:items-start gap-1">
                 <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-pink-400">{s.value}</span>
-                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">{s.label}</span>
+                <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-wider">{s.label}</span>
               </div>
             ))}
           </div>
@@ -129,7 +129,7 @@ export default function LandingPageClient() {
          <div className="text-center mb-12">
             <p className="text-violet-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">✦ Por dentro da plataforma</p>
             <h2 className="text-3xl md:text-5xl font-black tracking-tight">O Escritório Digital do Criador de Sucesso</h2>
-            <p className="text-zinc-500 text-xs mt-3">Curioso para ver como funciona? Dê uma espiada na nossa interface de controle financeiro e tarefas:</p>
+            <p className="text-zinc-300 text-xs mt-3">Curioso para ver como funciona? Dê uma espiada na nossa interface de controle financeiro e tarefas:</p>
          </div>
 
          {/* Dashboard Window Chrome Mockup */}
@@ -141,7 +141,7 @@ export default function LandingPageClient() {
                   <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
                   <div className="w-3 h-3 rounded-full bg-green-500/80" />
                </div>
-               <div className="text-[9px] font-bold text-zinc-600 tracking-widest uppercase">dashboard.influnext.com</div>
+               <div className="text-[9px] font-bold text-zinc-400 tracking-widest uppercase">dashboard.influnext.com</div>
                <div className="w-12" />
             </div>
 
@@ -156,10 +156,10 @@ export default function LandingPageClient() {
                         <ShieldCheck className="text-green-400 w-5 h-5" />
                      </div>
                      <div>
-                        <p className="text-xs font-bold text-zinc-400">Garantia Retida em Juízo</p>
+                        <p className="text-xs font-bold text-zinc-200">Garantia Retida em Juízo</p>
                         <p className="text-3xl font-black text-white tracking-tighter mt-1">R$ 3.500,00</p>
                      </div>
-                     <p className="text-[9px] text-zinc-500 leading-relaxed font-bold uppercase tracking-wider">
+                     <p className="text-[9px] text-zinc-300 leading-relaxed font-bold uppercase tracking-wider">
                         Depósito Loreal Brasil SA verificado. Pagamento garantido assim que o Reels for postado.
                      </p>
                   </div>
@@ -167,7 +167,7 @@ export default function LandingPageClient() {
                   {/* Wallet Faturamento Card */}
                   <div className="p-6 rounded-3xl border border-white/5 bg-white/[0.02] space-y-4">
                      <div className="flex justify-between items-center">
-                        <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Saldo Disponível</span>
+                        <span className="text-[8px] font-black text-zinc-350 uppercase tracking-widest">Saldo Disponível</span>
                         <DollarSign className="text-zinc-400 w-4 h-4" />
                      </div>
                      <div>
@@ -187,7 +187,7 @@ export default function LandingPageClient() {
                            <Layout size={18} />
                         </div>
                         <div>
-                           <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Cronograma de Entrega</p>
+                           <p className="text-[8px] font-black text-zinc-300 uppercase tracking-widest">Cronograma de Entrega</p>
                            <p className="text-sm font-bold text-white">Entregáveis do Contrato Ativo</p>
                         </div>
                      </div>
@@ -195,20 +195,20 @@ export default function LandingPageClient() {
                      <div className="space-y-3">
                         <div className="p-4 rounded-2xl bg-zinc-950/80 border border-white/5 space-y-2">
                            <div className="flex justify-between items-center">
-                              <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wider">Tarefa 1: Publicações Iniciais</span>
+                              <span className="text-[9px] font-black text-zinc-300 uppercase tracking-wider">Tarefa 1: Publicações Iniciais</span>
                               <span className="text-[8px] bg-yellow-500/10 text-yellow-500 font-bold px-2 py-0.5 rounded">Em produção</span>
                            </div>
-                           <p className="text-[10px] text-zinc-500 leading-relaxed font-bold">
+                           <p className="text-[10px] text-zinc-300 leading-relaxed font-bold">
                               Preparar três posts para o produto total para a empresa Loreal Brasil SA.
                            </p>
                         </div>
 
                         <div className="p-4 rounded-2xl bg-zinc-950/80 border border-white/5 space-y-2">
                            <div className="flex justify-between items-center">
-                              <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wider">Tarefa 2: Stories Sequenciais</span>
+                              <span className="text-[9px] font-black text-zinc-300 uppercase tracking-wider">Tarefa 2: Stories Sequenciais</span>
                               <span className="text-[8px] bg-green-500/10 text-green-500 font-bold px-2 py-0.5 rounded">Aprovado</span>
                            </div>
-                           <p className="text-[10px] text-zinc-500 leading-relaxed font-bold">
+                           <p className="text-[10px] text-zinc-300 leading-relaxed font-bold">
                               Criar um post de feed e quatro stories de engajamento demonstrando a aplicação real do produto.
                            </p>
                         </div>
@@ -216,7 +216,7 @@ export default function LandingPageClient() {
                   </div>
 
                   {/* Simulated Status Footer */}
-                  <div className="border-t border-white/5 pt-4 flex items-center justify-between text-[10px] text-zinc-500">
+                  <div className="border-t border-white/5 pt-4 flex items-center justify-between text-[10px] text-zinc-300">
                      <span>Próximo prazo: 15 de Junho de 2026</span>
                      <span className="font-bold text-white uppercase tracking-wider">Acompanhar Progresso</span>
                   </div>
@@ -242,12 +242,12 @@ export default function LandingPageClient() {
             ].map((pain, i) => (
               <div key={i} className="flex items-start gap-4 p-6 bg-white/[0.01] border border-red-500/10 rounded-2xl">
                 <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-zinc-300 font-medium leading-relaxed">{pain}</p>
+                <p className="text-sm text-zinc-100 font-medium leading-relaxed">{pain}</p>
               </div>
             ))}
           </div>
           <div className="mt-8 pt-8 border-t border-red-500/10 text-center">
-             <p className="text-zinc-400 text-sm">
+             <p className="text-zinc-200 text-sm">
                 A InfluNext profissionaliza essa relação. Conectamos criadores locais a marcas locais sob um ecossistema de **segurança contratual mútua**.
              </p>
           </div>
@@ -265,10 +265,10 @@ export default function LandingPageClient() {
             <div key={i} className="border border-white/5 bg-white/[0.02] rounded-2xl overflow-hidden">
               <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full flex items-center justify-between p-6 text-left">
                 <span className="font-bold text-sm text-white">{item.q}</span>
-                <ChevronDown className={`w-4 h-4 text-zinc-500 flex-shrink-0 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-4 h-4 text-zinc-300 flex-shrink-0 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
               </button>
               {openFaq === i && (
-                <div className="px-6 pb-6 text-zinc-400 text-sm leading-relaxed border-t border-white/5 pt-4">{item.a}</div>
+                <div className="px-6 pb-6 text-zinc-200 text-sm leading-relaxed border-t border-white/5 pt-4">{item.a}</div>
               )}
             </div>
           ))}
@@ -285,7 +285,7 @@ export default function LandingPageClient() {
               Seguidores não geram faturamento.<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-pink-400">Parcerias fechadas geram.</span>
             </h2>
-            <p className="text-zinc-400 text-lg max-w-2xl mx-auto">
+            <p className="text-zinc-200 text-lg max-w-2xl mx-auto">
               Experimente grátis. Acelere seu crescimento local com inteligência artificial e garanta o seu faturamento seguro no final do mês.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
@@ -305,14 +305,14 @@ export default function LandingPageClient() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex flex-col items-center md:items-start gap-2">
             <Logo size="sm" href="/" variant="light" />
-            <p className="text-zinc-600 text-[11px]">© 2026 InfluNext. Todos os direitos reservados.</p>
+            <p className="text-zinc-400 text-[11px]">© 2026 InfluNext. Todos os direitos reservados.</p>
           </div>
-          <div className="flex gap-8 text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
+          <div className="flex gap-8 text-[10px] text-zinc-300 font-bold uppercase tracking-widest">
             <Link href="/auth/login" className="hover:text-violet-400 transition-colors">Entrar</Link>
             <Link href="/auth/signup" className="hover:text-violet-400 transition-colors">Cadastrar</Link>
             <Link href="/dashboard/marketplace" className="hover:text-violet-400 transition-colors">Marketplace</Link>
           </div>
-          <div className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/5 bg-white/[0.02] text-[9px] font-black text-zinc-600 tracking-wider">
+          <div className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/5 bg-white/[0.02] text-[9px] font-black text-zinc-500 tracking-wider">
             🛡️ ESCROW SEGURO · IA BRASILEIRA · FEITO NO BRASIL
           </div>
         </div>
