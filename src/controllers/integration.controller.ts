@@ -35,12 +35,15 @@ export const getAuthUrls = async (req: Request, res: Response): Promise<void> =>
       'public_profile'
     ].join(',');
 
-    const instagramUrl = `https://www.facebook.com/v20.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${getFrontendUrl()}/auth/callback/instagram&scope=${scopes}&response_type=code&state=${state}`;
+    const instagramUrl = `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${getFrontendUrl()}/auth/callback/instagram&scope=user_profile,user_media&response_type=code&state=${state}`;
     
+    const instagramBusinessUrl = `https://www.facebook.com/v20.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${getFrontendUrl()}/auth/callback/instagram&scope=${scopes}&response_type=code&state=${state}_business`;
+
     const tiktokUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list,video.stats&response_type=code&redirect_uri=${getFrontendUrl()}/auth/callback/tiktok&state=${state}`;
 
     res.json({
       instagram: instagramUrl,
+      instagram_business: instagramBusinessUrl,
       tiktok: tiktokUrl,
       youtube: '#'
     });
@@ -60,76 +63,76 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
       return;
     }
 
-    const isFromOnboarding = stateStr.endsWith('_onboarding');
-    const userId = isFromOnboarding ? stateStr.replace('_onboarding', '') : stateStr;
+    const isBusiness = stateStr.includes('_business');
+    const cleanStateStr = stateStr.replace('_business', '');
+    const isFromOnboarding = cleanStateStr.endsWith('_onboarding');
+    const userId = isFromOnboarding ? cleanStateStr.replace('_onboarding', '') : cleanStateStr;
 
-    // 1. Short-Lived Access Token
-    const tokenResponse = await axios.get('https://graph.facebook.com/v20.0/oauth/access_token', {
-      params: {
-        client_id: process.env.INSTAGRAM_CLIENT_ID,
-        client_secret: process.env.INSTAGRAM_CLIENT_SECRET,
-        redirect_uri: `${getFrontendUrl()}/auth/callback/instagram`,
-        code: code as string
-      }
-    });
-
-    const shortLivedToken = tokenResponse.data.access_token;
-
-    // 2. Long-Lived Access Token (60 dias)
-    const longLivedResponse = await axios.get('https://graph.facebook.com/v20.0/oauth/access_token', {
-      params: {
-        grant_type: 'fb_exchange_token',
-        client_id: process.env.INSTAGRAM_CLIENT_ID,
-        client_secret: process.env.INSTAGRAM_CLIENT_SECRET,
-        fb_exchange_token: shortLivedToken
-      }
-    });
-
-    const longLivedToken = longLivedResponse.data.access_token;
-
-    // 3. Buscar Páginas e IDs do Instagram Business
-    const pagesResponse = await axios.get('https://graph.facebook.com/v20.0/me/accounts', {
-      params: { access_token: longLivedToken }
-    });
-
-    const pages = pagesResponse.data.data;
+    let accessToken = '';
     let instagramBusinessId = null;
     let instagramUsername = null;
-
-    if (pages && pages.length > 0) {
-      for (const page of pages) {
-        const igResponse = await axios.get(`https://graph.facebook.com/v20.0/${page.id}`, {
-          params: {
-            fields: 'instagram_business_account{id,username}',
-            access_token: longLivedToken
-          }
-        });
-
-        if (igResponse.data.instagram_business_account) {
-          instagramBusinessId = igResponse.data.instagram_business_account.id;
-          instagramUsername = igResponse.data.instagram_business_account.username;
-          break;
-        }
-      }
-    }
-
-    if (!instagramBusinessId) {
-      const redirectUrl = isFromOnboarding
-        ? `${getFrontendUrl()}/onboarding?status=error&error=no_business_account`
-        : `${getFrontendUrl()}/dashboard/settings?status=error&error=no_business_account`;
-      res.redirect(redirectUrl);
-      return;
-    }
-
     let instagramFollowers = 0;
     let instagramProfilePicture = null;
 
-    if (instagramBusinessId) {
+    if (isBusiness) {
+      // 1. Short-Lived Access Token
+      const tokenResponse = await axios.get('https://graph.facebook.com/v20.0/oauth/access_token', {
+        params: {
+          client_id: process.env.INSTAGRAM_CLIENT_ID,
+          client_secret: process.env.INSTAGRAM_CLIENT_SECRET,
+          redirect_uri: `${getFrontendUrl()}/auth/callback/instagram`,
+          code: code as string
+        }
+      });
+
+      const shortLivedToken = tokenResponse.data.access_token;
+
+      // 2. Long-Lived Access Token (60 dias)
+      const longLivedResponse = await axios.get('https://graph.facebook.com/v20.0/oauth/access_token', {
+        params: {
+          grant_type: 'fb_exchange_token',
+          client_id: process.env.INSTAGRAM_CLIENT_ID,
+          client_secret: process.env.INSTAGRAM_CLIENT_SECRET,
+          fb_exchange_token: shortLivedToken
+        }
+      });
+
+      accessToken = longLivedResponse.data.access_token;
+
+      // 3. Buscar Páginas e IDs do Instagram Business
+      const pagesResponse = await axios.get('https://graph.facebook.com/v20.0/me/accounts', {
+        params: { access_token: accessToken }
+      });
+
+      const pages = pagesResponse.data.data;
+
+      if (pages && pages.length > 0) {
+        for (const page of pages) {
+          const igResponse = await axios.get(`https://graph.facebook.com/v20.0/${page.id}`, {
+            params: {
+              fields: 'instagram_business_account{id,username}',
+              access_token: accessToken
+            }
+          });
+
+          if (igResponse.data.instagram_business_account) {
+            instagramBusinessId = igResponse.data.instagram_business_account.id;
+            instagramUsername = igResponse.data.instagram_business_account.username;
+            break;
+          }
+        }
+      }
+
+      if (!instagramBusinessId) {
+        throw new Error('Nenhuma conta comercial do Instagram vinculada à página do Facebook foi encontrada.');
+      }
+
+      // Buscar dados reais do perfil Instagram
       try {
         const detailsResponse = await axios.get(`https://graph.facebook.com/v20.0/${instagramBusinessId}`, {
           params: {
-            fields: 'followers_count,profile_picture_url,username',
-            access_token: longLivedToken
+            fields: 'followers_count,profile_picture_url',
+            access_token: accessToken
           }
         });
         instagramFollowers = detailsResponse.data.followers_count || 0;
@@ -137,6 +140,44 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
       } catch (err) {
         console.warn('[INSTAGRAM] Falha ao buscar detalhes adicionais do perfil', err);
       }
+    } else {
+      // Instagram Basic Display API Flow
+      const tokenResponse = await axios.post('https://api.instagram.com/oauth/access_token', new URLSearchParams({
+        client_id: process.env.INSTAGRAM_CLIENT_ID!,
+        client_secret: process.env.INSTAGRAM_CLIENT_SECRET!,
+        grant_type: 'authorization_code',
+        redirect_uri: `${getFrontendUrl()}/auth/callback/instagram`,
+        code: code as string
+      }).toString(), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      });
+
+      const shortLivedToken = tokenResponse.data.access_token;
+
+      try {
+        const longLivedResponse = await axios.get('https://graph.instagram.com/access_token', {
+          params: {
+            grant_type: 'ig_exchange_token',
+            client_secret: process.env.INSTAGRAM_CLIENT_SECRET!,
+            access_token: shortLivedToken
+          }
+        });
+        accessToken = longLivedResponse.data.access_token || shortLivedToken;
+      } catch (longLivedErr) {
+        console.warn('[INSTAGRAM BASIC] Erro ao obter long-lived token, usando token curto.', longLivedErr);
+        accessToken = shortLivedToken;
+      }
+
+      const profileResponse = await axios.get('https://graph.instagram.com/me', {
+        params: {
+          fields: 'id,username,account_type',
+          access_token: accessToken
+        }
+      });
+
+      instagramBusinessId = profileResponse.data.id;
+      instagramUsername = profileResponse.data.username;
+      instagramFollowers = 0; // Preenchido no onboarding/simulação
     }
 
     const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
@@ -156,7 +197,7 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
           username: instagramUsername,
           profilePicture: instagramProfilePicture,
           followersCount: instagramFollowers,
-          accessToken: longLivedToken,
+          accessToken: accessToken,
           isActive: true
         },
         update: {
@@ -164,7 +205,7 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
           username: instagramUsername,
           profilePicture: instagramProfilePicture,
           followersCount: instagramFollowers,
-          accessToken: longLivedToken,
+          accessToken: accessToken,
           isActive: true
         }
       });
@@ -174,9 +215,11 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
         data: { verifiedMetrics: true }
       });
       
-      InstagramService.syncInstagramData(influencer.id, longLivedToken, instagramBusinessId).catch(err => {
-        console.error('[INSTAGRAM] Falha na sincronização de dados reais pós-callback:', err);
-      });
+      if (isBusiness) {
+        InstagramService.syncInstagramData(influencer.id, accessToken, instagramBusinessId).catch(err => {
+          console.error('[INSTAGRAM] Falha na sincronização de dados reais pós-callback:', err);
+        });
+      }
     }
     
     const redirectUrl = isFromOnboarding
@@ -185,10 +228,17 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
     res.redirect(redirectUrl);
   } catch (error: any) {
     console.error('[INSTAGRAM] Erro no callback:', error.response?.data || error.message);
-    const isFromOnboarding = stateStr.endsWith('_onboarding');
+    const cleanStateStr = stateStr ? stateStr.replace('_business', '') : '';
+    const isFromOnboarding = cleanStateStr.endsWith('_onboarding');
+    
+    let errorType = 'error';
+    if (error.message && (error.message.includes('Facebook') || error.message.includes('Página') || error.message.includes('comercial'))) {
+      errorType = 'no_business_account';
+    }
+    
     const redirectUrl = isFromOnboarding
-      ? `${getFrontendUrl()}/onboarding?status=error`
-      : `${getFrontendUrl()}/dashboard/settings?status=error`;
+      ? `${getFrontendUrl()}/onboarding?status=error&error=${errorType}`
+      : `${getFrontendUrl()}/dashboard/settings?status=error&error=${errorType}`;
     res.redirect(redirectUrl);
   }
 };

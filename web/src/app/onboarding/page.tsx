@@ -168,7 +168,7 @@ export default function OnboardingPage() {
     window.location.href = url;
   };
 
-  const handleConnectReal = () => {
+  const handleConnectPersonal = () => {
     api.get('/integrations/urls?from=onboarding')
       .then(res => {
         const url = res.data?.instagram;
@@ -180,6 +180,21 @@ export default function OnboardingPage() {
       })
       .catch(() => {
         toast.error('Erro ao obter link de conexão com o Instagram.');
+      });
+  };
+
+  const handleConnectBusiness = () => {
+    api.get('/integrations/urls?from=onboarding')
+      .then(res => {
+        const url = res.data?.instagram_business;
+        if (!url || url === '#') {
+          toast.error('Configuração de API do Instagram Business pendente no servidor.');
+          return;
+        }
+        window.location.href = url;
+      })
+      .catch(() => {
+        toast.error('Erro ao obter link de conexão com o Instagram Business.');
       });
   };
 
@@ -799,9 +814,11 @@ export default function OnboardingPage() {
       <InstagramOnboardingModal 
         isOpen={isIgModalOpen}
         onClose={() => setIsIgModalOpen(false)}
-        onConfirm={(mode: 'real' | 'simulate') => {
-          if (mode === 'real') {
-            handleConnectReal();
+        onConfirm={(mode: 'personal' | 'business' | 'simulate') => {
+          if (mode === 'personal') {
+            handleConnectPersonal();
+          } else if (mode === 'business') {
+            handleConnectBusiness();
           } else {
             handleConnectSimulate();
           }

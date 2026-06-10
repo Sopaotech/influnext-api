@@ -1,5 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
+import dotenv from 'dotenv';
+dotenv.config();
+import { AIService } from '../src/services/ai.service';
 
 const prisma = new PrismaClient();
 
@@ -337,6 +340,40 @@ async function main() {
         fromAI: item.fromAI
       }
     });
+  }
+
+  console.log('🤖 Gerando análise estratégica com Inteligência Artificial (Gemini)...');
+  try {
+    const analysis = await AIService.generateWeeklyAnalysis(influencerProfile.id);
+    console.log('--------------------------------------------------');
+    if (analysis) {
+      console.log(analysis.analysisText);
+    } else {
+      console.log('Nenhuma análise gerada.');
+    }
+    console.log('--------------------------------------------------');
+    
+    // Buscar tarefas geradas pela IA no banco de dados para confirmar que foram salvas
+    const dbTasks = await prisma.task.findMany({
+      where: { influencerId: influencerProfile.id, fromAI: true },
+      orderBy: { scheduledDate: 'asc' }
+    });
+    console.log(`📊 Tarefas criadas pela IA no Banco de Dados (${dbTasks.length} encontradas):`);
+    dbTasks.forEach(task => {
+      console.log(`   - [ ] ${task.title}: ${task.description}`);
+    });
+    
+    // Buscar referências de tendências no banco de dados
+    const dbTrends = await prisma.trendReference.findMany({
+      where: { influencerId: influencerProfile.id }
+    });
+    console.log(`📊 Referências visuais salvas no Trend Vault (${dbTrends.length} encontradas):`);
+    dbTrends.forEach(trend => {
+      console.log(`   - ${trend.title} (${trend.videoUrl})`);
+    });
+    console.log('--------------------------------------------------');
+  } catch (aiErr: any) {
+    console.error('❌ Erro ao gerar estratégia da IA:', aiErr.message || aiErr);
   }
 
   console.log('🚀 Configuração da Simulação concluída com sucesso!');

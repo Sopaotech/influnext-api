@@ -469,14 +469,25 @@ export default function SettingsPage() {
                               <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
                             </svg>
                          </div>
-                         <div>
+                          <div>
                             <p className={`text-xs font-black ${isDark ? 'text-zinc-200' : 'text-slate-900'}`}>Instagram Insights</p>
                             <p className={`text-[8px] font-bold uppercase tracking-widest ${
                               connectedPlatforms.includes('INSTAGRAM') ? 'text-green-600' : 'text-slate-400'
                             }`}>
                               {connectedPlatforms.includes('INSTAGRAM') ? '✦ Sincronizado' : 'Conectar Instagram'}
                             </p>
-                         </div>
+                            {!connectedPlatforms.includes('INSTAGRAM') && authUrls?.instagram_business && (
+                              <span 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleConnect(authUrls.instagram_business);
+                                }}
+                                className="block mt-1 text-[8px] text-purple-400 hover:text-purple-300 font-bold underline cursor-pointer"
+                              >
+                                Conexão Avançada (Facebook)
+                              </span>
+                            )}
+                          </div>
                       </div>
                       {connectedPlatforms.includes('INSTAGRAM') ? (
                          <div className="flex items-center gap-2">

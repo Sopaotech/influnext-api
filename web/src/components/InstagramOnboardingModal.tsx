@@ -4,7 +4,7 @@ import { ShieldCheck, Info, CheckCircle2, ChevronRight, Sparkles } from 'lucide-
 interface InstagramOnboardingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (mode: 'real' | 'simulate') => void;
+  onConfirm: (mode: 'personal' | 'business' | 'simulate') => void;
 }
 
 export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: InstagramOnboardingModalProps) {
@@ -19,7 +19,7 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
       />
       
       {/* Modal Content */}
-      <div className="relative bg-white w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
+      <div className="relative bg-white w-full max-w-xl rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
         
         {/* Top Banner */}
         <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-8 text-white relative">
@@ -33,34 +33,53 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
             </div>
           </div>
           <h2 className="text-3xl font-black tracking-tight leading-tight">
-            Desbloqueie o Poder Máximo da sua <span className="text-purple-200">Análise de Dados</span>
+            Vincular Conta do <span className="text-purple-200">Instagram</span>
           </h2>
         </div>
 
         <div className="p-8 space-y-6">
           <p className="text-sm text-slate-500 text-center leading-relaxed">
-            Escolha como deseja prosseguir com a vinculação da sua conta do Instagram.
+            Escolha o método de conexão de acordo com o seu perfil do Instagram:
           </p>
 
           {/* Actions */}
           <div className="flex flex-col gap-3">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button 
-                onClick={() => onConfirm('real')}
-                className="flex-1 h-14 bg-slate-900 hover:bg-purple-600 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2 group"
-              >
-                Conexão Real <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </button>
-              <button 
-                onClick={() => onConfirm('simulate')}
-                className="flex-1 h-14 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-emerald-600/10 flex items-center justify-center gap-2 group"
-              >
-                Simular Conexão (Demo) <Sparkles className="w-4 h-4 animate-pulse" />
-              </button>
-            </div>
+            <button 
+              onClick={() => onConfirm('personal')}
+              className="w-full h-16 bg-slate-900 hover:bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-slate-900/10 flex items-center justify-between px-6 group"
+            >
+              <div className="text-left">
+                <span className="block text-white font-black">Conexão Direta (Recomendada)</span>
+                <span className="text-[8px] text-zinc-400 font-bold lowercase">Login direto no Instagram • Qualquer conta</span>
+              </div>
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </button>
+
+            <button 
+              onClick={() => onConfirm('business')}
+              className="w-full h-16 bg-white border border-slate-200 hover:border-purple-300 hover:bg-slate-50 text-slate-700 font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all flex items-center justify-between px-6 group"
+            >
+              <div className="text-left">
+                <span className="block text-slate-900 font-black">Conexão Profissional</span>
+                <span className="text-[8px] text-zinc-450 font-bold lowercase">Meta Graph API • Exige Página do Facebook</span>
+              </div>
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </button>
+
+            <button 
+              onClick={() => onConfirm('simulate')}
+              className="w-full h-16 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-emerald-600/10 flex items-center justify-between px-6 group"
+            >
+              <div className="text-left">
+                <span className="block text-white font-black">Simular Conexão (Demo Rápida)</span>
+                <span className="text-[8px] text-emerald-250 font-bold lowercase">Criar perfil de teste instantâneo</span>
+              </div>
+              <Sparkles className="w-4 h-4 animate-pulse text-white" />
+            </button>
+
             <button 
               onClick={onClose}
-              className="w-full h-12 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-bold text-[10px] uppercase tracking-widest rounded-2xl transition-all border border-slate-100"
+              className="w-full h-12 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-bold text-[10px] uppercase tracking-widest rounded-2xl transition-all border border-slate-100 mt-2"
             >
               Agora Não / Voltar
             </button>
