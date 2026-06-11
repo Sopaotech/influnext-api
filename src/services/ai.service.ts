@@ -168,9 +168,6 @@ export class AIService {
         "videoReferences": [{"title": "...", "videoUrl": "...", "thumbnail": "..."}] 
       }
 
-      DÊ 3 ORDENS DIRETAS. RETORNE ESTRITAMENTE EM JSON.`;oUrl": "...", "thumbnail": "..."}] 
-      }
-
       DÊ 3 ORDENS DIRETAS. RETORNE ESTRITAMENTE EM JSON.`;
 
       const result = await model.generateContent(prompt);
