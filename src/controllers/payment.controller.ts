@@ -3,6 +3,11 @@ import { prisma } from '../lib/prisma';
 import { stripe } from '../lib/stripe';
 import Stripe from 'stripe';
 
+const getFrontendUrl = () => {
+  const url = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
+  return url.endsWith('/') ? url.slice(0, -1) : url;
+};
+
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 
 export class PaymentController {
@@ -54,8 +59,8 @@ export class PaymentController {
           },
         ],
         mode: 'subscription',
-        success_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/subscription`,
+        success_url: `${getFrontendUrl()}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${getFrontendUrl()}/dashboard/subscription`,
         metadata: {
           userId: user.id,
           planId: plan.id
@@ -109,8 +114,8 @@ export class PaymentController {
           },
         ],
         mode: 'payment',
-        success_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/contracts/${contractId}?payment=success`,
-        cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/contracts/${contractId}/pay`,
+        success_url: `${getFrontendUrl()}/dashboard/contracts/${contractId}?payment=success`,
+        cancel_url: `${getFrontendUrl()}/dashboard/contracts/${contractId}/pay`,
         metadata: {
           contractId: contract.id,
           type: 'contract_escrow'

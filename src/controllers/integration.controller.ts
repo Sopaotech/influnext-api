@@ -35,7 +35,7 @@ export const getAuthUrls = async (req: Request, res: Response): Promise<void> =>
       'public_profile'
     ].join(',');
 
-    const instagramUrl = `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${getFrontendUrl()}/auth/callback/instagram&scope=user_profile,user_media&response_type=code&state=${state}`;
+    const instagramUrl = `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_BASIC_CLIENT_ID || process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${getFrontendUrl()}/auth/callback/instagram&scope=user_profile,user_media&response_type=code&state=${state}`;
     
     const instagramBusinessUrl = `https://www.facebook.com/v20.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${getFrontendUrl()}/auth/callback/instagram&scope=${scopes}&response_type=code&state=${state}_business`;
 
@@ -143,8 +143,8 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
     } else {
       // Instagram Basic Display API Flow
       const tokenResponse = await axios.post('https://api.instagram.com/oauth/access_token', new URLSearchParams({
-        client_id: process.env.INSTAGRAM_CLIENT_ID!,
-        client_secret: process.env.INSTAGRAM_CLIENT_SECRET!,
+        client_id: process.env.INSTAGRAM_BASIC_CLIENT_ID || process.env.INSTAGRAM_CLIENT_ID!,
+        client_secret: process.env.INSTAGRAM_BASIC_CLIENT_SECRET || process.env.INSTAGRAM_CLIENT_SECRET!,
         grant_type: 'authorization_code',
         redirect_uri: `${getFrontendUrl()}/auth/callback/instagram`,
         code: code as string
@@ -158,7 +158,7 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
         const longLivedResponse = await axios.get('https://graph.instagram.com/access_token', {
           params: {
             grant_type: 'ig_exchange_token',
-            client_secret: process.env.INSTAGRAM_CLIENT_SECRET!,
+            client_secret: process.env.INSTAGRAM_BASIC_CLIENT_SECRET || process.env.INSTAGRAM_CLIENT_SECRET!,
             access_token: shortLivedToken
           }
         });

@@ -35,9 +35,12 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://influnext.com.br'),
   alternates: { canonical: '/' },
   icons: {
-    icon: '/favicon.svg',
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' }
+    ],
     shortcut: '/favicon.svg',
-    apple: '/favicon.svg',
+    apple: '/icon.svg',
   },
   openGraph: {
     title: "InfluNext — A plataforma que une Influenciadores e Marcas com segurança real",
@@ -65,6 +68,7 @@ export const metadata: Metadata = {
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppearanceManager } from "@/components/appearance-manager";
+import { PwaInstallPrompt } from "@/components/PwaInstallPrompt";
 
 export default function RootLayout({
   children,
@@ -110,6 +114,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AppearanceManager />
+          <PwaInstallPrompt />
           <div className="flex-1 flex flex-col">
              {children}
           </div>

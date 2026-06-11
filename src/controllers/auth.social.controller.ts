@@ -25,7 +25,7 @@ export class SocialAuthController {
     const frontendUrl = rawFrontendUrl.endsWith('/') ? rawFrontendUrl.slice(0, -1) : rawFrontendUrl;
     
     const urls = {
-      instagram: `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/instagram&scope=user_profile,user_media&response_type=code&state=${userId}`,
+      instagram: `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_BASIC_CLIENT_ID || process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/instagram&scope=user_profile,user_media&response_type=code&state=${userId}`,
       instagram_business: `https://www.facebook.com/v20.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/instagram&scope=instagram_basic,instagram_manage_insights,pages_show_list,pages_read_engagement&response_type=code&state=${userId}_business`,
       tiktok: `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${frontendUrl}/auth/callback/tiktok&state=${userId}`,
       youtube: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/youtube&response_type=code&scope=https://www.googleapis.com/auth/youtube.readonly&state=${userId}&access_type=offline&prompt=consent`
@@ -39,7 +39,7 @@ export class SocialAuthController {
     const frontendUrl = rawFrontendUrl.endsWith('/') ? rawFrontendUrl.slice(0, -1) : rawFrontendUrl;
     
     const urls = {
-      instagram: `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/instagram&scope=user_profile,user_media&response_type=code&state=register_instagram`,
+      instagram: `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_BASIC_CLIENT_ID || process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/instagram&scope=user_profile,user_media&response_type=code&state=register_instagram`,
       instagram_business: `https://www.facebook.com/v20.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/instagram&scope=instagram_basic,instagram_manage_insights,pages_show_list,pages_read_engagement&response_type=code&state=register_instagram_business`,
       tiktok: `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${frontendUrl}/auth/callback/tiktok&state=register_tiktok`,
       youtube: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/youtube&response_type=code&scope=https://www.googleapis.com/auth/youtube.readonly&state=register_youtube&access_type=offline&prompt=consent`
@@ -137,8 +137,8 @@ export class SocialAuthController {
         } else {
           // Instagram Basic Display API Flow (Clean Instagram Screen OAuth)
           const tokenResponse = await axios.post('https://api.instagram.com/oauth/access_token', new URLSearchParams({
-            client_id: process.env.INSTAGRAM_CLIENT_ID!,
-            client_secret: process.env.INSTAGRAM_CLIENT_SECRET!,
+            client_id: process.env.INSTAGRAM_BASIC_CLIENT_ID || process.env.INSTAGRAM_CLIENT_ID!,
+            client_secret: process.env.INSTAGRAM_BASIC_CLIENT_SECRET || process.env.INSTAGRAM_CLIENT_SECRET!,
             grant_type: 'authorization_code',
             redirect_uri: `${frontendUrl}/auth/callback/instagram`,
             code: code as string
@@ -152,7 +152,7 @@ export class SocialAuthController {
             const longLivedResponse = await axios.get('https://graph.instagram.com/access_token', {
               params: {
                 grant_type: 'ig_exchange_token',
-                client_secret: process.env.INSTAGRAM_CLIENT_SECRET!,
+                client_secret: process.env.INSTAGRAM_BASIC_CLIENT_SECRET || process.env.INSTAGRAM_CLIENT_SECRET!,
                 access_token: shortLivedToken
               }
             });
