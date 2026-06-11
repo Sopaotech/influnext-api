@@ -71,7 +71,7 @@ export const getMyTasks = async (req: Request, res: Response): Promise<void> => 
 
     const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
     if (!influencer) {
-      res.status(404).json({ error: 'Perfil de influenciador não encontrado.' });
+      res.status(200).json([]);
       return;
     }
 
@@ -229,7 +229,7 @@ export const getTelemetryResults = async (req: Request, res: Response): Promise<
     const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
     
     if (!influencer) {
-      res.status(404).json({ error: 'Perfil não encontrado.' });
+      res.status(200).json([]);
       return;
     }
 

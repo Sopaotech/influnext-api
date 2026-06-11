@@ -26,6 +26,7 @@ routes.use('/dashboard', dashboardRoutes);
 routes.use('/admin', adminRoutes);
 routes.use('/p', publicRoutes);
 routes.use('/influencers', influencerRoutes);
+routes.use('/influencer', influencerRoutes);
 routes.use('/ai', aiRoutes);
 routes.use('/payments', paymentRoutes);
 routes.use('/webhooks', webhookRoutes);

@@ -476,17 +476,6 @@ export default function SettingsPage() {
                             }`}>
                               {connectedPlatforms.includes('INSTAGRAM') ? '✦ Sincronizado' : 'Conectar Instagram'}
                             </p>
-                            {!connectedPlatforms.includes('INSTAGRAM') && authUrls?.instagram_business && (
-                              <span 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleConnect(authUrls.instagram_business);
-                                }}
-                                className="block mt-1 text-[8px] text-purple-400 hover:text-purple-300 font-bold underline cursor-pointer"
-                              >
-                                Conexão Avançada (Facebook)
-                              </span>
-                            )}
                           </div>
                       </div>
                       {connectedPlatforms.includes('INSTAGRAM') ? (
@@ -578,45 +567,6 @@ export default function SettingsPage() {
                          <ExternalLink className={`transition-colors ${isDark ? 'text-zinc-500 group-hover:text-white' : 'text-slate-400 group-hover:text-slate-900'}`} size={16} />
                       )}
                   </button>
-
-                  {/* Seção de simulação oculta/teste rápido para demonstração local */}
-                  <div className="pt-6 border-t border-slate-200/50 dark:border-white/5 space-y-3">
-                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-zinc-500 text-center">
-                       ⚡ Ambientes Locais / Testes Rápidos (Simulação)
-                     </p>
-                     <div className="flex flex-wrap gap-2 justify-center">
-                        {!connectedPlatforms.includes('INSTAGRAM') && (
-                           <button 
-                             type="button"
-                             onClick={() => handleSimulateSync('INSTAGRAM', profile?.handle || 'instagram_demo')}
-                             disabled={connectingPlatform !== null}
-                             className="text-[9px] font-black uppercase tracking-wider px-3 py-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-300 border border-purple-500/20 transition-all"
-                           >
-                              {connectingPlatform === 'INSTAGRAM' ? 'Conectando...' : 'Simular Instagram'}
-                           </button>
-                        )}
-                        {!connectedPlatforms.includes('TIKTOK') && (
-                           <button 
-                             type="button"
-                             onClick={() => handleSimulateSync('TIKTOK', profile?.handle || 'tiktok_demo')}
-                             disabled={connectingPlatform !== null}
-                             className="text-[9px] font-black uppercase tracking-wider px-3 py-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-300 border border-purple-500/20 transition-all"
-                           >
-                              {connectingPlatform === 'TIKTOK' ? 'Conectando...' : 'Simular TikTok'}
-                           </button>
-                        )}
-                        {!connectedPlatforms.includes('YOUTUBE') && (
-                           <button 
-                             type="button"
-                             onClick={() => handleSimulateSync('YOUTUBE', profile?.handle || 'youtube_demo')}
-                             disabled={connectingPlatform !== null}
-                             className="text-[9px] font-black uppercase tracking-wider px-3 py-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-300 border border-purple-500/20 transition-all"
-                           >
-                              {connectingPlatform === 'YOUTUBE' ? 'Conectando...' : 'Simular YouTube'}
-                           </button>
-                        )}
-                     </div>
-                  </div>
                </div>
                </div>
             </section>
@@ -632,7 +582,7 @@ export default function SettingsPage() {
                 : 'bg-slate-900 text-white hover:bg-slate-800'
             }`}
           >
-            {saving ? 'PROCESSANDO...' : 'SYNC STUDIO'}
+            {saving ? 'PROCESSANDO...' : 'SALVAR CONFIGURAÇÕES'}
           </button>
 
           <div className="flex items-center justify-center gap-3 opacity-30">

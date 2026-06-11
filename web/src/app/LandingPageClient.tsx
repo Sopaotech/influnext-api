@@ -373,6 +373,20 @@ export default function LandingPageClient() {
          </div>
       </section>
 
+      {/* MOCKUP PREVIEW 3 (Chat com o Mentor por IA) */}
+      <section id="preview-chat" className="relative w-full max-w-6xl mx-auto px-6 pb-20">
+         <div className="text-center mb-12">
+            <p className="text-pink-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">✦ Interatividade em Tempo Real</p>
+            <h2 className="text-xl sm:text-3xl md:text-5xl font-black tracking-tighter leading-[1.05] md:leading-[0.95]">Conversa com o Mentor de IA<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-violet-400">Roteiros rápidos e controle de cash flow</span></h2>
+            <p className="text-zinc-300 text-xs mt-4 max-w-xl mx-auto leading-relaxed">
+               Veja como o seu Mentor de IA (Kowalski) acompanha seu fluxo de caixa de contratos e cria ganchos prontos para suas publicações.
+            </p>
+         </div>
+
+         {/* Chat Preview Widget */}
+         <InteractiveChatPreview />
+      </section>
+
       {/* DIFERENCIAIS / INOVAÇÃO (Para Criadores e Marcas) */}
       <section id="features" className="w-full max-w-7xl mx-auto px-6 lg:px-16 py-10">
          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -501,6 +515,174 @@ export default function LandingPageClient() {
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function InteractiveChatPreview() {
+  const [messages, setMessages] = useState<Array<{ sender: 'ai' | 'user'; text: string; time: string }>>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingSender, setTypingSender] = useState<'ai' | 'user'>('ai');
+
+  const conversationSteps = [
+    {
+      sender: 'ai' as const,
+      text: 'Olá, Lucas! Analisei seus contratos ativos no painel. Temos **R$ 3.500,00** garantidos em Escrow aguardando a entrega do seu Reels para a Loreal Brasil.',
+      delayBeforeTyping: 1000,
+      typingDuration: 2000,
+    },
+    {
+      sender: 'user' as const,
+      text: 'Sensacional! Qual é a sugestão de gancho viral para esse vídeo?',
+      delayBeforeTyping: 1500,
+      typingDuration: 1000,
+    },
+    {
+      sender: 'ai' as const,
+      text: 'Como sua conta é focada em conteúdo autêntico de moda, recomendo usar este gancho nos primeiros 3 segundos: \n\n"3 erros fatais que te fazem gastar o dobro com maquiagem..." \n\nIsso gera quebra de padrão imediata e retém o público local.',
+      delayBeforeTyping: 1500,
+      typingDuration: 3000,
+    },
+    {
+      sender: 'user' as const,
+      text: 'Perfeito, vou gravar agora mesmo!',
+      delayBeforeTyping: 1500,
+      typingDuration: 1000,
+    }
+  ];
+
+  useEffect(() => {
+    let currentStep = 0;
+    let timeoutId: NodeJS.Timeout;
+
+    const runConversation = () => {
+      if (currentStep >= conversationSteps.length) {
+        // Reset after a pause
+        timeoutId = setTimeout(() => {
+          setMessages([]);
+          currentStep = 0;
+          runConversation();
+        }, 5000);
+        return;
+      }
+
+      const step = conversationSteps[currentStep];
+
+      // Delay before typing starts
+      timeoutId = setTimeout(() => {
+        setIsTyping(true);
+        setTypingSender(step.sender);
+
+        // Typing duration
+        timeoutId = setTimeout(() => {
+          setIsTyping(false);
+          setMessages(prev => [...prev, {
+            sender: step.sender,
+            text: step.text,
+            time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          }]);
+          currentStep++;
+          runConversation();
+        }, step.typingDuration);
+
+      }, step.delayBeforeTyping);
+    };
+
+    runConversation();
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
+  return (
+    <div className="border border-white/10 rounded-[2rem] bg-black/40 overflow-hidden shadow-2xl relative shadow-pink-900/5 max-w-2xl mx-auto backdrop-blur-xl">
+      {/* Top Bar / Header */}
+      <div className="h-14 border-b border-white/5 px-6 flex items-center justify-between bg-zinc-950/60">
+        <div className="flex items-center gap-3">
+          <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" />
+          <span className="text-[10px] font-black text-zinc-300 uppercase tracking-widest">Vincenzo // Mentor Virtual</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[9px] bg-purple-500/10 text-purple-400 font-black px-2.5 py-1 rounded-full uppercase tracking-wider">Modo Estratégico</span>
+        </div>
+      </div>
+
+      {/* Chat Messages Container */}
+      <div className="p-6 min-h-[350px] max-h-[450px] overflow-y-auto space-y-4 flex flex-col justify-end">
+        {messages.map((msg, idx) => (
+          <div
+            key={idx}
+            className={`flex flex-col max-w-[85%] ${msg.sender === 'user' ? 'ml-auto items-end' : 'mr-auto items-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              {msg.sender === 'ai' ? (
+                <>
+                  <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-500/30">
+                    <Brain className="w-2.5 h-2.5 text-purple-400" />
+                  </div>
+                  <span className="text-[8px] font-black text-purple-400 uppercase tracking-wider">Vincenzo</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-[8px] font-black text-zinc-400 uppercase tracking-wider">Lucas</span>
+                  <div className="w-4 h-4 rounded-full bg-zinc-850 flex items-center justify-center border border-zinc-700">
+                    <User className="w-2.5 h-2.5 text-zinc-400" />
+                  </div>
+                </>
+              )}
+            </div>
+            <div
+              className={`p-4 rounded-[1.5rem] text-xs font-bold leading-relaxed whitespace-pre-wrap ${
+                msg.sender === 'user'
+                  ? 'bg-purple-600 text-white rounded-tr-none'
+                  : 'bg-white/5 border border-white/10 text-zinc-100 rounded-tl-none'
+              }`}
+            >
+              {msg.text}
+            </div>
+            <span className="text-[8px] text-zinc-500 font-bold mt-1 uppercase tracking-wider">{msg.time}</span>
+          </div>
+        ))}
+
+        {/* Typing Indicator */}
+        {isTyping && (
+          <div className={`flex flex-col max-w-[80%] ${typingSender === 'user' ? 'ml-auto items-end' : 'mr-auto items-start'} animate-in fade-in duration-300`}>
+            <div className="flex items-center gap-2 mb-1">
+              {typingSender === 'ai' ? (
+                <>
+                  <div className="w-4 h-4 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-500/30">
+                    <Brain className="w-2.5 h-2.5 text-purple-400" />
+                  </div>
+                  <span className="text-[8px] font-black text-purple-400 uppercase tracking-wider">Vincenzo digitando...</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-[8px] font-black text-zinc-400 uppercase tracking-wider">Lucas digitando...</span>
+                  <div className="w-4 h-4 rounded-full bg-zinc-850 flex items-center justify-center border border-zinc-700">
+                    <User className="w-2.5 h-2.5 text-zinc-400" />
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="p-3 px-5 rounded-[1.2rem] bg-white/5 border border-white/10 flex items-center gap-1.5 h-10">
+              <span className="w-1.5 h-1.5 bg-zinc-450 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 bg-zinc-450 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 bg-zinc-450 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Input bar mockup */}
+      <div className="p-4 bg-zinc-950/40 border-t border-white/5 flex gap-3">
+        <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl h-12 px-4 flex items-center text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
+          {isTyping && typingSender === 'user' ? 'Digitando resposta...' : 'Mensagem protegida criptografada...'}
+        </div>
+        <div className="w-12 h-12 rounded-2xl bg-purple-600 flex items-center justify-center text-white shadow-lg shadow-purple-600/20">
+          <MessageSquare className="w-4 h-4" />
+        </div>
+      </div>
     </div>
   );
 }

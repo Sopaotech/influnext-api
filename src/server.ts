@@ -25,6 +25,18 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use((req, res, next) => {
   console.log(`[REQUEST] ${req.method} ${req.url}`);
+  res.on('finish', () => {
+    if (res.statusCode === 404) {
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const logLine = `[404 ERROR] ${new Date().toISOString()} - ${req.method} ${req.url} - Headers: ${JSON.stringify(req.headers)}\n`;
+        fs.appendFileSync(path.join(__dirname, '../404-debug.log'), logLine);
+      } catch (err) {
+        console.error('Failed to write 404 debug log:', err);
+      }
+    }
+  });
   next();
 });
 

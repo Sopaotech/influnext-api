@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Sparkles, BrainCircuit, Loader2, ClipboardList, Music, Terminal, Zap, Activity, Play, Mic, MicOff, Volume2, Crown, Lock, User, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { EscrowExplanatoryCard } from '@/components/EscrowExplanatoryCard';
 
 interface AIAnalysis {
   id: string;
@@ -136,7 +137,16 @@ export default function AIWorkspacePage() {
         if (profileRes.data.profile?.aiInterview) {
           try {
             const parsed = JSON.parse(profileRes.data.profile.aiInterview);
-            if (parsed.gender === 'feminino') {
+            const isUserAlexsandro = profileRes.data.profile.handle && 
+              (profileRes.data.profile.handle.toLowerCase().includes('alexsandro') || 
+               profileRes.data.profile.handle.toLowerCase().includes('teste'));
+
+            if (isUserAlexsandro) {
+              setMentorName('Kowalski');
+              setChatMessages([
+                { role: 'mentor', text: 'Olá, Alexsandro! Eu sou o Kowalski, seu mentor virtual e braço direito de IA. O que vamos estruturar hoje: roteiros rápidos, seu fluxo de caixa de contratos (Escrow) ou as próximas campanhas?' }
+              ]);
+            } else if (parsed.gender === 'feminino') {
               setMentorName('Valentina');
               setChatMessages([
                 { role: 'mentor', text: 'Olá, eu sou a Valentina, sua estrategista de carreira e sócia aqui na InfluNext. Meu papel é direcionar seu perfil para escala e lucro real. O que vamos estruturar hoje: roteiro de conteúdo (Instagram/TikTok), pitch de marca ou análise de engajamento?' }
@@ -407,6 +417,8 @@ export default function AIWorkspacePage() {
                 </Button>
               </div>
             </section>
+
+            <EscrowExplanatoryCard />
 
             {/* Próximo Passo Recomendado (Socratic Action) */}
             <div className={`border p-6 rounded-[2rem] relative overflow-hidden shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-l-4 border-l-emerald-500 ${

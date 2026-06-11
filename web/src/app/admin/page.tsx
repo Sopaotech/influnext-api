@@ -18,7 +18,7 @@ export default async function AdminPage() {
   const stats = await getAdminStats();
 
   const cards = [
-    { label: 'Influencers', value: stats?.influencers ?? '—', icon: '👤', color: 'purple' },
+    { label: 'Criadores', value: stats?.influencers ?? '—', icon: '👤', color: 'purple' },
     { label: 'Empresas', value: stats?.companies ?? '—', icon: '🏢', color: 'blue' },
     { label: 'Contratos Ativos', value: stats?.activeContracts ?? '—', icon: '📄', color: 'emerald' },
     { label: 'Volume em Escrow', value: stats?.escrowVolume ? `R$ ${stats.escrowVolume.toLocaleString('pt-BR')}` : '—', icon: '🛡️', color: 'pink' },
@@ -63,7 +63,7 @@ export default async function AdminPage() {
         {/* Links rápidos */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
-            { href: '/dashboard/influencer', label: 'Ver Dashboard Influencer', icon: '👤' },
+            { href: '/dashboard/influencer', label: 'Ver Dashboard Criador', icon: '👤' },
             { href: '/dashboard/company', label: 'Ver Dashboard Empresa', icon: '🏢' },
             { href: '/auth/login', label: 'Página de Login', icon: '🔑' },
           ].map(l => (

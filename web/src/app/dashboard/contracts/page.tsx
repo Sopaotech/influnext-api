@@ -6,6 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { FileText, ShieldCheck, Clock, CheckCircle2, AlertCircle, ExternalLink, Zap, ChevronDown, ChevronUp, Brain, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { EscrowExplanatoryCard } from '@/components/EscrowExplanatoryCard';
+
 interface Contract {
   id: string;
   title: string;
@@ -76,6 +78,8 @@ export default function ContractsPage() {
           </p>
         </div>
       </header>
+
+      <EscrowExplanatoryCard />
 
       <section className="bg-[#100c1e] border border-[#1e1430] rounded-2xl overflow-hidden shadow-2xl">
         <div className="overflow-x-auto">

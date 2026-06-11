@@ -11,7 +11,7 @@ export const getTasks = async (req: Request, res: Response): Promise<void> => {
     const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
     
     if (!influencer) {
-      res.status(404).json({ error: "Perfil não encontrado." });
+      res.json([]);
       return;
     }
 
@@ -159,7 +159,7 @@ export const getDailyInsight = async (req: Request, res: Response): Promise<void
     const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
     
     if (!influencer) {
-      res.status(404).json({ error: "Perfil não encontrado." });
+      res.json({ insight: "Configure seu perfil no onboarding para começar a receber insights diários da IA." });
       return;
     }
 
@@ -367,7 +367,7 @@ export const getRateCard = async (req: Request, res: Response): Promise<void> =>
         include: { rateCards: true }
       });
       if (!company) {
-        res.status(404).json({ error: "Perfil não encontrado." });
+        res.json([]);
         return;
       }
       res.json(company.rateCards);
@@ -379,7 +379,7 @@ export const getRateCard = async (req: Request, res: Response): Promise<void> =>
       include: { rateCards: true }
     });
     if (!influencer) {
-      res.status(404).json({ error: "Perfil não encontrado." });
+      res.json([]);
       return;
     }
     res.json(influencer.rateCards);

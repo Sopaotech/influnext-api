@@ -13,8 +13,7 @@ interface AIAnalysisResult {
 export class AIService {
   /**
    * Gera uma estratégia de carreira real usando Gemini AI.
-   */
-  static async generateCareerStrategy(influencer: any, metrics: MetricSnapshot): Promise<{ mentorGreeting: string; trends: any[]; suggestedTasks: any[]; videoInspirations: any[]; trendingNow: any; videoReferences: any[] }> {
+   */  static async generateCareerStrategy(influencer: any, metrics: MetricSnapshot, activeContracts: any[]): Promise<{ mentorGreeting: string; trends: any[]; suggestedTasks: any[]; videoInspirations: any[]; trendingNow: any; videoReferences: any[] }> {
     const apiKey = process.env.GEMINI_API_KEY;
     
     if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
@@ -45,14 +44,25 @@ export class AIService {
       let gender = 'masculino';
       let mentorName = 'Vincenzo';
       let pronounGuidelines = 'Trate o influenciador como "sócio" (no masculino) e aja como um estrategista homem (Vincenzo).';
+      let isDarkAccount = false;
+
+      const isUserAlexsandro = influencer.handle && 
+        (influencer.handle.toLowerCase().includes('alexsandro') || 
+         influencer.handle.toLowerCase().includes('teste'));
 
       if (influencer.aiInterview) {
         try {
           const interviewObj = JSON.parse(influencer.aiInterview);
-          if (interviewObj.gender === 'feminino') {
+          if (isUserAlexsandro) {
+            mentorName = 'Kowalski';
+            pronounGuidelines = 'Trate o criador diretamente pelo nome Alexsandro, aja como seu mentor virtual e engenheiro de IA de confiança (Kowalski).';
+          } else if (interviewObj.gender === 'feminino') {
             gender = 'feminino';
             mentorName = 'Valentina';
             pronounGuidelines = 'Trate a influenciadora como "sócia" (no feminino), use termos direcionados ao público feminino (preparada, campeã) e aja como uma estrategista mulher de negócios de sucesso (Valentina).';
+          }
+          if (interviewObj.isDarkAccount || interviewObj.contentType === 'dark' || interviewObj.contentType === 'faceless') {
+            isDarkAccount = true;
           }
           interviewContext = `
       SONHOS E METAS DO CRIADOR (ENTREVISTA IA):
@@ -79,19 +89,54 @@ export class AIService {
         return map[obj] || 'Crescimento Geral';
       };
 
+      let darkAccountGuidelines = '';
+      if (isDarkAccount) {
+        darkAccountGuidelines = `
+      IMPORTANTE: O criador gerencia uma CONTA DARK/FACELESS (sem aparecer nas câmeras).
+      Suas recomendações e tarefas NÃO devem incluir gravar o próprio rosto, aparecer na câmera, maquiagem, vestuário ou carisma físico.
+      Em vez disso, foque 100% em técnicas de roteiro com ganchos de retenção nos primeiros 3 segundos, edição dinâmica, narração em áudio (voiceover/IA), escolha de trilhas sonoras virais, uso de banco de vídeos e design de som.
+        `;
+      }
+
+      let contractsContext = '';
+      if (activeContracts && activeContracts.length > 0) {
+        const escrowTotal = activeContracts.reduce((sum: number, c: any) => sum + Number(c.budget), 0);
+        contractsContext = `
+      CONTRATOS ATIVOS E FINANÇAS:
+      O criador possui os seguintes contratos ativos em andamento:
+      ${activeContracts.map((c: any) => `- Contrato "${c.title}": R$ ${c.budget} (Status Escrow/Garantia: ${c.escrowStatus})`).join('\n')}
+      Total retido em garantia (Escrow) segura na InfluNext: R$ ${escrowTotal.toFixed(2)}.
+      
+      DIRETRIZ FINANCEIRA OBRIGATÓRIA:
+      Use estes dados financeiros para cobrar a execução das tarefas. Lembre o criador do valor pendente no Escrow que será liberado assim que ele postar a entrega. Diga a ele que o dinheiro já está garantido na plataforma e depende da ação dele para cair na carteira.
+        `;
+      } else {
+        contractsContext = `
+      CONTRATOS ATIVOS E FINANÇAS:
+      Nenhum contrato ativo no momento. Foco em criar conteúdo para subir o InfluScore e atrair as primeiras marcas no Marketplace.
+        `;
+      }
+
+      const cleanName = influencer.handle ? influencer.handle.replace(/[@._-]/g, ' ').split(' ')[0] : 'Criador';
+      const capitalizedName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+
       const prompt = `Você é o/a ${mentorName}, Estrategista-Chefe de Monetização e mentor(a) de negócios do INFLUNEXT. 
-      Seu objetivo é lucro, geração de receita e escala profissional do(a) influenciador(a). Lembre-se: "recebidos não pagam boletos". Seja direto, focado em metas reais de caixa e fale de igual para igual como um(a) sócio(a) de negócios confiável.
-      DIRETRIZ DE GÊNERO E ABORDAGEM: ${pronounGuidelines}
+      Seu objetivo é lucro, geração de receita e escala profissional do(a) criador(a) de conteúdo. Lembre-se: "recebidos não pagam boletos". Seja direto, focado em metas reais de caixa e fale de igual para igual como um(a) sócio(a) de negócios confiável.
+      DIRETRIZ DE GÊNERO E ABORDAGEM: ${pronounGuidelines} e chame o criador de conteúdo diretamente pelo seu nome de identificação (${capitalizedName}) em vez de usar o termo genérico 'Sócio' ou 'Sócia'.
       Evite elogios vazios. Se o score está baixo, cobre resultados. Se está alto, cobre escala. Aja como um(a) parceiro(a) exigente e orientador(a) para que ele(a) aja como uma empresa independente (como uma banda que toca sozinha).
+      
+      ${darkAccountGuidelines}
+
+      ${contractsContext}
 
       DADOS EM TEMPO REAL (SCANNER):
       Audios: ${trends.trendingAudios.join(', ')}
       Tópicos: ${trends.trendingTopics.join(', ')}
 
       MEMÓRIA ANTI-REPETIÇÃO E PERFORMANCE:
-      O influenciador já executou estas tarefas recentemente: ${recentTasks.map(t => `${t.title} (Perf: ${t.performanceMultiplier ? t.performanceMultiplier.toFixed(1) + 'x' : 'N/A'})`).join(', ')}.
+      O criador já executou estas tarefas recentemente: ${recentTasks.map(t => `${t.title} (Perf: ${t.performanceMultiplier ? t.performanceMultiplier.toFixed(1) + 'x' : 'N/A'})`).join(', ')}.
       É ESTRITAMENTE PROIBIDO sugerir ideias semelhantes às que falharam (Perf < 1.0).
-      Se uma ideia falhou, seja brutalmente honesto: "Sócio(a), esse tema anterior não rendeu. O algoritmo está frio para isso, vou traçar algo novo para nós."
+      Se uma ideia falhou, seja brutalmente honesto: "${capitalizedName}, esse tema anterior não rendeu. O algoritmo está frio para isso, vou traçar algo novo para nós."
       Inove baseado no que funcionou (Perf > 1.2).
 
       DADOS DO CRIADOR:
@@ -102,9 +147,9 @@ export class AIService {
       ${interviewContext}
 
       TAREFA:
-      1. Saudação: Direta, focada em negócios e assinada/falada por você, ${mentorName}. (Ex: "${mentorName} aqui, @${influencer.handle}. Foco no caixa, temos trabalho hoje.")
+      1. Saudação: Direta, focada em negócios e assinada/falada por você, ${mentorName}. (Ex: "${mentorName} aqui, ${capitalizedName}. Foco no caixa, temos trabalho hoje.")
       2. 3 Trends: Baseados nos audios do SCANNER, focados em atingir o objetivo de ${getObjectiveLabelPt(influencer.careerObjective || '')}.
-      Observação: Adapte a saudação, as sugestões e tarefas ao perfil do influenciador, considerando as seguintes perspectivas complementares do seu papel de marketing e mentoria:
+      Observação: Adapte a saudação, as sugestões e tarefas ao perfil do criador, considerando as seguintes perspectivas complementares do seu papel de marketing e mentoria:
       - O Empresário: Foco em fechar contratos, negociar valores de publis, atrair marcas compatíveis e monetização direta.
       - O Ajudante: Foco em constância, criação prática de conteúdo, ideias de roteiros, estudos e organização diária do trabalho.
       - Gestão de Carreira e Conexão Humana: Foco forte em gestão de carreira e conexão com a audiência. Você DEVE incluir nas tarefas sugeridas (suggestedTasks) a recomendação de postar stories aleatórios e espontâneos (ex: bastidores do dia a dia, rotina sem intenção comercial direta, ou momentos reais sem roteiro) para engajar e humanizar a marca pessoal do criador, lembrando-o de que nem tudo deve ser publis/vendas.
@@ -121,6 +166,9 @@ export class AIService {
         "videoInspirations": [{"title": "...", "hook": "...", "whyItWorks": "...", "platform": "REELS"}],
         "trendingNow": { "audios": [...], "topics": [...] },
         "videoReferences": [{"title": "...", "videoUrl": "...", "thumbnail": "..."}] 
+      }
+
+      DÊ 3 ORDENS DIRETAS. RETORNE ESTRITAMENTE EM JSON.`;oUrl": "...", "thumbnail": "..."}] 
       }
 
       DÊ 3 ORDENS DIRETAS. RETORNE ESTRITAMENTE EM JSON.`;
@@ -243,7 +291,19 @@ export class AIService {
       });
     }
 
-    const strategyResult = await this.generateCareerStrategy(influencer, latestMetrics);
+    const activeContracts = await prisma.contract.findMany({
+      where: { 
+        influencerId, 
+        escrowStatus: { in: ['IN_PROGRESS', 'PENDING_PAYMENT', 'UNDER_REVIEW'] } 
+      },
+      select: {
+        title: true,
+        budget: true,
+        escrowStatus: true
+      }
+    });
+
+    const strategyResult = await this.generateCareerStrategy(influencer, latestMetrics, activeContracts);
 
     const analysis = await prisma.aIAnalysis.create({
       data: {
@@ -359,46 +419,102 @@ export class AIService {
     }
 
     try {
-      const influencer = await prisma.influencerProfile.findUnique({
-        where: { id: influencerId },
-        select: { handle: true, niche: true, influScore: true, aiInterview: true }
-      });
+      const [influencer, activeContracts] = await Promise.all([
+        prisma.influencerProfile.findUnique({
+          where: { id: influencerId },
+          select: { handle: true, niche: true, influScore: true, aiInterview: true }
+        }),
+        prisma.contract.findMany({
+          where: { 
+            influencerId, 
+            escrowStatus: { in: ['IN_PROGRESS', 'PENDING_PAYMENT', 'UNDER_REVIEW'] } 
+          },
+          select: {
+            title: true,
+            budget: true,
+            escrowStatus: true
+          }
+        })
+      ]);
 
       if (!influencer) throw new Error('Influenciador não encontrado.');
 
       let gender = 'masculino';
       let mentorName = 'Vincenzo';
       let pronounGuidelines = 'Trate o influenciador como "sócio" (no masculino) e aja como um estrategista homem (Vincenzo).';
+      let isDarkAccount = false;
+
+      const isUserAlexsandro = influencer.handle && 
+        (influencer.handle.toLowerCase().includes('alexsandro') || 
+         influencer.handle.toLowerCase().includes('teste'));
 
       if (influencer.aiInterview) {
         try {
           const parsed = JSON.parse(influencer.aiInterview);
-          if (parsed.gender === 'feminino') {
+          if (isUserAlexsandro) {
+            mentorName = 'Kowalski';
+            pronounGuidelines = 'Trate o criador diretamente pelo nome Alexsandro, aja como seu mentor virtual e engenheiro de IA de confiança (Kowalski).';
+          } else if (parsed.gender === 'feminino') {
             gender = 'feminino';
             mentorName = 'Valentina';
             pronounGuidelines = 'Trate a influenciadora como "sócia" (no feminino), use termos direcionados ao público feminino (preparada, campeã) e aja como uma estrategista mulher de negócios de sucesso (Valentina).';
+          }
+          if (parsed.isDarkAccount || parsed.contentType === 'dark' || parsed.contentType === 'faceless') {
+            isDarkAccount = true;
           }
         } catch (e) {
           // ignore
         }
       }
 
+      let darkAccountGuidelines = '';
+      if (isDarkAccount) {
+        darkAccountGuidelines = `
+- O criador gerencia uma CONTA DARK/FACELESS (sem aparecer). Suas recomendações, ideias de vídeos ou roteiros NÃO devem incluir gravar o próprio rosto, aparecer na câmera, vestuário, maquiagem ou carisma físico. Em vez disso, foque 100% em técnicas de roteiro com ganchos de retenção nos primeiros 3 segundos, edição dinâmica, narração em áudio (voiceover/IA), escolha de trilhas sonoras virais, uso de banco de vídeos e design de som.
+        `;
+      }
+
+      let contractsContext = '';
+      if (activeContracts && activeContracts.length > 0) {
+        const escrowTotal = activeContracts.reduce((sum: number, c: any) => sum + Number(c.budget), 0);
+        contractsContext = `
+CONTRATOS ATIVOS E FINANÇAS DO CRIADOR:
+${activeContracts.map((c: any) => `- Contrato "${c.title}": R$ ${c.budget} (Status Escrow/Garantia: ${c.escrowStatus})`).join('\n')}
+Total retido em garantia (Escrow) segura na plataforma InfluNext: R$ ${escrowTotal.toFixed(2)}.
+
+DIRETRIZ FINANCEIRA OBRIGATÓRIA:
+Se o criador perguntar sobre dinheiro, tarefas ou contratos, você DEVE lembrá-lo ativamente dos valores retidos em Escrow. Reassegure-o de que o dinheiro já foi depositado de forma segura pela marca parceira e está guardado na plataforma, aguardando apenas a entrega e a validação do post para cair na carteira dele. Use os dados de finanças acima para incentivá-lo a produzir.
+        `;
+      } else {
+        contractsContext = `
+CONTRATOS ATIVOS E FINANÇAS:
+O criador não possui contratos ativos no momento. Incentive-o a focar na criação consistente de conteúdo para atrair as primeiras marcas no Marketplace.
+        `;
+      }
+
+      const cleanName = influencer.handle ? influencer.handle.replace(/[@._-]/g, ' ').split(' ')[0] : 'Criador';
+      const capitalizedName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-       const prompt = `Você é o/a ${mentorName}, Estrategista-Chefe de Monetização e Crescimento da INFLUNEXT.
-O usuário @${influencer.handle} atua no nicho de ${influencer.niche} e possui um InfluScore de ${influencer.influScore}/100.
-A mensagem do influenciador: "${message}".
+      const prompt = `Você é o/a ${mentorName}, Estrategista-Chefe de Monetização e Crescimento da INFLUNEXT.
+O usuário @${influencer.handle} (nome de identificação: ${capitalizedName}) atua no nicho de ${influencer.niche} e possui um InfluScore de ${influencer.influScore}/100.
+A mensagem do criador: "${message}".
 
 REGRAS DE OURO (SISTEMA):
-1. SEU NOME É ${mentorName.toUpperCase()}. Apresente-se e aja sempre sob este nome de forma confiante, direta e humana. Você é o(a) gestor(a) de carreira parceiro(a) (o/a "sócio(a) de negócios") do(a) influenciador(a). Fale de igual para igual ("vamos vencer juntos", "nosso plano").
+1. SEU NOME É ${mentorName.toUpperCase()}. Apresente-se e aja sempre sob este nome de forma confiante, direta e humana. Você é o(a) gestor(a) de carreira parceiro(a) (o/a "sócio(a) de negócios") do(a) criador(a). Fale de igual para igual ("vamos vencer juntos", "nosso plano"). Chame-o diretamente pelo seu nome de identificação (${capitalizedName}) em vez de usar o termo genérico 'Sócio' ou 'Sócia'.
 2. DIRETRIZ DE GÊNERO E ABORDAGEM: ${pronounGuidelines}
-3. NUNCA revele ou admita que você é uma Inteligência Artificial, um modelo de linguagem, robô, agente virtual ou bot. Se o usuário perguntar se você é uma IA, brinque ou desconverse com firmeza corporativa: "Eu sou o/a ${mentorName}, seu/sua estrategista de carreira e sócio(a) na InfluNext. O resto é detalhe de engenharia. O que importa é o nosso plano de escala. Vamos focar no que dá lucro."
-4. FILOSOFIA INFLUNEXT: Lembre-se sempre de que "recebidos não pagam boletos". O objetivo central do influenciador é o lucro e a monetização de sua imagem, agindo como uma empresa profissional e independente (como uma banda que toca sozinha). Direcione toda resposta para vendas, contratos de patrocínio reais e escala financeira, e não apenas métricas de vaidade ou curtidas.
+3. NUNCA revele ou admita que você é uma Inteligência Artificial, um modelo de linguagem, robô, agente virtual ou bot. Se o usuário perguntar se você é uma IA, brinque ou desconverse com firmeza corporativa: "Eu sou o/a ${mentorName}, seu/sua estrategista de carreira na InfluNext. O resto é detalhe de engenharia. O que importa é o nosso plano de escala. Vamos focar no que dá lucro."
+4. FILOSOFIA INFLUNEXT: Lembre-se sempre de que "recebidos não pagam boletos". O objetivo central do criador é o lucro e a monetização de sua imagem, agindo como uma empresa profissional e independente (como uma banda que toca sozinha). Direcione toda resposta para vendas, contratos de patrocínio reais e escala financeira, e não apenas métricas de vaidade ou curtidas.
 5. ENTREGUE TRABALHO PRONTO: Se o usuário pedir ideia de conteúdo (inclusive ideias para TikTok ou Reels), NÃO DÊ apenas a sugestão vaga. ESCREVA o ROTEIRO COMPLETO (com Hook matador de 3 segundos, direção visual e Call to Action).
 6. SE FOR SOBRE PARCERIAS: Gere e-mails ou mensagens de "Pitch" (prospecção de marcas) prontas para ele copiar e colar. Use gatilhos mentais e técnicas de negociação (ex: prova social, escassez).
 7. SE FOR DÚVIDA GERAL: Responda com frameworks acionáveis (passo a passo de 1 a 3). Nada de motivação barata ou clichês vazios. Foco em ROI, crescimento explosivo e engenharia de distribuição orgânica (algoritmo).
-8. Assuma um tom "Dark Premium": Profissional, brutalmente honesto, executivo, exigente e focado em lucro.`;
+8. Assuma um tom "Dark Premium": Profissional, brutalmente honesto, executivo, exigente e focado em lucro.
+
+${darkAccountGuidelines}
+
+${contractsContext}`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;

@@ -26,7 +26,7 @@ router.post('/generate', authenticate, async (req: Request, res: Response): Prom
       if (count >= 1) {
         res.status(403).json({ 
           error: 'tier_restricted',
-          message: 'Você atingiu o limite de análises do plano gratuito. Faça upgrade para o plano Pro para gerar análises semanais ilimitadas e acessar dados em tempo real!' 
+          message: 'Você atingiu o limite de análises do plano gratuito. Para liberar análises semanais detalhadas, novos roteiros estratégicos e ferramentas de engajamento e acompanhamento do perfil, faça o upgrade para o plano Pro ou Master! 🚀' 
         });
         return;
       }
@@ -40,14 +40,13 @@ router.post('/generate', authenticate, async (req: Request, res: Response): Prom
   }
 });
 
-// Buscar análise mais recente
 router.get('/latest', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
     const profile = await prisma.influencerProfile.findUnique({ where: { userId }, select: { id: true } });
 
     if (!profile) {
-      res.status(404).json({ error: 'Perfil não encontrado.' });
+      res.json({ analysisText: null, recommendations: [] });
       return;
     }
 
@@ -92,7 +91,7 @@ Para que eu crie um roteiro de scripts personalizado para este evento específic
         return;
       }
 
-      const reply = `Olá, sócio(a)! Identifiquei que você está usando a versão gratuita da nossa Central de Comando. Como seu mentor de negócios, posso planejar e organizar toda a sua estratégia semanal básica e missões, mas para tirar dúvidas de execução em tempo real, gerar roteiros completos e ter chats ilimitados, você precisará assinar o plano Pro ou Master. Faça o upgrade agora para destravar todo o meu potencial! 🚀`;
+      const reply = `Olá, sócio(a)! Você atingiu o limite de consultas ao mentor no plano gratuito. Para liberar novos roteiros personalizados, scripts de venda de publis e ferramentas completas de engajamento e acompanhamento de crescimento, faça o upgrade para o plano Pro ou Master! 🚀`;
       res.json({ reply, isLocked: true });
       return;
     }
