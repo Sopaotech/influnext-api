@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { Loader2, AlertCircle, RefreshCw, ArrowLeft } from 'lucide-react';
 import Cookies from 'js-cookie';
 
-export default function SocialCallbackPage() {
+function SocialCallbackContent() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -212,6 +212,18 @@ export default function SocialCallbackPage() {
         InfluNext © 2026 • Secure Social Auth
       </p>
     </div>
+  );
+}
+
+export default function SocialCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#050508] flex flex-col items-center justify-center">
+        <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
+      </div>
+    }>
+      <SocialCallbackContent />
+    </Suspense>
   );
 }
 

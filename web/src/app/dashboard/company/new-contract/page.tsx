@@ -24,7 +24,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export default function NewContractPage() {
+function NewContractForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const influencerIdParam = searchParams.get('influencerId');
@@ -309,5 +309,13 @@ export default function NewContractPage() {
 
       </form>
     </div>
+  );
+}
+
+export default function NewContractPage() {
+  return (
+    <React.Suspense fallback={<div className="p-10 text-zinc-400 text-center animate-pulse">Carregando formulário de contrato...</div>}>
+      <NewContractForm />
+    </React.Suspense>
   );
 }
