@@ -387,31 +387,6 @@ export default function LandingPageClient() {
          <InteractiveChatPreview />
       </section>
 
-      {/* DIFERENCIAIS / INOVAÇÃO (Para Criadores e Marcas) */}
-      <section id="features" className="w-full max-w-7xl mx-auto px-6 lg:px-16 py-10">
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="p-8 rounded-[2rem] border border-white/5 bg-white/[0.01] hover:bg-white/[0.02] hover:border-violet-500/20 transition-all duration-300 space-y-4">
-               <div className="w-12 h-12 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-400">
-                  <ShieldCheck className="w-6 h-6" />
-               </div>
-               <h3 className="text-lg font-black text-white">Garantia Escrow (PIX)</h3>
-               <p className="text-zinc-300 text-xs leading-relaxed">
-                  O dinheiro da campanha é depositado pela marca antes de você começar a gravar. Quando o post for publicado e aprovado pelo app, seu cachê cai no PIX. Sem calote, sem permuta barata.
-               </p>
-            </div>
-
-            <div className="p-8 rounded-[2rem] border border-white/5 bg-white/[0.01] hover:bg-white/[0.02] hover:border-violet-500/20 transition-all duration-300 space-y-4">
-               <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-                  <Brain className="w-6 h-6" />
-               </div>
-               <h3 className="text-lg font-black text-white">Mentor de IA Local</h3>
-               <p className="text-zinc-300 text-xs leading-relaxed">
-                  Chega de posts aleatórios. A nossa inteligência artificial mapeia as tendências, os melhores horários e ganchos virais específicos para a sua geolocalização e nicho.
-               </p>
-            </div>
-         </div>
-      </section>
-
       {/* O PROBLEMA (Foco na dor do influenciador local e desintermediação) */}
       <section id="problema" className="w-full max-w-7xl mx-auto px-6 lg:px-16 py-20">
         <div className="border border-red-500/10 bg-red-500/5 rounded-[3rem] p-8 md:p-14">
