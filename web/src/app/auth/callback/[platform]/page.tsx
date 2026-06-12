@@ -22,6 +22,10 @@ export default function SocialCallbackPage() {
       setStatus('error');
       setErrorMessage('Dados de autenticação incompletos ou inválidos.');
       toast.error('Dados de autenticação inválidos.');
+      if (window.opener) {
+        window.opener.postMessage({ type: 'social-auth-error', platform, error: 'Dados de autenticação incompletos.' }, window.location.origin);
+        setTimeout(() => window.close(), 3000);
+      }
       return;
     }
 
@@ -41,12 +45,38 @@ export default function SocialCallbackPage() {
         Cookies.set('influnext_role', user.role, cookieOptions);
         Cookies.set('influnext_onboarding', user.onboardingCompleted ? 'true' : 'false', cookieOptions);
 
+        if (window.opener) {
+          window.opener.postMessage({ 
+            type: 'social-auth-success', 
+            platform, 
+            status: 'success', 
+            user, 
+            token: res.data.token 
+          }, window.location.origin);
+          setTimeout(() => {
+            window.close();
+          }, 1500);
+          return;
+        }
+
         setTimeout(() => {
           if (!user.onboardingCompleted && user.role === 'INFLUENCER') {
             router.push('/onboarding');
           } else {
             router.push('/dashboard/influencer');
           }
+        }, 1500);
+        return;
+      }
+
+      if (window.opener) {
+        window.opener.postMessage({ 
+          type: 'social-auth-success', 
+          platform, 
+          status: 'success' 
+        }, window.location.origin);
+        setTimeout(() => {
+          window.close();
         }, 1500);
         return;
       }
@@ -66,6 +96,18 @@ export default function SocialCallbackPage() {
       const message = error.response?.data?.message || 'Falha ao conectar conta social. Verifique sua conexão ou tente novamente.';
       setErrorMessage(message);
       toast.error(message);
+
+      if (window.opener) {
+        window.opener.postMessage({ 
+          type: 'social-auth-error', 
+          platform, 
+          status: 'error', 
+          error: message 
+        }, window.location.origin);
+        setTimeout(() => {
+          window.close();
+        }, 3000);
+      }
     }
   }, [code, platform, state, router]);
 

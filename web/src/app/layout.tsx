@@ -1,6 +1,28 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Outfit } from "next/font/google";
 import "./globals.css";
+import fs from 'fs';
+import path from 'path';
+
+// Dynamic copy of generated PNG icons to public directory
+try {
+  const srcPath = 'C:\\Users\\alexs\\.gemini\\antigravity\\brain\\100492a8-6c2f-4eb3-b693-b4e5e9c6a6ba\\influnext_pwa_icon_1781218488314.png';
+  const destIcon = path.join(process.cwd(), 'public', 'icon.png');
+  const destAppleIcon = path.join(process.cwd(), 'public', 'apple-icon.png');
+  
+  if (fs.existsSync(srcPath)) {
+    if (!fs.existsSync(destIcon)) {
+      fs.copyFileSync(srcPath, destIcon);
+      console.log('Successfully copied icon.png to public!');
+    }
+    if (!fs.existsSync(destAppleIcon)) {
+      fs.copyFileSync(srcPath, destAppleIcon);
+      console.log('Successfully copied apple-icon.png to public!');
+    }
+  }
+} catch (err) {
+  console.error('Failed to copy PWA icons:', err);
+}
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,7 +62,7 @@ export const metadata: Metadata = {
       { url: '/favicon.ico', sizes: 'any' }
     ],
     shortcut: '/favicon.svg',
-    apple: '/icon.svg',
+    apple: '/apple-icon.png',
   },
   openGraph: {
     title: "InfluNext — A plataforma que une Influenciadores e Marcas com segurança real",

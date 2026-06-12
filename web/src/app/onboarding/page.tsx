@@ -106,6 +106,19 @@ export default function OnboardingPage() {
   };
 
   useEffect(() => {
+    const handleMessage = async (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data;
+      if (data && data.type === 'social-auth-success') {
+        toast.success(`✦ ${data.platform?.toUpperCase()} conectado com sucesso!`);
+        fetchIntegrations();
+      } else if (data && data.type === 'social-auth-error') {
+        toast.error(data.error || 'Erro ao conectar com a rede social.');
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
     const params = new URLSearchParams(window.location.search);
     const status = params.get('status');
     const platform = params.get('platform');
@@ -123,6 +136,10 @@ export default function OnboardingPage() {
         : 'Erro ao conectar com a rede social.';
       toast.error(errorMsg);
     }
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
   }, []);
 
   const handleComplete = async () => {
@@ -160,12 +177,24 @@ export default function OnboardingPage() {
     }
   };
 
+  const openPopup = (url: string) => {
+    const width = 600;
+    const height = 750;
+    const left = window.screen.width / 2 - width / 2;
+    const top = window.screen.height / 2 - height / 2;
+    window.open(
+      url,
+      'ConnectSocial',
+      `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,status=yes`
+    );
+  };
+
   const handleConnect = (url: string) => {
     if (!url || url === '#') {
       toast.error('Configuração de API pendente no servidor.');
       return;
     }
-    window.location.href = url;
+    openPopup(url);
   };
 
   const handleConnectPersonal = () => {
@@ -176,7 +205,7 @@ export default function OnboardingPage() {
           toast.error('Configuração de API do Instagram pendente no servidor.');
           return;
         }
-        window.location.href = url;
+        openPopup(url);
       })
       .catch(() => {
         toast.error('Erro ao obter link de conexão com o Instagram.');
@@ -191,7 +220,7 @@ export default function OnboardingPage() {
           toast.error('Configuração de API do Instagram Business pendente no servidor.');
           return;
         }
-        window.location.href = url;
+        openPopup(url);
       })
       .catch(() => {
         toast.error('Erro ao obter link de conexão com o Instagram Business.');

@@ -108,6 +108,27 @@ export default function SettingsPage() {
     };
     init();
 
+    // Listener for popup OAuth completion
+    const handleMessage = async (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data;
+      if (data && data.type === 'social-auth-success') {
+        toast.success(`✦ ${data.platform?.toUpperCase()} conectado com sucesso!`, {
+          description: 'Seus dados e métricas já estão sendo processados.',
+          duration: 5000
+        });
+        await fetchIntegrations();
+        await fetchProfile();
+      } else if (data && data.type === 'social-auth-error') {
+        toast.error('Falha na conexão social', {
+          description: data.error || 'Ocorreu um erro ao processar a autenticação.',
+          duration: 5000
+        });
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
     // Check for callback status in URL
     const params = new URLSearchParams(window.location.search);
     const status = params.get('status');
@@ -129,6 +150,10 @@ export default function SettingsPage() {
       });
       window.history.replaceState({}, '', window.location.pathname);
     }
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
   }, []);
 
   const fetchProfile = async () => {
@@ -222,7 +247,16 @@ export default function SettingsPage() {
         toast.error('Configuração de API pendente no servidor.');
         return;
      }
-     window.location.href = url;
+     const width = 600;
+     const height = 750;
+     const left = window.screen.width / 2 - width / 2;
+     const top = window.screen.height / 2 - height / 2;
+     
+     window.open(
+       url,
+       'ConnectSocial',
+       `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,status=yes`
+     );
   };
 
   const isDark = true;

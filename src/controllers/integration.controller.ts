@@ -6,7 +6,18 @@ import { InstagramService } from '../services/instagram.service';
 import { AIService } from '../services/ai.service';
 import axios from 'axios';
 
-const getFrontendUrl = () => {
+const getFrontendUrl = (req?: Request) => {
+  const origin = req?.headers.origin as string;
+  if (origin) return origin.endsWith('/') ? origin.slice(0, -1) : origin;
+  
+  const referer = req?.headers.referer as string;
+  if (referer) {
+    try {
+      const parsed = new URL(referer);
+      return parsed.origin;
+    } catch (_) {}
+  }
+  
   const url = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
   return url.endsWith('/') ? url.slice(0, -1) : url;
 };
@@ -35,11 +46,11 @@ export const getAuthUrls = async (req: Request, res: Response): Promise<void> =>
       'public_profile'
     ].join(',');
 
-    const instagramUrl = `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_BASIC_CLIENT_ID || process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${getFrontendUrl()}/auth/callback/instagram&scope=user_profile,user_media&response_type=code&state=${state}`;
+    const instagramUrl = `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_BASIC_CLIENT_ID || process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${getFrontendUrl(req)}/auth/callback/instagram&scope=user_profile,user_media&response_type=code&state=${state}`;
     
-    const instagramBusinessUrl = `https://www.facebook.com/v20.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${getFrontendUrl()}/auth/callback/instagram&scope=${scopes}&response_type=code&state=${state}_business`;
+    const instagramBusinessUrl = `https://www.facebook.com/v20.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${getFrontendUrl(req)}/auth/callback/instagram&scope=${scopes}&response_type=code&state=${state}_business`;
 
-    const tiktokUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list,video.stats&response_type=code&redirect_uri=${getFrontendUrl()}/auth/callback/tiktok&state=${state}`;
+    const tiktokUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list,video.stats&response_type=code&redirect_uri=${getFrontendUrl(req)}/auth/callback/tiktok&state=${state}`;
 
     res.json({
       instagram: instagramUrl,
@@ -59,7 +70,7 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
     stateStr = state as string;
 
     if (!code || !stateStr) {
-      res.redirect(`${getFrontendUrl()}/dashboard/settings?status=error&error=invalid_params`);
+      res.redirect(`${getFrontendUrl(req)}/dashboard/settings?status=error&error=invalid_params`);
       return;
     }
 
@@ -80,7 +91,7 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
         params: {
           client_id: process.env.INSTAGRAM_CLIENT_ID,
           client_secret: process.env.INSTAGRAM_CLIENT_SECRET,
-          redirect_uri: `${getFrontendUrl()}/auth/callback/instagram`,
+          redirect_uri: `${getFrontendUrl(req)}/auth/callback/instagram`,
           code: code as string
         }
       });
@@ -146,7 +157,7 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
         client_id: process.env.INSTAGRAM_BASIC_CLIENT_ID || process.env.INSTAGRAM_CLIENT_ID!,
         client_secret: process.env.INSTAGRAM_BASIC_CLIENT_SECRET || process.env.INSTAGRAM_CLIENT_SECRET!,
         grant_type: 'authorization_code',
-        redirect_uri: `${getFrontendUrl()}/auth/callback/instagram`,
+        redirect_uri: `${getFrontendUrl(req)}/auth/callback/instagram`,
         code: code as string
       }).toString(), {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
@@ -223,8 +234,8 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
     }
     
     const redirectUrl = isFromOnboarding
-      ? `${getFrontendUrl()}/onboarding?status=success&platform=instagram`
-      : `${getFrontendUrl()}/dashboard/settings?status=success&platform=instagram`;
+      ? `${getFrontendUrl(req)}/onboarding?status=success&platform=instagram`
+      : `${getFrontendUrl(req)}/dashboard/settings?status=success&platform=instagram`;
     res.redirect(redirectUrl);
   } catch (error: any) {
     console.error('[INSTAGRAM] Erro no callback:', error.response?.data || error.message);
@@ -237,8 +248,8 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
     }
     
     const redirectUrl = isFromOnboarding
-      ? `${getFrontendUrl()}/onboarding?status=error&error=${errorType}`
-      : `${getFrontendUrl()}/dashboard/settings?status=error&error=${errorType}`;
+      ? `${getFrontendUrl(req)}/onboarding?status=error&error=${errorType}`
+      : `${getFrontendUrl(req)}/dashboard/settings?status=error&error=${errorType}`;
     res.redirect(redirectUrl);
   }
 };
@@ -366,7 +377,7 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
     stateStr = state as string;
 
     if (!code || !stateStr) {
-      res.redirect(`${getFrontendUrl()}/dashboard/settings?status=error&error=invalid_params`);
+      res.redirect(`${getFrontendUrl(req)}/dashboard/settings?status=error&error=invalid_params`);
       return;
     }
 
@@ -440,15 +451,15 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
     }
     
     const redirectUrl = isFromOnboarding
-      ? `${getFrontendUrl()}/onboarding?status=success&platform=tiktok`
-      : `${getFrontendUrl()}/dashboard/settings?status=success&platform=tiktok`;
+      ? `${getFrontendUrl(req)}/onboarding?status=success&platform=tiktok`
+      : `${getFrontendUrl(req)}/dashboard/settings?status=success&platform=tiktok`;
     res.redirect(redirectUrl);
   } catch (error) {
     console.error('[TIKTOK] Erro no callback:', error);
     const isFromOnboarding = stateStr.endsWith('_onboarding');
     const redirectUrl = isFromOnboarding
-      ? `${getFrontendUrl()}/onboarding?status=error`
-      : `${getFrontendUrl()}/dashboard/settings?status=error`;
+      ? `${getFrontendUrl(req)}/onboarding?status=error`
+      : `${getFrontendUrl(req)}/dashboard/settings?status=error`;
     res.redirect(redirectUrl);
   }
 };

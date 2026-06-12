@@ -17,12 +17,26 @@ function signFullToken(user: { id: string; role: string; email: string }) {
   );
 }
 
+function getFrontendUrl(req: Request): string {
+  const origin = req.headers.origin as string;
+  if (origin) return origin.endsWith('/') ? origin.slice(0, -1) : origin;
+  
+  const referer = req.headers.referer as string;
+  if (referer) {
+    try {
+      const parsed = new URL(referer);
+      return parsed.origin;
+    } catch (_) {}
+  }
+  
+  const raw = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
+  return raw.endsWith('/') ? raw.slice(0, -1) : raw;
+}
+
 export class SocialAuthController {
   static async getAuthUrls(req: Request, res: Response) {
     const userId = req.user!.id;
-    
-    const rawFrontendUrl = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
-    const frontendUrl = rawFrontendUrl.endsWith('/') ? rawFrontendUrl.slice(0, -1) : rawFrontendUrl;
+    const frontendUrl = getFrontendUrl(req);
     
     const urls = {
       instagram: `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_BASIC_CLIENT_ID || process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/instagram&scope=user_profile,user_media&response_type=code&state=${userId}`,
@@ -35,8 +49,7 @@ export class SocialAuthController {
   }
 
   static async getPublicAuthUrls(req: Request, res: Response) {
-    const rawFrontendUrl = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
-    const frontendUrl = rawFrontendUrl.endsWith('/') ? rawFrontendUrl.slice(0, -1) : rawFrontendUrl;
+    const frontendUrl = getFrontendUrl(req);
     
     const urls = {
       instagram: `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_BASIC_CLIENT_ID || process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/instagram&scope=user_profile,user_media&response_type=code&state=register_instagram`,
@@ -76,8 +89,7 @@ export class SocialAuthController {
       let tiktokFollowers = 0;
       let tiktokAvatar: string | null = null;
 
-      const rawFrontendUrl = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
-      const frontendUrl = rawFrontendUrl.endsWith('/') ? rawFrontendUrl.slice(0, -1) : rawFrontendUrl;
+      const frontendUrl = getFrontendUrl(req);
 
       if (platform === 'instagram') {
         if (isBusiness) {
