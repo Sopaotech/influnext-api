@@ -367,3 +367,60 @@ export const getContractById = async (req: Request, res: Response): Promise<void
     res.status(500).json({ error: "Erro ao buscar contrato." });
   }
 };
+
+export const updateContractScript = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    const { aiScript } = req.body;
+
+    if (!aiScript) {
+      res.status(400).json({ error: "O roteiro ou opinião não pode estar vazio." });
+      return;
+    }
+
+    const contract = await prisma.contract.findUnique({
+      where: { id },
+      include: { influencer: true, company: true }
+    });
+
+    if (!contract) {
+      res.status(404).json({ error: "Contrato não encontrado." });
+      return;
+    }
+
+    let hasAccess = false;
+    if (userRole === UserRole.INFLUENCER) {
+      const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
+      if (influencer && contract.influencerId === influencer.id) {
+        hasAccess = true;
+      }
+    } else if (userRole === UserRole.COMPANY) {
+      const company = await prisma.companyProfile.findUnique({ where: { userId } });
+      if (company && contract.companyId === company.id) {
+        hasAccess = true;
+      }
+    } else if (userRole === UserRole.ADMIN) {
+      hasAccess = true;
+    }
+
+    if (!hasAccess) {
+      res.status(403).json({ error: "Você não tem permissão para alterar este contrato." });
+      return;
+    }
+
+    const updated = await prisma.contract.update({
+      where: { id },
+      data: { aiScript }
+    });
+
+    res.json({
+      message: "Roteiro/Opinião atualizado com sucesso!",
+      contract: updated
+    });
+  } catch (error) {
+    console.error('[CONTRACT] Erro ao atualizar roteiro:', error);
+    res.status(500).json({ error: "Erro ao atualizar roteiro." });
+  }
+};

@@ -148,3 +148,4 @@ export const searchInfluencers = (q: string) => {
 };
 export const createContract = (data: any) => api.post('/contracts', data);
 export const getAdminStats = () => api.get<GlobalStats>('/admin/stats');
+export const updateContractScript = (id: string, aiScript: string) => api.patch(`/contracts/${id}/script`, { aiScript });

@@ -3,8 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, ShieldCheck, Clock, CheckCircle2, AlertCircle, ExternalLink, Zap, ChevronDown, ChevronUp, Brain, Sparkles } from 'lucide-react';
+import { FileText, ShieldCheck, Clock, CheckCircle2, AlertCircle, ExternalLink, Zap, ChevronDown, ChevronUp, Brain, Sparkles, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
+import Cookies from 'js-cookie';
 
 import { EscrowExplanatoryCard } from '@/components/EscrowExplanatoryCard';
 
@@ -19,16 +20,40 @@ interface Contract {
   aiScript?: string;
   company?: { companyName: string };
   influencer?: { handle: string };
+  deliverables?: { id: string; title: string; type: string; deadline: string; status: string; proofUrl?: string }[];
 }
 
 export default function ContractsPage() {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [proofUrls, setProofUrls] = useState<Record<string, string>>({});
+  const [submittingIds, setSubmittingIds] = useState<Record<string, boolean>>({});
+  const [editingScriptId, setEditingScriptId] = useState<string | null>(null);
+  const [editedScriptText, setEditedScriptText] = useState<string>('');
+  const [isSavingScript, setIsSavingScript] = useState<boolean>(false);
 
   useEffect(() => {
     fetchContracts();
+    setUserRole(Cookies.get('influnext_role') || null);
   }, []);
+
+  const handleSaveScript = async (contractId: string) => {
+    try {
+      setIsSavingScript(true);
+      await api.patch(`/contracts/${contractId}/script`, { aiScript: editedScriptText });
+      toast.success('✦ Roteiro/Opinião atualizado com sucesso!', {
+        description: 'Sua orientação/opinião foi salva e está vinculada ao contrato.'
+      });
+      setEditingScriptId(null);
+      fetchContracts();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Erro ao salvar roteiro.');
+    } finally {
+      setIsSavingScript(false);
+    }
+  };
 
   const fetchContracts = async () => {
     try {
@@ -39,6 +64,47 @@ export default function ContractsPage() {
       toast.error('Erro ao carregar contratos.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSubmitDeliverable = async (deliverableId: string) => {
+    const proofUrl = proofUrls[deliverableId];
+    if (!proofUrl) {
+      toast.error('Por favor, informe a URL da prova de entrega.');
+      return;
+    }
+
+    try {
+      setSubmittingIds(prev => ({ ...prev, [deliverableId]: true }));
+      const res = await api.patch(`/deliverables/${deliverableId}/submit`, { proofUrl });
+      toast.success(res.data.message || 'Entrega enviada com sucesso!');
+
+      const audit = res.data.aiAudit;
+      if (audit) {
+        if (audit.approved) {
+          toast.success(`✦ Auditoria de IA: Aprovada! (Confiança: ${audit.confidenceScore}%)`, {
+            description: audit.feedback,
+            duration: 8000
+          });
+        } else {
+          toast.warning(`⚠ Auditoria de IA: Atenção necessária! (Confiança: ${audit.confidenceScore}%)`, {
+            description: audit.feedback,
+            duration: 8000
+          });
+        }
+      }
+
+      setProofUrls(prev => {
+        const next = { ...prev };
+        delete next[deliverableId];
+        return next;
+      });
+      fetchContracts();
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.error || 'Erro ao enviar entregável.';
+      toast.error(errorMsg);
+    } finally {
+      setSubmittingIds(prev => ({ ...prev, [deliverableId]: false }));
     }
   };
 
@@ -146,7 +212,7 @@ export default function ContractsPage() {
                     {expandedId === contract.id && (
                       <TableRow className="bg-[#080810]/30 border-b-[#1e1430]">
                         <TableCell colSpan={6} className="p-8">
-                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in slide-in-from-top-2 duration-300">
+                           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in slide-in-from-top-2 duration-300">
                               {/* Briefing da Marca */}
                               <div className="space-y-4">
                                  <div className="flex items-center gap-2 text-[10px] font-black text-zinc-500 uppercase tracking-widest">
@@ -159,17 +225,155 @@ export default function ContractsPage() {
 
                               {/* Roteiro Inteligente InfluNext */}
                               <div className="space-y-4">
-                                 <div className="flex items-center gap-2 text-[10px] font-black text-purple-400 uppercase tracking-widest">
-                                    <Sparkles className="w-3.5 h-3.5" /> Roteiro Sugerido pela IA (O Cérebro)
+                                 <div className="flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-2 text-[10px] font-black text-purple-400 uppercase tracking-widest">
+                                       <Sparkles className="w-3.5 h-3.5" /> Roteiro Sugerido pela IA (O Cérebro)
+                                    </div>
+                                    {editingScriptId !== contract.id ? (
+                                       <button 
+                                          onClick={() => {
+                                             setEditingScriptId(contract.id);
+                                             setEditedScriptText(contract.aiScript || '');
+                                          }}
+                                          className="text-[9px] font-black text-purple-400 hover:text-purple-300 transition-colors uppercase tracking-widest"
+                                       >
+                                          {userRole === 'INFLUENCER' ? 'Dar minha Opinião / Ajustar' : 'Ajustar Roteiro'}
+                                       </button>
+                                    ) : null}
                                  </div>
                                  <div className="p-6 bg-gradient-to-br from-purple-950/20 to-indigo-950/20 border border-purple-500/20 rounded-2xl text-zinc-200 text-xs leading-relaxed font-sans prose prose-invert max-w-none">
-                                    {contract.aiScript ? (
-                                      <div className="whitespace-pre-wrap">{contract.aiScript}</div>
+                                    {editingScriptId === contract.id ? (
+                                       <div className="space-y-3">
+                                          <textarea 
+                                             value={editedScriptText}
+                                             onChange={(e) => setEditedScriptText(e.target.value)}
+                                             placeholder="Digite suas orientações, comentários ou roteiro adaptado..."
+                                             className="w-full bg-black/45 border border-[#1e1430] rounded-xl p-4 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-purple-500/50 transition-colors resize-none font-sans"
+                                             rows={8}
+                                             disabled={isSavingScript}
+                                          />
+                                          <div className="flex gap-2 justify-end">
+                                             <button 
+                                                onClick={() => setEditingScriptId(null)}
+                                                disabled={isSavingScript}
+                                                className="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border border-zinc-800 text-zinc-400 hover:bg-white/[0.02] transition-colors"
+                                             >
+                                                Cancelar
+                                             </button>
+                                             <button 
+                                                onClick={() => handleSaveScript(contract.id)}
+                                                disabled={isSavingScript || !editedScriptText.trim()}
+                                                className="px-5 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-purple-600 hover:bg-purple-500 text-white transition-all shadow-md active:scale-95 flex items-center gap-1.5"
+                                             >
+                                                {isSavingScript ? (
+                                                   <>
+                                                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                      Salvando...
+                                                   </>
+                                                ) : (
+                                                   'Salvar Roteiro'
+                                                )}
+                                             </button>
+                                          </div>
+                                       </div>
+                                    ) : contract.aiScript ? (
+                                       <div className="whitespace-pre-wrap">{contract.aiScript}</div>
                                     ) : (
-                                      <div className="flex items-center gap-2 text-zinc-600 italic">
-                                         <Brain className="w-4 h-4 opacity-50" />
-                                         Processando inteligência de roteiro...
-                                      </div>
+                                       <div className="flex items-center gap-2 text-zinc-600 italic">
+                                          <Brain className="w-4 h-4 opacity-50" />
+                                          Processando inteligência de roteiro...
+                                       </div>
+                                    )}
+                                 </div>
+                              </div>
+
+                              {/* Entregáveis e Submissão */}
+                              <div className="space-y-4">
+                                 <div className="flex items-center gap-2 text-[10px] font-black text-emerald-400 uppercase tracking-widest">
+                                    <ShieldCheck className="w-3.5 h-3.5" /> Entregáveis / Ação de Escrow
+                                 </div>
+                                 <div className="space-y-4">
+                                    {!contract.deliverables || contract.deliverables.length === 0 ? (
+                                      <p className="text-zinc-600 text-xs italic">Nenhum entregável cadastrado para este contrato.</p>
+                                    ) : (
+                                      contract.deliverables.map((d) => {
+                                        const isDone = d.status === 'APPROVED';
+                                        const isPending = d.status === 'PENDING';
+                                        const isReview = d.status === 'UNDER_REVIEW';
+
+                                        let statusBadgeColor = 'text-zinc-400 bg-zinc-400/10 border-zinc-400/20';
+                                        if (isDone) statusBadgeColor = 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
+                                        if (isReview) statusBadgeColor = 'text-blue-400 bg-blue-400/10 border-blue-400/20';
+
+                                        return (
+                                          <div key={d.id} className="p-5 bg-[#100c1e] border border-[#1e1430] rounded-2xl space-y-3 shadow-md">
+                                            <div className="flex justify-between items-start gap-2">
+                                              <div>
+                                                <h4 className="text-xs font-black text-zinc-200 uppercase tracking-wider">{d.title}</h4>
+                                                <span className="text-[8px] bg-purple-500/15 text-purple-400 px-2 py-0.5 rounded border border-purple-500/10 font-bold uppercase tracking-widest">{d.type}</span>
+                                              </div>
+                                              <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded border ${statusBadgeColor}`}>
+                                                {d.status}
+                                              </span>
+                                            </div>
+
+                                            <div className="flex items-center gap-1.5 text-[9px] text-zinc-500 font-bold">
+                                              <Clock className="w-3 h-3" /> Prazo: {new Date(d.deadline).toLocaleDateString('pt-BR')}
+                                            </div>
+
+                                            {isReview && d.proofUrl && (
+                                              <div className="pt-2 border-t border-zinc-800/40">
+                                                <a 
+                                                  href={d.proofUrl} 
+                                                  target="_blank" 
+                                                  rel="noreferrer" 
+                                                  className="text-[9px] text-blue-400 hover:underline flex items-center gap-1 font-bold uppercase tracking-widest"
+                                                >
+                                                  Ver Link Enviado <ExternalLink className="w-3 h-3" />
+                                                </a>
+                                              </div>
+                                            )}
+
+                                            {isDone && d.proofUrl && (
+                                              <div className="pt-2 border-t border-zinc-800/40">
+                                                <a 
+                                                  href={d.proofUrl} 
+                                                  target="_blank" 
+                                                  rel="noreferrer" 
+                                                  className="text-[9px] text-emerald-400 hover:underline flex items-center gap-1 font-bold uppercase tracking-widest"
+                                                >
+                                                  Ver Link Validado <ExternalLink className="w-3 h-3" />
+                                                </a>
+                                              </div>
+                                            )}
+
+                                            {isPending && userRole === 'INFLUENCER' && (
+                                              <div className="space-y-2 pt-2 border-t border-zinc-800/40">
+                                                <div className="flex gap-2">
+                                                  <input 
+                                                    type="text" 
+                                                    placeholder="URL do Instagram/TikTok..." 
+                                                    value={proofUrls[d.id] || ''}
+                                                    onChange={(e) => setProofUrls(prev => ({ ...prev, [d.id]: e.target.value }))}
+                                                    className="flex-1 bg-black/45 border border-[#1e1430] rounded-xl px-3 py-2 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-purple-500/50 transition-colors"
+                                                  />
+                                                  <button 
+                                                    onClick={() => handleSubmitDeliverable(d.id)}
+                                                    disabled={submittingIds[d.id]}
+                                                    className="bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:hover:bg-purple-600 text-white p-2.5 rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center"
+                                                  >
+                                                    {submittingIds[d.id] ? (
+                                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                                    ) : (
+                                                      <Send className="w-4 h-4" />
+                                                    )}
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      })
                                     )}
                                  </div>
                               </div>

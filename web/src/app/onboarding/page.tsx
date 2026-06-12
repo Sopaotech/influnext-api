@@ -243,7 +243,8 @@ export default function OnboardingPage() {
         experience,
         availability,
         frequency,
-        boughtFollowers
+        boughtFollowers,
+        gender
       });
       await api.patch('/influencers/profile', {
         handle,

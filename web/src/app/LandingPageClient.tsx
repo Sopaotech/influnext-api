@@ -389,7 +389,7 @@ export default function LandingPageClient() {
 
       {/* DIFERENCIAIS / INOVAÇÃO (Para Criadores e Marcas) */}
       <section id="features" className="w-full max-w-7xl mx-auto px-6 lg:px-16 py-10">
-         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="p-8 rounded-[2rem] border border-white/5 bg-white/[0.01] hover:bg-white/[0.02] hover:border-violet-500/20 transition-all duration-300 space-y-4">
                <div className="w-12 h-12 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-400">
                   <ShieldCheck className="w-6 h-6" />
@@ -409,19 +409,8 @@ export default function LandingPageClient() {
                   Chega de posts aleatórios. A nossa inteligência artificial mapeia as tendências, os melhores horários e ganchos virais específicos para a sua geolocalização e nicho.
                </p>
             </div>
-
-            <div className="p-8 rounded-[2rem] border border-white/5 bg-white/[0.01] hover:bg-white/[0.02] hover:border-violet-500/20 transition-all duration-300 space-y-4">
-               <div className="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500">
-                  <Calendar className="w-6 h-6" />
-               </div>
-               <h3 className="text-lg font-black text-white">Radar de Eventos Físicos</h3>
-               <p className="text-zinc-300 text-xs leading-relaxed">
-                  Convidado para um evento presencial? Registre o convite e nossa IA cria um roteiro completo de cobertura em 3 fases (Pré, Durante e Pós) para maximizar o engajamento e provar seu ROI.
-
-                </p>
-             </div>
-          </div>
-       </section>
+         </div>
+      </section>
 
       {/* O PROBLEMA (Foco na dor do influenciador local e desintermediação) */}
       <section id="problema" className="w-full max-w-7xl mx-auto px-6 lg:px-16 py-20">

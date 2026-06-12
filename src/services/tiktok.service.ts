@@ -1,13 +1,12 @@
 import axios from 'axios';
-import { prisma } from '../lib/prisma';
 
-export class TiktokService {
-  private static readonly API_URL = 'https://open.tiktokapis.com/v2';
-  
+export class TikTokService {
+  private static readonly TOKEN_URL = 'https://open.tiktokapis.com/v2/oauth/token/';
+
   /**
-   * Obtém um token de acesso de longa duração trocando um código de autorização.
+   * Renova um token de acesso expirado do TikTok usando o refreshToken.
    */
-  static async exchangeCodeForToken(code: string, redirectUri: string) {
+  static async refreshAccessToken(refreshToken: string) {
     const clientKey = process.env.TIKTOK_CLIENT_KEY;
     const clientSecret = process.env.TIKTOK_CLIENT_SECRET;
 
@@ -16,45 +15,36 @@ export class TiktokService {
     }
 
     try {
-      const form = new URLSearchParams();
-      form.append('client_key', clientKey);
-      form.append('client_secret', clientSecret);
-      form.append('grant_type', 'authorization_code');
-      form.append('code', code);
-      form.append('redirect_uri', redirectUri);
+      const res = await axios.post(
+        this.TOKEN_URL,
+        new URLSearchParams({
+          client_key: clientKey,
+          client_secret: clientSecret,
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken
+        }).toString(),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          }
+        }
+      );
 
-      const res = await axios.post(`${this.API_URL}/oauth/token/`, form, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-      });
+      const { access_token, expires_in, refresh_token, open_id } = res.data;
+
+      if (!access_token) {
+        throw new Error(res.data.error_description || 'Erro desconhecido ao renovar token do TikTok');
+      }
 
       return {
-        accessToken: res.data.access_token,
-        refreshToken: res.data.refresh_token,
-        expiresIn: res.data.expires_in,
-        platformId: res.data.open_id
+        accessToken: access_token,
+        expiresIn: expires_in || 86400,
+        refreshToken: refresh_token || refreshToken, // se não retornar um novo, mantém o atual
+        openId: open_id
       };
     } catch (error: any) {
-      console.error('[TIKTOK SERVICE] Erro ao trocar token:', error.response?.data || error.message);
-      throw new Error('Falha na autenticação com TikTok');
-    }
-  }
-
-  /**
-   * Puxa informações básicas e métricas do perfil.
-   */
-  static async fetchProfileData(accessToken: string) {
-    try {
-      const res = await axios.get(`${this.API_URL}/user/info/`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        params: {
-          fields: 'open_id,display_name,avatar_url,follower_count'
-        }
-      });
-      
-      return res.data.data.user;
-    } catch (error: any) {
-      console.error('[TIKTOK SERVICE] Erro ao buscar perfil:', error.response?.data || error.message);
-      throw new Error('Falha ao obter dados do perfil do TikTok');
+      console.error('[TIKTOK SERVICE] Erro ao renovar token:', error.response?.data || error.message);
+      throw new Error('Falha ao renovar token do TikTok');
     }
   }
 }

@@ -51,6 +51,27 @@ export class InstagramService {
   }
 
   /**
+   * Renova um token de acesso de longa duração do Instagram (Basic Display API).
+   */
+  static async refreshLongLivedToken(accessToken: string) {
+    try {
+      const res = await axios.get('https://graph.instagram.com/refresh_access_token', {
+        params: {
+          grant_type: 'ig_refresh_token',
+          access_token: accessToken
+        }
+      });
+      return {
+        accessToken: res.data.access_token,
+        expiresIn: res.data.expires_in || 5184000
+      };
+    } catch (error: any) {
+      console.error('[INSTAGRAM SERVICE] Erro ao renovar token:', error.response?.data || error.message);
+      throw new Error('Falha ao renovar token do Instagram');
+    }
+  }
+
+  /**
    * Puxa informações básicas e insights de um perfil usando um Token Longo.
    */
   static async fetchProfileData(accessToken: string) {

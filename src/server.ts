@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { routes } from './routes';
-// import './workers/notification.worker';
 
 dotenv.config();
 
@@ -13,7 +12,15 @@ const allowedOriginsStr = process.env.ALLOWED_ORIGINS || 'http://localhost:3000,
 const ALLOWED_ORIGINS = allowedOriginsStr.split(',').map(origin => origin.trim());
 
 app.use(cors({
-  origin: true, // Temporário: permite TUDO para diagnóstico
+  origin: (origin, callback) => {
+    // Permite requisições sem origem (como Postman, aplicativos móveis ou requisições locais de servidor para servidor)
+    if (!origin) return callback(null, true);
+    if (ALLOWED_ORIGINS.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+      callback(null, true);
+    } else {
+      callback(new Error('Bloqueado por CORS: Origem não permitida.'));
+    }
+  },
   credentials: true
 }));
 
@@ -77,6 +84,22 @@ const startServer = async () => {
     // Garante que o administrador solicitado pelo usuário exista
     const { ensureAdminExists } = await import('./lib/admin-init');
     await ensureAdminExists();
+
+    // Inicializa workers e filas de background de forma assíncrona/defensiva
+    try {
+      console.log('🔄 Inicializando workers e crons de background...');
+      await import('./workers/notification.worker');
+      await import('./workers/cleanup.worker');
+      await import('./workers/token-renewal.worker');
+
+      const { addDailyCleanupJob } = await import('./queues/cleanup.queue');
+      const { addDailyTokenRenewalJob } = await import('./queues/token-renewal.queue');
+      await addDailyCleanupJob();
+      await addDailyTokenRenewalJob();
+      console.log('✅ Workers e crons de background ativos.');
+    } catch (workerError) {
+      console.warn('⚠️ Falha ao inicializar workers em background (Redis offline?):', workerError);
+    }
 
     app.listen(PORT, () => {
       console.log(`🚀 INFLUNEXT ONLINE: Port ${PORT}`);

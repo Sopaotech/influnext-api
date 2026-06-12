@@ -241,6 +241,37 @@ export class PaymentController {
               });
               console.log(`[STRIPE] ✅ Assinatura ativada para usuário ${userId}`);
             }
+          } else if (session.mode === 'payment' && session.metadata?.type === 'contract_escrow') {
+            const contractId = session.metadata?.contractId;
+            if (contractId) {
+              await prisma.contract.update({
+                where: { id: contractId },
+                data: { escrowStatus: 'IN_PROGRESS' }
+              });
+
+              const contract = await prisma.contract.findUnique({
+                where: { id: contractId },
+                include: { influencer: true }
+              });
+
+              if (contract) {
+                await prisma.notification.create({
+                  data: {
+                    userId: contract.influencer.userId,
+                    message: `✅ Depósito em Escrow confirmado para o contrato: "${contract.title}". Pode iniciar a produção!`,
+                    type: 'ESCROW_CONFIRMED'
+                  }
+                });
+
+                const { addNotificationJob } = await import('../queues/notification.queue');
+                await addNotificationJob(
+                  contract.influencer.userId,
+                  `💰 Seu pagamento foi confirmado! Pode iniciar a produção de: "${contract.title}". Valor líquido: R$ ${Number(contract.netAmount).toFixed(2)}`,
+                  'ESCROW_CONFIRMED'
+                );
+              }
+              console.log(`[STRIPE] ✅ Contrato ${contractId} pago via Checkout Session. Escrow IN_PROGRESS.`);
+            }
           }
           break;
         }
@@ -286,6 +317,61 @@ export class PaymentController {
     } catch (error) {
       console.error('[STRIPE WEBHOOK] Erro ao processar evento:', error);
       return res.status(500).json({ error: 'Erro interno no webhook' });
+    }
+  }
+
+  /**
+   * POST /v1/payments/connect/onboard
+   * Cria/recupera conta Express e gera link de onboarding
+   */
+  static async onboardConnectAccount(req: Request, res: Response) {
+    try {
+      const userId = req.user!.id;
+      const userEmail = req.user!.email;
+      const { redirectUrl } = req.body;
+
+      if (!redirectUrl) {
+        return res.status(400).json({ error: 'redirectUrl é obrigatório' });
+      }
+
+      const { StripeConnectService } = await import('../services/stripe-connect.service');
+      const onboardResult = await StripeConnectService.createExpressAccount(userId, userEmail, redirectUrl);
+
+      return res.json(onboardResult);
+    } catch (error: any) {
+      console.error('[STRIPE CONNECT] Erro no onboarding:', error);
+      return res.status(500).json({ error: error.message || 'Erro ao processar onboarding do Stripe Connect.' });
+    }
+  }
+
+  /**
+   * GET /v1/payments/connect/status
+   * Busca o status da conta Stripe Connect vinculada
+   */
+  static async getConnectAccountStatus(req: Request, res: Response) {
+    try {
+      const userId = req.user!.id;
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { stripeConnectAccountId: true }
+      });
+
+      if (!user || !user.stripeConnectAccountId) {
+        return res.json({ connected: false, message: 'Conta Stripe Connect não vinculada.' });
+      }
+
+      const { StripeConnectService } = await import('../services/stripe-connect.service');
+      const status = await StripeConnectService.getAccountStatus(user.stripeConnectAccountId);
+
+      return res.json({
+        connected: status.detailsSubmitted,
+        chargesEnabled: status.chargesEnabled,
+        payoutsEnabled: status.payoutsEnabled,
+        requirements: status.requirements
+      });
+    } catch (error: any) {
+      console.error('[STRIPE CONNECT] Erro ao buscar status:', error);
+      return res.status(500).json({ error: error.message || 'Erro ao buscar status do Stripe Connect.' });
     }
   }
 }

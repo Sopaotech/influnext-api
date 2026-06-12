@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { api, searchInfluencers, createContract, InfluencerSearchItem } from '@/lib/api';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { Search, Plus, Trash2, ShieldCheck, ArrowLeft, Sparkles } from 'lucide-react';
 import Link from 'next/link';
@@ -26,6 +26,10 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function NewContractPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const influencerIdParam = searchParams.get('influencerId');
+  const handleParam = searchParams.get('handle');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<InfluencerSearchItem[]>([]);
   const [selectedInfluencer, setSelectedInfluencer] = useState<InfluencerSearchItem | null>(null);
@@ -40,6 +44,18 @@ export default function NewContractPage() {
       deliverables: [{ title: '', type: 'REEL', dueDate: '' }]
     }
   });
+
+  useEffect(() => {
+    if (influencerIdParam && handleParam) {
+      const inf: InfluencerSearchItem = {
+        id: influencerIdParam,
+        handle: handleParam,
+        verifiedMetrics: true
+      };
+      setSelectedInfluencer(inf);
+      setValue('influencerId', inf.id, { shouldValidate: true });
+    }
+  }, [influencerIdParam, handleParam, setValue]);
 
   const { fields, append, remove } = useFieldArray({
     control,

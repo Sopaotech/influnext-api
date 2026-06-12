@@ -471,6 +471,18 @@ export const requestWithdraw = async (req: Request, res: Response): Promise<void
       return;
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { stripeConnectAccountId: true }
+    });
+
+    if (!user || !user.stripeConnectAccountId) {
+      res.status(400).json({
+        error: 'Você precisa vincular sua conta Stripe Connect para solicitar saques. Vá até a aba da Carteira e clique em Conectar.'
+      });
+      return;
+    }
+
     const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
     if (!influencer) {
       res.status(404).json({ error: 'Perfil não encontrado.' });
@@ -517,33 +529,50 @@ export const requestWithdraw = async (req: Request, res: Response): Promise<void
       return;
     }
 
+    // Executa a transferência real na Stripe
+    const { stripe } = await import('../lib/stripe');
+    if (!stripe) {
+      res.status(500).json({ error: 'Serviço de saques/pagamentos indisponível.' });
+      return;
+    }
+
+    const transfer = await stripe.transfers.create({
+      amount: Math.round(withdrawAmount * 100), // Stripe trabalha com centavos
+      currency: 'brl',
+      destination: user.stripeConnectAccountId,
+      metadata: {
+        userId,
+        type: 'withdraw_payout',
+        influencerId: influencer.id
+      }
+    });
+
     // Registrar solicitação via notificação para auditoria
     await prisma.notification.create({
       data: {
         userId,
-        message: `Solicitação de saque PIX: R$ ${withdrawAmount.toFixed(2)} para CPF ${cpfClean.substring(0, 3)}.***.***-${cpfClean.substring(9)}`,
+        message: `Saque de R$ ${withdrawAmount.toFixed(2)} efetuado com sucesso via Stripe Connect.`,
         type: 'WITHDRAW_REQUEST',
         metadata: JSON.stringify({
           amount: withdrawAmount,
-          cpf: cpfClean,
+          stripeTransferId: transfer.id,
           influencerId: influencer.id,
           requestedAt: new Date().toISOString(),
-          status: 'PROCESSING'
+          status: 'COMPLETED'
         })
       }
     });
 
     res.json({
       success: true,
-      message: 'Saque solicitado com sucesso! O PIX será processado em até 1 hora útil.',
+      message: 'Saque realizado com sucesso via Stripe Connect! O valor estará disponível em sua conta vinculada.',
       amount: withdrawAmount,
-      pixKey: `${cpfClean.substring(0, 3)}.${cpfClean.substring(3, 6)}.${cpfClean.substring(6, 9)}-${cpfClean.substring(9)}`,
-      estimatedTime: '< 1 hora',
+      transferId: transfer.id,
       availableBalance: (availableBalance - withdrawAmount).toFixed(2)
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('[WITHDRAW] Erro ao processar saque:', error);
-    res.status(500).json({ error: 'Erro ao processar solicitação de saque.' });
+    res.status(500).json({ error: 'Erro ao processar solicitação de saque.', details: error.message });
   }
 };
 

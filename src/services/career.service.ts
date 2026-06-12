@@ -29,21 +29,11 @@ export class CareerService {
    * Gera o insight motivacional e empresarial do dia.
    */
   static async getDailyBusinessInsight(influencerId: string) {
-    const influencer = await prisma.influencerProfile.findUnique({
-      where: { id: influencerId },
-      select: { handle: true, niche: true, influScore: true }
-    });
-
-    if (!influencer) return "Bora focar no progresso hoje!";
-
-    const message = `Gere uma frase motivacional curta (máx 150 caracteres) para um influenciador de ${influencer.niche}. 
-    Ele tem um score de ${influencer.influScore}/100. Seja inspirador mas profissional, estilo 'sócio incentivador'.`;
-    
     try {
-      const insight = await AIService.chatWithMentor(influencerId, message);
+      const insight = await AIService.generateDailyBusinessInsight(influencerId);
       return insight;
     } catch (error) {
-      return `Foque na constância, @${influencer.handle}. O sucesso é um jogo de longo prazo.`;
+      return `Foque na constância. O sucesso é um jogo de longo prazo.`;
     }
   }
 

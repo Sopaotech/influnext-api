@@ -36,6 +36,7 @@ model User {
   credits             Int     @default(0)
   trialEndsAt         DateTime?
   stripeCustomerId    String?   @unique // ID do cliente na Stripe
+  stripeConnectAccountId String? @unique // ID da conta Stripe Connect (Express) do influenciador
   
   subscriptions Subscription[]
   influencer    InfluencerProfile?

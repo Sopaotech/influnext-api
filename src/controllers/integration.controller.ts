@@ -84,6 +84,7 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
     let instagramUsername = null;
     let instagramFollowers = 0;
     let instagramProfilePicture = null;
+    let expiresAt: Date | null = null;
 
     if (isBusiness) {
       // 1. Short-Lived Access Token
@@ -109,6 +110,8 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
       });
 
       accessToken = longLivedResponse.data.access_token;
+      const expiresIn = longLivedResponse.data.expires_in || 5184000;
+      expiresAt = new Date(Date.now() + expiresIn * 1000);
 
       // 3. Buscar Páginas e IDs do Instagram Business
       const pagesResponse = await axios.get('https://graph.facebook.com/v20.0/me/accounts', {
@@ -174,9 +177,12 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
           }
         });
         accessToken = longLivedResponse.data.access_token || shortLivedToken;
+        const expiresIn = longLivedResponse.data.expires_in || 5184000;
+        expiresAt = new Date(Date.now() + expiresIn * 1000);
       } catch (longLivedErr) {
         console.warn('[INSTAGRAM BASIC] Erro ao obter long-lived token, usando token curto.', longLivedErr);
         accessToken = shortLivedToken;
+        expiresAt = new Date(Date.now() + 2 * 3600 * 1000); // fallback de 2 horas para token curto
       }
 
       const profileResponse = await axios.get('https://graph.instagram.com/me', {
@@ -209,6 +215,7 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
           profilePicture: instagramProfilePicture,
           followersCount: instagramFollowers,
           accessToken: accessToken,
+          expiresAt: expiresAt,
           isActive: true
         },
         update: {
@@ -217,6 +224,7 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
           profilePicture: instagramProfilePicture,
           followersCount: instagramFollowers,
           accessToken: accessToken,
+          expiresAt: expiresAt,
           isActive: true
         }
       });
@@ -398,7 +406,11 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
         { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
       );
 
-      const { access_token, open_id } = tokenResponse.data;
+      const { access_token, expires_in, refresh_token, open_id } = tokenResponse.data;
+
+      // Calcular expiração do token (default de 24 horas)
+      const ttExpiresIn = expires_in || 86400;
+      const ttExpiresAt = new Date(Date.now() + ttExpiresIn * 1000);
 
       // Buscar dados reais do perfil TikTok
       let tiktokUsername = `${influencer.handle}_tt`;
@@ -435,6 +447,8 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
           profilePicture: tiktokAvatar,
           followersCount: tiktokFollowers,
           accessToken: access_token,
+          refreshToken: refresh_token || null,
+          expiresAt: ttExpiresAt,
           isActive: true
         },
         update: {
@@ -443,6 +457,8 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
           profilePicture: tiktokAvatar,
           followersCount: tiktokFollowers,
           accessToken: access_token,
+          refreshToken: refresh_token || null,
+          expiresAt: ttExpiresAt,
           isActive: true
         }
       });
@@ -545,5 +561,17 @@ export const getConnectedPlatforms = async (req: Request, res: Response): Promis
     res.json({ platforms: platformNames });
   } catch (error) {
     res.status(500).json({ error: "Erro ao buscar plataformas." });
+  }
+};
+
+export const triggerTokenRenewalDebug = async (req: Request, res: Response): Promise<void> => {
+  try {
+    console.log('[DEBUG] Executando renovação de tokens manual via admin...');
+    const { runTokenRenewalLogic } = await import('../workers/token-renewal.worker');
+    await runTokenRenewalLogic();
+    res.json({ success: true, message: 'Processo de renovação executado com sucesso. Verifique os logs do console para mais detalhes.' });
+  } catch (error: any) {
+    console.error('[DEBUG] Erro na renovação de tokens:', error);
+    res.status(500).json({ error: 'Erro ao executar o processo de renovação de tokens.', details: error.message });
   }
 };
