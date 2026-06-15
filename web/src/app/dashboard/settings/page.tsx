@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useTheme } from 'next-themes';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -260,12 +259,7 @@ export default function SettingsPage() {
      );
   };
 
-  const { theme: activeTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-  const isDark = !mounted || activeTheme === 'dark';
+  const isDark = true;
 
   if (loading) {
     return (
@@ -475,50 +469,6 @@ export default function SettingsPage() {
         {/* Right Column: Appearance & Socials */}
         <div className="space-y-10">
           
-          {/* Theme & Appearance Selection */}
-          <section className={`border rounded-[3rem] p-8 space-y-6 transition-all duration-500 ${
-            isDark ? 'bg-black/35 border-white/5 shadow-2xl' : 'bg-white border-slate-200/80 shadow-[0_8px_30px_rgb(0,0,0,0.03)]'
-          }`} style={isDark ? { backdropFilter: 'blur(30px)' } : undefined}>
-            <div>
-              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-1">Tema da Interface</h3>
-              <p className={`text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Escolha sua aparência preferida</p>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {/* Tema Escuro Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  setTheme('dark');
-                  setSelectedBg('#09090b');
-                }}
-                className={`flex flex-col items-center gap-3 p-5 rounded-[2rem] border transition-all ${
-                  isDark 
-                    ? 'border-purple-500/60 bg-purple-500/10 shadow-lg shadow-purple-500/5' 
-                    : 'border-slate-200 hover:border-slate-300 bg-slate-50/50 hover:bg-slate-50'
-                }`}
-              >
-                <div className="w-8 h-8 rounded-full bg-[#050508] border border-white/10 flex items-center justify-center text-white font-bold text-xs">A</div>
-                <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-purple-400' : 'text-slate-500'}`}>Premium Escuro</span>
-              </button>
-
-              {/* Tema Claro Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  setTheme('light');
-                  setSelectedBg('#ffffff');
-                }}
-                className={`flex flex-col items-center gap-3 p-5 rounded-[2rem] border transition-all ${
-                  !isDark 
-                    ? 'border-purple-600 bg-purple-500/5 shadow-lg shadow-purple-500/5' 
-                    : 'border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10'
-                }`}
-              >
-                <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-900 font-bold text-xs">A</div>
-                <span className={`text-[10px] font-black uppercase tracking-widest ${!isDark ? 'text-purple-600' : 'text-zinc-400'}`}>Modo Claro</span>
-              </button>
-            </div>
-          </section>
 
           {/* Social Platforms Card */}
           {!isCompany && (
