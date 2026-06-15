@@ -130,6 +130,9 @@ model CompanyProfile {
   segment         String?
   employeeCount   String?
   campaignBudget  String?
+  salesGoal       String?
+  averageTicket   String?
+  instagramPositioning String?
   logoUrl         String?
   bio             String?
   contracts       Contract[]

@@ -57,10 +57,11 @@ router.get('/latest', authenticate, async (req: Request, res: Response): Promise
   }
 });
 
-// Interagir com o Mentor IA
+// Interagir com o Mentor IA (Bilateral)
 router.post('/chat', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
+    const role = req.user!.role;
     const { message } = req.body;
 
     if (!message) {
@@ -68,15 +69,35 @@ router.post('/chat', authenticate, async (req: Request, res: Response): Promise<
       return;
     }
 
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { subscriptionTier: true } });
+    const userTier = user?.subscriptionTier || 'FREE';
+
+    // Roteamento de IA para Empresas (Brands)
+    if (role === 'COMPANY') {
+      const company = await prisma.companyProfile.findUnique({ where: { userId }, select: { id: true } });
+      if (!company) {
+        res.status(404).json({ error: 'Perfil de empresa não encontrado.' });
+        return;
+      }
+
+      if (userTier === 'FREE') {
+        const reply = `Olá! Você está usando o plano gratuito corporativo. Para liberar acesso completo ao mentor de IA de posicionamento de marca Vektor, estruturar roteiros e ganchos ilimitados para seus produtos, ter taxas de Escrow reduzidas para 10% e painel co-working, faça o upgrade para o Plano Brand Agency! 🚀`;
+        res.json({ reply, isLocked: true });
+        return;
+      }
+
+      const reply = await AIService.chatWithBrandMentor(company.id, message);
+      res.json({ reply });
+      return;
+    }
+
+    // Roteamento de IA para Criadores (Influencers)
     const profile = await prisma.influencerProfile.findUnique({ where: { userId }, select: { id: true } });
 
     if (!profile) {
       res.status(404).json({ error: 'Apenas influenciadores têm acesso ao mentor.' });
       return;
     }
-
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { subscriptionTier: true } });
-    const userTier = user?.subscriptionTier || 'FREE';
 
     if (userTier === 'FREE') {
       if (message.includes('[PRESENÇA EM EVENTO]')) {
@@ -86,12 +107,12 @@ router.post('/chat', authenticate, async (req: Request, res: Response): Promise<
 2. 🎥 No Evento (Gere desejo): Poste 3 a 5 Stories em tempo real. Faça 1 vídeo mostrando os bastidores do espaço, 1 foto com o look final destacado e 1 interação/depoimento curto.
 3. 📈 Pós-Evento (Gere prova social): Crie 1 post de feed compilando os melhores momentos com um gancho estratégico na legenda sobre networking.
 
-Para que eu crie um roteiro de scripts personalizado para este evento específico com ideias de fotos exclusivas para seu nicho, faça o upgrade para o plano Pro ou Master! 🚀`;
+Para que eu crie um roteiro de scripts personalizado para este evento específico com ideias de fotos exclusivas para seu nicho, faça o upgrade para o Plano Premium! 🚀`;
         res.json({ reply, isLocked: false });
         return;
       }
 
-      const reply = `Olá, sócio(a)! Você atingiu o limite de consultas ao mentor no plano gratuito. Para liberar novos roteiros personalizados, scripts de venda de publis e ferramentas completas de engajamento e acompanhamento de crescimento, faça o upgrade para o plano Pro ou Master! 🚀`;
+      const reply = `Olá, sócio(a)! Você atingiu o limite de consultas ao mentor no plano gratuito. Para liberar novos roteiros personalizados, scripts de venda de publis e ferramentas completas de engajamento e acompanhamento de crescimento, faça o upgrade para o Plano Premium! 🚀`;
       res.json({ reply, isLocked: true });
       return;
     }

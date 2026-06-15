@@ -30,15 +30,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   React.useEffect(() => {
     const fetchTheme = async () => {
       try {
-        const res = await api.get('/dashboard/influencer');
+        const userRole = Cookies.get('influnext_role');
+        const endpoint = userRole === 'COMPANY' ? '/dashboard/company' : '/dashboard/influencer';
+        const res = await api.get(endpoint);
+        
         if (res.data.profile?.profileImageUrl) {
           setProfileImg(res.data.profile.profileImageUrl);
+        } else if (res.data.profile?.logoUrl) {
+          setProfileImg(res.data.profile.logoUrl);
         }
+        
         const pendingCount = res.data.tasks?.filter((t: any) => !t.isDone).length || 0;
         setTaskCount(pendingCount);
 
         // Verificação de Paywall para planos expirados/inativos
-        const userState = res.data.profile?.user;
+        const userState = res.data.profile?.user || res.data.userState;
         if (userState && userState.role !== 'ADMIN') {
           const isExpired = userState.subscriptionStatus === 'INACTIVE' || 
             (userState.subscriptionStatus === 'TRIAL' && userState.trialEndsAt && new Date() > new Date(userState.trialEndsAt));
@@ -68,8 +74,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setIsAdmin(userRole === 'ADMIN');
   }, [userRole]);
 
+  const homeHref = userRole === 'COMPANY' ? '/dashboard/company' : '/dashboard/influencer';
+
   const navItems = [
-    { name: 'Home', href: '/dashboard/influencer', icon: Home },
+    { name: 'Home', href: homeHref, icon: Home },
     { name: 'Calendário', href: '/dashboard/calendar', icon: Calendar },
     { name: 'Workspace', href: '/dashboard/workspace', icon: LayoutDashboard, special: true, badgeCount: taskCount },
     { name: 'Marketplace', href: '/dashboard/marketplace', icon: Store },
@@ -105,7 +113,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Mobile Header - Glass */}
       <header className={`md:hidden fixed top-0 left-0 right-0 z-[100] border-b p-4 flex items-center justify-between transition-all duration-500 ${isDark ? 'bg-black/45 backdrop-blur-xl border-white/5' : 'bg-white/5 backdrop-blur-xl border-white/10'}`}>
-        <Logo size="sm" href="/dashboard/influencer" variant="light" />
+        <Logo size="sm" href={homeHref} variant="light" />
         <div className="flex items-center gap-3">
            <Link href="/dashboard/settings" className="w-8 h-8 rounded-full border border-white/20 p-0.5 block hover:scale-110 transition-transform">
              <div className={`w-full h-full rounded-full overflow-hidden ${isDark ? 'bg-white/10' : 'bg-white/20'}`}>
@@ -122,7 +130,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       >
         <div className="p-8">
           <div className="hidden md:flex items-center mb-12 px-2">
-            <Logo size="sm" href="/dashboard/influencer" variant="light" />
+            <Logo size="sm" href={homeHref} variant="light" />
           </div>
           
           <nav className="space-y-1.5">

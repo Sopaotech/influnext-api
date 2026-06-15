@@ -4,7 +4,7 @@ import path from 'path';
 
 export async function GET() {
   try {
-    const srcPath = 'C:\\Users\\alexs\\.gemini\\antigravity\\brain\\100492a8-6c2f-4eb3-b693-b4e5e9c6a6ba\\influnext_pwa_icon_1781218488314.png';
+    const srcPath = 'C:\\Users\\alexs\\.gemini\\antigravity-ide\\brain\\a6ebead6-98ec-44e8-8082-f4ca86c3d11f\\influnext_pwa_icon_black_bg_1781481821310.png';
     const publicDir = path.join(process.cwd(), 'public');
     
     const destIcon = path.join(publicDir, 'icon.png');

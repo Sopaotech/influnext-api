@@ -91,8 +91,13 @@ export class PaymentController {
 
       if (!contract) return res.status(404).json({ error: 'Contrato não encontrado' });
 
-      // Valor em centavos
-      const amount = Math.round(contract.budget * 100);
+      const brandTier = contract.company.user?.subscriptionTier || 'FREE';
+      const brandStatus = contract.company.user?.subscriptionStatus || 'INACTIVE';
+      const isBrandFree = !(brandTier === 'ENTERPRISE' && brandStatus === 'ACTIVE');
+
+      const escrowFeeRate = isBrandFree ? 0.15 : 0.10;
+      const totalAmount = contract.budget * (1 + escrowFeeRate);
+      const amountInCents = Math.round(totalAmount * 100);
 
       if (!stripe) {
         return res.status(500).json({ error: 'Serviço de pagamentos não configurado.' });
@@ -106,9 +111,11 @@ export class PaymentController {
               currency: 'brl',
               product_data: {
                 name: `Contrato: ${contract.title}`,
-                description: `Pagamento em Escrow para InfluNext`,
+                description: isBrandFree 
+                  ? `Pagamento em Escrow (Cachê R$ ${contract.budget.toFixed(2)} + 15% taxa de garantia R$ ${(contract.budget * 0.15).toFixed(2)})`
+                  : `Pagamento em Escrow (Cachê R$ ${contract.budget.toFixed(2)} + 10% taxa de garantia R$ ${(contract.budget * 0.10).toFixed(2)})`,
               },
-              unit_amount: amount,
+              unit_amount: amountInCents,
             },
             quantity: 1,
           },
@@ -155,22 +162,29 @@ export class PaymentController {
 
       if (!contract) return res.status(404).json({ error: 'Contrato não encontrado' });
 
-      // Valor em centavos
-      const amount = Math.round(contract.budget * 100);
+      const brandTier = contract.company.user?.subscriptionTier || 'FREE';
+      const brandStatus = contract.company.user?.subscriptionStatus || 'INACTIVE';
+      const isBrandFree = !(brandTier === 'ENTERPRISE' && brandStatus === 'ACTIVE');
+
+      const escrowFeeRate = isBrandFree ? 0.15 : 0.10;
+      const totalAmount = contract.budget * (1 + escrowFeeRate);
+      const amountInCents = Math.round(totalAmount * 100);
 
       if (!stripe) {
         return res.status(500).json({ error: 'Serviço de pagamentos não configurado.' });
       }
 
       const paymentIntent = await stripe.paymentIntents.create({
-        amount,
+        amount: amountInCents,
         currency: 'brl',
         payment_method_types: ['card', 'pix'],
         metadata: {
           contractId: contract.id,
           type: 'contract_escrow'
         },
-        description: `Pagamento de Escrow: ${contract.title}`
+        description: isBrandFree 
+          ? `Pagamento de Escrow: ${contract.title} (Cachê R$ ${contract.budget.toFixed(2)} + 15% taxa R$ ${(contract.budget * 0.15).toFixed(2)})`
+          : `Pagamento de Escrow: ${contract.title} (Cachê R$ ${contract.budget.toFixed(2)} + 10% taxa R$ ${(contract.budget * 0.10).toFixed(2)})`
       });
 
       // Atualizar contrato com o ID da transação externa
@@ -235,11 +249,21 @@ export class PaymentController {
                 }
               });
 
+              let subscriptionTier = 'FREE';
+              if (planId === 'plan_pro_influencer_1' || planId === 'plan_master_influencer_1') {
+                subscriptionTier = 'MASTER';
+              } else if (planId === 'plan_brand_enterprise_1') {
+                subscriptionTier = 'ENTERPRISE';
+              }
+
               await prisma.user.update({
                 where: { id: userId },
-                data: { subscriptionStatus: 'ACTIVE' }
+                data: { 
+                  subscriptionStatus: 'ACTIVE',
+                  subscriptionTier
+                }
               });
-              console.log(`[STRIPE] ✅ Assinatura ativada para usuário ${userId}`);
+              console.log(`[STRIPE] ✅ Assinatura ativada para usuário ${userId} com Tier ${subscriptionTier}`);
             }
           } else if (session.mode === 'payment' && session.metadata?.type === 'contract_escrow') {
             const contractId = session.metadata?.contractId;
@@ -299,13 +323,16 @@ export class PaymentController {
           if (dbSub) {
             await prisma.user.update({
               where: { id: dbSub.userId },
-              data: { subscriptionStatus: 'INACTIVE' }
+              data: { 
+                subscriptionStatus: 'INACTIVE',
+                subscriptionTier: 'FREE'
+              }
             });
             await prisma.subscription.update({
               where: { id: dbSub.id },
               data: { status: 'canceled' }
             });
-            console.log(`[STRIPE] ⚠️ Assinatura ${subscription.id} cancelada.`);
+            console.log(`[STRIPE] ⚠️ Assinatura ${subscription.id} cancelada. Usuário ${dbSub.userId} resetado para tier FREE.`);
           }
           break;
         }

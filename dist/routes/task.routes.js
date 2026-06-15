@@ -9,5 +9,7 @@ router.get('/', auth_middleware_1.authenticate, task_controller_1.getMyTasks);
 router.post('/ai-generate', auth_middleware_1.authenticate, task_controller_1.createAITasks);
 router.post('/process-command', auth_middleware_1.authenticate, task_controller_1.processAICommand);
 router.post('/:taskId/complete', auth_middleware_1.authenticate, task_controller_1.completeTaskWithProof);
+router.patch('/:taskId/toggle', auth_middleware_1.authenticate, task_controller_1.toggleTask);
+router.delete('/:taskId', auth_middleware_1.authenticate, task_controller_1.deleteTask);
 router.get('/telemetry', auth_middleware_1.authenticate, task_controller_1.getTelemetryResults);
 exports.default = router;

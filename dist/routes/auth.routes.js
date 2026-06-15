@@ -7,6 +7,7 @@ const auth_middleware_1 = require("../middlewares/auth.middleware");
 const router = (0, express_1.Router)();
 router.post('/signup', auth_controller_1.signup);
 router.post('/login', auth_controller_1.login);
+router.post('/social-login', auth_controller_1.socialLogin);
 router.post('/force-admin', auth_controller_1.forceAdminAccess);
 router.post('/2fa/verify', auth_controller_1.verify2FA);
 router.post('/2fa/setup', auth_middleware_1.authenticate, auth_controller_1.setup2FA);

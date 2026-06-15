@@ -39,10 +39,31 @@ const EMPLOYEE_RANGES = [
 ];
 
 const BUDGET_RANGES = [
-  { value: 'até_5k', label: 'Até R$ 5.000 / campanha' },
-  { value: '5k_20k', label: 'R$ 5.000 – R$ 20.000' },
-  { value: '20k_100k', label: 'R$ 20.000 – R$ 100.000' },
-  { value: '100k+', label: 'Acima de R$ 100.000' },
+  { value: 'até_2k', label: 'Até R$ 2.000 / mês' },
+  { value: '2k_5k', label: 'R$ 2.000 – R$ 5.000 / mês' },
+  { value: '5k_15k', label: 'R$ 5.000 – R$ 15.000 / mês' },
+  { value: '15k+', label: 'Acima de R$ 15.000 / mês' },
+];
+
+const SALES_GOALS = [
+  { value: 'leads', label: 'Atrair leads qualificados' },
+  { value: 'sales', label: 'Aumentar vendas diretas de produtos/serviços' },
+  { value: 'awareness', label: 'Branding / Reconhecimento e visibilidade' },
+  { value: 'local_clients', label: 'Atrair mais clientes locais/físicos' },
+];
+
+const TICKET_RANGES = [
+  { value: 'baixo', label: 'Abaixo de R$ 50' },
+  { value: 'medio', label: 'R$ 50 – R$ 150' },
+  { value: 'alto', label: 'R$ 150 – R$ 500' },
+  { value: 'premium', label: 'Acima de R$ 500' },
+];
+
+const INSTAGRAM_STANDINGS = [
+  { value: 'fraco', label: 'Fraco (Sem presença/engajamento)' },
+  { value: 'regular', label: 'Regular (Postagens frequentes, pouca conversão)' },
+  { value: 'forte', label: 'Forte (Boa audiência, buscando escala)' },
+  { value: 'inexistente', label: 'Inexistente (Estamos começando do zero)' },
 ];
 
 // ─── Stepper ───────────────────────────────────────────────────────────────────
@@ -120,6 +141,9 @@ export default function SignupClient() {
   const [segment, setSegment] = useState('');
   const [employeeCount, setEmployeeCount] = useState('');
   const [campaignBudget, setCampaignBudget] = useState('');
+  const [salesGoal, setSalesGoal] = useState('');
+  const [averageTicket, setAverageTicket] = useState('');
+  const [instagramPositioning, setInstagramPositioning] = useState('');
 
   const cookieOptions: Cookies.CookieAttributes = {
     expires: 7,
@@ -192,6 +216,9 @@ export default function SignupClient() {
           segment,
           employeeCount,
           campaignBudget,
+          salesGoal,
+          averageTicket,
+          instagramPositioning,
         });
         router.push('/dashboard/company');
       }
@@ -532,7 +559,7 @@ export default function SignupClient() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className={labelClass}>Budget Estimado (Campanha)</label>
+                  <label className={labelClass}>Orçamento de Campanha Planejado</label>
                   <div className="relative">
                     <select
                       value={campaignBudget}
@@ -542,6 +569,51 @@ export default function SignupClient() {
                     >
                       <option value="" className="bg-[#0a0a10]">Selecione...</option>
                       {BUDGET_RANGES.map(b => <option key={b.value} value={b.value} className="bg-[#0a0a10]">{b.label}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className={labelClass}>Meta de Vendas/Marketing Principal</label>
+                  <div className="relative">
+                    <select
+                      value={salesGoal}
+                      onChange={(e) => setSalesGoal(e.target.value)}
+                      required
+                      className={selectClass}
+                    >
+                      <option value="" className="bg-[#0a0a10]">Selecione...</option>
+                      {SALES_GOALS.map(sg => <option key={sg.value} value={sg.value} className="bg-[#0a0a10]">{sg.label}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className={labelClass}>Ticket Médio do Produto Principal</label>
+                  <div className="relative">
+                    <select
+                      value={averageTicket}
+                      onChange={(e) => setAverageTicket(e.target.value)}
+                      required
+                      className={selectClass}
+                    >
+                      <option value="" className="bg-[#0a0a10]">Selecione...</option>
+                      {TICKET_RANGES.map(t => <option key={t.value} value={t.value} className="bg-[#0a0a10]">{t.label}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className={labelClass}>Posicionamento Instagram Atual</label>
+                  <div className="relative">
+                    <select
+                      value={instagramPositioning}
+                      onChange={(e) => setInstagramPositioning(e.target.value)}
+                      required
+                      className={selectClass}
+                    >
+                      <option value="" className="bg-[#0a0a10]">Selecione...</option>
+                      {INSTAGRAM_STANDINGS.map(is => <option key={is.value} value={is.value} className="bg-[#0a0a10]">{is.label}</option>)}
                     </select>
                   </div>
                 </div>

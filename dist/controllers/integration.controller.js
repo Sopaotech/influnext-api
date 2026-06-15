@@ -1,15 +1,59 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getConnectedPlatforms = exports.syncPlatformMetrics = exports.handleTikTokCallback = exports.simulateInstagramConnection = exports.handleInstagramCallback = exports.getAuthUrls = void 0;
+exports.triggerTokenRenewalDebug = exports.getConnectedPlatforms = exports.syncPlatformMetrics = exports.handleTikTokCallback = exports.simulateInstagramConnection = exports.handleInstagramCallback = exports.getAuthUrls = void 0;
 const prisma_1 = require("../lib/prisma");
 const scoring_service_1 = require("../services/scoring.service");
 const instagram_service_1 = require("../services/instagram.service");
 const ai_service_1 = require("../services/ai.service");
 const axios_1 = __importDefault(require("axios"));
-const getFrontendUrl = () => {
+const getFrontendUrl = (req) => {
+    const origin = req?.headers.origin;
+    if (origin)
+        return origin.endsWith('/') ? origin.slice(0, -1) : origin;
+    const referer = req?.headers.referer;
+    if (referer) {
+        try {
+            const parsed = new URL(referer);
+            return parsed.origin;
+        }
+        catch (_) { }
+    }
     const url = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
     return url.endsWith('/') ? url.slice(0, -1) : url;
 };
@@ -33,10 +77,12 @@ const getAuthUrls = async (req, res) => {
             'pages_read_engagement',
             'public_profile'
         ].join(',');
-        const instagramUrl = `https://www.facebook.com/v20.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${getFrontendUrl()}/auth/callback/instagram&scope=${scopes}&response_type=code&state=${state}`;
-        const tiktokUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list,video.stats&response_type=code&redirect_uri=${getFrontendUrl()}/auth/callback/tiktok&state=${state}`;
+        const instagramUrl = `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_BASIC_CLIENT_ID || process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${getFrontendUrl(req)}/auth/callback/instagram&scope=user_profile,user_media&response_type=code&state=${state}`;
+        const instagramBusinessUrl = `https://www.facebook.com/v20.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${getFrontendUrl(req)}/auth/callback/instagram&scope=${scopes}&response_type=code&state=${state}_business`;
+        const tiktokUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list,video.stats&response_type=code&redirect_uri=${getFrontendUrl(req)}/auth/callback/tiktok&state=${state}`;
         res.json({
             instagram: instagramUrl,
+            instagram_business: instagramBusinessUrl,
             tiktok: tiktokUrl,
             youtube: '#'
         });
@@ -52,68 +98,71 @@ const handleInstagramCallback = async (req, res) => {
         const { code, state } = req.query;
         stateStr = state;
         if (!code || !stateStr) {
-            res.redirect(`${getFrontendUrl()}/dashboard/settings?status=error&error=invalid_params`);
+            res.redirect(`${getFrontendUrl(req)}/dashboard/settings?status=error&error=invalid_params`);
             return;
         }
-        const isFromOnboarding = stateStr.endsWith('_onboarding');
-        const userId = isFromOnboarding ? stateStr.replace('_onboarding', '') : stateStr;
-        // 1. Short-Lived Access Token
-        const tokenResponse = await axios_1.default.get('https://graph.facebook.com/v20.0/oauth/access_token', {
-            params: {
-                client_id: process.env.INSTAGRAM_CLIENT_ID,
-                client_secret: process.env.INSTAGRAM_CLIENT_SECRET,
-                redirect_uri: `${getFrontendUrl()}/auth/callback/instagram`,
-                code: code
-            }
-        });
-        const shortLivedToken = tokenResponse.data.access_token;
-        // 2. Long-Lived Access Token (60 dias)
-        const longLivedResponse = await axios_1.default.get('https://graph.facebook.com/v20.0/oauth/access_token', {
-            params: {
-                grant_type: 'fb_exchange_token',
-                client_id: process.env.INSTAGRAM_CLIENT_ID,
-                client_secret: process.env.INSTAGRAM_CLIENT_SECRET,
-                fb_exchange_token: shortLivedToken
-            }
-        });
-        const longLivedToken = longLivedResponse.data.access_token;
-        // 3. Buscar Páginas e IDs do Instagram Business
-        const pagesResponse = await axios_1.default.get('https://graph.facebook.com/v20.0/me/accounts', {
-            params: { access_token: longLivedToken }
-        });
-        const pages = pagesResponse.data.data;
+        const isBusiness = stateStr.includes('_business');
+        const cleanStateStr = stateStr.replace('_business', '');
+        const isFromOnboarding = cleanStateStr.endsWith('_onboarding');
+        const userId = isFromOnboarding ? cleanStateStr.replace('_onboarding', '') : cleanStateStr;
+        let accessToken = '';
         let instagramBusinessId = null;
         let instagramUsername = null;
-        if (pages && pages.length > 0) {
-            for (const page of pages) {
-                const igResponse = await axios_1.default.get(`https://graph.facebook.com/v20.0/${page.id}`, {
-                    params: {
-                        fields: 'instagram_business_account{id,username}',
-                        access_token: longLivedToken
-                    }
-                });
-                if (igResponse.data.instagram_business_account) {
-                    instagramBusinessId = igResponse.data.instagram_business_account.id;
-                    instagramUsername = igResponse.data.instagram_business_account.username;
-                    break;
-                }
-            }
-        }
-        if (!instagramBusinessId) {
-            const redirectUrl = isFromOnboarding
-                ? `${getFrontendUrl()}/onboarding?status=error&error=no_business_account`
-                : `${getFrontendUrl()}/dashboard/settings?status=error&error=no_business_account`;
-            res.redirect(redirectUrl);
-            return;
-        }
         let instagramFollowers = 0;
         let instagramProfilePicture = null;
-        if (instagramBusinessId) {
+        let expiresAt = null;
+        if (isBusiness) {
+            // 1. Short-Lived Access Token
+            const tokenResponse = await axios_1.default.get('https://graph.facebook.com/v20.0/oauth/access_token', {
+                params: {
+                    client_id: process.env.INSTAGRAM_CLIENT_ID,
+                    client_secret: process.env.INSTAGRAM_CLIENT_SECRET,
+                    redirect_uri: `${getFrontendUrl(req)}/auth/callback/instagram`,
+                    code: code
+                }
+            });
+            const shortLivedToken = tokenResponse.data.access_token;
+            // 2. Long-Lived Access Token (60 dias)
+            const longLivedResponse = await axios_1.default.get('https://graph.facebook.com/v20.0/oauth/access_token', {
+                params: {
+                    grant_type: 'fb_exchange_token',
+                    client_id: process.env.INSTAGRAM_CLIENT_ID,
+                    client_secret: process.env.INSTAGRAM_CLIENT_SECRET,
+                    fb_exchange_token: shortLivedToken
+                }
+            });
+            accessToken = longLivedResponse.data.access_token;
+            const expiresIn = longLivedResponse.data.expires_in || 5184000;
+            expiresAt = new Date(Date.now() + expiresIn * 1000);
+            // 3. Buscar Páginas e IDs do Instagram Business
+            const pagesResponse = await axios_1.default.get('https://graph.facebook.com/v20.0/me/accounts', {
+                params: { access_token: accessToken }
+            });
+            const pages = pagesResponse.data.data;
+            if (pages && pages.length > 0) {
+                for (const page of pages) {
+                    const igResponse = await axios_1.default.get(`https://graph.facebook.com/v20.0/${page.id}`, {
+                        params: {
+                            fields: 'instagram_business_account{id,username}',
+                            access_token: accessToken
+                        }
+                    });
+                    if (igResponse.data.instagram_business_account) {
+                        instagramBusinessId = igResponse.data.instagram_business_account.id;
+                        instagramUsername = igResponse.data.instagram_business_account.username;
+                        break;
+                    }
+                }
+            }
+            if (!instagramBusinessId) {
+                throw new Error('Nenhuma conta comercial do Instagram vinculada à página do Facebook foi encontrada.');
+            }
+            // Buscar dados reais do perfil Instagram
             try {
                 const detailsResponse = await axios_1.default.get(`https://graph.facebook.com/v20.0/${instagramBusinessId}`, {
                     params: {
-                        fields: 'followers_count,profile_picture_url,username',
-                        access_token: longLivedToken
+                        fields: 'followers_count,profile_picture_url',
+                        access_token: accessToken
                     }
                 });
                 instagramFollowers = detailsResponse.data.followers_count || 0;
@@ -122,6 +171,45 @@ const handleInstagramCallback = async (req, res) => {
             catch (err) {
                 console.warn('[INSTAGRAM] Falha ao buscar detalhes adicionais do perfil', err);
             }
+        }
+        else {
+            // Instagram Basic Display API Flow
+            const tokenResponse = await axios_1.default.post('https://api.instagram.com/oauth/access_token', new URLSearchParams({
+                client_id: process.env.INSTAGRAM_BASIC_CLIENT_ID || process.env.INSTAGRAM_CLIENT_ID,
+                client_secret: process.env.INSTAGRAM_BASIC_CLIENT_SECRET || process.env.INSTAGRAM_CLIENT_SECRET,
+                grant_type: 'authorization_code',
+                redirect_uri: `${getFrontendUrl(req)}/auth/callback/instagram`,
+                code: code
+            }).toString(), {
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            });
+            const shortLivedToken = tokenResponse.data.access_token;
+            try {
+                const longLivedResponse = await axios_1.default.get('https://graph.instagram.com/access_token', {
+                    params: {
+                        grant_type: 'ig_exchange_token',
+                        client_secret: process.env.INSTAGRAM_BASIC_CLIENT_SECRET || process.env.INSTAGRAM_CLIENT_SECRET,
+                        access_token: shortLivedToken
+                    }
+                });
+                accessToken = longLivedResponse.data.access_token || shortLivedToken;
+                const expiresIn = longLivedResponse.data.expires_in || 5184000;
+                expiresAt = new Date(Date.now() + expiresIn * 1000);
+            }
+            catch (longLivedErr) {
+                console.warn('[INSTAGRAM BASIC] Erro ao obter long-lived token, usando token curto.', longLivedErr);
+                accessToken = shortLivedToken;
+                expiresAt = new Date(Date.now() + 2 * 3600 * 1000); // fallback de 2 horas para token curto
+            }
+            const profileResponse = await axios_1.default.get('https://graph.instagram.com/me', {
+                params: {
+                    fields: 'id,username,account_type',
+                    access_token: accessToken
+                }
+            });
+            instagramBusinessId = profileResponse.data.id;
+            instagramUsername = profileResponse.data.username;
+            instagramFollowers = 0; // Preenchido no onboarding/simulação
         }
         const influencer = await prisma_1.prisma.influencerProfile.findUnique({ where: { userId } });
         if (influencer) {
@@ -139,7 +227,8 @@ const handleInstagramCallback = async (req, res) => {
                     username: instagramUsername,
                     profilePicture: instagramProfilePicture,
                     followersCount: instagramFollowers,
-                    accessToken: longLivedToken,
+                    accessToken: accessToken,
+                    expiresAt: expiresAt,
                     isActive: true
                 },
                 update: {
@@ -147,7 +236,8 @@ const handleInstagramCallback = async (req, res) => {
                     username: instagramUsername,
                     profilePicture: instagramProfilePicture,
                     followersCount: instagramFollowers,
-                    accessToken: longLivedToken,
+                    accessToken: accessToken,
+                    expiresAt: expiresAt,
                     isActive: true
                 }
             });
@@ -155,21 +245,28 @@ const handleInstagramCallback = async (req, res) => {
                 where: { id: influencer.id },
                 data: { verifiedMetrics: true }
             });
-            instagram_service_1.InstagramService.syncInstagramData(influencer.id, longLivedToken, instagramBusinessId).catch(err => {
-                console.error('[INSTAGRAM] Falha na sincronização de dados reais pós-callback:', err);
-            });
+            if (isBusiness) {
+                instagram_service_1.InstagramService.syncInstagramData(influencer.id, accessToken, instagramBusinessId).catch(err => {
+                    console.error('[INSTAGRAM] Falha na sincronização de dados reais pós-callback:', err);
+                });
+            }
         }
         const redirectUrl = isFromOnboarding
-            ? `${getFrontendUrl()}/onboarding?status=success&platform=instagram`
-            : `${getFrontendUrl()}/dashboard/settings?status=success&platform=instagram`;
+            ? `${getFrontendUrl(req)}/onboarding?status=success&platform=instagram`
+            : `${getFrontendUrl(req)}/dashboard/settings?status=success&platform=instagram`;
         res.redirect(redirectUrl);
     }
     catch (error) {
         console.error('[INSTAGRAM] Erro no callback:', error.response?.data || error.message);
-        const isFromOnboarding = stateStr.endsWith('_onboarding');
+        const cleanStateStr = stateStr ? stateStr.replace('_business', '') : '';
+        const isFromOnboarding = cleanStateStr.endsWith('_onboarding');
+        let errorType = 'error';
+        if (error.message && (error.message.includes('Facebook') || error.message.includes('Página') || error.message.includes('comercial'))) {
+            errorType = 'no_business_account';
+        }
         const redirectUrl = isFromOnboarding
-            ? `${getFrontendUrl()}/onboarding?status=error`
-            : `${getFrontendUrl()}/dashboard/settings?status=error`;
+            ? `${getFrontendUrl(req)}/onboarding?status=error&error=${errorType}`
+            : `${getFrontendUrl(req)}/dashboard/settings?status=error&error=${errorType}`;
         res.redirect(redirectUrl);
     }
 };
@@ -285,7 +382,7 @@ const handleTikTokCallback = async (req, res) => {
         const { code, state } = req.query;
         stateStr = state;
         if (!code || !stateStr) {
-            res.redirect(`${getFrontendUrl()}/dashboard/settings?status=error&error=invalid_params`);
+            res.redirect(`${getFrontendUrl(req)}/dashboard/settings?status=error&error=invalid_params`);
             return;
         }
         const isFromOnboarding = stateStr.endsWith('_onboarding');
@@ -299,7 +396,10 @@ const handleTikTokCallback = async (req, res) => {
                 grant_type: 'authorization_code',
                 redirect_uri: `${process.env.NEXT_PUBLIC_API_URL}/integrations/tiktok/callback`,
             }).toString(), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
-            const { access_token, open_id } = tokenResponse.data;
+            const { access_token, expires_in, refresh_token, open_id } = tokenResponse.data;
+            // Calcular expiração do token (default de 24 horas)
+            const ttExpiresIn = expires_in || 86400;
+            const ttExpiresAt = new Date(Date.now() + ttExpiresIn * 1000);
             // Buscar dados reais do perfil TikTok
             let tiktokUsername = `${influencer.handle}_tt`;
             let tiktokFollowers = 0;
@@ -334,6 +434,8 @@ const handleTikTokCallback = async (req, res) => {
                     profilePicture: tiktokAvatar,
                     followersCount: tiktokFollowers,
                     accessToken: access_token,
+                    refreshToken: refresh_token || null,
+                    expiresAt: ttExpiresAt,
                     isActive: true
                 },
                 update: {
@@ -342,22 +444,24 @@ const handleTikTokCallback = async (req, res) => {
                     profilePicture: tiktokAvatar,
                     followersCount: tiktokFollowers,
                     accessToken: access_token,
+                    refreshToken: refresh_token || null,
+                    expiresAt: ttExpiresAt,
                     isActive: true
                 }
             });
             await scoring_service_1.ScoringService.calculateAndPersist(influencer.id);
         }
         const redirectUrl = isFromOnboarding
-            ? `${getFrontendUrl()}/onboarding?status=success&platform=tiktok`
-            : `${getFrontendUrl()}/dashboard/settings?status=success&platform=tiktok`;
+            ? `${getFrontendUrl(req)}/onboarding?status=success&platform=tiktok`
+            : `${getFrontendUrl(req)}/dashboard/settings?status=success&platform=tiktok`;
         res.redirect(redirectUrl);
     }
     catch (error) {
         console.error('[TIKTOK] Erro no callback:', error);
         const isFromOnboarding = stateStr.endsWith('_onboarding');
         const redirectUrl = isFromOnboarding
-            ? `${getFrontendUrl()}/onboarding?status=error`
-            : `${getFrontendUrl()}/dashboard/settings?status=error`;
+            ? `${getFrontendUrl(req)}/onboarding?status=error`
+            : `${getFrontendUrl(req)}/dashboard/settings?status=error`;
         res.redirect(redirectUrl);
     }
 };
@@ -440,3 +544,16 @@ const getConnectedPlatforms = async (req, res) => {
     }
 };
 exports.getConnectedPlatforms = getConnectedPlatforms;
+const triggerTokenRenewalDebug = async (req, res) => {
+    try {
+        console.log('[DEBUG] Executando renovação de tokens manual via admin...');
+        const { runTokenRenewalLogic } = await Promise.resolve().then(() => __importStar(require('../workers/token-renewal.worker')));
+        await runTokenRenewalLogic();
+        res.json({ success: true, message: 'Processo de renovação executado com sucesso. Verifique os logs do console para mais detalhes.' });
+    }
+    catch (error) {
+        console.error('[DEBUG] Erro na renovação de tokens:', error);
+        res.status(500).json({ error: 'Erro ao executar o processo de renovação de tokens.', details: error.message });
+    }
+};
+exports.triggerTokenRenewalDebug = triggerTokenRenewalDebug;

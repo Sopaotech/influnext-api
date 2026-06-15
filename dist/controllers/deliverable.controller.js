@@ -5,6 +5,7 @@ const roles_1 = require("../types/roles");
 const prisma_1 = require("../lib/prisma");
 const zod_1 = require("zod");
 const notification_queue_1 = require("../queues/notification.queue");
+const ai_service_1 = require("../services/ai.service");
 const submitSchema = zod_1.z.object({
     proofUrl: zod_1.z.string().url('O link da prova deve ser uma URL válida do Instagram ou TikTok.'),
 });
@@ -38,6 +39,8 @@ const submitWork = async (req, res) => {
                     select: {
                         id: true,
                         title: true,
+                        briefing: true,
+                        aiScript: true,
                         company: { select: { userId: true } }
                     }
                 }
@@ -52,6 +55,13 @@ const submitWork = async (req, res) => {
             res.status(400).json({ error: 'Este entregável já foi aprovado e não pode ser re-submetido.' });
             return;
         }
+        // Executar a auditoria automática da IA
+        const auditResult = await ai_service_1.AIService.auditDeliverableLink(proofUrl, deliverable.type, deliverable.contract.title, deliverable.contract.briefing || undefined, deliverable.contract.aiScript || undefined);
+        // Se a IA não aprovar devido a um erro grave (ex: domínio de URL errado), impede o envio
+        if (!auditResult.approved && auditResult.confidenceScore === 0) {
+            res.status(400).json({ error: auditResult.feedback });
+            return;
+        }
         const [updatedDeliverable] = await prisma_1.prisma.$transaction([
             prisma_1.prisma.deliverable.update({
                 where: { id },
@@ -63,13 +73,21 @@ const submitWork = async (req, res) => {
             prisma_1.prisma.notification.create({
                 data: {
                     userId: deliverable.contract.company.userId,
-                    message: `Nova entrega para revisão no contrato: ${deliverable.contract.title}`,
+                    message: `Nova entrega no contrato "${deliverable.contract.title}". Auditoria da IA: ${auditResult.approved ? 'Aprovada' : 'Atenção Requerida'} (Confiança: ${auditResult.confidenceScore}%). ${auditResult.feedback}`,
                     type: 'SUBMISSION_REVIEW'
                 }
             })
         ]);
-        await (0, notification_queue_1.addNotificationJob)(deliverable.contract.company.userId, `Nova entrega para revisão no contrato: ${deliverable.contract.title}`, 'SUBMISSION_REVIEW');
-        res.status(200).json({ message: 'Entrega submetida com sucesso!', deliverable: updatedDeliverable });
+        await (0, notification_queue_1.addNotificationJob)(deliverable.contract.company.userId, `Nova entrega para revisão no contrato: ${deliverable.contract.title}. Auditoria IA: ${auditResult.approved ? 'Aprovada' : 'Atenção Requerida'}.`, 'SUBMISSION_REVIEW');
+        res.status(200).json({
+            message: 'Entrega submetida com sucesso!',
+            deliverable: updatedDeliverable,
+            aiAudit: {
+                approved: auditResult.approved,
+                confidenceScore: auditResult.confidenceScore,
+                feedback: auditResult.feedback
+            }
+        });
     }
     catch (error) {
         console.error('[DELIVERABLE] Erro na submissão:', error);

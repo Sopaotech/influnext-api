@@ -37,7 +37,7 @@ const getInfluencerDashboard = async (req, res) => {
                         missionCompleted: false,
                         profileProgress: 100,
                     },
-                    kpis: { influScore: 100, scoreClass: 'DIAMOND', escrowBalance: 0, activeContractsCount: 0, pendingMissionsCount: 0, latestFollowers: 0, latestEngagement: 0 },
+                    kpis: { influScore: 100, scoreClass: 'DIAMOND', escrowBalance: 0, activeContractsCount: 0, pendingMissionsCount: 0, latestFollowers: 0, latestEngagement: 0, totalEarned: 0, latestReach: 0, avgViews: 0 },
                     userState: user,
                     contracts: [],
                     tasks: [],
@@ -67,6 +67,12 @@ const getInfluencerDashboard = async (req, res) => {
         const escrowBalance = profile.contracts
             .filter((c) => c.escrowStatus === 'IN_PROGRESS')
             .reduce((sum, c) => sum + Number(c.budget), 0);
+        // KPI: Total Ganhos (contratos COMPLETED)
+        const completedContracts = await prisma_1.prisma.contract.findMany({
+            where: { influencerId: profile.id, escrowStatus: 'COMPLETED' },
+            select: { netAmount: true, budget: true }
+        });
+        const totalEarned = completedContracts.reduce((sum, c) => sum + Number(c.netAmount || c.budget * 0.85), 0);
         // KPI: Contratos ativos (qualquer status não concluído)
         const activeContractsCount = profile.contracts.length;
         // KPI: Missões pendentes
@@ -88,10 +94,13 @@ const getInfluencerDashboard = async (req, res) => {
                 influScore: profile.influScore,
                 scoreClass: profile.scoreClass,
                 escrowBalance,
+                totalEarned,
                 activeContractsCount,
                 pendingMissionsCount,
                 latestFollowers: profile.metricsHistory?.[0]?.followers ?? null,
                 latestEngagement: profile.metricsHistory?.[0]?.engagementRate ?? null,
+                latestReach: profile.metricsHistory?.[0]?.reachLast30Days ?? 0,
+                avgViews: profile.metricsHistory?.[0]?.avgViews ?? 0,
             },
             userState: profile.user,
             contracts: profile.contracts,

@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.seedDemoBalance = exports.getBalance = exports.requestWithdraw = exports.updateRateCard = exports.getRateCard = exports.completeMission = exports.getMyMission = exports.updateProfile = exports.searchInfluencers = exports.getDailyInsight = exports.createVoiceTask = exports.updateTask = exports.getTasks = void 0;
 const prisma_1 = require("../lib/prisma");
@@ -11,7 +44,7 @@ const getTasks = async (req, res) => {
         const userId = req.user.id;
         const influencer = await prisma_1.prisma.influencerProfile.findUnique({ where: { userId } });
         if (!influencer) {
-            res.status(404).json({ error: "Perfil não encontrado." });
+            res.json([]);
             return;
         }
         const tasks = await prisma_1.prisma.task.findMany({
@@ -148,7 +181,7 @@ const getDailyInsight = async (req, res) => {
         const userId = req.user.id;
         const influencer = await prisma_1.prisma.influencerProfile.findUnique({ where: { userId } });
         if (!influencer) {
-            res.status(404).json({ error: "Perfil não encontrado." });
+            res.json({ insight: "Configure seu perfil no onboarding para começar a receber insights diários da IA." });
             return;
         }
         const insight = await career_service_1.CareerService.getDailyBusinessInsight(influencer.id);
@@ -360,7 +393,7 @@ const getRateCard = async (req, res) => {
                 include: { rateCards: true }
             });
             if (!company) {
-                res.status(404).json({ error: "Perfil não encontrado." });
+                res.json([]);
                 return;
             }
             res.json(company.rateCards);
@@ -371,7 +404,7 @@ const getRateCard = async (req, res) => {
             include: { rateCards: true }
         });
         if (!influencer) {
-            res.status(404).json({ error: "Perfil não encontrado." });
+            res.json([]);
             return;
         }
         res.json(influencer.rateCards);
@@ -454,6 +487,16 @@ const requestWithdraw = async (req, res) => {
             res.status(400).json({ error: 'Valor de saque inválido.' });
             return;
         }
+        const user = await prisma_1.prisma.user.findUnique({
+            where: { id: userId },
+            select: { stripeConnectAccountId: true }
+        });
+        if (!user || !user.stripeConnectAccountId) {
+            res.status(400).json({
+                error: 'Você precisa vincular sua conta Stripe Connect para solicitar saques. Vá até a aba da Carteira e clique em Conectar.'
+            });
+            return;
+        }
         const influencer = await prisma_1.prisma.influencerProfile.findUnique({ where: { userId } });
         if (!influencer) {
             res.status(404).json({ error: 'Perfil não encontrado.' });
@@ -494,33 +537,48 @@ const requestWithdraw = async (req, res) => {
             });
             return;
         }
+        // Executa a transferência real na Stripe
+        const { stripe } = await Promise.resolve().then(() => __importStar(require('../lib/stripe')));
+        if (!stripe) {
+            res.status(500).json({ error: 'Serviço de saques/pagamentos indisponível.' });
+            return;
+        }
+        const transfer = await stripe.transfers.create({
+            amount: Math.round(withdrawAmount * 100), // Stripe trabalha com centavos
+            currency: 'brl',
+            destination: user.stripeConnectAccountId,
+            metadata: {
+                userId,
+                type: 'withdraw_payout',
+                influencerId: influencer.id
+            }
+        });
         // Registrar solicitação via notificação para auditoria
         await prisma_1.prisma.notification.create({
             data: {
                 userId,
-                message: `Solicitação de saque PIX: R$ ${withdrawAmount.toFixed(2)} para CPF ${cpfClean.substring(0, 3)}.***.***-${cpfClean.substring(9)}`,
+                message: `Saque de R$ ${withdrawAmount.toFixed(2)} efetuado com sucesso via Stripe Connect.`,
                 type: 'WITHDRAW_REQUEST',
                 metadata: JSON.stringify({
                     amount: withdrawAmount,
-                    cpf: cpfClean,
+                    stripeTransferId: transfer.id,
                     influencerId: influencer.id,
                     requestedAt: new Date().toISOString(),
-                    status: 'PROCESSING'
+                    status: 'COMPLETED'
                 })
             }
         });
         res.json({
             success: true,
-            message: 'Saque solicitado com sucesso! O PIX será processado em até 1 hora útil.',
+            message: 'Saque realizado com sucesso via Stripe Connect! O valor estará disponível em sua conta vinculada.',
             amount: withdrawAmount,
-            pixKey: `${cpfClean.substring(0, 3)}.${cpfClean.substring(3, 6)}.${cpfClean.substring(6, 9)}-${cpfClean.substring(9)}`,
-            estimatedTime: '< 1 hora',
+            transferId: transfer.id,
             availableBalance: (availableBalance - withdrawAmount).toFixed(2)
         });
     }
     catch (error) {
         console.error('[WITHDRAW] Erro ao processar saque:', error);
-        res.status(500).json({ error: 'Erro ao processar solicitação de saque.' });
+        res.status(500).json({ error: 'Erro ao processar solicitação de saque.', details: error.message });
     }
 };
 exports.requestWithdraw = requestWithdraw;
@@ -537,13 +595,28 @@ const getBalance = async (req, res) => {
             res.json({
                 availableBalance: 0,
                 completedContracts: 0,
-                currency: 'BRL'
+                currency: 'BRL',
+                transactions: [],
+                monthlyData: [
+                    { month: 'Jan', value: 0 },
+                    { month: 'Fev', value: 0 },
+                    { month: 'Mar', value: 0 },
+                    { month: 'Abr', value: 0 },
+                    { month: 'Mai', value: 0 },
+                    { month: 'Jun', value: 0 },
+                    { month: 'Jul', value: 0 },
+                    { month: 'Ago', value: 0 },
+                    { month: 'Set', value: 0 },
+                    { month: 'Out', value: 0 },
+                    { month: 'Nov', value: 0 },
+                    { month: 'Dez', value: 0 }
+                ]
             });
             return;
         }
         const completedContracts = await prisma_1.prisma.contract.findMany({
             where: { influencerId: influencer.id, escrowStatus: 'COMPLETED' },
-            select: { netAmount: true, budget: true, title: true }
+            select: { id: true, netAmount: true, budget: true, title: true, createdAt: true }
         });
         const totalEarned = completedContracts.reduce((acc, c) => {
             return acc + (c.netAmount || c.budget * 0.85);
@@ -551,15 +624,44 @@ const getBalance = async (req, res) => {
         // Calcular saques totais já feitos (não rejeitados e não cancelados)
         const withdrawNotifications = await prisma_1.prisma.notification.findMany({
             where: { userId, type: 'WITHDRAW_REQUEST' },
-            select: { metadata: true }
+            select: { id: true, createdAt: true, metadata: true, message: true }
         });
         let totalWithdrawn = 0;
+        const transactions = [];
+        // 1. Adicionar Contratos Concluídos como receitas
+        for (const c of completedContracts) {
+            const amount = Number(c.netAmount || c.budget * 0.85);
+            transactions.push({
+                id: `CTR-${c.id.substring(0, 4).toUpperCase()}`,
+                dateRaw: c.createdAt,
+                date: new Date(c.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }),
+                desc: c.title,
+                amount,
+                status: 'Concluído'
+            });
+        }
         for (const notif of withdrawNotifications) {
             if (notif.metadata) {
                 try {
                     const meta = JSON.parse(notif.metadata);
-                    if (meta && meta.amount && meta.status !== 'REJECTED' && meta.status !== 'CANCELLED') {
-                        totalWithdrawn += parseFloat(meta.amount);
+                    if (meta && meta.amount) {
+                        if (meta.status !== 'REJECTED' && meta.status !== 'CANCELLED') {
+                            totalWithdrawn += parseFloat(meta.amount);
+                        }
+                        const statusMap = {
+                            'PROCESSING': 'Processando',
+                            'COMPLETED': 'Processado',
+                            'REJECTED': 'Rejeitado',
+                            'CANCELLED': 'Cancelado'
+                        };
+                        transactions.push({
+                            id: `WD-${notif.id.substring(0, 4).toUpperCase()}`,
+                            dateRaw: notif.createdAt,
+                            date: new Date(notif.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }),
+                            desc: 'Saque PIX para Conta Pessoal',
+                            amount: -parseFloat(meta.amount),
+                            status: statusMap[meta.status] || 'Processado'
+                        });
                     }
                 }
                 catch (e) {
@@ -567,11 +669,28 @@ const getBalance = async (req, res) => {
                 }
             }
         }
+        // Ordenar transações por data decrescente
+        transactions.sort((a, b) => new Date(b.dateRaw).getTime() - new Date(a.dateRaw).getTime());
+        // Gerar faturamento mensal dinâmico com base nos contratos do ano corrente
+        const currentYear = new Date().getFullYear();
+        const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        const monthlyData = months.map(m => ({ month: m, value: 0 }));
+        for (const c of completedContracts) {
+            const date = new Date(c.createdAt);
+            if (date.getFullYear() === currentYear) {
+                const monthIndex = date.getMonth();
+                if (monthIndex >= 0 && monthIndex < 12) {
+                    monthlyData[monthIndex].value += Number(c.netAmount || c.budget * 0.85);
+                }
+            }
+        }
         const availableBalance = Math.max(0, totalEarned - totalWithdrawn);
         res.json({
             availableBalance: parseFloat(availableBalance.toFixed(2)),
             completedContracts: completedContracts.length,
-            currency: 'BRL'
+            currency: 'BRL',
+            transactions,
+            monthlyData
         });
     }
     catch (error) {

@@ -40,14 +40,23 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const routes_1 = require("./routes");
-// import './workers/notification.worker';
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 // Configuração de CORS Dinâmica para Multi-Domínio
 const allowedOriginsStr = process.env.ALLOWED_ORIGINS || 'http://localhost:3000,https://influnext.com.br,https://www.influnext.com.br,https://influnext.com,https://www.influnext.com';
 const ALLOWED_ORIGINS = allowedOriginsStr.split(',').map(origin => origin.trim());
 app.use((0, cors_1.default)({
-    origin: true, // Temporário: permite TUDO para diagnóstico
+    origin: (origin, callback) => {
+        // Permite requisições sem origem (como Postman, aplicativos móveis ou requisições locais de servidor para servidor)
+        if (!origin)
+            return callback(null, true);
+        if (ALLOWED_ORIGINS.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+            callback(null, true);
+        }
+        else {
+            callback(new Error('Bloqueado por CORS: Origem não permitida.'));
+        }
+    },
     credentials: true
 }));
 // Middleware de Analytics (Movido para ser carregado sob demanda)
@@ -57,6 +66,19 @@ app.use(express_1.default.json({ limit: '50mb' }));
 app.use(express_1.default.urlencoded({ limit: '50mb', extended: true }));
 app.use((req, res, next) => {
     console.log(`[REQUEST] ${req.method} ${req.url}`);
+    res.on('finish', () => {
+        if (res.statusCode === 404) {
+            try {
+                const fs = require('fs');
+                const path = require('path');
+                const logLine = `[404 ERROR] ${new Date().toISOString()} - ${req.method} ${req.url} - Headers: ${JSON.stringify(req.headers)}\n`;
+                fs.appendFileSync(path.join(__dirname, '../404-debug.log'), logLine);
+            }
+            catch (err) {
+                console.error('Failed to write 404 debug log:', err);
+            }
+        }
+    });
     next();
 });
 // Endpoint de Health Check (CRÍTICO para o Railway)
@@ -91,6 +113,21 @@ const startServer = async () => {
         // Garante que o administrador solicitado pelo usuário exista
         const { ensureAdminExists } = await Promise.resolve().then(() => __importStar(require('./lib/admin-init')));
         await ensureAdminExists();
+        // Inicializa workers e filas de background de forma assíncrona/defensiva
+        try {
+            console.log('🔄 Inicializando workers e crons de background...');
+            await Promise.resolve().then(() => __importStar(require('./workers/notification.worker')));
+            await Promise.resolve().then(() => __importStar(require('./workers/cleanup.worker')));
+            await Promise.resolve().then(() => __importStar(require('./workers/token-renewal.worker')));
+            const { addDailyCleanupJob } = await Promise.resolve().then(() => __importStar(require('./queues/cleanup.queue')));
+            const { addDailyTokenRenewalJob } = await Promise.resolve().then(() => __importStar(require('./queues/token-renewal.queue')));
+            await addDailyCleanupJob();
+            await addDailyTokenRenewalJob();
+            console.log('✅ Workers e crons de background ativos.');
+        }
+        catch (workerError) {
+            console.warn('⚠️ Falha ao inicializar workers em background (Redis offline?):', workerError);
+        }
         app.listen(PORT, () => {
             console.log(`🚀 INFLUNEXT ONLINE: Port ${PORT}`);
             console.log(`🌍 URL da API: https://api.influnext.com.br`);

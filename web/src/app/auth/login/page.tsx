@@ -63,8 +63,9 @@ export default function LoginPage() {
     Cookies.set('influnext_role', data.user.role, cookieOptions);
     Cookies.set('influnext_onboarding', data.user.onboardingCompleted ? 'true' : 'false', cookieOptions);
 
-    if (!data.user.onboardingCompleted && data.user.role === 'INFLUENCER') {
-      router.push('/onboarding');
+    if (!data.user.onboardingCompleted) {
+      if (data.user.role === 'INFLUENCER') router.push('/onboarding');
+      else if (data.user.role === 'COMPANY') router.push('/onboarding/company');
       return;
     }
 

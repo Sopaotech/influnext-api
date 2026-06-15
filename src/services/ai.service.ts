@@ -523,6 +523,83 @@ ${contractsContext}`;
   }
 
   /**
+   * Conversa em tempo real com o Mentor IA do INFLUNEXT para Empresas (Vektor).
+   */
+  static async chatWithBrandMentor(companyId: string, message: string): Promise<string> {
+    const apiKey = process.env.GEMINI_API_KEY;
+    
+    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
+      return `Como Vektor (Modo Offline), recebi sua mensagem: "${message}". Configure a GEMINI_API_KEY no backend para ativar a inteligência avançada.`;
+    }
+
+    try {
+      const [company, activeContracts] = await Promise.all([
+        prisma.companyProfile.findUnique({
+          where: { id: companyId },
+          select: { companyName: true, segment: true, campaignBudget: true, salesGoal: true, averageTicket: true, instagramPositioning: true }
+        }),
+        prisma.contract.findMany({
+          where: { 
+            companyId, 
+            escrowStatus: { in: ['IN_PROGRESS', 'PENDING_PAYMENT', 'UNDER_REVIEW'] } 
+          },
+          select: {
+            title: true,
+            budget: true,
+            escrowStatus: true
+          }
+        })
+      ]);
+
+      if (!company) throw new Error('Empresa não encontrada.');
+
+      let contractsContext = '';
+      if (activeContracts && activeContracts.length > 0) {
+        const escrowTotal = activeContracts.reduce((sum: number, c: any) => sum + Number(c.budget), 0);
+        contractsContext = `
+CAMPANHAS ATIVAS E VALORES EM ESCROW:
+${activeContracts.map((c: any) => `- Campanha "${c.title}": R$ ${c.budget} (Garantia Escrow: ${c.escrowStatus})`).join('\n')}
+Total alocado em Escrow seguro: R$ ${escrowTotal.toFixed(2)}.
+        `;
+      } else {
+        contractsContext = `
+O orçamento corporativo atual não possui contratos de Escrow ativos na plataforma.
+        `;
+      }
+
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+      const prompt = `Você é o VEKTOR, Estrategista-Chefe de Branding, Posicionamento de Marca e Otimização de ROI de Campanhas de Marketing de Influência na INFLUNEXT.
+Seu cliente é a empresa "${company.companyName}" do segmento "${company.segment || 'Geral'}".
+
+DADOS ESTRATÉGICOS DA EMPRESA:
+- Orçamento Planejado: ${company.campaignBudget || 'Não especificado'}
+- Meta Principal de Vendas/Marketing: ${company.salesGoal || 'Não especificada'}
+- Ticket Médio dos Produtos: ${company.averageTicket || 'Não especificado'}
+- Posicionamento Instagram Atual: ${company.instagramPositioning || 'Não avaliado'}
+
+A mensagem da empresa: "${message}".
+
+REGRAS DE OURO (SISTEMA VEKTOR):
+1. SEU NOME É VEKTOR. Apresente-se de forma direta, analítica, focada em números, ROI e consistência comercial.
+2. ORIENTAÇÃO DE ORÇAMENTO (SCALABILITY): Se a marca estiver insegura ou perguntar sobre quanto investir, guie-a sob a nossa filosofia: "Não é necessário gastar fortunas ou milhões de reais de uma vez. O importante é o crescimento escalonável e a consistência no posicionamento do produto." Diga que mais vale realizar campanhas menores e constantes de testes de ganchos do que gastar todo o orçamento de uma vez em um único influenciador grande.
+3. ANTI-PECHINCHA (ANTI-BARGAINING): Se a empresa reclamar de taxas ou do cachê de influenciadores, justifique cientificamente o valor do criador com base em seu InfluScore, taxa de retenção/engajamento e público-alvo qualificado regionalmente. Explique que o InfluNext garante que cada real pago é respaldado por dados reais auditados de engajamento, eliminando seguidores falsos, o que justifica o investimento e previne a perda de orçamento ("pechinchar preço atrai entregas fracas. Foquemos no ROI do cachê baseado no ticket médio de ${company.averageTicket}").
+4. ESTRUTURA DO PRODUTO: Sempre que a marca perguntar sobre o que postar ou ideias de campanhas para o seu produto, crie orientações completas: sugira ideias de ganchos de 3 segundos específicos para o produto, cases de marketing semelhantes se houver, posicionamento de marca ideal e o tipo de nicho de influenciador local a ser contratado no marketplace.
+5. DIRETO E EXECUTIVO: Fale com clareza executiva, profissional e focado em escala financeira ("Dark Premium"). Nada de autoajuda ou jargões corporativos vazios.
+
+${contractsContext}`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return response.text();
+    } catch (error: any) {
+      console.error('[AI BRAND CHAT] Erro ao conectar ao Gemini:', error);
+      throw new Error(`O mentor Vektor está indisponível: ${error.message || 'Erro de conexão'}`);
+    }
+  }
+
+  /**
    * Gera um briefing profissional para uma campanha.
    */
   static async generateCampaignBriefing(influencerHandle: string, campaignTitle: string): Promise<string> {
@@ -535,20 +612,18 @@ ${contractsContext}`;
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const prompt = `Você é um Consultor Estrategista e Especialista em Posicionamento de Marca, Planejamento de Pitch Comercial e Estruturação de Branding do INFLUNEXT.
+Sua tarefa é gerar um BRIEFING E PLANEJAMENTO DE POSICIONAMENTO DE MARCA profissional para a marca contratar o influenciador @${influencerHandle} para a campanha "${campaignTitle}".
 
-      const prompt = `Você é um Especialista em Marketing de Influência do INFLUNEXT.
-Sua tarefa é gerar um BRIEFING TÉCNICO E CRIATIVO para uma marca que deseja contratar o influenciador @${influencerHandle}.
-Título da Campanha: "${campaignTitle}".
+O planejamento deve conter:
+1. **Posicionamento Estratégico da Marca**: Como a marca deve se posicionar nesta campanha para atrair o público local/nicho do criador.
+2. **Diretrizes de Voice & Pitch**: Como estruturar o pitch de vendas e os primeiros 3 segundos (gancho) para prender a atenção e gerar desejo imediato, evitando que pareça uma publicidade barata.
+3. **Pilar de Branding & Mensagem-Chave**: 3 mensagens fundamentais de branding que devem ser integradas de forma natural e orgânica ao conteúdo do criador.
+4. **Instruções de Produção & Hook Visual**: Indicações claras de cenário, iluminação, dinâmica visual e CTA voltado para conversão.
+5. **Auditoria de Engajamento & ROI**: Sugestão de metas de engajamento e métricas a serem analisadas pós-campanha para garantir o retorno sobre o investimento.
 
-REGRAS DO BRIEFING:
-1. Seja direto, profissional e focado em ROI.
-2. Defina o tom de voz ideal para o criador.
-3. Sugira 3 pontos-chave que NÃO podem faltar na menção à marca.
-4. Defina diretrizes visuais rápidas (iluminação, cenário, hook inicial).
-5. O texto deve ser pronto para ser enviado ao criador.
-
-Responda apenas com o texto do briefing, formatado em Markdown simples.`;
-
+Seja direto, focado em alta conversão e ROI real, com formatação Markdown profissional e limpa, pronto para ser enviado ao criador ou lido pela equipe da marca.
+Responda apenas com o texto do briefing e planejamento, formatado em Markdown simples.`;
       const result = await model.generateContent(prompt);
       const response = await result.response;
       return response.text();

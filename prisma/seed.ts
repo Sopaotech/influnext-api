@@ -29,15 +29,15 @@ async function main() {
   const plans = [
     {
       id: 'plan_pro_influencer_1',
-      name: 'Plano Influencer Pro',
-      price: 97.00,
+      name: 'Plano Creator Premium',
+      price: 49.90,
       interval: 'month',
       externalId: process.env.STRIPE_PRICE_PRO || 'plan_pro_influencer_1',
     },
     {
       id: 'plan_brand_enterprise_1',
-      name: 'Plano Brand Enterprise',
-      price: 497.00,
+      name: 'Plano Agency / Co-Working',
+      price: 110.00,
       interval: 'month',
       externalId: process.env.STRIPE_PRICE_ENTERPRISE || 'plan_brand_enterprise_1',
     }

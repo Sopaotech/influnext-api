@@ -36,6 +36,10 @@ const FAQ = [
     a: 'No plano Free, cobramos 15% de comissão por transação. No plano Pro (R$ 49/mês), a comissão cai para 10%. No plano Master (R$ 149/mês), cai para 5%. Criamos essa progressão de escala para que influenciadores profissionais e agências retenham muito mais lucro à medida que faturam alto.' 
   },
   { 
+    q: 'Como o Mentor de IA Vektor ajuda marcas sem experiência em marketing?', 
+    a: 'O Vektor atua como um co-piloto estratégico de branding e ROI. Ele ajuda marcas iniciantes a entenderem que marketing de influência de sucesso não exige gastar milhões de uma vez, mas sim ter consistência, escala gradativa e foco claro no posicionamento do produto. Com o Vektor, você aprende a escolher e negociar com os influenciadores certos, obtendo muito mais alcance local e vendas reais gastando menos.'
+  },
+  { 
     q: 'Como funciona a proteção contra calotes no interior?', 
     a: 'Para comércios locais (clínicas, lojas e restaurantes), criamos o micro-escrow. A marca pode contratar campanhas de R$ 300 a R$ 1.500 com total segurança, garantindo que o dinheiro só saia do caixa quando o post local for entregue.' 
   },
@@ -67,6 +71,7 @@ export default function LandingPageClient() {
           <a href="#como-funciona" className="hover:text-white transition-colors">Como Funciona</a>
           <a href="#preview" className="hover:text-white transition-colors">Visualizar Painel</a>
           <a href="#problema" className="hover:text-white transition-colors">O Problema</a>
+          <a href="#planos" className="hover:text-white transition-colors">Planos & Preços</a>
         </div>
         
         {/* Right controls */}
@@ -75,7 +80,7 @@ export default function LandingPageClient() {
             Entrar
           </Link>
           
-          <Link href="/auth/signup?type=influencer" className="text-[10px] font-black uppercase tracking-widest bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-500 hover:to-pink-500 text-white px-5 py-2.5 rounded-full transition-all shadow-lg shadow-violet-600/20">
+          <Link href="/auth/signup?type=influencer" className="text-[10px] font-black uppercase tracking-widest bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-5 py-2.5 rounded-full transition-all shadow-lg shadow-purple-600/20">
             Cadastrar
           </Link>
         </div>
@@ -84,14 +89,14 @@ export default function LandingPageClient() {
       {/* HERO */}
       <section className="relative w-full min-h-[95vh] flex flex-col items-center justify-center text-center px-6 pt-12 pb-24 overflow-hidden">
         {/* bg glows */}
-        <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full bg-violet-600/10 blur-[120px] pointer-events-none" />
+        <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full bg-purple-600/10 blur-[120px] pointer-events-none" />
         <div className="absolute bottom-0 left-[20%] w-[500px] h-[400px] rounded-full bg-pink-600/8 blur-[100px] pointer-events-none" />
 
         <div className="relative z-10 flex flex-col items-center max-w-5xl">
           <Logo size="xxl" href={null} variant="light" />
           <h1 className="text-xl sm:text-4xl md:text-7xl font-black tracking-tighter leading-[1.0] md:leading-[0.95] mt-8 mb-6 max-w-4xl">
             Para influenciadores que geram vendas<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-400 to-pink-400">Para marcas que buscam retorno</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-500">Para marcas que buscam retorno</span>
           </h1>
           
           <p className="text-zinc-200 text-base md:text-lg max-w-3xl leading-relaxed mb-10">
@@ -101,12 +106,12 @@ export default function LandingPageClient() {
           {/* Crucial Benefits Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mt-20 pt-10 border-t border-white/5 w-full max-w-5xl relative z-10">
             {/* Benefício 1: Gestão de Carreira */}
-            <div className="flex flex-col items-center md:items-start text-center md:text-left p-6 rounded-2xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.02] hover:border-violet-500/20 transition-all duration-300 gap-3">
-              <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
+            <div className="flex flex-col items-center md:items-start text-center md:text-left p-6 rounded-2xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.02] hover:border-purple-500/20 transition-all duration-300 gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
                 <Brain className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[9px] font-black text-violet-400 uppercase tracking-widest mb-1">Criadores & Marcas</p>
+                <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-1">Criadores & Marcas</p>
                 <h4 className="text-sm font-bold text-white mb-2">Carreira & Rotina por IA</h4>
                 <p className="text-zinc-400 text-xs leading-relaxed font-bold">
                   Nossa IA organiza a rotina do criador e gera roteiros locais virais, garantindo à marca postagens consistentes e alinhadas ao cronograma.
@@ -148,15 +153,15 @@ export default function LandingPageClient() {
       {/* MOCKUP PREVIEW - Finance */}
       <section id="preview" className="relative w-full max-w-6xl mx-auto px-6 py-20">
          <div className="text-center mb-12">
-            <p className="text-violet-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">✦ Controle Total</p>
-            <h2 className="text-xl sm:text-3xl md:text-5xl font-black tracking-tighter leading-[1.05] md:leading-[0.95]">Campanhas, contratos e pagamentos<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-pink-400">Tudo em uma única tela</span></h2>
+            <p className="text-purple-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">✦ Controle Total</p>
+            <h2 className="text-xl sm:text-3xl md:text-5xl font-black tracking-tighter leading-[1.05] md:leading-[0.95]">Controle financeiro e contratos inteligentes<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Gerencie tudo em uma única tela segura</span></h2>
             <p className="text-zinc-300 text-xs mt-4 max-w-xl mx-auto leading-relaxed">
                Acompanhe suas parcerias do início ao fim, controle prazos de entrega e garanta o recebimento seguro via Escrow sem burocracia.
             </p>
          </div>
 
          {/* Dashboard Window Chrome Mockup - Finance */}
-         <div className="border border-white/10 rounded-[2rem] bg-black/40 overflow-hidden shadow-2xl relative shadow-violet-900/10">
+         <div className="border border-white/10 rounded-[2rem] bg-black/40 overflow-hidden shadow-2xl relative shadow-purple-900/10">
             {/* Header chrome buttons */}
             <div className="h-12 border-b border-white/5 px-6 flex items-center justify-between bg-zinc-950/60">
                <div className="flex gap-2">
@@ -252,7 +257,7 @@ export default function LandingPageClient() {
       <section id="preview-ai" className="relative w-full max-w-6xl mx-auto px-6 pb-20">
          <div className="text-center mb-12">
             <p className="text-purple-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">✦ Inteligência & Consistência</p>
-            <h2 className="text-xl sm:text-3xl md:text-5xl font-black tracking-tighter leading-[1.05] md:leading-[0.95]">Consistência algorítmica com inteligência artificial<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Monetize cada publicação com ganchos validados</span></h2>
+            <h2 className="text-xl sm:text-3xl md:text-5xl font-black tracking-tighter leading-[1.05] md:leading-[0.95]">Consistência e roteiros guiados por IA<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Crie publicações de alto engajamento em segundos</span></h2>
             <p className="text-zinc-300 text-xs mt-4 max-w-xl mx-auto leading-relaxed">
                Receba orientações personalizadas por IA para seu nicho e mantenha a disciplina através de um calendário projetado para transformar visualizações em conversão de vendas.
             </p>
@@ -305,70 +310,70 @@ export default function LandingPageClient() {
                            <span className="text-zinc-400">Gancho Viral (Hook)</span>
                            <span className="font-bold text-white">"3 Looks que parecem caros..."</span>
                         </div>
-                     </div>
-                  </div>
-               </div>
+                      </div>
+                   </div>
+                </div>
 
-               {/* Center/Right Column: Habits, Motivation & Task Calendar */}
-               <div className="p-6 rounded-3xl border border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent flex flex-col justify-between gap-6 md:col-span-2">
-                  <div className="space-y-4">
-                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                           <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center text-white">
-                              <Calendar size={18} className="text-purple-400" />
-                           </div>
-                           <div>
-                              <p className="text-[8px] font-black text-zinc-350 uppercase tracking-widest">Rotina e Hábitos</p>
-                              <p className="text-sm font-bold text-white">Calendário de Hábitos do Criador</p>
-                           </div>
-                        </div>
-                        <div className="text-right">
-                           <span className="text-[9px] bg-purple-500/10 text-purple-400 font-bold px-3 py-1 rounded-full uppercase tracking-wider">Força do Hábito: 85%</span>
-                        </div>
-                     </div>
+                {/* Center/Right Column: Habits, Motivation & Task Calendar */}
+                <div className="p-6 rounded-3xl border border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent flex flex-col justify-between gap-6 md:col-span-2">
+                   <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                         <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center text-white">
+                               <Calendar size={18} className="text-purple-400" />
+                            </div>
+                            <div>
+                               <p className="text-[8px] font-black text-zinc-350 uppercase tracking-widest">Rotina e Hábitos</p>
+                               <p className="text-sm font-bold text-white">Calendário de Hábitos do Criador</p>
+                            </div>
+                         </div>
+                         <div className="text-right">
+                            <span className="text-[9px] bg-purple-500/10 text-purple-400 font-bold px-3 py-1 rounded-full uppercase tracking-wider">Força do Hábito: 85%</span>
+                         </div>
+                      </div>
 
-                     {/* Calendar Habits List */}
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="p-4 rounded-2xl bg-zinc-950/85 border border-white/5 flex items-center justify-between">
-                           <div>
-                              <p className="text-[9px] text-zinc-400 font-black uppercase">Segunda-feira</p>
-                              <p className="text-xs font-bold text-white mt-0.5">Postar 3 Stories</p>
-                           </div>
-                           <span className="text-[8px] bg-emerald-500/10 text-emerald-400 font-bold px-2 py-0.5 rounded">Feito</span>
-                        </div>
+                      {/* Calendar Habits List */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                         <div className="p-4 rounded-2xl bg-zinc-950/85 border border-white/5 flex items-center justify-between">
+                            <div>
+                               <p className="text-[9px] text-zinc-400 font-black uppercase">Segunda-feira</p>
+                               <p className="text-xs font-bold text-white mt-0.5">Postar 3 Stories</p>
+                            </div>
+                            <span className="text-[8px] bg-emerald-500/10 text-emerald-400 font-bold px-2 py-0.5 rounded">Feito</span>
+                         </div>
 
-                        <div className="p-4 rounded-2xl bg-zinc-950/85 border border-white/5 flex items-center justify-between">
-                           <div>
-                              <p className="text-[9px] text-zinc-400 font-black uppercase">Terça-feira</p>
-                              <p className="text-xs font-bold text-white mt-0.5">Gravar 2 Reels</p>
-                           </div>
-                           <span className="text-[8px] bg-emerald-500/10 text-emerald-400 font-bold px-2 py-0.5 rounded">Feito</span>
-                        </div>
+                         <div className="p-4 rounded-2xl bg-zinc-950/85 border border-white/5 flex items-center justify-between">
+                            <div>
+                               <p className="text-[9px] text-zinc-400 font-black uppercase">Terça-feira</p>
+                               <p className="text-xs font-bold text-white mt-0.5">Gravar 2 Reels</p>
+                            </div>
+                            <span className="text-[8px] bg-emerald-500/10 text-emerald-400 font-bold px-2 py-0.5 rounded">Feito</span>
+                         </div>
 
-                        <div className="p-4 rounded-2xl bg-zinc-950/85 border border-purple-500/30 bg-purple-500/5 flex items-center justify-between animate-pulse">
-                           <div>
-                              <p className="text-[9px] text-purple-400 font-black uppercase">Quarta-feira (Hoje)</p>
-                              <p className="text-xs font-bold text-white mt-0.5">Publicar Reels de Outono</p>
-                           </div>
-                           <span className="text-[8px] bg-yellow-500/10 text-yellow-500 font-bold px-2 py-0.5 rounded">Agendado</span>
-                        </div>
+                         <div className="p-4 rounded-2xl bg-zinc-950/85 border border-purple-500/30 bg-purple-500/5 flex items-center justify-between animate-pulse">
+                            <div>
+                               <p className="text-[9px] text-purple-400 font-black uppercase">Quarta-feira (Hoje)</p>
+                               <p className="text-xs font-bold text-white mt-0.5">Publicar Reels de Outono</p>
+                            </div>
+                            <span className="text-[8px] bg-purple-500/10 text-purple-400 font-bold px-2 py-0.5 rounded">Agendado</span>
+                         </div>
 
-                        <div className="p-4 rounded-2xl bg-zinc-950/40 border border-white/5 flex items-center justify-between opacity-50">
-                           <div>
-                              <p className="text-[9px] text-zinc-400 font-black uppercase">Quinta-feira</p>
-                              <p className="text-xs font-bold text-white mt-0.5">Responder Directs</p>
-                           </div>
-                           <span className="text-[8px] bg-zinc-800 text-zinc-400 font-bold px-2 py-0.5 rounded">Pendente</span>
-                        </div>
-                     </div>
-                  </div>
+                         <div className="p-4 rounded-2xl bg-zinc-950/40 border border-white/5 flex items-center justify-between opacity-50">
+                            <div>
+                               <p className="text-[9px] text-zinc-400 font-black uppercase">Quinta-feira</p>
+                               <p className="text-xs font-bold text-white mt-0.5">Responder Directs</p>
+                            </div>
+                            <span className="text-[8px] bg-zinc-800 text-zinc-400 font-bold px-2 py-0.5 rounded">Pendente</span>
+                         </div>
+                      </div>
+                   </div>
 
-                  {/* Motivation Bar */}
-                  <div className="border-t border-white/5 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[10px] text-zinc-350">
-                     <p className="font-bold text-white">🔥 Meta Semanal: 4/5 tarefas concluídas. Você está focado!</p>
-                     <span className="font-bold text-purple-400 uppercase tracking-widest">Ver Painel Completo</span>
-                  </div>
-               </div>
+                   {/* Motivation Bar */}
+                   <div className="border-t border-white/5 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[10px] text-zinc-350">
+                      <p className="font-bold text-white">🔥 Meta Semanal: 4/5 tarefas concluídas. Você está focado!</p>
+                      <span className="font-bold text-purple-400 uppercase tracking-widest">Ver Painel Completo</span>
+                   </div>
+                </div>
             </div>
          </div>
       </section>
@@ -376,8 +381,8 @@ export default function LandingPageClient() {
       {/* MOCKUP PREVIEW 3 (Chat com o Mentor por IA) */}
       <section id="preview-chat" className="relative w-full max-w-6xl mx-auto px-6 pb-20">
          <div className="text-center mb-12">
-            <p className="text-pink-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">✦ Interatividade em Tempo Real</p>
-            <h2 className="text-xl sm:text-3xl md:text-5xl font-black tracking-tighter leading-[1.05] md:leading-[0.95]">Conversa com o Mentor de IA<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-violet-400">Roteiros rápidos e controle de cash flow</span></h2>
+            <p className="text-purple-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">✦ Interatividade em Tempo Real</p>
+            <h2 className="text-xl sm:text-3xl md:text-5xl font-black tracking-tighter leading-[1.05] md:leading-[0.95]">Mentoria inteligente em tempo real<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">Obtenha ganchos de alta conversão para seus posts</span></h2>
             <p className="text-zinc-300 text-xs mt-4 max-w-xl mx-auto leading-relaxed">
                Veja como o seu Mentor de IA (Kowalski) acompanha seu fluxo de caixa de contratos e cria ganchos prontos para suas publicações.
             </p>
@@ -387,31 +392,214 @@ export default function LandingPageClient() {
          <InteractiveChatPreview />
       </section>
 
-      {/* O PROBLEMA (Foco na dor do influenciador local e desintermediação) */}
+      {/* O PROBLEMA (Foco na dor do influenciador local e marcas locais) */}
       <section id="problema" className="w-full max-w-7xl mx-auto px-6 lg:px-16 py-20">
         <div className="border border-red-500/10 bg-red-500/5 rounded-[3rem] p-8 md:p-14">
           <p className="text-red-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">⚠ A dura realidade que ninguém te conta</p>
           <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-10 leading-tight">
-            Se você está no interior ou é micro-influenciador,<br />
-            <span className="text-red-400">você é explorado.</span>
+            Relações informais geram desperdício e calotes.<br />
+            <span className="text-red-400">Dê um fim às permutas vazias e parcerias sem garantia.</span>
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[
-              'Micro-influenciadores locais com 5.000 seguidores hiper-engajados trabalhando por "permuta de lanche" enquanto marcas faturam em cima do seu alcance.',
-              'Contratos fechados via WhatsApp que viram calote. Sem garantia jurídica, você Houston, produz, posta e torce para a marca pagar.',
-              'Marcas locais que têm medo de contratar publicidade porque não confiam se o influenciador realmente vai postar nas datas corretas.',
-              'Ausência completa de relatórios profissionais: sem saber ROI ou retenção, você não consegue cobrar o valor justo pelo seu trabalho.',
-            ].map((pain, i) => (
-              <div key={i} className="flex items-start gap-4 p-6 bg-white/[0.01] border border-red-500/10 rounded-2xl">
-                <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-zinc-100 font-medium leading-relaxed">{pain}</p>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* LADO DO CRIADOR */}
+            <div className="bg-black/40 border border-red-900/30 rounded-[2rem] p-8 space-y-6">
+              <h3 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                Lado do Criador (Creators)
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-start gap-4 p-5 bg-white/[0.01] border border-red-500/5 rounded-2xl">
+                  <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-xs font-black text-red-400 uppercase tracking-widest mb-1">Permutas Sem Valor</h4>
+                    <p className="text-xs text-zinc-300 leading-relaxed font-bold">
+                      Micro-influenciadores trabalhando em troca de "recebidos e lanches" gratuitos, enquanto marcas lucram em cima do seu engajamento hiper-local.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4 p-5 bg-white/[0.01] border border-red-500/5 rounded-2xl">
+                  <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-xs font-black text-red-400 uppercase tracking-widest mb-1">WhatsApp & Calote</h4>
+                    <p className="text-xs text-zinc-300 leading-relaxed font-bold">
+                      Parcerias fechadas na base da palavra que somem na hora do pagamento. Você produz, posta, entrega alcance e fica sem receber o cachê.
+                    </p>
+                  </div>
+                </div>
               </div>
-            ))}
+            </div>
+
+            {/* LADO DA EMPRESA */}
+            <div className="bg-black/40 border border-pink-900/30 rounded-[2rem] p-8 space-y-6">
+              <h3 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-pink-500"></span>
+                Lado da Empresa (Brands)
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-start gap-4 p-5 bg-white/[0.01] border border-pink-500/5 rounded-2xl">
+                  <XCircle className="w-5 h-5 text-pink-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-xs font-black text-pink-400 uppercase tracking-widest mb-1">Seguidores Falsos & Fraude</h4>
+                    <p className="text-xs text-zinc-300 leading-relaxed font-bold">
+                      Dinheiro jogado fora com influenciadores inflados que compram seguidores falsos e não geram uma única venda real no seu comércio local.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4 p-5 bg-white/[0.01] border border-pink-500/5 rounded-2xl">
+                  <XCircle className="w-5 h-5 text-pink-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-xs font-black text-pink-400 uppercase tracking-widest mb-1">Atraso & Falta de ROI</h4>
+                    <p className="text-xs text-zinc-300 leading-relaxed font-bold">
+                      Impossibilidade de medir o retorno financeiro da campanha e falta de comprometimento dos criadores com prazos e briefings acordados.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+
           <div className="mt-8 pt-8 border-t border-red-500/10 text-center">
-             <p className="text-zinc-200 text-sm">
-                A InfluNext profissionaliza essa relação. Conectamos criadores locais a marcas locais sob um ecossistema de **segurança contratual mútua**.
+             <p className="text-zinc-200 text-xs font-bold leading-relaxed">
+                A InfluNext profissionaliza essa relação bilateral. Conectamos criadores locais a marcas locais sob um ecossistema com **pagamento em Escrow seguro**, garantindo que o criador receba e que a marca receba a postagem exata auditada.
              </p>
+          </div>
+        </div>
+      </section>
+
+      {/* SEÇÃO DE PLANOS & PREÇOS */}
+      <section id="planos" className="w-full max-w-7xl mx-auto px-6 lg:px-16 py-20 relative overflow-hidden">
+        {/* bg glows */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-purple-600/5 blur-[120px] pointer-events-none" />
+
+        <div className="text-center mb-16 relative z-10">
+          <p className="text-purple-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">✦ Transparência Total</p>
+          <h2 className="text-xl sm:text-3xl md:text-5xl font-black tracking-tighter leading-[1.05] md:leading-[0.95] mb-4">
+            Escolha o plano ideal para a sua<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">escala de faturamento</span>
+          </h2>
+          <p className="text-zinc-400 text-xs max-w-xl mx-auto leading-relaxed">
+            Dê risco zero à sua carreira. Comece sem custo fixo e faça o upgrade conforme suas campanhas crescem e seu faturamento aumenta.
+          </p>
+        </div>
+
+        {/* Pricing Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10 max-w-4xl mx-auto items-stretch">
+          
+          {/* Card 1: Creator Premium */}
+          <div className="border border-purple-500/20 bg-gradient-to-b from-purple-950/10 to-transparent hover:border-purple-500/40 rounded-[2.5rem] p-10 flex flex-col justify-between transition-all duration-300 shadow-xl relative group">
+            {/* Tag popular */}
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-600 to-pink-600 border border-purple-400/20 text-white text-[8px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full shadow-lg">
+              Recomendado para Criadores
+            </div>
+
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <span className="text-purple-400 text-[9px] font-black uppercase tracking-widest">Elite Creator</span>
+                <h3 className="text-2xl font-black text-white">Creator Premium</h3>
+                <p className="text-zinc-400 text-xs leading-relaxed font-bold">O plano definitivo para o Creator profissional gerenciar sua carreira e faturar alto em dinheiro real.</p>
+              </div>
+
+              <div className="py-4 border-y border-white/5 space-y-1">
+                <span className="text-sm font-bold text-purple-400">R$</span>
+                <span className="text-5xl font-black text-white tracking-tighter">49,90</span>
+                <span className="text-zinc-500 text-[10px] font-bold block uppercase tracking-wider">Por mês</span>
+              </div>
+
+              <ul className="space-y-3.5 text-xs text-zinc-300 font-medium">
+                <li className="flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                  <span>**Taxa de campanha reduzida para 5%** (mais lucro líquido)</span>
+                </li>
+                <li className="flex items-center gap-3 font-bold text-white">
+                  <CheckCircle2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                  <span>Mentor de IA Vincenzo **Ilimitado + Gerador de Roteiros**</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                  <span>Contas e redes sociais **ilimitadas** (Instagram, TikTok, YouTube)</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                  <span>Contratos e Escrows ativos **ilimitados** em andamento</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                  <span>Selo **&ldquo;Verificado PRO&rdquo;** e destaque máximo no topo das buscas</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="pt-8">
+              <Link href="/auth/signup?type=influencer" className="block w-full text-center bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-purple-600/20 active:scale-95">
+                Escolher Plano Creator Premium
+              </Link>
+            </div>
+          </div>
+
+          {/* Card 2: Brand Agency */}
+          <div className="border border-pink-500/20 bg-gradient-to-b from-pink-950/10 to-transparent hover:border-pink-500/40 rounded-[2.5rem] p-10 flex flex-col justify-between transition-all duration-300 shadow-xl relative group">
+            {/* Tag popular */}
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-600 to-purple-600 border border-pink-400/20 text-white text-[8px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full shadow-lg">
+              Recomendado para Empresas
+            </div>
+
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <span className="text-pink-400 text-[9px] font-black uppercase tracking-widest">Enterprise Partner</span>
+                <h3 className="text-2xl font-black text-white">Brand Agency</h3>
+                <p className="text-zinc-400 text-xs leading-relaxed font-bold">A central de inteligência para marcas e agências gerenciarem criadores locais com ROI auditado.</p>
+              </div>
+
+              <div className="py-4 border-y border-white/5 space-y-1">
+                <span className="text-sm font-bold text-pink-400">R$</span>
+                <span className="text-5xl font-black text-white tracking-tighter">110,00</span>
+                <span className="text-zinc-500 text-[10px] font-bold block uppercase tracking-wider">Por mês</span>
+              </div>
+
+              <ul className="space-y-3.5 text-xs text-zinc-300 font-medium">
+                <li className="flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-pink-400 flex-shrink-0" />
+                  <span>**Taxa de Escrow reduzida para 10%** em todas as campanhas</span>
+                </li>
+                <li className="flex items-center gap-3 font-bold text-white">
+                  <CheckCircle2 className="w-4 h-4 text-pink-400 flex-shrink-0" />
+                  <span>**Mentor de IA Vektor** (Consistência, escala e posicionamento sem gastar fortunas)</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-pink-400 flex-shrink-0" />
+                  <span>**Campanhas e contratos ativos ilimitados**</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-pink-400 flex-shrink-0" />
+                  <span>Painel Co-working para múltiplos usuários admins</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-pink-400 flex-shrink-0" />
+                  <span>Relatórios avançados de ROI, métricas de público e conversão</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="pt-8">
+              <Link href="/auth/signup?type=company" className="block w-full text-center bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-505 text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-pink-600/20 active:scale-95">
+                Escolher Plano Brand Agency
+              </Link>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Bilateral Free Tiers info note */}
+        <div className="mt-12 max-w-3xl mx-auto bg-zinc-950/40 border border-white/5 rounded-3xl p-6 text-center text-xs text-zinc-450 leading-relaxed font-bold relative z-10">
+          💡 <strong>Planos Gratuitos (Free Tiers) disponíveis para ambos os lados:</strong>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 text-left text-zinc-400 font-medium">
+            <div className="p-3 bg-white/[0.01] rounded-2xl border border-white/5">
+              🚀 <strong>Criadores Free (R$ 0):</strong> Taxa de 15% por campanha, 1 conta conectada (Instagram), 1 contrato ativo por vez e Vincenzo IA básico.
+            </div>
+            <div className="p-3 bg-white/[0.01] rounded-2xl border border-white/5">
+              🏢 <strong>Marcas Free (R$ 0):</strong> Taxa operacional de Escrow de 15% sobre o orçamento, briefings básicos e limite de 3 contratos ativos simultâneos.
+            </div>
           </div>
         </div>
       </section>
@@ -419,7 +607,7 @@ export default function LandingPageClient() {
       {/* FAQ */}
       <section id="faq" className="w-full max-w-4xl mx-auto px-6 lg:px-16 py-20">
         <div className="text-center mb-16">
-          <p className="text-violet-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">Dúvidas</p>
+          <p className="text-purple-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">Dúvidas</p>
           <h2 className="text-4xl font-black tracking-tight">Perguntas frequentes.</h2>
         </div>
         <div className="space-y-3">
@@ -439,19 +627,19 @@ export default function LandingPageClient() {
 
       {/* CTA FINAL */}
       <section className="w-full max-w-7xl mx-auto px-6 lg:px-16 py-12 pb-28">
-        <div className="relative rounded-[3rem] overflow-hidden bg-gradient-to-br from-violet-900/80 via-[#0a0a1a] to-pink-900/40 border border-violet-500/20 p-12 md:p-24 text-center">
-          <div className="absolute inset-0 bg-gradient-to-t from-violet-600/5 to-transparent" />
+        <div className="relative rounded-[3rem] overflow-hidden bg-gradient-to-br from-purple-950/80 via-[#0a0a0e] to-pink-950/40 border border-purple-500/20 p-12 md:p-24 text-center">
+          <div className="absolute inset-0 bg-gradient-to-t from-purple-600/5 to-transparent" />
           <div className="relative z-10 space-y-8 max-w-4xl mx-auto">
-            <p className="text-violet-400 text-[10px] font-black uppercase tracking-[0.3em]">Pronto para profissionalizar sua carreira?</p>
+            <p className="text-purple-400 text-[10px] font-black uppercase tracking-[0.3em]">Pronto para profissionalizar sua carreira?</p>
             <h2 className="text-xl sm:text-4xl md:text-7xl font-black tracking-tighter leading-[1.0] md:leading-[0.95]">
-              Transforme sua influência em um negócio<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-pink-400">Mais contratos, zero estresse e cachê garantido</span>
+              Profissionalize suas parcerias e feche acordos reais<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Mais previsibilidade, zero calotes e recebimento garantido</span>
             </h2>
             <p className="text-zinc-200 text-base md:text-lg max-w-3xl mx-auto">
-              Crie sua conta em segundos e junte-se ao ecossistema que está transformando a influência local. Profissionalize sua rotina com inteligência artificial, garanta recebimentos sem atritos e entregue resultados reais de vendas.
+               Crie sua conta em segundos e junte-se ao ecossistema que está transformando a influência local. Profissionalize sua rotina com inteligência artificial, garanta recebimentos sem atritos e entregue resultados reais de vendas.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-              <Link href="/auth/signup?type=influencer" className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-500 hover:to-pink-500 text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-wider transition-all shadow-2xl shadow-violet-600/30 hover:scale-[1.03] active:scale-95">
+              <Link href="/auth/signup?type=influencer" className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-12 py-5 rounded-2xl font-black text-sm uppercase tracking-wider transition-all shadow-2xl shadow-purple-600/30 hover:scale-[1.03] active:scale-95">
                 Criar conta grátis <ArrowRight className="w-5 h-5" />
               </Link>
               <Link href="/auth/login" className="inline-flex items-center justify-center border border-white/10 hover:bg-white/5 text-white px-12 py-5 rounded-2xl font-bold text-sm uppercase tracking-wider transition-all">
@@ -470,9 +658,9 @@ export default function LandingPageClient() {
             <p className="text-zinc-400 text-[11px]">© 2026 InfluNext. Todos os direitos reservados.</p>
           </div>
           <div className="flex gap-8 text-[10px] text-zinc-300 font-bold uppercase tracking-widest">
-            <Link href="/auth/login" className="hover:text-violet-400 transition-colors">Entrar</Link>
-            <Link href="/auth/signup" className="hover:text-violet-400 transition-colors">Cadastrar</Link>
-            <Link href="/dashboard/marketplace" className="hover:text-violet-400 transition-colors">Marketplace</Link>
+            <Link href="/auth/login" className="hover:text-purple-400 transition-colors">Entrar</Link>
+            <Link href="/auth/signup" className="hover:text-purple-400 transition-colors">Cadastrar</Link>
+            <Link href="/dashboard/marketplace" className="hover:text-purple-400 transition-colors">Marketplace</Link>
           </div>
           <div className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/5 bg-white/[0.02] text-[9px] font-black text-zinc-500 tracking-wider">
             🛡️ ESCROW SEGURO · IA BRASILEIRA · FEITO NO BRASIL

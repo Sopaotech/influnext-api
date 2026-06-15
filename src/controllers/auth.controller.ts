@@ -145,12 +145,15 @@ export const completeProfile = async (req: Request, res: Response): Promise<void
 
     } else if (role === 'COMPANY') {
       const schema = z.object({
-        companyName:    z.string().min(2, 'Nome da empresa obrigatório.'),
-        city:           z.string().optional(),
-        state:          z.string().max(2).optional(),
-        segment:        z.string().optional(),
-        employeeCount:  z.string().optional(),
-        campaignBudget: z.string().optional(),
+        companyName:          z.string().min(2, 'Nome da empresa obrigatório.'),
+        city:                 z.string().optional(),
+        state:                z.string().max(2).optional(),
+        segment:              z.string().optional(),
+        employeeCount:        z.string().optional(),
+        campaignBudget:       z.string().optional(),
+        salesGoal:            z.string().optional(),
+        averageTicket:        z.string().optional(),
+        instagramPositioning: z.string().optional(),
       });
 
       const parsed = schema.safeParse(req.body);
@@ -170,13 +173,16 @@ export const completeProfile = async (req: Request, res: Response): Promise<void
       const profile = await prisma.companyProfile.create({
         data: {
           userId,
-          companyName:    parsed.data.companyName,
+          companyName:          parsed.data.companyName,
           taxId,
-          city:           parsed.data.city,
-          state:          parsed.data.state,
-          segment:        parsed.data.segment,
-          employeeCount:  parsed.data.employeeCount,
-          campaignBudget: parsed.data.campaignBudget,
+          city:                 parsed.data.city,
+          state:                parsed.data.state,
+          segment:              parsed.data.segment,
+          employeeCount:        parsed.data.employeeCount,
+          campaignBudget:       parsed.data.campaignBudget,
+          salesGoal:            parsed.data.salesGoal,
+          averageTicket:        parsed.data.averageTicket,
+          instagramPositioning: parsed.data.instagramPositioning,
         },
       });
 

@@ -32,6 +32,7 @@ routes.use('/dashboard', dashboard_routes_1.default);
 routes.use('/admin', admin_routes_1.default);
 routes.use('/p', public_routes_1.default);
 routes.use('/influencers', influencer_routes_1.default);
+routes.use('/influencer', influencer_routes_1.default);
 routes.use('/ai', ai_routes_1.default);
 routes.use('/payments', payment_routes_1.default);
 routes.use('/webhooks', webhook_routes_1.default);

@@ -39,6 +39,38 @@ export const createContract = async (req: Request, res: Response): Promise<void>
       return;
     }
 
+    const company = await prisma.companyProfile.findUnique({ 
+      where: { userId },
+      include: { user: { select: { subscriptionTier: true, subscriptionStatus: true } } }
+    });
+
+    if (!company) {
+      res.status(403).json({ error: "Perfil de empresa não encontrado." });
+      return;
+    }
+
+    // Enforce 3 active contracts limit for Free brands
+    const brandTier = company.user?.subscriptionTier || 'FREE';
+    const brandStatus = company.user?.subscriptionStatus || 'INACTIVE';
+    const isBrandFree = !(brandTier === 'ENTERPRISE' && brandStatus === 'ACTIVE');
+
+    if (isBrandFree) {
+      const activeContractsCount = await prisma.contract.count({
+        where: {
+          companyId: company.id,
+          escrowStatus: { in: ['PENDING_PAYMENT', 'IN_PROGRESS', 'UNDER_REVIEW'] }
+        }
+      });
+
+      if (activeContractsCount >= 3) {
+        res.status(403).json({ 
+          error: "limit_reached",
+          message: "Você atingiu o limite máximo de 3 contratos ativos em andamento no plano gratuito. Para criar contratos ilimitados e ter taxa de intermediação de Escrow zerada (0%), faça o upgrade do seu perfil para o plano Agency! 🚀" 
+        });
+        return;
+      }
+    }
+
     const parsed = createContractSchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ errors: parsed.error.flatten().fieldErrors });
@@ -79,12 +111,6 @@ export const createContract = async (req: Request, res: Response): Promise<void>
     const platformFee = budget * successFeeRate;
     const netAmount   = budget - platformFee;
     // ────────────────────────────────────────────────────────────────────────
-
-    const company = await prisma.companyProfile.findUnique({ where: { userId } });
-    if (!company) {
-      res.status(403).json({ error: "Perfil de empresa não encontrado." });
-      return;
-    }
 
     const result = await prisma.$transaction(async (tx) => {
       const contract = await tx.contract.create({
@@ -422,5 +448,120 @@ export const updateContractScript = async (req: Request, res: Response): Promise
   } catch (error) {
     console.error('[CONTRACT] Erro ao atualizar roteiro:', error);
     res.status(500).json({ error: "Erro ao atualizar roteiro." });
+  }
+};
+
+export const cancelAndRefundContract = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    const { id } = req.params;
+
+    // Apenas ADMIN ou a COMPANY dona do contrato podem cancelar
+    if (userRole !== UserRole.COMPANY && userRole !== UserRole.ADMIN) {
+      res.status(403).json({ error: "Apenas empresas ou admins podem cancelar contratos." });
+      return;
+    }
+
+    const contract = await prisma.contract.findUnique({
+      where: { id },
+      include: { company: true, influencer: { include: { user: true } } }
+    });
+
+    if (!contract) {
+      res.status(404).json({ error: "Contrato não encontrado." });
+      return;
+    }
+
+    if (userRole === UserRole.COMPANY) {
+      const company = await prisma.companyProfile.findUnique({ where: { userId } });
+      if (!company || company.id !== contract.companyId) {
+        res.status(403).json({ error: "Você não tem permissão para cancelar este contrato." });
+        return;
+      }
+    }
+
+    // Apenas contratos PENDING_PAYMENT ou IN_PROGRESS ou DRAFT podem ser cancelados
+    if (contract.escrowStatus !== 'PENDING_PAYMENT' && contract.escrowStatus !== 'IN_PROGRESS' && contract.escrowStatus !== 'DRAFT') {
+      res.status(400).json({ error: `Contrato no status ${contract.escrowStatus} não pode ser cancelado.` });
+      return;
+    }
+
+    const previousStatus = contract.escrowStatus;
+
+    // Se o status for IN_PROGRESS, significa que o pagamento já foi capturado (está em Escrow)
+    if (previousStatus === 'IN_PROGRESS' && contract.externalTxId) {
+      const { stripe } = await import('../lib/stripe');
+      if (!stripe) {
+        res.status(500).json({ error: "Serviço de pagamentos da Stripe não está configurado." });
+        return;
+      }
+
+      try {
+        let paymentIntentId = contract.externalTxId;
+        if (paymentIntentId.startsWith('cs_')) {
+          const session = await stripe.checkout.sessions.retrieve(paymentIntentId);
+          if (session.payment_intent) {
+            paymentIntentId = typeof session.payment_intent === 'string' 
+              ? session.payment_intent 
+              : session.payment_intent.id;
+          } else {
+            throw new Error("Não foi possível encontrar a transação de pagamento associada a esta sessão.");
+          }
+        }
+
+        // Recuperar o PaymentIntent para saber o valor exato pago (garantindo tratar 5% do plano gratuito vs 0% do Agency)
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        const amountPaidInCents = paymentIntent.amount;
+        const refundAmountInCents = Math.round(amountPaidInCents * 0.96);
+        const refundAmount = refundAmountInCents / 100;
+        const stripeFee = (amountPaidInCents - refundAmountInCents) / 100;
+
+        // Criar estorno na Stripe
+        await stripe.refunds.create({
+          payment_intent: paymentIntentId,
+          amount: refundAmountInCents,
+        });
+        console.log(`[STRIPE] ✅ Estorno de R$ ${refundAmount.toFixed(2)} processado para o contrato ${id}. Taxa retida: R$ ${stripeFee.toFixed(2)}`);
+      } catch (stripeErr: any) {
+        console.error('[STRIPE REFUND ERROR]:', stripeErr);
+        res.status(500).json({ error: `Erro ao processar estorno na Stripe: ${stripeErr.message || stripeErr}` });
+        return;
+      }
+    }
+
+    // Atualiza o status do contrato para CANCELED
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedContract = await tx.contract.update({
+        where: { id },
+        data: { escrowStatus: 'CANCELED' }
+      });
+
+      // Notificar o influenciador
+      await tx.notification.create({
+        data: {
+          userId: contract.influencer.userId,
+          message: `⚠️ O contrato "${contract.title}" foi cancelado pela marca parceira e o reembolso foi solicitado.`,
+          type: 'CONTRACT_CANCELED'
+        }
+      });
+
+      return updatedContract;
+    });
+
+    // Enviar notificação assíncrona
+    await addNotificationJob(
+      contract.influencer.userId,
+      `⚠️ O contrato "${contract.title}" foi cancelado pela marca parceira.`,
+      'CONTRACT_CANCELED'
+    );
+
+    res.json({
+      message: "Contrato cancelado com sucesso. O reembolso foi processado para a marca deduzindo as taxas do Stripe.",
+      contract: updated
+    });
+  } catch (error) {
+    console.error('[CONTRACT CANCEL] Erro ao cancelar contrato:', error);
+    res.status(500).json({ error: "Erro ao cancelar o contrato." });
   }
 };

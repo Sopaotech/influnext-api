@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getTelemetryResults = exports.completeTaskWithProof = exports.processAICommand = exports.createAITasks = exports.getMyTasks = exports.createTask = void 0;
+exports.deleteTask = exports.toggleTask = exports.getTelemetryResults = exports.completeTaskWithProof = exports.processAICommand = exports.createAITasks = exports.getMyTasks = exports.createTask = void 0;
 const client_1 = require("@prisma/client");
 const zod_1 = require("zod");
 const post_analyzer_queue_1 = require("../queues/post-analyzer.queue");
@@ -42,7 +42,7 @@ const prisma = new client_1.PrismaClient();
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 const createTaskSchema = zod_1.z.object({
     title: zod_1.z.string().min(1, 'Título obrigatório.').max(255),
-    scheduledDate: zod_1.z.string().datetime({ message: 'Data inválida. Use ISO 8601.' }).optional(),
+    scheduledDate: zod_1.z.string().optional(),
 });
 const aiTaskSuggestionSchema = zod_1.z.object({
     title: zod_1.z.string(),
@@ -93,7 +93,7 @@ const getMyTasks = async (req, res) => {
         const userId = req.user.id;
         const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
         if (!influencer) {
-            res.status(404).json({ error: 'Perfil de influenciador não encontrado.' });
+            res.status(200).json([]);
             return;
         }
         const tasks = await prisma.task.findMany({
@@ -233,7 +233,7 @@ const getTelemetryResults = async (req, res) => {
         const userId = req.user.id;
         const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
         if (!influencer) {
-            res.status(404).json({ error: 'Perfil não encontrado.' });
+            res.status(200).json([]);
             return;
         }
         const results = await prisma.task.findMany({
@@ -252,3 +252,33 @@ const getTelemetryResults = async (req, res) => {
     }
 };
 exports.getTelemetryResults = getTelemetryResults;
+const toggleTask = async (req, res) => {
+    try {
+        const { taskId } = req.params;
+        const task = await prisma.task.findUnique({ where: { id: taskId } });
+        if (!task) {
+            res.status(404).json({ error: 'Tarefa não encontrada.' });
+            return;
+        }
+        const updated = await prisma.task.update({
+            where: { id: taskId },
+            data: { isDone: !task.isDone }
+        });
+        res.status(200).json(updated);
+    }
+    catch (error) {
+        res.status(550).json({ error: 'Erro ao alternar status da tarefa.' });
+    }
+};
+exports.toggleTask = toggleTask;
+const deleteTask = async (req, res) => {
+    try {
+        const { taskId } = req.params;
+        await prisma.task.delete({ where: { id: taskId } });
+        res.status(200).json({ message: 'Tarefa excluída com sucesso.' });
+    }
+    catch (error) {
+        res.status(550).json({ error: 'Erro ao excluir tarefa.' });
+    }
+};
+exports.deleteTask = deleteTask;
