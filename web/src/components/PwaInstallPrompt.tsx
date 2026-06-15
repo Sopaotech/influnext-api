@@ -93,28 +93,12 @@ export function PwaInstallPrompt() {
         {/* Conteúdo */}
         <div className="flex gap-4">
           {/* Favicon / Logo da Plataforma */}
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-slate-900 shadow-md">
-            <svg width="28" height="28" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stop-color="#0D0820"/>
-                  <stop offset="100%" stop-color="#1a1040"/>
-                </linearGradient>
-                <linearGradient id="chart-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
-                  <stop offset="0%" stop-color="#534AB7" />
-                  <stop offset="100%" stop-color="#C4BEFF" />
-                </linearGradient>
-              </defs>
-              <g transform="translate(8, 12)">
-                <rect x="6" y="24" width="6" height="18" fill="url(#chart-gradient)" opacity="0.6" />
-                <rect x="16" y="16" width="6" height="26" fill="url(#chart-gradient)" opacity="0.7" />
-                <rect x="26" y="22" width="6" height="20" fill="url(#chart-gradient)" opacity="0.8" />
-                <rect x="36" y="10" width="6" height="32" fill="url(#chart-gradient)" opacity="0.9" />
-                <rect x="46" y="2" width="6" height="40" fill="url(#chart-gradient)" />
-                <path d="M -2,32 L 8,20 L 18,10 L 28,18 L 40,2 L 50,-8" stroke="url(#chart-gradient)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-                <polygon points="40,-12 56,-14 50,4" fill="#C4BEFF" />
-              </g>
-            </svg>
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-slate-900 shadow-md overflow-hidden">
+            <img 
+              src="/icon.png" 
+              alt="InfluNext Logo" 
+              className="h-10 w-10 rounded-lg object-cover" 
+            />
           </div>
 
           <div className="flex-1 pr-6">
