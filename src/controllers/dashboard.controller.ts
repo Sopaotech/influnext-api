@@ -31,7 +31,7 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
             id: 'admin',
             handle: 'Admin InfluNext',
             niche: 'SaaS Platform',
-            profileImageUrl: null,
+            profileImageUrl: user.profileImageUrl,
             influScore: 100,
             scoreClass: 'DIAMOND',
             dailyMission: 'Gerenciar Ecossistema',

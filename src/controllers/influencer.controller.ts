@@ -284,6 +284,27 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
         where: { userId },
         data: companyData,
       });
+    } else if (role === 'ADMIN') {
+      const userData: any = {};
+      if (profileData.profileImageUrl !== undefined) userData.profileImageUrl = profileData.profileImageUrl;
+      if (theme) userData.theme = theme;
+      if (accentColor) userData.accentColor = accentColor;
+      if (onboardingCompleted !== undefined) userData.onboardingCompleted = onboardingCompleted;
+
+      const userUpdated = await prisma.user.update({
+        where: { id: userId },
+        data: userData,
+      });
+
+      // Retorna formato compatível para não quebrar o frontend
+      res.json({
+        id: 'admin',
+        handle: 'Admin InfluNext',
+        profileImageUrl: userUpdated.profileImageUrl,
+        theme: userUpdated.theme,
+        accentColor: userUpdated.accentColor,
+      });
+      return;
     } else {
       const influencerData: any = {};
       if (profileData.handle) influencerData.handle = profileData.handle;

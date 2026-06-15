@@ -8,6 +8,7 @@ import { Home, FileText, Settings, LogOut, Menu, X, Sparkles, ShieldCheck, Store
 import { Toaster } from '@/components/ui/sonner';
 import { Logo } from '@/components/Logo';
 import dynamic from 'next/dynamic';
+import { useTheme } from 'next-themes';
 
 const BottomNav = dynamic(
   () => import('@/components/BottomNav').then(mod => mod.BottomNav),
@@ -25,7 +26,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Fundo dinâmico baseado no perfil - Forçado para Dark Theme Premium
   const [profileImg, setProfileImg] = useState<string | null>(null);
   const [taskCount, setTaskCount] = useState(0);
-  const isDark = true;
+  
+  const { theme: activeTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+  const isDark = !mounted || activeTheme === 'dark';
 
   React.useEffect(() => {
     const fetchTheme = async () => {

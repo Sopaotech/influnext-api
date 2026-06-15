@@ -4,20 +4,26 @@
   "description": "Seu Escritório Digital Neural - Gestão de Carreira para Influenciadores",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#F8FAFC",
+  "background_color": "#050508",
   "theme_color": "#7C3AED",
   "icons": [
     {
       "src": "/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icon.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/apple-icon.png",

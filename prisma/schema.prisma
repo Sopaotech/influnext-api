@@ -21,6 +21,7 @@ model User {
   role              String    // "INFLUENCER" | "COMPANY" | "ADMIN"
   twoFactorEnabled  Boolean   @default(false)
   twoFactorSecret   String?   // AES-256-GCM encrypted
+  profileImageUrl   String?   
   createdAt         DateTime  @default(now())
   
   // Preferências de Aparência

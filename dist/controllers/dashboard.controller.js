@@ -30,7 +30,7 @@ const getInfluencerDashboard = async (req, res) => {
                         id: 'admin',
                         handle: 'Admin InfluNext',
                         niche: 'SaaS Platform',
-                        profileImageUrl: null,
+                        profileImageUrl: user.profileImageUrl,
                         influScore: 100,
                         scoreClass: 'DIAMOND',
                         dailyMission: 'Gerenciar Ecossistema',
