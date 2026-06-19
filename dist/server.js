@@ -113,21 +113,19 @@ const startServer = async () => {
         // Garante que o administrador solicitado pelo usuário exista
         const { ensureAdminExists } = await Promise.resolve().then(() => __importStar(require('./lib/admin-init')));
         await ensureAdminExists();
-        // Inicializa workers e filas de background de forma assíncrona/defensiva
-        try {
-            console.log('🔄 Inicializando workers e crons de background...');
-            await Promise.resolve().then(() => __importStar(require('./workers/notification.worker')));
-            await Promise.resolve().then(() => __importStar(require('./workers/cleanup.worker')));
-            await Promise.resolve().then(() => __importStar(require('./workers/token-renewal.worker')));
-            const { addDailyCleanupJob } = await Promise.resolve().then(() => __importStar(require('./queues/cleanup.queue')));
-            const { addDailyTokenRenewalJob } = await Promise.resolve().then(() => __importStar(require('./queues/token-renewal.queue')));
-            await addDailyCleanupJob();
-            await addDailyTokenRenewalJob();
+        // Inicializa workers e crons de background de forma assíncrona/defensiva (não bloqueante)
+        console.log('🔄 Inicializando workers e crons de background em paralelo...');
+        Promise.all([
+            Promise.resolve().then(() => __importStar(require('./workers/notification.worker'))),
+            Promise.resolve().then(() => __importStar(require('./workers/cleanup.worker'))),
+            Promise.resolve().then(() => __importStar(require('./workers/token-renewal.worker'))),
+            Promise.resolve().then(() => __importStar(require('./queues/cleanup.queue'))).then(m => m.addDailyCleanupJob()),
+            Promise.resolve().then(() => __importStar(require('./queues/token-renewal.queue'))).then(m => m.addDailyTokenRenewalJob())
+        ]).then(() => {
             console.log('✅ Workers e crons de background ativos.');
-        }
-        catch (workerError) {
-            console.warn('⚠️ Falha ao inicializar workers em background (Redis offline?):', workerError);
-        }
+        }).catch((workerError) => {
+            console.warn('⚠️ Falha ao inicializar workers em background (Redis offline?):', workerError.message || workerError);
+        });
         app.listen(PORT, () => {
             console.log(`🚀 INFLUNEXT ONLINE: Port ${PORT}`);
             console.log(`🌍 URL da API: https://api.influnext.com.br`);

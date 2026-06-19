@@ -157,9 +157,9 @@ export default function AIWorkspacePage() {
                  profileRes.data.profile.handle.toLowerCase().includes('teste'));
 
               if (isUserAlexsandro) {
-                setMentorName('Kowalski');
+                setMentorName('Vincenzo');
                 setChatMessages([
-                  { role: 'mentor', text: 'Olá, Alexsandro! Eu sou o Kowalski, seu mentor virtual e braço direito de IA. O que vamos estruturar hoje: roteiros rápidos, seu fluxo de caixa de contratos (Escrow) ou as próximas campanhas?' }
+                  { role: 'mentor', text: 'Olá, Alexsandro! Eu sou o Vincenzo, seu estrategista de carreira e sócio aqui na InfluNext. Meu papel é direcionar seu perfil para escala e lucro real. O que vamos estruturar hoje: roteiro de conteúdo (Instagram/TikTok), pitch de marca ou análise de engajamento?' }
                 ]);
               } else if (parsed.gender === 'feminino') {
                 setMentorName('Valentina');

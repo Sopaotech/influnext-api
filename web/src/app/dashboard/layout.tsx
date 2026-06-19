@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import Cookies from 'js-cookie';
-import { Home, FileText, Settings, LogOut, Menu, X, Sparkles, ShieldCheck, Store, LifeBuoy, Crown, Calendar, Search, MessageSquare, LayoutDashboard, TrendingUp } from 'lucide-react';
+import { Home, FileText, Settings, LogOut, Menu, X, Sparkles, ShieldCheck, Store, LifeBuoy, Crown, Calendar, Search, MessageSquare, LayoutDashboard, TrendingUp, Package } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
 import { Logo } from '@/components/Logo';
 import dynamic from 'next/dynamic';
@@ -84,6 +84,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'Marketplace', href: '/dashboard/marketplace', icon: Store },
     { name: 'Media Kit', href: '/dashboard/mediakit', icon: Sparkles }, 
     { name: 'Contratos', href: '/dashboard/contracts', icon: FileText },
+    { name: 'Recebidos', href: '/dashboard/recebidos', icon: Package },
     { name: 'Relatórios', href: '/dashboard/reports', icon: TrendingUp },
     { name: 'Assistente', href: '/dashboard/support', icon: MessageSquare },
     ...(isAdmin ? [{ name: 'Admin Control', href: '/dashboard/admin', icon: ShieldCheck }] : []),

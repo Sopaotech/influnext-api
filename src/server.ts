@@ -85,21 +85,19 @@ const startServer = async () => {
     const { ensureAdminExists } = await import('./lib/admin-init');
     await ensureAdminExists();
 
-    // Inicializa workers e filas de background de forma assíncrona/defensiva
-    try {
-      console.log('🔄 Inicializando workers e crons de background...');
-      await import('./workers/notification.worker');
-      await import('./workers/cleanup.worker');
-      await import('./workers/token-renewal.worker');
-
-      const { addDailyCleanupJob } = await import('./queues/cleanup.queue');
-      const { addDailyTokenRenewalJob } = await import('./queues/token-renewal.queue');
-      await addDailyCleanupJob();
-      await addDailyTokenRenewalJob();
+    // Inicializa workers e crons de background de forma assíncrona/defensiva (não bloqueante)
+    console.log('🔄 Inicializando workers e crons de background em paralelo...');
+    Promise.all([
+      import('./workers/notification.worker'),
+      import('./workers/cleanup.worker'),
+      import('./workers/token-renewal.worker'),
+      import('./queues/cleanup.queue').then(m => m.addDailyCleanupJob()),
+      import('./queues/token-renewal.queue').then(m => m.addDailyTokenRenewalJob())
+    ]).then(() => {
       console.log('✅ Workers e crons de background ativos.');
-    } catch (workerError) {
-      console.warn('⚠️ Falha ao inicializar workers em background (Redis offline?):', workerError);
-    }
+    }).catch((workerError) => {
+      console.warn('⚠️ Falha ao inicializar workers em background (Redis offline?):', workerError.message || workerError);
+    });
 
     app.listen(PORT, () => {
       console.log(`🚀 INFLUNEXT ONLINE: Port ${PORT}`);

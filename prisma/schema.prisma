@@ -98,6 +98,12 @@ model InfluencerProfile {
   insights        String?  // SQLite não suporta Json, usaremos String (JSON stringified)
   topPosts        String?  // SQLite não suporta Json, usaremos String (JSON stringified)
   
+  // Endereço de Recebidos
+  shippingAddress String?
+  poBox           String?
+  shareAddress    Boolean           @default(false)
+  recebidos       Recebido[]
+  
   platforms       SocialPlatform[]
   tasks           Task[]
   metricsHistory  MetricSnapshot[]
@@ -138,7 +144,25 @@ model CompanyProfile {
   bio             String?
   contracts       Contract[]
   rateCards       RateCard[]
+  recebidos       Recebido[]
+  marketingAnalyses MarketingAnalysis[]
 }
+
+model MarketingAnalysis {
+  id           String   @id @default(uuid())
+  companyId    String
+  // "A1" | "A2" | "A3" | "A4" | "A5" | "O1" | "O2" | "O3" | "O4"
+  analysisType String
+  inputs       String   // JSON stringified com os campos do formulário preenchido
+  output       String   // Relatório em Markdown gerado pela IA
+  // Plano da empresa no momento da execução: "FREE" | "PRO" | "MASTER" | "ENTERPRISE"
+  planTier     String
+  createdAt    DateTime @default(now())
+
+  company      CompanyProfile @relation(fields: [companyId], references: [id])
+  @@index([companyId, createdAt])
+}
+
 
 model SocialPlatform {
   id              String   @id @default(uuid())
@@ -282,4 +306,22 @@ model PageView {
   userAgent   String?
   ip          String?
   createdAt   DateTime @default(now())
+}
+
+model Recebido {
+  id              String   @id @default(uuid())
+  companyId       String
+  influencerId    String
+  title           String   // ex: "Kit Maquiagem Verão"
+  description     String?  // ex: "Envio de batons e bases da coleção nova"
+  status          String   @default("PENDING") // "PENDING" | "SHIPPED" | "DELIVERED" | "RECEIVED" | "REJECTED"
+  trackingCode    String?  // Código de rastreio dos Correios/transportadora
+  shippingCarrier String?  // Correios, DHL, Loggi, etc.
+  sentAt          DateTime?
+  receivedAt      DateTime?
+  
+  company         CompanyProfile    @relation(fields: [companyId], references: [id])
+  influencer      InfluencerProfile @relation(fields: [influencerId], references: [id])
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 }

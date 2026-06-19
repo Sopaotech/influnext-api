@@ -54,8 +54,8 @@ export class AIService {
         try {
           const interviewObj = JSON.parse(influencer.aiInterview);
           if (isUserAlexsandro) {
-            mentorName = 'Kowalski';
-            pronounGuidelines = 'Trate o criador diretamente pelo nome Alexsandro, aja como seu mentor virtual e engenheiro de IA de confiança (Kowalski).';
+            mentorName = 'Vincenzo';
+            pronounGuidelines = 'Trate o criador diretamente pelo nome Alexsandro, aja como seu mentor virtual e estrategista homem de negócios de sucesso (Vincenzo).';
           } else if (interviewObj.gender === 'feminino') {
             gender = 'feminino';
             mentorName = 'Valentina';
@@ -449,8 +449,8 @@ export class AIService {
         try {
           const parsed = JSON.parse(influencer.aiInterview);
           if (isUserAlexsandro) {
-            mentorName = 'Kowalski';
-            pronounGuidelines = 'Trate o criador diretamente pelo nome Alexsandro, aja como seu mentor virtual e engenheiro de IA de confiança (Kowalski).';
+            mentorName = 'Vincenzo';
+            pronounGuidelines = 'Trate o criador diretamente pelo nome Alexsandro, aja como seu mentor virtual e estrategista homem de negócios de sucesso (Vincenzo).';
           } else if (parsed.gender === 'feminino') {
             gender = 'feminino';
             mentorName = 'Valentina';

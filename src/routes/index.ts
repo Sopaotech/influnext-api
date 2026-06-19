@@ -13,6 +13,8 @@ import paymentRoutes from './payment.routes';
 import webhookRoutes from './webhook.routes';
 import supportRoutes from './support.routes';
 import socialAuthRoutes from './auth.social.routes';
+import recebidosRoutes from './recebidos.routes';
+import marketingIntelligenceRoutes from './marketing-intelligence.routes';
 
 const routes = Router();
 routes.get('/health', (req, res) => res.json({ status: 'OK' }));
@@ -31,5 +33,7 @@ routes.use('/ai', aiRoutes);
 routes.use('/payments', paymentRoutes);
 routes.use('/webhooks', webhookRoutes);
 routes.use('/support', supportRoutes);
+routes.use('/recebidos', recebidosRoutes);
+routes.use('/marketing-intelligence', marketingIntelligenceRoutes);
 
 export { routes };

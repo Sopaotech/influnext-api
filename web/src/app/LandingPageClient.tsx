@@ -384,7 +384,7 @@ export default function LandingPageClient() {
             <p className="text-purple-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">✦ Interatividade em Tempo Real</p>
             <h2 className="text-xl sm:text-3xl md:text-5xl font-black tracking-tighter leading-[1.05] md:leading-[0.95]">Mentoria inteligente em tempo real<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">Obtenha ganchos de alta conversão para seus posts</span></h2>
             <p className="text-zinc-300 text-xs mt-4 max-w-xl mx-auto leading-relaxed">
-               Veja como o seu Mentor de IA (Kowalski) acompanha seu fluxo de caixa de contratos e cria ganchos prontos para suas publicações.
+               Veja como o seu Mentor de IA (Vincenzo) acompanha seu fluxo de caixa de contratos e cria ganchos prontos para suas publicações.
             </p>
          </div>
 

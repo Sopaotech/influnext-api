@@ -30,14 +30,14 @@ async function main() {
     {
       id: 'plan_pro_influencer_1',
       name: 'Plano Creator Premium',
-      price: 49.90,
+      price: 49.00,
       interval: 'month',
       externalId: process.env.STRIPE_PRICE_PRO || 'plan_pro_influencer_1',
     },
     {
       id: 'plan_brand_enterprise_1',
       name: 'Plano Agency / Co-Working',
-      price: 110.00,
+      price: 119.00,
       interval: 'month',
       externalId: process.env.STRIPE_PRICE_ENTERPRISE || 'plan_brand_enterprise_1',
     }

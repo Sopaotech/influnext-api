@@ -5,6 +5,7 @@ import { ScoringService } from '../services/scoring.service';
 import { InstagramService } from '../services/instagram.service';
 import { AIService } from '../services/ai.service';
 import axios from 'axios';
+import jwt from 'jsonwebtoken';
 
 const getFrontendUrl = (req?: Request) => {
   const origin = req?.headers.origin as string;
@@ -36,7 +37,12 @@ export const getAuthUrls = async (req: Request, res: Response): Promise<void> =>
     }
 
     const from = req.query.from as string;
-    const state = from === 'onboarding' ? `${userId}_onboarding` : userId;
+    const jwtSecret = process.env.JWT_SECRET || 'fallback_secret_change_me';
+    
+    // Gerar states assinados e temporários (JWT de 1 hora de validade) para prevenir CSRF e manipulação de ID
+    const stateBasic = jwt.sign({ userId, from: from || '', isBusiness: false }, jwtSecret, { expiresIn: '1h' });
+    const stateBusiness = jwt.sign({ userId, from: from || '', isBusiness: true }, jwtSecret, { expiresIn: '1h' });
+    const stateTiktok = jwt.sign({ userId, from: from || '' }, jwtSecret, { expiresIn: '1h' });
     
     const scopes = [
       'instagram_basic',
@@ -46,11 +52,11 @@ export const getAuthUrls = async (req: Request, res: Response): Promise<void> =>
       'public_profile'
     ].join(',');
 
-    const instagramUrl = `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_BASIC_CLIENT_ID || process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${getFrontendUrl(req)}/auth/callback/instagram&scope=user_profile,user_media&response_type=code&state=${state}`;
+    const instagramUrl = `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_BASIC_CLIENT_ID || process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${getFrontendUrl(req)}/auth/callback/instagram&scope=user_profile,user_media&response_type=code&state=${stateBasic}`;
     
-    const instagramBusinessUrl = `https://www.facebook.com/v20.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${getFrontendUrl(req)}/auth/callback/instagram&scope=${scopes}&response_type=code&state=${state}_business`;
+    const instagramBusinessUrl = `https://www.facebook.com/v20.0/dialog/oauth?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${getFrontendUrl(req)}/auth/callback/instagram&scope=${scopes}&response_type=code&state=${stateBusiness}`;
 
-    const tiktokUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list,video.stats&response_type=code&redirect_uri=${getFrontendUrl(req)}/auth/callback/tiktok&state=${state}`;
+    const tiktokUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list,video.stats&response_type=code&redirect_uri=${getFrontendUrl(req)}/auth/callback/tiktok&state=${stateTiktok}`;
 
     res.json({
       instagram: instagramUrl,
@@ -65,6 +71,7 @@ export const getAuthUrls = async (req: Request, res: Response): Promise<void> =>
 
 export const handleInstagramCallback = async (req: Request, res: Response): Promise<void> => {
   let stateStr = '';
+  let isFromOnboarding = false;
   try {
     const { code, state } = req.query;
     stateStr = state as string;
@@ -74,10 +81,20 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
       return;
     }
 
-    const isBusiness = stateStr.includes('_business');
-    const cleanStateStr = stateStr.replace('_business', '');
-    const isFromOnboarding = cleanStateStr.endsWith('_onboarding');
-    const userId = isFromOnboarding ? cleanStateStr.replace('_onboarding', '') : cleanStateStr;
+    // Validar o state JWT para evitar ataques CSRF ou de manipulação de ID
+    const jwtSecret = process.env.JWT_SECRET || 'fallback_secret_change_me';
+    let decodedState: { userId: string; from?: string; isBusiness?: boolean };
+    try {
+      decodedState = jwt.verify(stateStr, jwtSecret) as { userId: string; from?: string; isBusiness?: boolean };
+    } catch (jwtErr) {
+      console.error('[INSTAGRAM] Erro ao validar JWT do state:', jwtErr);
+      res.redirect(`${getFrontendUrl(req)}/dashboard/settings?status=error&error=invalid_state`);
+      return;
+    }
+
+    const userId = decodedState.userId;
+    const isBusiness = !!decodedState.isBusiness;
+    isFromOnboarding = decodedState.from === 'onboarding';
 
     let accessToken = '';
     let instagramBusinessId = null;
@@ -247,8 +264,6 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
     res.redirect(redirectUrl);
   } catch (error: any) {
     console.error('[INSTAGRAM] Erro no callback:', error.response?.data || error.message);
-    const cleanStateStr = stateStr ? stateStr.replace('_business', '') : '';
-    const isFromOnboarding = cleanStateStr.endsWith('_onboarding');
     
     let errorType = 'error';
     if (error.message && (error.message.includes('Facebook') || error.message.includes('Página') || error.message.includes('comercial'))) {
@@ -380,6 +395,7 @@ export const simulateInstagramConnection = async (req: Request, res: Response): 
 
 export const handleTikTokCallback = async (req: Request, res: Response): Promise<void> => {
   let stateStr = '';
+  let isFromOnboarding = false;
   try {
     const { code, state } = req.query;
     stateStr = state as string;
@@ -389,8 +405,19 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
       return;
     }
 
-    const isFromOnboarding = stateStr.endsWith('_onboarding');
-    const userId = isFromOnboarding ? stateStr.replace('_onboarding', '') : stateStr;
+    // Validar o state JWT para evitar ataques CSRF ou de manipulação de ID
+    const jwtSecret = process.env.JWT_SECRET || 'fallback_secret_change_me';
+    let decodedState: { userId: string; from?: string };
+    try {
+      decodedState = jwt.verify(stateStr, jwtSecret) as { userId: string; from?: string };
+    } catch (jwtErr) {
+      console.error('[TIKTOK] Erro ao validar JWT do state:', jwtErr);
+      res.redirect(`${getFrontendUrl(req)}/dashboard/settings?status=error&error=invalid_state`);
+      return;
+    }
+
+    const userId = decodedState.userId;
+    isFromOnboarding = decodedState.from === 'onboarding';
 
     const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
 
@@ -472,7 +499,6 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
     res.redirect(redirectUrl);
   } catch (error) {
     console.error('[TIKTOK] Erro no callback:', error);
-    const isFromOnboarding = stateStr.endsWith('_onboarding');
     const redirectUrl = isFromOnboarding
       ? `${getFrontendUrl(req)}/onboarding?status=error`
       : `${getFrontendUrl(req)}/dashboard/settings?status=error`;

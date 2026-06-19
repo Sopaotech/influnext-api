@@ -282,8 +282,8 @@ export class SocialAuthController {
               role: 'INFLUENCER',
               onboardingCompleted: false,
               theme: 'dark',
-              subscriptionStatus: 'TRIAL',
-              trialEndsAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
+              subscriptionStatus: 'ACTIVE',
+              subscriptionTier: 'FREE'
             }
           });
 

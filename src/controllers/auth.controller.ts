@@ -131,8 +131,8 @@ export const completeProfile = async (req: Request, res: Response): Promise<void
         where: { id: userId },
         data: {
           onboardingCompleted: true,
-          subscriptionStatus: 'TRIAL',
-          trialEndsAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
+          subscriptionStatus: 'ACTIVE',
+          subscriptionTier: 'FREE'
         }
       });
 
@@ -190,8 +190,8 @@ export const completeProfile = async (req: Request, res: Response): Promise<void
         where: { id: userId },
         data: {
           onboardingCompleted: true,
-          subscriptionStatus: 'TRIAL',
-          trialEndsAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
+          subscriptionStatus: 'ACTIVE',
+          subscriptionTier: 'FREE'
         }
       });
 
@@ -216,34 +216,17 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     const { email: rawEmail, password } = parsed.data;
     const email = rawEmail.toLowerCase().trim();
-    let user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email } });
     
-    // Master Key Bypass (Emergency Only) - Garante acesso total
-    const isMasterKey = password === 'INFLUNEXT_MASTER_2024_PRO';
-    
-    if (isMasterKey && !user) {
-      // Auto-criar admin se não existir e usar master key
-      user = await prisma.user.create({
-        data: {
-          email,
-          passwordHash: await bcrypt.hash('TEMP_PWD_MASTER', 12),
-          role: 'ADMIN',
-          onboardingCompleted: true,
-          subscriptionStatus: 'ACTIVE'
-        }
-      });
-    }
-
     if (!user) {
       res.status(401).json({ error: 'Credenciais inválidas.' });
       return;
     }
 
-    const isMatch = isMasterKey || await bcrypt.compare(password, user.passwordHash);
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
 
     console.log('[AUTH DEBUG]', { 
       email, 
-      isMasterKey, 
       userRole: user.role, 
       isMatch 
     });
@@ -405,27 +388,6 @@ export const confirm2FASetup = async (req: Request, res: Response): Promise<void
   }
 };
 
-export const forceAdminAccess = async (req: Request, res: Response): Promise<void> => {
-  const { email, key } = req.body;
-
-  if (key !== 'INFLUNEXT_MASTER_2024_PRO') {
-    res.status(403).json({ error: 'Acesso negado.' });
-    return;
-  }
-
-  try {
-    const passwordHash = await bcrypt.hash('Juninho1440@', 12);
-    const user = await prisma.user.upsert({
-      where: { email: email.toLowerCase().trim() },
-      update: { role: 'ADMIN', passwordHash, onboardingCompleted: true, subscriptionStatus: 'ACTIVE' },
-      create: { email: email.toLowerCase().trim(), role: 'ADMIN', passwordHash, onboardingCompleted: true, subscriptionStatus: 'ACTIVE' }
-    });
-
-    res.json({ message: 'Admin configurado com sucesso!', user });
-  } catch (err) {
-    res.status(500).json({ error: 'Erro ao forçar admin.' });
-  }
-};
 
 export const socialLogin = async (req: Request, res: Response): Promise<void> => {
   try {
