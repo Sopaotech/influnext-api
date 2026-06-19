@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { X, Sparkles } from 'lucide-react';
+import { X } from 'lucide-react';
 
 export function AppStandbyNotice() {
   const [showNotice, setShowNotice] = useState(false);
@@ -45,9 +45,13 @@ export function AppStandbyNotice() {
 
         {/* Conteúdo */}
         <div className="flex gap-4">
-          {/* Ícone Animado */}
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-purple-500/20 bg-purple-500/5 text-purple-400 shadow-md">
-            <Sparkles className="h-5 w-5 animate-pulse" />
+          {/* Favicon / Logo da Plataforma */}
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-slate-900 shadow-md overflow-hidden">
+            <img 
+              src="/icon.png" 
+              alt="InfluNext Logo" 
+              className="h-10 w-10 rounded-lg object-cover" 
+            />
           </div>
 
           <div className="flex-1 pr-6">

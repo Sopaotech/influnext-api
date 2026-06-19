@@ -68,7 +68,6 @@ export const metadata: Metadata = {
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppearanceManager } from "@/components/appearance-manager";
-import { PwaInstallPrompt } from "@/components/PwaInstallPrompt";
 import { AppStandbyNotice } from "@/components/AppStandbyNotice";
 
 export default function RootLayout({
@@ -115,7 +114,6 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AppearanceManager />
-          <PwaInstallPrompt />
           <AppStandbyNotice />
           <div className="flex-1 flex flex-col">
              {children}
