@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Sparkles, BrainCircuit, Loader2, ClipboardList, Music, Terminal, Zap, Activity, Play, Mic, MicOff, Volume2, Crown, Lock, User, Calendar, Building, Target } from 'lucide-react';
+import { Sparkles, BrainCircuit, Loader2, ClipboardList, Music, Terminal, Zap, Activity, Play, Mic, MicOff, Volume2, Crown, Lock, User, Calendar, Building, Target, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { EscrowExplanatoryCard } from '@/components/EscrowExplanatoryCard';
@@ -25,6 +25,7 @@ interface AIAnalysis {
 export default function AIWorkspacePage() {
   const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
   const [telemetry, setTelemetry] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCreatingTasks, setIsCreatingTasks] = useState(false);
@@ -113,12 +114,17 @@ export default function AIWorkspacePage() {
       setIsLoading(true);
       const userRole = Cookies.get('influnext_role');
 
-      const [res, telRes, connRes, meRes] = await Promise.all([
+      const [res, telRes, connRes, meRes, tasksRes] = await Promise.all([
         api.get<AIAnalysis>('/ai/latest').catch(() => ({ data: { analysisText: null, recommendations: [] } as any })),
         api.get('/tasks/telemetry').catch(() => ({ data: [] })),
         api.get('/integrations/connected').catch(() => ({ data: { platforms: [] } })),
-        api.get('/auth/me').catch(() => null)
+        api.get('/auth/me').catch(() => null),
+        api.get('/tasks').catch(() => ({ data: [] }))
       ]);
+
+      if (tasksRes && tasksRes.data) {
+        setTasks(tasksRes.data);
+      }
 
       if (meRes) {
         setUser(meRes.data);
@@ -295,6 +301,60 @@ export default function AIWorkspacePage() {
     if (preferredVoice) utterance.voice = preferredVoice;
 
     window.speechSynthesis.speak(utterance);
+  };
+
+  const handleToggleTask = async (taskId: string) => {
+    try {
+      const res = await api.patch(`/tasks/${taskId}/toggle`);
+      if (res.status === 200) {
+        setTasks(prev => prev.map(t => t.id === taskId ? { ...t, isDone: !t.isDone } : t));
+        toast.success('✦ Status da tarefa atualizado!');
+      }
+    } catch (err) {
+      toast.error('Erro ao alternar status da tarefa.');
+    }
+  };
+
+  const handleSimulateDialogue = () => {
+    if (isChatting) return;
+    
+    // Limpa o chat para iniciar a demo
+    setChatMessages([]);
+    setIsChatting(true);
+
+    // Passo 1: Usuário pergunta
+    setTimeout(() => {
+      setChatMessages(prev => [...prev, { role: 'user', text: 'Oi Vincenzo, como posso aumentar o ROI na minha próxima campanha com a Zara?' }]);
+      
+      // Passo 2: Vincenzo começa a digitar e responde
+      setTimeout(() => {
+        const reply1 = `Fala Alexsandro! Para a Zara, precisamos focar em um gancho altamente magnético de 3 segundos no Reels. Sugiro este script pronto:
+
+🎬 "3 peças indispensáveis da Zara que parecem de grife mas custam menos de R$ 150..."
+
+Use cortes dinâmicos rápidos nas transições de look, adicione som de transição física (whoosh) e chame para ação direcionando para o link da bio. Isso triplica a retenção orgânica do algoritmo local.`;
+        setChatMessages(prev => [...prev, { role: 'mentor', text: reply1 }]);
+        speak(reply1);
+        
+        // Passo 3: Usuário pergunta sobre segurança e pagamento
+        setTimeout(() => {
+          setChatMessages(prev => [...prev, { role: 'user', text: 'Excelente. E sobre o pagamento? Como garanto que vou receber pelo Reels sem calotes?' }]);
+          
+          // Passo 4: Vincenzo explica o Escrow
+          setTimeout(() => {
+            const reply2 = `Fica tranquilo, sócio! O orçamento acordado de R$ 3.500,00 já foi depositado pela marca e está bloqueado com total segurança na conta de garantia (Escrow) da InfluNext. 
+
+Assim que você gravar e subir o link da entrega aqui no painel, nossa Inteligência Artificial fará a auditoria automática do vídeo em tempo real (verificando o gancho de 3 segundos e as regras do briefing). Com tudo correto, o pagamento é liberado direto na sua carteira na mesma hora!`;
+            setChatMessages(prev => [...prev, { role: 'mentor', text: reply2 }]);
+            speak(reply2);
+            setIsChatting(false);
+          }, 3500);
+
+        }, 3000);
+
+      }, 3500);
+
+    }, 1000);
   };
 
   const isDark = true;
@@ -618,10 +678,22 @@ export default function AIWorkspacePage() {
                 <section className={`border p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] relative flex flex-col h-[400px] md:h-[500px] shadow-sm ${
                   isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
                 }`}>
-                  <div className={`flex items-center gap-3 mb-4 md:mb-6 text-[9px] md:text-[10px] font-black uppercase tracking-widest border-b pb-4 md:pb-6 ${
-                    isDark ? 'text-zinc-500 border-white/5' : 'text-slate-400 border-slate-50'
+                  <div className={`flex items-center justify-between mb-4 md:mb-6 border-b pb-4 md:pb-6 ${
+                    isDark ? 'border-white/5' : 'border-slate-50'
                   }`}>
-                     <Terminal className="w-5 h-5 text-purple-600" /> {mentorName} // Estrategista de Carreira
+                     <div className={`flex items-center gap-3 text-[9px] md:text-[10px] font-black uppercase tracking-widest ${
+                       isDark ? 'text-zinc-500' : 'text-slate-400'
+                     }`}>
+                        <Terminal className="w-5 h-5 text-purple-600" /> {mentorName} // Estrategista de Carreira
+                     </div>
+                     <button
+                       type="button"
+                       onClick={handleSimulateDialogue}
+                       disabled={isChatting}
+                       className="px-3 py-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-[8px] font-black uppercase tracking-wider rounded-lg transition-all"
+                     >
+                       Simular Conversa Demo
+                     </button>
                   </div>
                   
                   <div className="flex-1 overflow-y-auto space-y-6 pr-2 scrollbar-none scroll-smooth">
@@ -895,6 +967,49 @@ export default function AIWorkspacePage() {
                             </div>
                          </div>
                        ))}
+                    </div>
+                 </div>
+
+                 {/* Calendário de Tarefas da IA */}
+                 <div className={`border p-6 rounded-3xl space-y-4 border-t-4 border-t-purple-600 shadow-sm ${
+                   isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
+                 }`}>
+                    <h3 className="text-purple-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                       <Calendar className="w-3.5 h-3.5" /> CALENDÁRIO & TAREFAS
+                    </h3>
+                    <div className="space-y-3">
+                       {tasks.length > 0 ? (
+                         tasks.map((task: any) => (
+                           <div 
+                             key={task.id} 
+                             onClick={() => handleToggleTask(task.id)}
+                             className={`p-3 border rounded-xl flex items-start gap-3 cursor-pointer transition-all hover:bg-white/[0.02] ${
+                               task.isDone ? 'opacity-50 border-emerald-500/20 bg-emerald-500/[0.01]' : 'border-white/5'
+                             }`}
+                           >
+                             <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
+                               task.isDone ? 'bg-emerald-500 border-emerald-400 text-white' : 'border-zinc-600'
+                             }`}>
+                               {task.isDone && <CheckCircle2 className="w-3 h-3" />}
+                             </div>
+                             <div className="space-y-0.5 text-left">
+                               <p className={`text-[10px] font-black uppercase tracking-tight ${task.isDone ? 'line-through text-zinc-500' : 'text-zinc-200'}`}>
+                                 {task.title}
+                               </p>
+                               <p className="text-[9px] text-zinc-400 font-medium">
+                                 {task.description}
+                               </p>
+                               <p className="text-[8px] text-purple-400 font-bold uppercase">
+                                 Agendado para: {new Date(task.scheduledDate).toLocaleDateString('pt-BR')}
+                               </p>
+                             </div>
+                           </div>
+                         ))
+                       ) : (
+                         <p className="text-[9px] text-zinc-500 italic uppercase text-center py-2">
+                           Nenhuma tarefa no calendário.
+                         </p>
+                       )}
                     </div>
                  </div>
       

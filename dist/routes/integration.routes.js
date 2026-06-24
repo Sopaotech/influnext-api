@@ -14,6 +14,8 @@ router.get('/urls', auth_middleware_1.authenticate, integration_controller_1.get
 router.post('/sync-metrics', auth_middleware_1.authenticate, integration_controller_1.syncPlatformMetrics);
 // Simulação de conexão (ex: Instagram/TikTok)
 router.post('/simulate', auth_middleware_1.authenticate, integration_controller_1.simulateInstagramConnection);
+// Simulação do fluxo completo de contratos e IA
+router.post('/simulate/flow-step', integration_controller_1.simulateFlowStep);
 // Execução manual da renovação de tokens (Apenas Admin)
 router.post('/refresh-tokens-debug', auth_middleware_1.authenticate, (0, role_middleware_1.authorize)([roles_1.UserRole.ADMIN]), integration_controller_1.triggerTokenRenewalDebug);
 // Callbacks (públicos, chamados pelas redes sociais)

@@ -25,6 +25,12 @@ import {
 } from 'lucide-react';
 import { BACKGROUNDS } from '@/lib/constants';
 import Cookies from 'js-cookie';
+import dynamic from 'next/dynamic';
+
+const InstagramOnboardingModal = dynamic<any>(
+  () => import('@/components/InstagramOnboardingModal').then(mod => mod.InstagramOnboardingModal),
+  { ssr: false }
+);
 
 // Helper function to compress images before upload
 const compressImage = (file: File, maxWidth = 1200, quality = 0.8): Promise<string> => {
@@ -71,6 +77,7 @@ export default function SettingsPage() {
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
   const [authUrls, setAuthUrls] = useState<any>(null);
   const [showAllBgs, setShowAllBgs] = useState(false);
+  const [isIgModalOpen, setIsIgModalOpen] = useState(false);
   
   const [igUsername, setIgUsername] = useState('');
   const [ttUsername, setTtUsername] = useState('');
@@ -482,7 +489,7 @@ export default function SettingsPage() {
                   {/* Instagram */}
                   <button 
                     type="button"
-                    onClick={() => !connectedPlatforms.includes('INSTAGRAM') && handleConnect(authUrls?.instagram)}
+                    onClick={() => !connectedPlatforms.includes('INSTAGRAM') && setIsIgModalOpen(true)}
                     disabled={connectedPlatforms.includes('INSTAGRAM')}
                     className={`w-full p-6 rounded-[2rem] border transition-all flex items-center justify-between group text-left ${
                       connectedPlatforms.includes('INSTAGRAM') 
@@ -625,6 +632,23 @@ export default function SettingsPage() {
 
         </div>
       </form>
+      
+      <InstagramOnboardingModal 
+        isOpen={isIgModalOpen}
+        onClose={() => setIsIgModalOpen(false)}
+        onConfirm={async (mode: 'personal' | 'business' | 'simulate', username?: string) => {
+          if (mode === 'simulate' && username) {
+            await handleSimulateSync('INSTAGRAM', username);
+            setIsIgModalOpen(false);
+          } else if (mode === 'personal') {
+            handleConnect(authUrls?.instagram);
+            setIsIgModalOpen(false);
+          } else if (mode === 'business') {
+            handleConnect(authUrls?.instagram_business);
+            setIsIgModalOpen(false);
+          }
+        }}
+      />
     </div>
   );
 }

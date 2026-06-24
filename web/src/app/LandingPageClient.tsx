@@ -10,15 +10,8 @@ import {
   ShieldCheck, 
   BarChart3, 
   Brain, 
-  TrendingUp, 
-  Target, 
-  Rocket, 
-  Star, 
   ChevronDown, 
-  Search, 
   User,
-  Lock,
-  Eye,
   DollarSign,
   Layout,
   MessageSquare,
@@ -87,14 +80,13 @@ export default function LandingPageClient() {
       </nav>
 
       {/* HERO */}
-      <section className="relative w-full min-h-[95vh] flex flex-col items-center justify-center text-center px-6 pt-12 pb-24 overflow-hidden">
+      <section className="relative w-full min-h-[95vh] flex flex-col items-center justify-center text-center px-6 pt-4 pb-24 overflow-hidden">
         {/* bg glows */}
         <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full bg-purple-600/10 blur-[120px] pointer-events-none" />
         <div className="absolute bottom-0 left-[20%] w-[500px] h-[400px] rounded-full bg-pink-600/8 blur-[100px] pointer-events-none" />
 
         <div className="relative z-10 flex flex-col items-center max-w-5xl">
-          <Logo size="xxl" href={null} variant="light" />
-          <h1 className="text-xl sm:text-4xl md:text-7xl font-black tracking-tighter leading-[1.0] md:leading-[0.95] mt-8 mb-6 max-w-4xl">
+          <h1 className="text-3xl sm:text-5xl md:text-8xl font-black tracking-tighter leading-[1.0] md:leading-[0.95] mt-2 mb-6 max-w-4xl">
             Para influenciadores que geram vendas<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-500">Para marcas que buscam retorno</span>
           </h1>
@@ -306,10 +298,10 @@ export default function LandingPageClient() {
                            <span className="text-zinc-400">Público Alvo</span>
                            <span className="font-bold text-emerald-400">94% Regional (SP)</span>
                         </div>
-                        <div className="flex justify-between text-[10px]">
-                           <span className="text-zinc-400">Gancho Viral (Hook)</span>
-                           <span className="font-bold text-white">"3 Looks que parecem caros..."</span>
-                        </div>
+                         <div className="flex justify-between text-[10px]">
+                            <span className="text-zinc-400">Gancho Viral (Hook)</span>
+                            <span className="font-bold text-white">&quot;3 Looks que parecem caros...&quot;</span>
+                         </div>
                       </div>
                    </div>
                 </div>
@@ -413,9 +405,9 @@ export default function LandingPageClient() {
                   <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
                   <div>
                     <h4 className="text-xs font-black text-red-400 uppercase tracking-widest mb-1">Permutas Sem Valor</h4>
-                    <p className="text-xs text-zinc-300 leading-relaxed font-bold">
-                      Micro-influenciadores trabalhando em troca de "recebidos e lanches" gratuitos, enquanto marcas lucram em cima do seu engajamento hiper-local.
-                    </p>
+                     <p className="text-xs text-zinc-300 leading-relaxed font-bold">
+                      Micro-influenciadores trabalhando em troca de &quot;recebidos e lanches&quot; gratuitos, enquanto marcas lucram em cima do seu engajamento hiper-local.
+                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4 p-5 bg-white/[0.01] border border-red-500/5 rounded-2xl">
@@ -671,44 +663,44 @@ export default function LandingPageClient() {
   );
 }
 
+const CONVERSATION_STEPS = [
+  {
+    sender: 'ai' as const,
+    text: 'Olá, Lucas! Analisei seus contratos ativos no painel. Temos **R$ 3.500,00** garantidos em Escrow aguardando a entrega do seu Reels para a Loreal Brasil.',
+    delayBeforeTyping: 1000,
+    typingDuration: 2000,
+  },
+  {
+    sender: 'user' as const,
+    text: 'Sensacional! Qual é a sugestão de gancho viral para esse vídeo?',
+    delayBeforeTyping: 1500,
+    typingDuration: 1000,
+  },
+  {
+    sender: 'ai' as const,
+    text: 'Como sua conta é focada em conteúdo autêntico de moda, recomendo usar este gancho nos primeiros 3 segundos: \n\n"3 erros fatais que te fazem gastar o dobro com maquiagem..." \n\nIsso gera quebra de padrão imediata e retém o público local.',
+    delayBeforeTyping: 1500,
+    typingDuration: 3000,
+  },
+  {
+    sender: 'user' as const,
+    text: 'Perfeito, vou gravar agora mesmo!',
+    delayBeforeTyping: 1500,
+    typingDuration: 1000,
+  }
+];
+
 function InteractiveChatPreview() {
   const [messages, setMessages] = useState<Array<{ sender: 'ai' | 'user'; text: string; time: string }>>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [typingSender, setTypingSender] = useState<'ai' | 'user'>('ai');
-
-  const conversationSteps = [
-    {
-      sender: 'ai' as const,
-      text: 'Olá, Lucas! Analisei seus contratos ativos no painel. Temos **R$ 3.500,00** garantidos em Escrow aguardando a entrega do seu Reels para a Loreal Brasil.',
-      delayBeforeTyping: 1000,
-      typingDuration: 2000,
-    },
-    {
-      sender: 'user' as const,
-      text: 'Sensacional! Qual é a sugestão de gancho viral para esse vídeo?',
-      delayBeforeTyping: 1500,
-      typingDuration: 1000,
-    },
-    {
-      sender: 'ai' as const,
-      text: 'Como sua conta é focada em conteúdo autêntico de moda, recomendo usar este gancho nos primeiros 3 segundos: \n\n"3 erros fatais que te fazem gastar o dobro com maquiagem..." \n\nIsso gera quebra de padrão imediata e retém o público local.',
-      delayBeforeTyping: 1500,
-      typingDuration: 3000,
-    },
-    {
-      sender: 'user' as const,
-      text: 'Perfeito, vou gravar agora mesmo!',
-      delayBeforeTyping: 1500,
-      typingDuration: 1000,
-    }
-  ];
 
   useEffect(() => {
     let currentStep = 0;
     let timeoutId: NodeJS.Timeout;
 
     const runConversation = () => {
-      if (currentStep >= conversationSteps.length) {
+      if (currentStep >= CONVERSATION_STEPS.length) {
         // Reset after a pause
         timeoutId = setTimeout(() => {
           setMessages([]);
@@ -718,7 +710,7 @@ function InteractiveChatPreview() {
         return;
       }
 
-      const step = conversationSteps[currentStep];
+      const step = CONVERSATION_STEPS[currentStep];
 
       // Delay before typing starts
       timeoutId = setTimeout(() => {

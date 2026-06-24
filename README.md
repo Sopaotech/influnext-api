@@ -16,6 +16,10 @@ O projeto segue uma estrutura de camadas para garantir escalabilidade e manuten�
 - `src/routes`: Definição de endpoints.
 - `src/schemas`: Validações com Zod.
 
+## 🤖 Inteligência Artificial (IA)
+A documentação completa contendo as personas (Vincenzo, Valentina e Vektor), as regras de negócio de IA (como a proteção de Escrow, anti-repetição e contas Dark) e a infraestrutura de banco de dados/rotas pode ser acessada em:
+- [Guia de Arquitetura e Engenharia de IA](file:///d:/Influnext/docs/AI_SYSTEMS_GUIDE.md)
+
 ## 📦 Como rodar
 1. Clone o repositório.
 2. Instale as dependências: `npm install`

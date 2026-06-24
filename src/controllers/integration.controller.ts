@@ -302,7 +302,7 @@ export const simulateInstagramConnection = async (req: Request, res: Response): 
     let engagementRate = 4.75;
     let avgViews = 9230;
     let reachLast30Days = 48900;
-    let profilePicture = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=150&q=80';
+    let profilePicture = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&auto=format&fit=crop';
 
     if (platform === 'TIKTOK') {
       followersCount = 32800;
@@ -317,6 +317,61 @@ export const simulateInstagramConnection = async (req: Request, res: Response): 
       reachLast30Days = 24000;
       profilePicture = 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=150&q=80';
     }
+
+    // Gerar posts e insights simulados de acordo com o nicho do influenciador
+    const sumLikes = Math.round(followersCount * (engagementRate / 100) * 0.85);
+    const sumComments = Math.round(followersCount * (engagementRate / 100) * 0.15);
+    const totalSaved = Math.round(followersCount * 0.02);
+    const totalShares = Math.round(followersCount * 0.03);
+    const postCount = 6;
+
+    const mockCaptions = [
+      `🚀 Novo projeto no ar! Focado em escala, design e inovação. O que acharam? #niche #branding`,
+      `☕ Bastidores de um dia produtivo. Planejamento estratégico e foco total no objetivo da semana.`,
+      `✨ Sempre buscando a excelência. Nova parceria incrível chegando, fiquem ligados! 💥`,
+      `💡 Dica de ouro para o seu dia: mantenha a consistência, os resultados virão a longo prazo.`,
+      `🔥 Conexão com o público é o ativo mais valioso de qualquer marca. Concordam?`,
+      `🎯 Novo setup montado! Pronto para levar a produção de conteúdo para o próximo nível.`
+    ];
+
+    const postsWithInsights = mockCaptions.map((caption, index) => {
+      const isVideo = index % 2 === 0;
+      const likes = Math.round((sumLikes / postCount) * (0.8 + Math.random() * 0.4));
+      const comments = Math.round((sumComments / postCount) * (0.8 + Math.random() * 0.4));
+      const reach = Math.round(followersCount * (0.3 + Math.random() * 0.4));
+      const saved = Math.round(likes * 0.15);
+      const shares = Math.round(likes * 0.1);
+
+      return {
+        id: `sim_media_${platform.toLowerCase()}_${index}_${Math.floor(Math.random() * 100000)}`,
+        caption,
+        mediaType: isVideo ? 'VIDEO' : 'IMAGE',
+        mediaUrl: isVideo 
+          ? 'https://images.unsplash.com/photo-1536240478700-b869070f9279?w=500&auto=format&fit=crop'
+          : 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=500&auto=format&fit=crop',
+        permalink: 'https://instagram.com',
+        likeCount: likes,
+        commentCount: comments,
+        plays: isVideo ? Math.round(reach * 1.2) : 0,
+        impressions: !isVideo ? Math.round(reach * 1.1) : 0,
+        reach,
+        saved,
+        shares,
+        timestamp: new Date(Date.now() - index * 24 * 3600 * 1000).toISOString()
+      };
+    });
+
+    const insightsJson = {
+      followers: followersCount,
+      avgViews,
+      engagementRate,
+      reachLast30Days,
+      avgLikes: Math.round(sumLikes / postCount),
+      avgComments: Math.round(sumComments / postCount),
+      avgShares: Math.round(totalShares / postCount),
+      avgSaves: Math.round(totalSaved / postCount),
+      updatedAt: new Date().toISOString()
+    };
 
     const platformId = `simulated_${platform.toLowerCase()}_${Math.floor(100000 + Math.random() * 900000)}`;
 
@@ -361,10 +416,16 @@ export const simulateInstagramConnection = async (req: Request, res: Response): 
       }
     });
 
-    // 3. Atualizar verifiedMetrics e completar onboarding
+    // 3. Atualizar verifiedMetrics, insights, topPosts, handle e completar onboarding
     await prisma.influencerProfile.update({
       where: { id: influencer.id },
-      data: { verifiedMetrics: true }
+      data: { 
+        verifiedMetrics: true,
+        insights: JSON.stringify(insightsJson),
+        topPosts: JSON.stringify(postsWithInsights),
+        profileImageUrl: profilePicture,
+        handle: username
+      }
     });
 
     await prisma.user.update({
@@ -599,5 +660,406 @@ export const triggerTokenRenewalDebug = async (req: Request, res: Response): Pro
   } catch (error: any) {
     console.error('[DEBUG] Erro na renovação de tokens:', error);
     res.status(500).json({ error: 'Erro ao executar o processo de renovação de tokens.', details: error.message });
+  }
+};
+
+export const simulateFlowStep = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { step, username } = req.body;
+    const influencerEmail = 'influencer@demo.influnext.com.br';
+    const companyEmail = 'empresa@demo.influnext.com.br';
+
+    // Buscar Usuário Influencer Demo
+    const influencerUser = await prisma.user.findUnique({
+      where: { email: influencerEmail },
+      include: { influencer: true }
+    });
+
+    if (!influencerUser || !influencerUser.influencer) {
+      res.status(404).json({ error: 'Usuário influenciador demo não encontrado. Execute o seed primeiro.' });
+      return;
+    }
+
+    const influencer = influencerUser.influencer;
+
+    // Buscar Usuário Empresa Demo
+    const companyUser = await prisma.user.findUnique({
+      where: { email: companyEmail },
+      include: { company: true }
+    });
+
+    if (!companyUser || !companyUser.company) {
+      res.status(404).json({ error: 'Usuário empresa demo não encontrado. Execute o seed primeiro.' });
+      return;
+    }
+
+    const company = companyUser.company;
+
+    if (step === 1) {
+      // --- PASSO 1: Onboarding & Conexão Instagram ---
+      const handle = username || influencer.handle || 'demo.influencer';
+      const cleanHandle = handle.replace('@', '');
+      const followers = 24800;
+      const engagement = 5.24;
+      const avgViews = 14200;
+      const reachLast30Days = 85600;
+      const profilePicture = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&auto=format&fit=crop';
+
+      // 1. Criar posts e insights realistas
+      const sumLikes = Math.round(followers * (engagement / 100) * 0.85);
+      const sumComments = Math.round(followers * (engagement / 100) * 0.15);
+      const totalSaved = Math.round(followers * 0.02);
+      const totalShares = Math.round(followers * 0.03);
+      const postCount = 6;
+
+      const mockCaptions = [
+        `🔥 Lançamento do novo setup com foco em performance e criação de conteúdo. O que acharam?`,
+        `☕ Café da manhã com foco em metas e organização de projetos para 2026. #growth`,
+        `✨ Sempre grata por parcerias autênticas que acreditam na minha verdade.`,
+        `💡 Lembrete do dia: a consistência vence o talento quando o talento não tem consistência.`,
+        `🚀 Um dia incrível gravando bastidores para o canal. Vem novidade aí!`,
+        `🎯 Foco nos entregáveis da semana e parcerias estratégicas no ar.`
+      ];
+
+      const postsWithInsights = mockCaptions.map((caption, index) => {
+        const isVideo = index % 2 === 0;
+        const likes = Math.round((sumLikes / postCount) * (0.8 + Math.random() * 0.4));
+        const comments = Math.round((sumComments / postCount) * (0.8 + Math.random() * 0.4));
+        const reach = Math.round(followers * (0.3 + Math.random() * 0.4));
+        const saved = Math.round(likes * 0.15);
+        const shares = Math.round(likes * 0.1);
+
+        return {
+          id: `sim_media_instagram_${index}_${Math.floor(Math.random() * 100000)}`,
+          caption,
+          mediaType: isVideo ? 'VIDEO' : 'IMAGE',
+          mediaUrl: isVideo 
+            ? 'https://images.unsplash.com/photo-1536240478700-b869070f9279?w=500&auto=format&fit=crop'
+            : 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=500&auto=format&fit=crop',
+          permalink: 'https://instagram.com',
+          likeCount: likes,
+          commentCount: comments,
+          plays: isVideo ? Math.round(reach * 1.2) : 0,
+          impressions: !isVideo ? Math.round(reach * 1.1) : 0,
+          reach,
+          saved,
+          shares,
+          timestamp: new Date(Date.now() - index * 24 * 3600 * 1000).toISOString()
+        };
+      });
+
+      const insightsJson = {
+        followers,
+        avgViews,
+        engagementRate: engagement,
+        reachLast30Days,
+        avgLikes: Math.round(sumLikes / postCount),
+        avgComments: Math.round(sumComments / postCount),
+        avgShares: Math.round(totalShares / postCount),
+        avgSaves: Math.round(totalSaved / postCount),
+        updatedAt: new Date().toISOString()
+      };
+
+      // 2. Atualizar perfil e conectar plataforma social
+      await prisma.$transaction([
+        prisma.socialPlatform.upsert({
+          where: { influencerId_platformName: { influencerId: influencer.id, platformName: 'INSTAGRAM' } },
+          create: {
+            influencerId: influencer.id,
+            platformName: 'INSTAGRAM',
+            platformId: `simulated_instagram_${influencer.id.substring(0, 5)}`,
+            username: cleanHandle,
+            profilePicture,
+            followersCount: followers,
+            accessToken: 'simulated_access_token_demo',
+            isActive: true
+          },
+          update: {
+            username: cleanHandle,
+            profilePicture,
+            followersCount: followers,
+            isActive: true
+          }
+        }),
+        prisma.metricSnapshot.create({
+          data: {
+            influencerId: influencer.id,
+            provider: 'INSTAGRAM',
+            followers,
+            engagementRate: engagement,
+            reachLast30Days,
+            avgViews,
+            integrityHash: `simulated_hash_${Math.random().toString(36).substring(7)}`
+          }
+        }),
+        prisma.influencerProfile.update({
+          where: { id: influencer.id },
+          data: {
+            verifiedMetrics: true,
+            insights: JSON.stringify(insightsJson),
+            topPosts: JSON.stringify(postsWithInsights),
+            profileImageUrl: profilePicture,
+            handle: cleanHandle,
+            niche: 'Fashion & Lifestyle',
+            bio: 'Criadora de conteúdo premium — parceira de marcas que buscam engajamento real.'
+          }
+        }),
+        prisma.user.update({
+          where: { id: influencerUser.id },
+          data: { onboardingCompleted: true }
+        })
+      ]);
+
+      // 3. Recalcular InfluScore
+      await ScoringService.calculateAndPersist(influencer.id);
+
+      const updatedProfile = await prisma.influencerProfile.findUnique({
+        where: { id: influencer.id }
+      });
+
+      res.json({
+        success: true,
+        message: 'Instagram vinculado com sucesso!',
+        data: {
+          followers,
+          engagementRate: engagement,
+          influScore: updatedProfile?.influScore,
+          scoreClass: updatedProfile?.scoreClass,
+          username: cleanHandle
+        }
+      });
+      return;
+    }
+
+    if (step === 2) {
+      // --- PASSO 2: AI Weekly Strategy Content ---
+      // Forçar a geração de uma nova análise estratégica da IA
+      const analysis = await AIService.generateWeeklyAnalysis(influencer.id);
+      res.json({
+        success: true,
+        message: 'Análise de Inteligência Artificial gerada!',
+        data: {
+          analysisText: analysis?.analysisText || 'Estratégia não disponível.',
+          recommendations: analysis?.recommendations || '[]'
+        }
+      });
+      return;
+    }
+
+    if (step === 3) {
+      // --- PASSO 3: Criar Proposta de Contrato ---
+      // Limpar propostas em aberto anteriores do simulador para evitar lixo
+      await prisma.contract.deleteMany({
+        where: {
+          companyId: company.id,
+          influencerId: influencer.id,
+          escrowStatus: { in: ['DRAFT', 'PENDING_PAYMENT', 'IN_PROGRESS', 'UNDER_REVIEW', 'CANCELED'] }
+        }
+      });
+
+      const title = 'Campanha Outono Premium 2026';
+      const briefing = 'Criação de 1 Reels demonstrando a qualidade do casaco corta-vento impermeável da nova coleção Outono/Inverno. Seguir a paleta de cores escuras e estética limpa.';
+      const budget = 3500.00;
+      const successFeeRate = 0.15; // 15% taxa
+      const platformFee = budget * successFeeRate;
+      const netAmount = budget - platformFee;
+
+      const contract = await prisma.contract.create({
+        data: {
+          companyId: company.id,
+          influencerId: influencer.id,
+          title,
+          briefing,
+          budget,
+          platformFee,
+          netAmount,
+          successFeeRate,
+          escrowStatus: 'DRAFT',
+          deliverables: {
+            create: [
+              {
+                type: 'REELS',
+                deadline: new Date(Date.now() + 5 * 24 * 3600 * 1000),
+                status: 'PENDING'
+              }
+            ]
+          }
+        },
+        include: { deliverables: true }
+      });
+
+      res.json({
+        success: true,
+        message: 'Proposta de contrato criada pela Empresa!',
+        data: contract
+      });
+      return;
+    }
+
+    if (step === 4) {
+      // --- PASSO 4: Depósito em Escrow ---
+      const contract = await prisma.contract.findFirst({
+        where: {
+          companyId: company.id,
+          influencerId: influencer.id,
+          escrowStatus: 'DRAFT'
+        }
+      });
+
+      if (!contract) {
+        res.status(404).json({ error: 'Nenhum contrato em DRAFT encontrado. Execute o passo anterior.' });
+        return;
+      }
+
+      const updated = await prisma.contract.update({
+        where: { id: contract.id },
+        data: { 
+          escrowStatus: 'IN_PROGRESS',
+          externalTxId: `sim_tx_escrow_${Math.random().toString(36).substring(7)}`
+        },
+        include: { deliverables: true }
+      });
+
+      // Criar notificação para o influenciador
+      await prisma.notification.create({
+        data: {
+          userId: influencerUser.id,
+          message: `💰 O pagamento em Escrow foi confirmado para a campanha "${updated.title}"! Você já pode iniciar a produção.`,
+          type: 'ESCROW_CONFIRMED'
+        }
+      });
+
+      res.json({
+        success: true,
+        message: 'Depósito em Escrow confirmado! Recursos retidos na plataforma com segurança.',
+        data: updated
+      });
+      return;
+    }
+
+    if (step === 5) {
+      // --- PASSO 5: Submeter Peça & Auditoria IA ---
+      const contract = await prisma.contract.findFirst({
+        where: {
+          companyId: company.id,
+          influencerId: influencer.id,
+          escrowStatus: 'IN_PROGRESS'
+        },
+        include: { deliverables: true }
+      });
+
+      if (!contract || contract.deliverables.length === 0) {
+        res.status(404).json({ error: 'Nenhum contrato em progresso encontrado.' });
+        return;
+      }
+
+      const deliverable = contract.deliverables[0];
+      const proofUrl = 'https://www.instagram.com/reel/C_outono_premium_jaqueta';
+
+      // Executar a auditoria real do Gemini
+      const auditResult = await AIService.auditDeliverableLink(
+        proofUrl,
+        deliverable.type,
+        contract.title,
+        contract.briefing || undefined,
+        contract.aiScript || undefined
+      );
+
+      // Atualiza entregável para UNDER_REVIEW com a prova
+      const updatedDeliverable = await prisma.deliverable.update({
+        where: { id: deliverable.id },
+        data: {
+          status: 'UNDER_REVIEW',
+          proofUrl
+        }
+      });
+
+      // Atualiza o contrato para UNDER_REVIEW
+      await prisma.contract.update({
+        where: { id: contract.id },
+        data: { escrowStatus: 'UNDER_REVIEW' }
+      });
+
+      // Notificar empresa
+      await prisma.notification.create({
+        data: {
+          userId: companyUser.id,
+          message: `✨ Nova entrega submetida pelo influenciador. Auditoria da IA: ${auditResult.approved ? 'Aprovada' : 'Atenção Requerida'} (Nota: ${auditResult.confidenceScore}%).`,
+          type: 'SUBMISSION_REVIEW'
+        }
+      });
+
+      res.json({
+        success: true,
+        message: 'Entrega submetida com sucesso! A Inteligência Artificial auditou o link em tempo real.',
+        data: {
+          deliverable: updatedDeliverable,
+          aiAudit: auditResult
+        }
+      });
+      return;
+    }
+
+    if (step === 6) {
+      // --- PASSO 6: Aprovação & Liberação de Saldo (Payout) ---
+      const contract = await prisma.contract.findFirst({
+        where: {
+          companyId: company.id,
+          influencerId: influencer.id,
+          escrowStatus: 'UNDER_REVIEW'
+        },
+        include: { deliverables: true }
+      });
+
+      if (!contract || contract.deliverables.length === 0) {
+        res.status(404).json({ error: 'Nenhum contrato em revisão encontrado.' });
+        return;
+      }
+
+      const deliverable = contract.deliverables[0];
+
+      // Aprovar via transação e liberar saldo na wallet do influenciador (contrato COMPLETED)
+      const updated = await prisma.$transaction(async (tx) => {
+        await tx.deliverable.update({
+          where: { id: deliverable.id },
+          data: { status: 'APPROVED' }
+        });
+
+        const updatedContract = await tx.contract.update({
+          where: { id: contract.id },
+          data: { 
+            escrowStatus: 'COMPLETED',
+            releaseTxId: `sim_payout_tx_${Math.random().toString(36).substring(7)}`
+          },
+          include: { deliverables: true }
+        });
+
+        // Notificar o influenciador
+        await tx.notification.create({
+          data: {
+            userId: influencerUser.id,
+            message: `🎉 Mapeamos que sua entrega do Reels foi aprovada pela marca. O saldo de R$ ${Number(contract.netAmount).toFixed(2)} já está disponível na sua carteira!`,
+            type: 'PAYMENT_RELEASED'
+          }
+        });
+
+        return updatedContract;
+      });
+
+      // Recalcular score para incluir bônus de contrato concluído
+      await ScoringService.calculateAndPersist(influencer.id);
+
+      res.json({
+        success: true,
+        message: 'Parabéns! Payout liberado com sucesso! Contrato finalizado.',
+        data: updated
+      });
+      return;
+    }
+
+    res.status(400).json({ error: 'Etapa de simulação inválida.' });
+  } catch (error: any) {
+    console.error('[SIMULATE FLOW STEP] Erro na etapa:', error);
+    res.status(500).json({ error: `Erro na execução da etapa: ${error.message}` });
   }
 };

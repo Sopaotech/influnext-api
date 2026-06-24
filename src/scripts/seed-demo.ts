@@ -22,13 +22,14 @@ async function seedDemo() {
   // ── 1. Influenciador Demo ──────────────────────────────────────────────────
   const influencerUser = await prisma.user.upsert({
     where: { email: 'influencer@demo.influnext.com.br' },
-    update: { passwordHash, role: 'INFLUENCER', onboardingCompleted: true, subscriptionStatus: 'ACTIVE' },
+    update: { passwordHash, role: 'INFLUENCER', onboardingCompleted: true, subscriptionStatus: 'ACTIVE', subscriptionTier: 'PRO' },
     create: {
       email: 'influencer@demo.influnext.com.br',
       passwordHash,
       role: 'INFLUENCER',
       onboardingCompleted: true,
       subscriptionStatus: 'ACTIVE',
+      subscriptionTier: 'PRO',
     }
   });
   console.log(`✅ Usuário influencer: ${influencerUser.email}`);
@@ -54,13 +55,14 @@ async function seedDemo() {
   // ── 2. Empresa Demo ────────────────────────────────────────────────────────
   const companyUser = await prisma.user.upsert({
     where: { email: 'empresa@demo.influnext.com.br' },
-    update: { passwordHash, role: 'COMPANY', onboardingCompleted: true, subscriptionStatus: 'ACTIVE' },
+    update: { passwordHash, role: 'COMPANY', onboardingCompleted: true, subscriptionStatus: 'ACTIVE', subscriptionTier: 'PRO' },
     create: {
       email: 'empresa@demo.influnext.com.br',
       passwordHash,
       role: 'COMPANY',
       onboardingCompleted: true,
       subscriptionStatus: 'ACTIVE',
+      subscriptionTier: 'PRO',
     }
   });
   console.log(`✅ Usuário empresa: ${companyUser.email}`);

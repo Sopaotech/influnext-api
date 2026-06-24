@@ -227,10 +227,10 @@ export default function OnboardingPage() {
       });
   };
 
-  const handleConnectSimulate = async () => {
+  const handleConnectSimulate = async (username?: string) => {
     try {
       setIsSaving(true);
-      await api.post('/integrations/simulate');
+      await api.post('/integrations/simulate', { username });
       Cookies.set('influnext_onboarding', 'true', { expires: 7 });
       toast.success('✦ Instagram conectado com sucesso (Simulado)!');
       
@@ -844,13 +844,13 @@ export default function OnboardingPage() {
       <InstagramOnboardingModal 
         isOpen={isIgModalOpen}
         onClose={() => setIsIgModalOpen(false)}
-        onConfirm={(mode: 'personal' | 'business' | 'simulate') => {
+        onConfirm={(mode: 'personal' | 'business' | 'simulate', username?: string) => {
           if (mode === 'personal') {
             handleConnectPersonal();
           } else if (mode === 'business') {
             handleConnectBusiness();
           } else {
-            handleConnectSimulate();
+            handleConnectSimulate(username);
           }
         }}
       />
