@@ -80,7 +80,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navItems = [
     { name: 'Home', href: homeHref, icon: Home },
     { name: 'Calendário', href: '/dashboard/calendar', icon: Calendar },
-    { name: 'Workspace', href: '/dashboard/workspace', icon: LayoutDashboard, special: true, badgeCount: taskCount },
+    { name: 'Área de Trabalho', href: '/dashboard/workspace', icon: LayoutDashboard, special: true, badgeCount: taskCount },
     { name: 'Marketplace', href: '/dashboard/marketplace', icon: Store },
     { name: 'Media Kit', href: '/dashboard/mediakit', icon: Sparkles }, 
     { name: 'Contratos', href: '/dashboard/contracts', icon: FileText },

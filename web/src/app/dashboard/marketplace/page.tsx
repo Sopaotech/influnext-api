@@ -30,7 +30,15 @@ interface Influencer {
   influScore: number;
   scoreClass: string;
   verifiedMetrics: boolean;
+  metricsHistory?: { followers: number }[];
 }
+
+const formatNumber = (num: number) => {
+  if (!num) return '0';
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1).replace('.0', '')}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1).replace('.0', '')}K`;
+  return num.toLocaleString('pt-BR');
+};
 
 export default function MarketplacePage() {
   const router = useRouter();
@@ -237,7 +245,12 @@ export default function MarketplacePage() {
                 </div>
                 <div className="mt-6 relative z-10">
                   <p className="text-xl font-black tracking-tighter">@{inf.handle}</p>
-                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">ROI Estimado: <span className="text-emerald-400">+14%</span></p>
+                  <div className="flex justify-between items-center mt-1">
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">ROI Estimado: <span className="text-emerald-400">+14%</span></p>
+                    <p className="text-[10px] text-amber-400 font-bold uppercase tracking-widest">
+                      {inf.metricsHistory?.[0]?.followers ? formatNumber(inf.metricsHistory[0].followers) : '---'} segs
+                    </p>
+                  </div>
                 </div>
                 <Link
                   href={`/dashboard/company/new-contract?influencerId=${inf.id}&handle=${inf.handle}`}
@@ -312,11 +325,16 @@ export default function MarketplacePage() {
                   </div>
                 </div>
 
-                {/* Score */}
+                {/* Score & Followers */}
                 <div className="flex items-center justify-between pt-4 border-t border-white/10">
                   <div className="space-y-0.5">
-                    <p className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">InfluScore</p>
-                    <p className="text-2xl font-black text-white tracking-tighter">{inf.influScore}</p>
+                    <p className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">InfluScore / Seguidores</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-black text-white tracking-tighter">{inf.influScore}</span>
+                      <span className="text-[10px] text-zinc-400 font-bold">
+                        • {inf.metricsHistory?.[0]?.followers ? formatNumber(inf.metricsHistory[0].followers) : '---'}
+                      </span>
+                    </div>
                   </div>
                   <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border ${SCORE_CLASSES[inf.scoreClass] || SCORE_CLASSES.BRONZE}`}>
                     {inf.scoreClass}

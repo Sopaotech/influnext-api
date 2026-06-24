@@ -64,6 +64,8 @@ export default function MediaKitPage() {
 
   const profile = data?.profile;
   const kpis = data?.kpis;
+  const instagramPlatform = data?.platforms?.find((p: any) => p.platformName === 'INSTAGRAM' || p.platform === 'INSTAGRAM');
+  const tiktokPlatform = data?.platforms?.find((p: any) => p.platformName === 'TIKTOK' || p.platform === 'TIKTOK');
 
   return (
     <div className="p-4 md:p-10 max-w-7xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-10 duration-1000 pb-32">
@@ -313,34 +315,38 @@ export default function MediaKitPage() {
       {/* Verified Platforms */}
       <section className="bg-black/35 border border-white/5 rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-10">
          <div className="space-y-4 text-center md:text-left">
-            <h3 className="text-xl md:text-2xl font-black text-white">Redes Ativas & Auditadas</h3>
-            <p className="text-zinc-400 text-xs md:text-sm font-medium max-w-sm">Métricas sincronizadas diretamente via API oficial para garantir 100% de integridade nos dados.</p>
+            <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter">Canais & Seguidores</h3>
+            <p className="text-zinc-400 text-xs md:text-sm font-medium max-w-sm leading-relaxed">Métricas auditadas e sincronizadas diretamente via API oficial para garantir 100% de integridade nos dados.</p>
          </div>
-         <div className="flex flex-wrap justify-center gap-4">
+         <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
             {/* Instagram Node */}
-            <div className={`px-4 md:px-6 py-3 md:py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3 shadow-sm ${data?.platforms?.some((p: any) => p.platform === 'INSTAGRAM') ? '' : 'opacity-40 grayscale'}`}>
-               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-pink-500">
+            <div className={`px-6 py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-4 shadow-sm flex-1 md:flex-initial transition-all ${instagramPlatform ? 'border-pink-500/20' : 'opacity-40 grayscale'}`}>
+               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-pink-500 flex-shrink-0">
                  <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
                  <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
                </svg>
-               <div>
-                  <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">Instagram</div>
-                  <div className="text-xs md:text-sm font-bold text-zinc-300">
-                    {data?.platforms?.some((p: any) => p.platform === 'INSTAGRAM') ? 'Conectado' : 'Desconectado'}
+               <div className="text-left">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Instagram</div>
+                  <div className="text-xs font-bold text-zinc-200 mt-0.5">
+                    {instagramPlatform ? (
+                      <span>@{instagramPlatform.username} • <span className="text-pink-400 font-black">{formatNumber(instagramPlatform.followersCount)}</span></span>
+                    ) : 'Desconectado'}
                   </div>
                </div>
             </div>
             
             {/* TikTok Node */}
-            <div className={`px-4 md:px-6 py-3 md:py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3 shadow-sm ${data?.platforms?.some((p: any) => p.platform === 'TIKTOK') ? '' : 'opacity-40 grayscale'}`}>
-               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className={data?.platforms?.some((p: any) => p.platform === 'TIKTOK') ? "text-white" : "text-zinc-500"}>
+            <div className={`px-6 py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-4 shadow-sm flex-1 md:flex-initial transition-all ${tiktokPlatform ? 'border-purple-500/20' : 'opacity-40 grayscale'}`}>
+               <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className={`flex-shrink-0 ${tiktokPlatform ? "text-purple-400" : "text-zinc-550"}`}>
                  <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.23-2.5.83-5.06 2.82-6.52 1.39-1.04 3.18-1.54 4.93-1.39v4.06c-1.16-.1-2.35.15-3.32.84-.81.57-1.38 1.48-1.46 2.47-.09 1.14.36 2.3 1.18 3.08.79.76 1.93 1.14 3.04 1.05 1.54-.12 2.88-1.28 3.23-2.79.16-.67.24-1.37.24-2.06V.02z" />
                </svg>
-               <div>
-                  <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500">TikTok</div>
-                  <div className="text-xs md:text-sm font-bold text-zinc-300">
-                    {data?.platforms?.some((p: any) => p.platform === 'TIKTOK') ? 'Conectado' : 'Desconectado'}
+               <div className="text-left">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">TikTok</div>
+                  <div className="text-xs font-bold text-zinc-200 mt-0.5">
+                    {tiktokPlatform ? (
+                      <span>@{tiktokPlatform.username} • <span className="text-purple-400 font-black">{formatNumber(tiktokPlatform.followersCount)}</span></span>
+                    ) : 'Desconectado'}
                   </div>
                </div>
             </div>

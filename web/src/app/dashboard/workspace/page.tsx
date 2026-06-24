@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Sparkles, BrainCircuit, Loader2, ClipboardList, Music, Terminal, Zap, Activity, Play, Mic, MicOff, Volume2, Crown, Lock, User, Calendar, Building, Target, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { EscrowExplanatoryCard } from '@/components/EscrowExplanatoryCard';
 import Cookies from 'js-cookie';
 
 interface AIAnalysis {
@@ -356,6 +355,46 @@ Assim que você gravar e subir o link da entrega aqui no painel, nossa Inteligê
 
     }, 1000);
   };
+ 
+  const handleSimulateCompanyDialogue = () => {
+    if (isChatting) return;
+    
+    // Limpa o chat para iniciar a demo
+    setChatMessages([]);
+    setIsChatting(true);
+
+    // Passo 1: Empresa pergunta
+    setTimeout(() => {
+      setChatMessages(prev => [...prev, { role: 'user', text: 'Oi Vektor, como posso estruturar o briefing da próxima campanha da nossa Marca Premium Ltda com a @demo.influencer?' }]);
+      
+      // Passo 2: Vektor responde
+      setTimeout(() => {
+        const reply1 = `Olá! Para a campanha da Marca Premium Ltda com a @demo.influencer (nicho Fashion & Lifestyle, com 370K seguidores e InfluScore 78), sugiro propor um criativo híbrido de Reels de 15 segundos demonstrando a Coleção de Linho em ambiente de estúdio. 
+
+Para maior conversão, recomendo incluir um cupom exclusivo 'PREMIUM10' e um gancho chamativo nos primeiros 3 segundos do vídeo. O orçamento de R$ 5.000,00 da campanha deve ser depositado em nosso Escrow Seguro para garantir segurança absoluta.`;
+        setChatMessages(prev => [...prev, { role: 'mentor', text: reply1 }]);
+        speak(reply1);
+        
+        // Passo 3: Empresa pergunta sobre segurança e validação
+        setTimeout(() => {
+          setChatMessages(prev => [...prev, { role: 'user', text: 'Excelente! E sobre a entrega dos vídeos e a liberação de pagamento? Como funciona a auditoria de IA?' }]);
+          
+          // Passo 4: Vektor explica o processo de auditoria de IA e liberação do saldo
+          setTimeout(() => {
+            const reply2 = `Excelente pergunta! A @demo.influencer produzirá e publicará o conteúdo conforme o briefing. Assim que ela entregar o link da publicação aqui no painel, nossa Inteligência Artificial fará a auditoria automática do vídeo em tempo real (verificando presença do produto e regras acordadas).
+
+Estando tudo correto, o pagamento de R$ 4.250,00 líquidos é liberado da conta de custódia diretamente para a carteira dela, gerando também a nota fiscal correspondente. Tudo de forma 100% protegida e rastreável!`;
+            setChatMessages(prev => [...prev, { role: 'mentor', text: reply2 }]);
+            speak(reply2);
+            setIsChatting(false);
+          }, 3500);
+
+        }, 3000);
+
+      }, 3500);
+
+    }, 1000);
+  };
 
   const isDark = true;
   const isCompany = user?.role === 'COMPANY';
@@ -382,7 +421,7 @@ Assim que você gravar e subir o link da entrega aqui no painel, nossa Inteligê
                </span>
             </div>
             <h1 className={`text-5xl md:text-7xl font-black tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Central de <span className={`text-transparent bg-clip-text bg-gradient-to-r ${isCompany ? 'from-pink-400 via-purple-400 to-pink-500' : 'from-purple-500 via-pink-500 to-indigo-500'}`}>{isCompany ? 'Branding' : 'Comando'}</span>
+              Área de <span className={`text-transparent bg-clip-text bg-gradient-to-r ${isCompany ? 'from-pink-400 via-purple-400 to-pink-500' : 'from-purple-500 via-pink-500 to-indigo-500'}`}>Trabalho</span>
             </h1>
             <p className={`text-[11px] font-black max-w-lg uppercase tracking-widest px-3 py-1.5 rounded-lg w-fit border ${
               isDark 
@@ -430,10 +469,22 @@ Assim que você gravar e subir o link da entrega aqui no painel, nossa Inteligê
             <section className={`border p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] relative flex flex-col h-[500px] md:h-[600px] shadow-sm ${
               isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
             }`}>
-              <div className={`flex items-center gap-3 mb-4 md:mb-6 text-[9px] md:text-[10px] font-black uppercase tracking-widest border-b pb-4 md:pb-6 ${
-                isDark ? 'text-zinc-500 border-white/5' : 'text-slate-400 border-slate-50'
+              <div className={`flex items-center justify-between mb-4 md:mb-6 border-b pb-4 md:pb-6 ${
+                isDark ? 'border-white/5' : 'border-slate-50'
               }`}>
-                 <Terminal className="w-5 h-5 text-amber-500" /> {mentorName} // Estrategista de Posicionamento de Marca & ROI
+                 <div className={`flex items-center gap-3 text-[9px] md:text-[10px] font-black uppercase tracking-widest ${
+                   isDark ? 'text-zinc-500' : 'text-slate-400'
+                 }`}>
+                    <Terminal className="w-5 h-5 text-amber-500" /> {mentorName} // Estrategista de Posicionamento de Marca & ROI
+                 </div>
+                 <button
+                   type="button"
+                   onClick={handleSimulateCompanyDialogue}
+                   disabled={isChatting}
+                   className="px-3 py-1 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-[8px] font-black uppercase tracking-wider rounded-lg transition-all"
+                 >
+                   Simular Conversa Demo
+                 </button>
               </div>
               
               <div className="flex-1 overflow-y-auto space-y-6 pr-2 scrollbar-none scroll-smooth">
@@ -566,6 +617,36 @@ Assim que você gravar e subir o link da entrega aqui no painel, nossa Inteligê
                 IR PARA O MARKETPLACE ➔
               </Button>
             </div>
+
+            {/* Widget 3: Criador Destaque (Match Perfeito) */}
+            <div className={`border p-6 rounded-[2rem] space-y-4 border-l-4 border-l-purple-500 shadow-sm relative overflow-hidden ${
+              isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
+            }`}>
+              <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-500/5 blur-3xl rounded-full" />
+              <h3 className={`text-[10px] font-black uppercase tracking-widest flex items-center justify-between ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                 <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-purple-500" /> MATCH DA SEMANA (IA)
+                 </div>
+              </h3>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 font-bold text-xs uppercase">
+                  DI
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-[10px] font-black text-white uppercase tracking-tight">@demo.influencer</p>
+                  <p className="text-[8px] text-zinc-550 font-bold uppercase">Fashion & Lifestyle • 370K segs</p>
+                </div>
+              </div>
+              <p className="text-[10px] text-zinc-400 leading-normal font-medium">
+                Vektor identificou 94% de afinidade com a sua Coleção de Verão de Linho. O ROI estimado é de +14%.
+              </p>
+              <Button 
+                onClick={() => router.push('/dashboard/marketplace')}
+                className="w-full h-11 bg-purple-600/20 border border-purple-500/35 hover:bg-purple-600/40 text-purple-200 font-black text-[9px] uppercase tracking-widest rounded-xl transition-all shadow-sm"
+              >
+                PROPOR CONTRATO ➔
+              </Button>
+            </div>
             
           </div>
         </div>
@@ -648,7 +729,6 @@ Assim que você gravar e subir o link da entrega aqui no painel, nossa Inteligê
                   </div>
                 </section>
     
-                <EscrowExplanatoryCard />
     
                 {/* Próximo Passo Recomendado (Socratic Action) */}
                 <div className={`border p-6 rounded-[2rem] relative overflow-hidden shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-l-4 border-l-emerald-500 ${

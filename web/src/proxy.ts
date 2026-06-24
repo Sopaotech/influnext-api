@@ -7,7 +7,7 @@ function redirectNoCache(url: URL) {
   return response;
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const token = request.cookies.get('influnext_token')?.value;
   const role = request.cookies.get('influnext_role')?.value;
   const { pathname } = request.nextUrl;

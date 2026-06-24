@@ -214,6 +214,11 @@ export const searchInfluencers = async (req: Request, res: Response): Promise<vo
         scoreClass:      true,
         verifiedMetrics: true,
         profileImageUrl: true,
+        metricsHistory: {
+          take: 1,
+          orderBy: { capturedAt: 'desc' },
+          select: { followers: true }
+        }
       },
       orderBy: { influScore: 'desc' },
       take: 50,

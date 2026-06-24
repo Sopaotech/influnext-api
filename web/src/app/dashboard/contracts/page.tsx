@@ -213,82 +213,85 @@ export default function ContractsPage() {
                       <TableRow className="bg-[#080810]/30 border-b-[#1e1430]">
                         <TableCell colSpan={6} className="p-8">
                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in slide-in-from-top-2 duration-300">
-                              {/* Briefing da Marca */}
-                              <div className="space-y-4">
-                                 <div className="flex items-center gap-2 text-[10px] font-black text-zinc-500 uppercase tracking-widest">
-                                    <FileText className="w-3.5 h-3.5" /> Briefing da Marca
-                                 </div>
-                                 <div className="p-6 bg-[#100c1e] border border-[#1e1430] rounded-2xl text-zinc-400 text-xs leading-relaxed font-medium">
-                                    {contract.briefing || "Nenhum briefing detalhado fornecido."}
-                                 </div>
-                              </div>
-
-                              {/* Roteiro Inteligente InfluNext */}
-                              <div className="space-y-4">
-                                 <div className="flex items-center justify-between gap-4">
-                                    <div className="flex items-center gap-2 text-[10px] font-black text-purple-400 uppercase tracking-widest">
-                                       <Sparkles className="w-3.5 h-3.5" /> Roteiro Sugerido pela IA (O Cérebro)
+                              {/* Coluna da Esquerda (Briefing + Roteiro) */}
+                              <div className="lg:col-span-2 space-y-6">
+                                 {/* Briefing da Marca */}
+                                 <div className="space-y-4">
+                                    <div className="flex items-center gap-2 text-[10px] font-black text-zinc-500 uppercase tracking-widest">
+                                       <FileText className="w-3.5 h-3.5" /> Briefing da Marca
                                     </div>
-                                    {editingScriptId !== contract.id ? (
-                                       <button 
-                                          onClick={() => {
-                                             setEditingScriptId(contract.id);
-                                             setEditedScriptText(contract.aiScript || '');
-                                          }}
-                                          className="text-[9px] font-black text-purple-400 hover:text-purple-300 transition-colors uppercase tracking-widest"
-                                       >
-                                          {userRole === 'INFLUENCER' ? 'Dar minha Opinião / Ajustar' : 'Ajustar Roteiro'}
-                                       </button>
-                                    ) : null}
+                                    <div className="p-6 bg-[#100c1e] border border-[#1e1430] rounded-2xl text-zinc-400 text-xs leading-relaxed font-medium">
+                                       {contract.briefing || "Nenhum briefing detalhado fornecido."}
+                                    </div>
                                  </div>
-                                 <div className="p-6 bg-gradient-to-br from-purple-950/20 to-indigo-950/20 border border-purple-500/20 rounded-2xl text-zinc-200 text-xs leading-relaxed font-sans prose prose-invert max-w-none">
-                                    {editingScriptId === contract.id ? (
-                                       <div className="space-y-3">
-                                          <textarea 
-                                             value={editedScriptText}
-                                             onChange={(e) => setEditedScriptText(e.target.value)}
-                                             placeholder="Digite suas orientações, comentários ou roteiro adaptado..."
-                                             className="w-full bg-black/45 border border-[#1e1430] rounded-xl p-4 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-purple-500/50 transition-colors resize-none font-sans"
-                                             rows={8}
-                                             disabled={isSavingScript}
-                                          />
-                                          <div className="flex gap-2 justify-end">
-                                             <button 
-                                                onClick={() => setEditingScriptId(null)}
+
+                                 {/* Roteiro Inteligente InfluNext */}
+                                 <div className="space-y-4">
+                                    <div className="flex items-center justify-between gap-4">
+                                       <div className="flex items-center gap-2 text-[10px] font-black text-purple-400 uppercase tracking-widest">
+                                          <Sparkles className="w-3.5 h-3.5" /> Roteiro Sugerido pela IA (O Cérebro)
+                                       </div>
+                                       {editingScriptId !== contract.id ? (
+                                          <button 
+                                             onClick={() => {
+                                                setEditingScriptId(contract.id);
+                                                setEditedScriptText(contract.aiScript || '');
+                                             }}
+                                             className="text-[9px] font-black text-purple-400 hover:text-purple-300 transition-colors uppercase tracking-widest"
+                                          >
+                                             {userRole === 'INFLUENCER' ? 'Dar minha Opinião / Ajustar' : 'Ajustar Roteiro'}
+                                          </button>
+                                       ) : null}
+                                    </div>
+                                    <div className="p-6 bg-gradient-to-br from-purple-950/20 to-indigo-950/20 border border-purple-500/20 rounded-2xl text-zinc-200 text-xs leading-relaxed font-sans prose prose-invert max-w-none">
+                                       {editingScriptId === contract.id ? (
+                                          <div className="space-y-3">
+                                             <textarea 
+                                                value={editedScriptText}
+                                                onChange={(e) => setEditedScriptText(e.target.value)}
+                                                placeholder="Digite suas orientações, comentários ou roteiro adaptado..."
+                                                className="w-full bg-black/45 border border-[#1e1430] rounded-xl p-4 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-purple-500/50 transition-colors resize-none font-sans"
+                                                rows={8}
                                                 disabled={isSavingScript}
-                                                className="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border border-zinc-800 text-zinc-400 hover:bg-white/[0.02] transition-colors"
-                                             >
-                                                Cancelar
-                                             </button>
-                                             <button 
-                                                onClick={() => handleSaveScript(contract.id)}
-                                                disabled={isSavingScript || !editedScriptText.trim()}
-                                                className="px-5 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-purple-600 hover:bg-purple-500 text-white transition-all shadow-md active:scale-95 flex items-center gap-1.5"
-                                             >
-                                                {isSavingScript ? (
-                                                   <>
-                                                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                                      Salvando...
-                                                   </>
-                                                ) : (
-                                                   'Salvar Roteiro'
-                                                )}
-                                             </button>
+                                             />
+                                             <div className="flex gap-2 justify-end">
+                                                <button 
+                                                   onClick={() => setEditingScriptId(null)}
+                                                   disabled={isSavingScript}
+                                                   className="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border border-zinc-800 text-zinc-400 hover:bg-white/[0.02] transition-colors"
+                                                >
+                                                   Cancelar
+                                                </button>
+                                                <button 
+                                                   onClick={() => handleSaveScript(contract.id)}
+                                                   disabled={isSavingScript || !editedScriptText.trim()}
+                                                   className="px-5 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-purple-600 hover:bg-purple-500 text-white transition-all shadow-md active:scale-95 flex items-center gap-1.5"
+                                                >
+                                                   {isSavingScript ? (
+                                                      <>
+                                                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                         Salvando...
+                                                      </>
+                                                   ) : (
+                                                      'Salvar Roteiro'
+                                                   )}
+                                                </button>
+                                             </div>
                                           </div>
-                                       </div>
-                                    ) : contract.aiScript ? (
-                                       <div className="whitespace-pre-wrap">{contract.aiScript}</div>
-                                    ) : (
-                                       <div className="flex items-center gap-2 text-zinc-600 italic">
-                                          <Brain className="w-4 h-4 opacity-50" />
-                                          Processando inteligência de roteiro...
-                                       </div>
-                                    )}
+                                       ) : contract.aiScript ? (
+                                          <div className="whitespace-pre-wrap">{contract.aiScript}</div>
+                                       ) : (
+                                          <div className="flex items-center gap-2 text-zinc-600 italic">
+                                             <Brain className="w-4 h-4 opacity-50" />
+                                             Processando inteligência de roteiro...
+                                          </div>
+                                       )}
+                                    </div>
                                  </div>
                               </div>
 
                               {/* Entregáveis e Submissão */}
-                              <div className="space-y-4">
+                              <div className="lg:col-span-1 space-y-4">
                                  <div className="flex items-center gap-2 text-[10px] font-black text-emerald-400 uppercase tracking-widest">
                                     <ShieldCheck className="w-3.5 h-3.5" /> Entregáveis / Ação de Escrow
                                  </div>

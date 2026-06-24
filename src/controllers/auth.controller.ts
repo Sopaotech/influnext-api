@@ -520,3 +520,33 @@ export const socialLogin = async (req: Request, res: Response): Promise<void> =>
     res.status(500).json({ error: 'Erro interno no servidor ao autenticar via rede social.' });
   }
 };
+
+export const getMe = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user!.id;
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        subscriptionStatus: true,
+        subscriptionTier: true,
+        trialEndsAt: true,
+        onboardingCompleted: true,
+        theme: true,
+        accentColor: true
+      }
+    });
+
+    if (!user) {
+      res.status(404).json({ error: 'Usuário não encontrado.' });
+      return;
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.error('[AUTH GETME ERROR]:', error);
+    res.status(500).json({ error: 'Erro ao buscar dados do usuário.' });
+  }
+};
