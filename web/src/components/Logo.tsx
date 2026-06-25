@@ -6,22 +6,23 @@ interface LogoProps {
   href?: string | null;
   className?: string;
   variant?: 'auto' | 'light' | 'dark';
+  textOnly?: boolean;
 }
 
 const fontSizeMap = {
-  sm: 'text-[13px]',
-  md: 'text-2xl',
-  lg: 'text-3xl',
-  xl: 'text-5xl',
-  xxl: 'text-7xl md:text-8xl'
+  sm: 'text-[10px]',
+  md: 'text-[11px] md:text-xs',
+  lg: 'text-sm md:text-base',
+  xl: 'text-xl sm:text-2xl',
+  xxl: 'text-3xl sm:text-4xl'
 };
 
 const iconSizeMap = {
   sm: 18,
-  md: 28,
-  lg: 36,
-  xl: 56,
-  xxl: 96
+  md: 36,
+  lg: 56,
+  xl: 96,
+  xxl: 144
 };
 
 function SpeedometerIcon({ size, className = '' }: { size: number; className?: string }) {
@@ -65,7 +66,7 @@ function SpeedometerIcon({ size, className = '' }: { size: number; className?: s
   );
 }
 
-export function Logo({ size = 'md', href = '/', className = '', variant = 'auto' }: LogoProps) {
+export function Logo({ size = 'md', href = '/', className = '', variant = 'auto', textOnly = false }: LogoProps) {
   const fontSize = fontSizeMap[size];
   const iconSize = iconSizeMap[size];
 
@@ -75,9 +76,9 @@ export function Logo({ size = 'md', href = '/', className = '', variant = 'auto'
     : 'text-slate-900 dark:text-white';
 
   const content = (
-    <span className={`inline-flex flex-col items-center select-none ${className}`}>
+    <span className={`inline-flex ${textOnly ? 'items-center' : 'flex-col items-center'} select-none ${className}`}>
       {/* Vertically stacked speedometer icon */}
-      <SpeedometerIcon size={iconSize} className="mb-0" />
+      {!textOnly && <SpeedometerIcon size={iconSize} className="mb-0" />}
       <span className={`font-black tracking-tighter leading-none ${fontSize} ${textColor}`}>
         Influ
         <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-pink-500">

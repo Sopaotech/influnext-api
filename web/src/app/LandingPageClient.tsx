@@ -86,7 +86,11 @@ export default function LandingPageClient() {
         <div className="absolute bottom-0 left-[20%] w-[500px] h-[400px] rounded-full bg-pink-600/8 blur-[100px] pointer-events-none" />
 
         <div className="relative z-10 flex flex-col items-center max-w-5xl">
-          <h1 className="text-3xl sm:text-5xl md:text-8xl font-black tracking-tighter leading-[1.0] md:leading-[0.95] mt-2 mb-6 max-w-4xl">
+          {/* Logo completo centralizado no Hero */}
+          <div className="mb-6 scale-110 sm:scale-125 transition-all duration-300">
+            <Logo size="xxl" href={null} variant="light" />
+          </div>
+          <h1 className="text-2xl sm:text-4xl md:text-6xl font-black tracking-tighter leading-[1.0] md:leading-[0.95] mt-4 mb-8 max-w-3xl">
             Para influenciadores que geram vendas<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-500">Para marcas que buscam retorno</span>
           </h1>
@@ -459,6 +463,169 @@ export default function LandingPageClient() {
         </div>
       </section>
 
+      {/* SEÇÃO ECOSSISTEMA DE IA */}
+      <section id="inteligencia-ia" className="w-full max-w-7xl mx-auto px-6 lg:px-16 py-24 relative overflow-hidden">
+        {/* Glows de fundo */}
+        <div className="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-purple-600/5 blur-[120px] pointer-events-none" />
+        <div className="absolute top-1/3 right-1/4 translate-x-1/2 w-[500px] h-[500px] rounded-full bg-pink-600/5 blur-[120px] pointer-events-none" />
+
+        <div className="text-center mb-16 relative z-10">
+          <p className="text-purple-400 text-[10px] font-black uppercase tracking-[0.3em] mb-3">✦ Cérebro do Ecossistema</p>
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter leading-[1.05] md:leading-[0.95] mb-4">
+            Duas IAs especializadas. Uma para cada ponta.<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">Inteligência que gera dinheiro real, não curtidas.</span>
+          </h2>
+          <p className="text-zinc-400 text-xs max-w-2xl mx-auto leading-relaxed">
+            Eliminamos a intermediação humana ineficiente. Nossos modelos de IA são treinados com dados de geolocalização e engajamento hiper-local para otimizar campanhas e valorizar o trabalho de criadores e o retorno de marcas.
+          </p>
+        </div>
+
+        {/* Grid das duas IAs */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10 max-w-5xl mx-auto items-stretch">
+          
+          {/* Card 1: IA Vincenzo (Creators) */}
+          <div className="border border-purple-500/20 bg-gradient-to-b from-purple-950/10 to-transparent rounded-[2.5rem] p-8 md:p-10 flex flex-col justify-between transition-all duration-300 hover:border-purple-500/40 hover:shadow-2xl hover:shadow-purple-950/10">
+            <div>
+              {/* Header do Card */}
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shadow-inner">
+                    <Brain className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <span className="text-purple-400 text-[9px] font-black uppercase tracking-widest block">Para Criadores de Conteúdo</span>
+                    <h3 className="text-2xl font-black text-white">IA Vincenzo</h3>
+                  </div>
+                </div>
+                <span className="text-[9px] bg-purple-500/15 text-purple-300 font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-purple-500/10">
+                  Gestão & Monetização
+                </span>
+              </div>
+
+              <p className="text-zinc-300 text-xs leading-relaxed mb-6 font-bold">
+                O Vincenzo é o estrategista de carreira do criador de conteúdo. Ele analisa seu perfil real e garante que você receba propostas em dinheiro, acabando com as permutas sem valor de &ldquo;recebidos e lanches&rdquo;.
+              </p>
+
+              {/* Tópicos de Inteligência */}
+              <div className="space-y-4 pt-6 border-t border-white/5">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-5 h-5 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 flex-shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white mb-1">Especialização por Nicho</h4>
+                    <p className="text-[11px] text-zinc-400 leading-relaxed font-bold">
+                      A IA mapeia a linguagem e o tom de voz do seu nicho exato (moda, beleza, gastronomia), gerando roteiros locais que convertem.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3.5">
+                  <div className="w-5 h-5 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 flex-shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white mb-1">Contratos Reais em Dinheiro</h4>
+                    <p className="text-[11px] text-zinc-400 leading-relaxed font-bold">
+                      A IA formata propostas comerciais estruturadas e cobra um cachê justo da marca, garantido pelo nosso sistema de Escrow Seguro.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3.5">
+                  <div className="w-5 h-5 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 flex-shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white mb-1">Crescimento de Carreira Guiado</h4>
+                    <p className="text-[11px] text-zinc-400 leading-relaxed font-bold">
+                      Mapeamento de hábitos de postagem e rotina de gravação baseados em dados reais de engajamento do seu perfil.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Rodapé do Card: Administração */}
+            <div className="mt-8 pt-6 border-t border-white/5 text-[10px] text-zinc-400 flex items-center justify-between">
+              <span>Administrado por: <strong className="text-purple-450 font-bold">O Criador (Via Redes Sociais)</strong></span>
+              <span className="text-purple-400 font-bold uppercase tracking-wider">Ativo</span>
+            </div>
+          </div>
+
+          {/* Card 2: IA Vektor (Brands) */}
+          <div className="border border-pink-500/20 bg-gradient-to-b from-pink-950/10 to-transparent rounded-[2.5rem] p-8 md:p-10 flex flex-col justify-between transition-all duration-300 hover:border-pink-500/40 hover:shadow-2xl hover:shadow-pink-950/10">
+            <div>
+              {/* Header do Card */}
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-400 shadow-inner">
+                    <Zap className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <span className="text-pink-400 text-[9px] font-black uppercase tracking-widest block">Para Marcas & Comércios Locais</span>
+                    <h3 className="text-2xl font-black text-white">IA Vektor</h3>
+                  </div>
+                </div>
+                <span className="text-[9px] bg-pink-500/15 text-pink-300 font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-pink-500/10">
+                  Branding & ROI
+                </span>
+              </div>
+
+              <p className="text-zinc-300 text-xs leading-relaxed mb-6 font-bold">
+                O Vektor atua como o co-piloto estratégico da marca. Ele garante que cada centavo retorne em vendas, orientando sobre branding, calculando o ROI e fazendo a seleção inteligente do influencer ideal.
+              </p>
+
+              {/* Tópicos de Inteligência */}
+              <div className="space-y-4 pt-6 border-t border-white/5">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-5 h-5 rounded-full bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-400 flex-shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white mb-1">Posicionamento de Marca & ROI</h4>
+                    <p className="text-[11px] text-zinc-400 leading-relaxed font-bold">
+                      A IA orienta marcas a definirem o orçamento ideal e estruturarem o cronograma de campanhas locais de forma inteligente.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3.5">
+                  <div className="w-5 h-5 rounded-full bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-400 flex-shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white mb-1">Escolha de Influencers por Geolocalização</h4>
+                    <p className="text-[11px] text-zinc-400 leading-relaxed font-bold">
+                      Varre o mapa para encontrar criadores que possuam audiência real na mesma geolocalização e cidade do comércio da marca.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3.5">
+                  <div className="w-5 h-5 rounded-full bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-400 flex-shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white mb-1">Análise de Pitch & Relatório de Posição</h4>
+                    <p className="text-[11px] text-zinc-400 leading-relaxed font-bold">
+                      Geração automatizada de pitch de abordagem e relatórios consolidados pós-campanha para mensurar o ganho real de visibilidade.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Rodapé do Card: Administração */}
+            <div className="mt-8 pt-6 border-t border-white/5 text-[10px] text-zinc-400 flex items-center justify-between">
+              <span>Administrado por: <strong className="text-pink-450 font-bold">A Marca (Via Painel Brand Agency)</strong></span>
+              <span className="text-pink-400 font-bold uppercase tracking-wider">Ativo</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       {/* SEÇÃO DE PLANOS & PREÇOS */}
       <section id="planos" className="w-full max-w-7xl mx-auto px-6 lg:px-16 py-20 relative overflow-hidden">
         {/* bg glows */}
@@ -501,74 +668,82 @@ export default function LandingPageClient() {
               <ul className="space-y-3.5 text-xs text-zinc-300 font-medium">
                 <li className="flex items-center gap-3">
                   <CheckCircle2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                  <span>**Taxa de campanha reduzida para 5%** (mais lucro líquido)</span>
+                  <span>Taxa de comissão reduzida de apenas <strong className="text-white font-black">5% por campanha</strong> para você reter mais lucro líquido.</span>
                 </li>
                 <li className="flex items-center gap-3 font-bold text-white">
                   <CheckCircle2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                  <span>Mentor de IA Vincenzo **Ilimitado + Gerador de Roteiros**</span>
+                  <span>Acesso ilimitado ao Vincenzo, nosso <strong className="text-white font-black">gerador de roteiros de alta conversão</strong>.</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <CheckCircle2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                  <span>Contas e redes sociais **ilimitadas** (Instagram, TikTok, YouTube)</span>
+                  <span>Recomendação inteligente de <strong className="text-white font-black">perfis semelhantes</strong> e ganchos de vídeo personalizados.</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <CheckCircle2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                  <span>Contratos e Escrows ativos **ilimitados** em andamento</span>
+                  <span>Garantia de <strong className="text-white font-black">contratos em dinheiro real</strong>, eliminando parcerias em troca de lanches.</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <CheckCircle2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                  <span>Selo **&ldquo;Verificado PRO&rdquo;** e destaque máximo no topo das buscas</span>
+                  <span>Conexão para <strong className="text-white font-black">redes sociais ilimitadas</strong> (Instagram, TikTok e YouTube).</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                  <span>Destaque máximo com o selo <strong className="text-white font-black">Verificado PRO</strong> nas buscas feitas pelas marcas.</span>
                 </li>
               </ul>
             </div>
-
+ 
             <div className="pt-8">
               <Link href="/auth/signup?type=influencer" className="block w-full text-center bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-purple-600/20 active:scale-95">
                 Escolher Plano Creator Premium
               </Link>
             </div>
           </div>
-
+ 
           {/* Card 2: Brand Agency */}
-          <div className="border border-pink-500/20 bg-gradient-to-b from-pink-950/10 to-transparent hover:border-pink-500/40 rounded-[2.5rem] p-10 flex flex-col justify-between transition-all duration-300 shadow-xl relative group">
+          <div className="border border-pink-500/20 bg-gradient-to-b from-pink-950/10 to-transparent rounded-[2.5rem] p-10 flex flex-col justify-between transition-all duration-300 shadow-xl relative group">
             {/* Tag popular */}
             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-600 to-purple-600 border border-pink-400/20 text-white text-[8px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full shadow-lg">
               Recomendado para Empresas
             </div>
-
+ 
             <div className="space-y-6">
               <div className="space-y-2">
                 <span className="text-pink-400 text-[9px] font-black uppercase tracking-widest">Enterprise Partner</span>
                 <h3 className="text-2xl font-black text-white">Brand Agency</h3>
                 <p className="text-zinc-400 text-xs leading-relaxed font-bold">A central de inteligência para marcas e agências gerenciarem criadores locais com ROI auditado.</p>
               </div>
-
+ 
               <div className="py-4 border-y border-white/5 space-y-1">
                 <span className="text-sm font-bold text-pink-400">R$</span>
                 <span className="text-5xl font-black text-white tracking-tighter">110,00</span>
                 <span className="text-zinc-500 text-[10px] font-bold block uppercase tracking-wider">Por mês</span>
               </div>
-
+ 
               <ul className="space-y-3.5 text-xs text-zinc-300 font-medium">
                 <li className="flex items-center gap-3">
                   <CheckCircle2 className="w-4 h-4 text-pink-400 flex-shrink-0" />
-                  <span>**Taxa de Escrow reduzida para 10%** em todas as campanhas</span>
+                  <span>Taxa operacional de garantia reduzida de <strong className="text-white font-black">10% por campanha</strong>.</span>
                 </li>
                 <li className="flex items-center gap-3 font-bold text-white">
                   <CheckCircle2 className="w-4 h-4 text-pink-400 flex-shrink-0" />
-                  <span>**Mentor de IA Vektor** (Consistência, escala e posicionamento sem gastar fortunas)</span>
+                  <span>Acesso ilimitado ao mentor Vektor para <strong className="text-white font-black">definir seu posicionamento e medir o ROI</strong>.</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <CheckCircle2 className="w-4 h-4 text-pink-400 flex-shrink-0" />
-                  <span>**Campanhas e contratos ativos ilimitados**</span>
+                  <span>Mecanismo inteligente para <strong className="text-white font-black">encontrar influenciadores locais</strong> da mesma cidade.</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <CheckCircle2 className="w-4 h-4 text-pink-400 flex-shrink-0" />
-                  <span>Painel Co-working para múltiplos usuários admins</span>
+                  <span>Criação de e-mails de abordagem e <strong className="text-white font-black">relatórios de presença de marca</strong> automatizados.</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <CheckCircle2 className="w-4 h-4 text-pink-400 flex-shrink-0" />
-                  <span>Relatórios avançados de ROI, métricas de público e conversão</span>
+                  <span>Campanhas e contratos ativos <strong className="text-white font-black">sem limite</strong> com auditoria automática de posts.</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-pink-400 flex-shrink-0" />
+                  <span>Painel colaborativo completo para <strong className="text-white font-black">múltiplos administradores</strong> da sua empresa.</span>
                 </li>
               </ul>
             </div>
@@ -583,14 +758,20 @@ export default function LandingPageClient() {
         </div>
 
         {/* Bilateral Free Tiers info note */}
-        <div className="mt-12 max-w-3xl mx-auto bg-zinc-950/40 border border-white/5 rounded-3xl p-6 text-center text-xs text-zinc-450 leading-relaxed font-bold relative z-10">
-          💡 <strong>Planos Gratuitos (Free Tiers) disponíveis para ambos os lados:</strong>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 text-left text-zinc-400 font-medium">
-            <div className="p-3 bg-white/[0.01] rounded-2xl border border-white/5">
-              🚀 <strong>Criadores Free (R$ 0):</strong> Taxa de 15% por campanha, 1 conta conectada (Instagram), 1 contrato ativo por vez e Vincenzo IA básico.
+        <div className="mt-16 max-w-3xl mx-auto bg-zinc-950/60 border border-white/5 rounded-3xl p-8 text-center text-xs relative z-10">
+          <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest block mb-4">Planos de Entrada (Free Tiers)</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-zinc-400 font-medium">
+            <div className="p-5 bg-white/[0.01] rounded-2xl border border-white/5 space-y-2">
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider">Criadores Free (R$ 0)</h4>
+              <p className="text-[11px] text-zinc-400 leading-relaxed font-bold">
+                Taxa de comissão de 15% por campanha, 1 rede social conectada (Instagram), 1 contrato ativo em andamento e acesso básico à IA Vincenzo para roteiros.
+              </p>
             </div>
-            <div className="p-3 bg-white/[0.01] rounded-2xl border border-white/5">
-              🏢 <strong>Marcas Free (R$ 0):</strong> Taxa operacional de Escrow de 15% sobre o orçamento, briefings básicos e limite de 3 contratos ativos simultâneos.
+            <div className="p-5 bg-white/[0.01] rounded-2xl border border-white/5 space-y-2">
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider">Marcas Free (R$ 0)</h4>
+              <p className="text-[11px] text-zinc-400 leading-relaxed font-bold">
+                Taxa de Escrow de 15% sobre o orçamento depositado, briefings padronizados e limite de até 3 campanhas ativas simultaneamente.
+              </p>
             </div>
           </div>
         </div>
