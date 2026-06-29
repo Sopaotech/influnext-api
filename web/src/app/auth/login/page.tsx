@@ -24,6 +24,28 @@ export default function LoginPage() {
   const [socialGender, setSocialGender] = useState<'masculino' | 'feminino'>('feminino');
   const [socialNiche, setSocialNiche] = useState('Lifestyle');
 
+  const handleSocialRedirect = async (platform: 'INSTAGRAM' | 'TIKTOK') => {
+    try {
+      setIsLoading(true);
+      setError('');
+      const res = await api.get<{ instagram: string; tiktok: string; instagram_business?: string }>('/auth/social/public-urls');
+      const url = platform === 'INSTAGRAM' 
+        ? (res.data.instagram_business || res.data.instagram) 
+        : res.data.tiktok;
+
+      if (!url) {
+        throw new Error('URL de autenticação não encontrada.');
+      }
+
+      window.location.href = url;
+    } catch (err: any) {
+      console.error('[SOCIAL AUTH REDIRECT] Erro:', err);
+      setError('Erro ao redirecionar para login social. Tente novamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const openSocialModal = (platform: 'INSTAGRAM' | 'TIKTOK') => {
     setSocialPlatform(platform);
     setSocialHandle('');
@@ -217,7 +239,13 @@ export default function LoginPage() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => openSocialModal('INSTAGRAM')}
+                  onClick={(e) => {
+                    if (e.altKey || e.ctrlKey) {
+                      openSocialModal('INSTAGRAM');
+                    } else {
+                      handleSocialRedirect('INSTAGRAM');
+                    }
+                  }}
                   className="h-12 bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] hover:border-pink-500/30 transition-all rounded-2xl flex items-center justify-center gap-2 group"
                 >
                   <svg className="w-4 h-4 text-pink-500 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -230,7 +258,13 @@ export default function LoginPage() {
 
                 <button
                   type="button"
-                  onClick={() => openSocialModal('TIKTOK')}
+                  onClick={(e) => {
+                    if (e.altKey || e.ctrlKey) {
+                      openSocialModal('TIKTOK');
+                    } else {
+                      handleSocialRedirect('TIKTOK');
+                    }
+                  }}
                   className="h-12 bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] hover:border-zinc-300/30 transition-all rounded-2xl flex items-center justify-center gap-2 group"
                 >
                   <svg className="w-4 h-4 text-zinc-100 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
