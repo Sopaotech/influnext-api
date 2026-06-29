@@ -229,6 +229,11 @@ const searchInfluencers = async (req, res) => {
                 scoreClass: true,
                 verifiedMetrics: true,
                 profileImageUrl: true,
+                metricsHistory: {
+                    take: 1,
+                    orderBy: { capturedAt: 'desc' },
+                    select: { followers: true }
+                }
             },
             orderBy: { influScore: 'desc' },
             take: 50,

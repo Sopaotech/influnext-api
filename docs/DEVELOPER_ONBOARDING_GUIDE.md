@@ -62,7 +62,7 @@ d:\Influnext
 sequenceDiagram
     participant Mobile as Mobile App (Flutter WebView)
     participant Web as Next.js PWA (Port 3000)
-    participant API as Express API (Port 5000)
+    participant API as Express API (Port 4000)
     participant DB as Postgres (Prisma)
     participant AI as IA (Gemini/OpenAI)
 
@@ -100,7 +100,7 @@ Para rodar todo o ambiente de desenvolvimento em sua máquina local, execute os 
    npx prisma generate
    npm run seed
    ```
-5. Inicie a API em modo de desenvolvimento (porta `5000`):
+5. Inicie a API em modo de desenvolvimento (porta `4000`):
    ```bash
    npm run dev
    ```
@@ -116,7 +116,7 @@ Para rodar todo o ambiente de desenvolvimento em sua máquina local, execute os 
    ```
 3. Crie um arquivo `.env.local` e configure a URL de conexão com a API:
    ```env
-   NEXT_PUBLIC_API_URL=http://localhost:5000
+   NEXT_PUBLIC_API_URL=http://localhost:4000/v1
    ```
 4. Inicie o servidor do Next.js (porta `3000`):
    ```bash

@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.socialLogin = exports.confirm2FASetup = exports.setup2FA = exports.verify2FA = exports.login = exports.completeProfile = exports.signup = void 0;
+exports.getMe = exports.socialLogin = exports.confirm2FASetup = exports.setup2FA = exports.verify2FA = exports.login = exports.completeProfile = exports.signup = void 0;
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prisma_1 = require("../lib/prisma");
@@ -499,3 +499,32 @@ const socialLogin = async (req, res) => {
     }
 };
 exports.socialLogin = socialLogin;
+const getMe = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const user = await prisma_1.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                email: true,
+                role: true,
+                subscriptionStatus: true,
+                subscriptionTier: true,
+                trialEndsAt: true,
+                onboardingCompleted: true,
+                theme: true,
+                accentColor: true
+            }
+        });
+        if (!user) {
+            res.status(404).json({ error: 'Usuário não encontrado.' });
+            return;
+        }
+        res.status(200).json(user);
+    }
+    catch (error) {
+        console.error('[AUTH GETME ERROR]:', error);
+        res.status(500).json({ error: 'Erro ao buscar dados do usuário.' });
+    }
+};
+exports.getMe = getMe;

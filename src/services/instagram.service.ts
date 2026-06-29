@@ -255,6 +255,7 @@ export class InstagramService {
       await prisma.influencerProfile.update({
         where: { id: influencerId },
         data: {
+          handle: username,
           profileImageUrl: profilePicture,
           verifiedMetrics: true,
           insights: JSON.stringify(insightsJson),

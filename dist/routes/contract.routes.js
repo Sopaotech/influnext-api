@@ -11,6 +11,8 @@ router.post('/', auth_middleware_1.authenticate, security_middleware_1.contractB
 router.get('/', auth_middleware_1.authenticate, contract_controller_1.getMyContracts);
 router.get('/:id', auth_middleware_1.authenticate, contract_controller_1.getContractById);
 router.patch('/:id/script', auth_middleware_1.authenticate, contract_controller_1.updateContractScript);
+// Assinatura eletrônica / Aceite do influenciador
+router.post('/:id/accept', auth_middleware_1.authenticate, (0, role_middleware_1.authorize)([roles_1.UserRole.INFLUENCER]), contract_controller_1.acceptContract);
 // Liberação de pagamento: ADMIN ou COMPANY
 router.patch('/:id/release', auth_middleware_1.authenticate, (0, role_middleware_1.authorize)([roles_1.UserRole.ADMIN, roles_1.UserRole.COMPANY]), contract_controller_1.releasePayment);
 // Confirmação manual de pagamento: ADMIN ou COMPANY

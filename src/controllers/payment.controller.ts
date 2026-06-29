@@ -91,6 +91,10 @@ export class PaymentController {
 
       if (!contract) return res.status(404).json({ error: 'Contrato não encontrado' });
 
+      if (!contract.influencerSigned) {
+        return res.status(400).json({ error: 'O contrato precisa ser aceito e assinado eletronicamente pelo influenciador antes de efetuar o pagamento.' });
+      }
+
       const brandTier = contract.company.user?.subscriptionTier || 'FREE';
       const brandStatus = contract.company.user?.subscriptionStatus || 'INACTIVE';
       const isBrandFree = !(brandTier === 'ENTERPRISE' && brandStatus === 'ACTIVE');
@@ -161,6 +165,10 @@ export class PaymentController {
       });
 
       if (!contract) return res.status(404).json({ error: 'Contrato não encontrado' });
+
+      if (!contract.influencerSigned) {
+        return res.status(400).json({ error: 'O contrato precisa ser aceito e assinado eletronicamente pelo influenciador antes de efetuar o pagamento.' });
+      }
 
       const brandTier = contract.company.user?.subscriptionTier || 'FREE';
       const brandStatus = contract.company.user?.subscriptionStatus || 'INACTIVE';

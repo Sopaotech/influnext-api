@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma';
 import { z } from 'zod';
 import { addNotificationJob } from '../queues/notification.queue';
 import { BriefingService } from '../services/briefing.service';
+import crypto from 'crypto';
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -21,6 +22,7 @@ const createContractSchema = z.object({
   briefing: z.string().min(10, 'O briefing deve ter pelo menos 10 caracteres.').optional(),
   budget: z.coerce.number().positive('O budget deve ser um número positivo.'),
   deliverables: z.array(deliverableSchema).min(1, 'Pelo menos um entregável é obrigatório.'),
+  contractType: z.enum(['SPOT', 'RETAINER']).optional(),
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -77,7 +79,7 @@ export const createContract = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const { influencerId, title, budget, deliverables, briefing } = parsed.data;
+    const { influencerId, title, budget, deliverables, briefing, contractType } = parsed.data;
 
     // ─── Geração de Roteiro IA (O Cérebro) ──────────────────────────────────
     let aiScript = null;
@@ -112,6 +114,8 @@ export const createContract = async (req: Request, res: Response): Promise<void>
     const netAmount   = budget - platformFee;
     // ────────────────────────────────────────────────────────────────────────
 
+    const clientIp = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || req.ip || '127.0.0.1';
+
     const result = await prisma.$transaction(async (tx) => {
       const contract = await tx.contract.create({
         data: {
@@ -125,9 +129,11 @@ export const createContract = async (req: Request, res: Response): Promise<void>
           netAmount,
           successFeeRate,
           escrowStatus: 'DRAFT',
+          contractType: contractType || 'SPOT',
+          companySigned: true,
+          companyIp: clientIp,
           deliverables: {
             create: deliverables.map((d) => ({
-              title: d.title,
               type: d.type,
               deadline: new Date(d.dueDate || d.deadline || new Date()),
               status: 'PENDING'
@@ -166,6 +172,102 @@ export const createContract = async (req: Request, res: Response): Promise<void>
   }
 };
 
+/**
+ * POST /contracts/:id/accept
+ * Aceita e assina eletronicamente o contrato (influenciador)
+ */
+export const acceptContract = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    const { id } = req.params;
+
+    if (userRole !== UserRole.INFLUENCER) {
+      res.status(403).json({ error: "Apenas influenciadores podem aceitar e assinar contratos." });
+      return;
+    }
+
+    const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
+    if (!influencer) {
+      res.status(404).json({ error: "Perfil de influenciador não encontrado." });
+      return;
+    }
+
+    const contract = await prisma.contract.findUnique({
+      where: { id },
+      include: { deliverables: true, company: true }
+    });
+
+    if (!contract) {
+      res.status(404).json({ error: "Contrato não encontrado." });
+      return;
+    }
+
+    if (contract.influencerId !== influencer.id) {
+      res.status(403).json({ error: "Você não é o influenciador designado para este contrato." });
+      return;
+    }
+
+    if (contract.escrowStatus !== 'DRAFT') {
+      res.status(400).json({ error: `Contrato no status ${contract.escrowStatus} não pode ser assinado.` });
+      return;
+    }
+
+    if (contract.influencerSigned) {
+      res.status(400).json({ error: "Você já assinou este contrato." });
+      return;
+    }
+
+    // Gerar hash de consentimento legal (SHA-256) com base no escopo e valores da minuta
+    const deliverablesString = contract.deliverables
+      .map((d) => `${d.type}:${d.deadline.toISOString()}`)
+      .join(';');
+    const consentContent = `${contract.title}|${contract.budget}|${contract.briefing || ''}|${deliverablesString}`;
+    const signatureHash = crypto.createHash('sha256').update(consentContent).digest('hex');
+
+    const clientIp = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || req.ip || '127.0.0.1';
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedContract = await tx.contract.update({
+        where: { id },
+        data: {
+          influencerSigned: true,
+          influencerIp: clientIp,
+          signedAt: new Date(),
+          signatureHash,
+          escrowStatus: 'PENDING_PAYMENT'
+        }
+      });
+
+      // Notifica a empresa
+      await tx.notification.create({
+        data: {
+          userId: contract.company.userId,
+          message: `✍️ O influenciador assinou o contrato "${contract.title}". Aguardando depósito em Escrow!`,
+          type: 'CONTRACT_SIGNED'
+        }
+      });
+
+      return updatedContract;
+    });
+
+    // Enviar notificação assíncrona
+    await addNotificationJob(
+      contract.company.userId,
+      `✍️ O influenciador assinou o contrato "${contract.title}". Efetue o depósito para iniciar.`,
+      'CONTRACT_SIGNED'
+    );
+
+    res.status(200).json({
+      message: "Contrato assinado eletronicamente com sucesso (Consent Log gerado)!",
+      contract: updated
+    });
+  } catch (error) {
+    console.error('[CONTRACT ACCEPT] Erro ao aceitar contrato:', error);
+    res.status(500).json({ error: "Erro ao assinar contrato." });
+  }
+};
+
 // ─── Confirmação Manual de Pagamento (Mock Escrow) ────────────────────────────
 
 export const confirmPayment = async (req: Request, res: Response): Promise<void> => {
@@ -199,8 +301,13 @@ export const confirmPayment = async (req: Request, res: Response): Promise<void>
       }
     }
 
-    if (contract.escrowStatus !== 'DRAFT') {
-      res.status(409).json({ error: `Contrato já está no status: ${contract.escrowStatus}. Apenas contratos DRAFT podem ser ativados.` });
+    if (!contract.influencerSigned) {
+      res.status(400).json({ error: "O contrato precisa ser assinado eletronicamente pelo influenciador antes de confirmar o pagamento." });
+      return;
+    }
+
+    if (contract.escrowStatus !== 'DRAFT' && contract.escrowStatus !== 'PENDING_PAYMENT') {
+      res.status(409).json({ error: `Contrato já está no status: ${contract.escrowStatus}. Apenas contratos pendentes de ativação podem ser pagos.` });
       return;
     }
 

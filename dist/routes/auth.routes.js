@@ -13,4 +13,5 @@ router.post('/2fa/verify', auth_controller_1.verify2FA);
 router.post('/2fa/setup', auth_middleware_1.authenticate, auth_controller_1.setup2FA);
 router.post('/2fa/confirm', auth_middleware_1.authenticate, auth_controller_1.confirm2FASetup);
 router.post('/complete-profile', auth_middleware_1.authenticate, auth_controller_1.completeProfile);
+router.get('/me', auth_middleware_1.authenticate, auth_controller_1.getMe);
 exports.default = router;
