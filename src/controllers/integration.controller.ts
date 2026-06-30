@@ -297,12 +297,32 @@ export const simulateInstagramConnection = async (req: Request, res: Response): 
     const platform = (req.body.platform || 'INSTAGRAM').toUpperCase();
     const inputUsername = req.body.username || influencer.handle || `influencer_${influencer.id.substring(0, 5)}`;
     const username = inputUsername.startsWith('@') ? inputUsername.slice(1) : inputUsername;
+    const range = req.body.followersRange || '10k-50k';
 
     let followersCount = 15430;
     let engagementRate = 4.75;
     let avgViews = 9230;
     let reachLast30Days = 48900;
     let profilePicture = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&auto=format&fit=crop';
+
+    if (platform === 'INSTAGRAM') {
+      if (range === '50k-100k') {
+        followersCount = 72500;
+        engagementRate = 3.8;
+        avgViews = 38400;
+        reachLast30Days = 210000;
+      } else if (range === '100k-500k') {
+        followersCount = 284000;
+        engagementRate = 2.9;
+        avgViews = 124000;
+        reachLast30Days = 850000;
+      } else if (range === '500k+') {
+        followersCount = 1250000;
+        engagementRate = 2.1;
+        avgViews = 450000;
+        reachLast30Days = 3400000;
+      }
+    }
 
     if (platform === 'TIKTOK') {
       followersCount = 32800;

@@ -84,14 +84,14 @@ export default function SettingsPage() {
   const [ytUsername, setYtUsername] = useState('');
   const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null);
 
-  const handleSimulateSync = async (platform: string, username: string) => {
+  const handleSimulateSync = async (platform: string, username: string, followersRange?: string) => {
     if (!username.trim()) {
       toast.error('Por favor, informe seu nome de usuário.');
       return;
     }
     setConnectingPlatform(platform);
     try {
-      const res = await api.post('/integrations/simulate', { platform, username });
+      const res = await api.post('/integrations/simulate', { platform, username, followersRange });
       if (res.data.success) {
         toast.success(`✦ ${platform} conectado por busca direta!`);
         await fetchIntegrations();
@@ -636,9 +636,9 @@ export default function SettingsPage() {
       <InstagramOnboardingModal 
         isOpen={isIgModalOpen}
         onClose={() => setIsIgModalOpen(false)}
-        onConfirm={async (mode: 'personal' | 'business' | 'simulate', username?: string) => {
+        onConfirm={async (mode: 'personal' | 'business' | 'simulate', username?: string, followersRange?: string) => {
           if (mode === 'simulate' && username) {
-            await handleSimulateSync('INSTAGRAM', username);
+            await handleSimulateSync('INSTAGRAM', username, followersRange);
             setIsIgModalOpen(false);
           } else if (mode === 'personal') {
             handleConnect(authUrls?.instagram);

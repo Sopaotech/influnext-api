@@ -15,7 +15,7 @@ const outfit = Outfit({
 });
 
 export const viewport: Viewport = {
-  themeColor: '#7C3AED',
+  themeColor: '#d96b27',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -86,7 +86,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body className="min-h-full flex flex-col selection:bg-purple-500/30 font-sans">
+      <body className="min-h-full flex flex-col selection:bg-orange-500/30 font-sans">
         {/* Google Structured Data (JSON-LD) */}
         <script
           type="application/ld+json"
