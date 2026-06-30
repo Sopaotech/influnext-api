@@ -670,7 +670,7 @@ export default function LandingPageClient() {
                   <CheckCircle2 className="w-4 h-4 text-orange-600 flex-shrink-0" />
                   <span>Taxa de comissão reduzida de apenas <strong className="text-zinc-900 font-black">5% por campanha</strong> para você reter mais lucro líquido.</span>
                 </li>
-                <li className="flex items-center gap-3 font-bold text-white">
+                <li className="flex items-center gap-3 font-bold text-zinc-800">
                   <CheckCircle2 className="w-4 h-4 text-orange-600 flex-shrink-0" />
                   <span>Acesso ilimitado ao Vincenzo, nosso <strong className="text-zinc-900 font-black">gerador de roteiros de alta conversão</strong>.</span>
                 </li>
@@ -725,7 +725,7 @@ export default function LandingPageClient() {
                   <CheckCircle2 className="w-4 h-4 text-orange-600 flex-shrink-0" />
                   <span>Taxa operacional de garantia reduzida de <strong className="text-zinc-900 font-black">10% por campanha</strong>.</span>
                 </li>
-                <li className="flex items-center gap-3 font-bold text-white">
+                <li className="flex items-center gap-3 font-bold text-zinc-800">
                   <CheckCircle2 className="w-4 h-4 text-orange-600 flex-shrink-0" />
                   <span>Acesso ilimitado ao mentor Vektor para <strong className="text-zinc-900 font-black">definir seu posicionamento e medir o ROI</strong>.</span>
                 </li>
