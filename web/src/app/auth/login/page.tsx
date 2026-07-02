@@ -132,18 +132,6 @@ export default function LoginPage() {
   return (
     <div className="w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
-      {/* Logo + tagline */}
-      <div className="text-center space-y-3">
-        <Logo size="lg" href="/" className="justify-center" variant="dark" />
-        <div className="flex items-center justify-center gap-2">
-          <div className="h-px w-10 bg-zinc-200" />
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500">
-            Studio Control Center
-          </p>
-          <div className="h-px w-10 bg-zinc-200" />
-        </div>
-      </div>
-
       {/* Card */}
       <div className="relative">
         {/* Glow border */}
@@ -161,6 +149,18 @@ export default function LoginPage() {
           <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
 
           <div className="relative z-10 space-y-8">
+            {/* Logo + tagline (moved inside card for mobile centering and spacing) */}
+            <div className="text-center space-y-3 pt-4 pb-6 border-b border-zinc-100">
+              <Logo size="lg" href="/" className="justify-center" variant="dark" />
+              <div className="flex items-center justify-center gap-2">
+                <div className="h-px w-10 bg-zinc-200" />
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500">
+                  Studio Control Center
+                </p>
+                <div className="h-px w-10 bg-zinc-200" />
+              </div>
+            </div>
+
             {/* Header */}
             <div className="space-y-1">
               <h1 className="text-2xl font-black text-zinc-900 tracking-tighter">

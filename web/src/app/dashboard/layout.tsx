@@ -25,8 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Fundo dinâmico baseado no perfil - Forçado para Dark Theme Premium
   const [profileImg, setProfileImg] = useState<string | null>(null);
   const [taskCount, setTaskCount] = useState(0);
-  
-  const isDark = true;
+  const [isDark, setIsDark] = useState(true);
 
   React.useEffect(() => {
     const fetchTheme = async () => {
@@ -44,8 +43,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const pendingCount = res.data.tasks?.filter((t: any) => !t.isDone).length || 0;
         setTaskCount(pendingCount);
 
-        // Verificação de Paywall para planos expirados/inativos
         const userState = res.data.profile?.user || res.data.userState;
+        if (userState?.theme) {
+          setIsDark(userState.theme === 'dark');
+          Cookies.set('influnext_theme', userState.theme, { expires: 7, path: '/' });
+        }
+
+        // Verificação de Paywall para planos expirados/inativos
         if (userState && userState.role !== 'ADMIN') {
           const isExpired = userState.subscriptionStatus === 'INACTIVE' || 
             (userState.subscriptionStatus === 'TRIAL' && userState.trialEndsAt && new Date() > new Date(userState.trialEndsAt));
@@ -92,17 +96,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ];
 
   return (
-    <div className="min-h-screen relative flex font-sans selection:bg-slate-900/10 overflow-hidden text-white">
+    <div className={`min-h-screen relative flex font-sans selection:bg-slate-900/10 overflow-hidden transition-colors duration-500 ${isDark ? 'text-white' : 'text-slate-900'}`}>
       
       {/* Background Layer - Solid Slate base */}
-      <div className="fixed inset-0 z-0 bg-[#050508]" />
+      <div className={`fixed inset-0 z-0 transition-colors duration-500 ${isDark ? 'bg-[#050508]' : 'bg-[#f8fafc]'}`} />
       
       {/* Premium Atmospheric Background Glows & Subtle Grid */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        {/* Main violet glow — top center */}
-        <div className="absolute top-[-15%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] rounded-full bg-violet-600/10 blur-[130px]" />
-        {/* Pink accent — bottom right */}
-        <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-pink-600/6 blur-[110px]" />
+        {/* Main violet/orange glow — top center */}
+        <div className={`absolute top-[-15%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] rounded-full blur-[130px] transition-all duration-500 ${isDark ? 'bg-violet-600/10' : 'bg-orange-500/5'}`} />
+        {/* Pink/orange accent — bottom right */}
+        <div className={`absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full blur-[110px] transition-all duration-500 ${isDark ? 'bg-pink-600/6' : 'bg-orange-500/3'}`} />
         {/* Subtle grid texture */}
         <div
           className="absolute inset-0 opacity-[0.015]"
@@ -114,8 +118,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       {/* Mobile Header - Glass */}
-      <header className={`md:hidden fixed top-0 left-0 right-0 z-[100] border-b p-4 flex items-center justify-between transition-all duration-500 ${isDark ? 'bg-black/45 backdrop-blur-xl border-white/5' : 'bg-white/5 backdrop-blur-xl border-white/10'}`}>
-        <Logo size="sm" href={homeHref} variant="light" />
+      <header className={`md:hidden fixed top-0 left-0 right-0 z-[100] border-b p-4 flex items-center justify-between transition-all duration-500 ${isDark ? 'bg-black/45 backdrop-blur-xl border-white/5' : 'bg-white/70 backdrop-blur-xl border-slate-200'}`}>
+        <Logo size="sm" href={homeHref} variant={isDark ? "light" : "dark"} />
         <div className="flex items-center gap-3">
            <Link href="/dashboard/settings" className="w-8 h-8 rounded-full border border-white/20 p-0.5 block hover:scale-110 transition-transform">
              <div className={`w-full h-full rounded-full overflow-hidden ${isDark ? 'bg-white/10' : 'bg-white/20'}`}>
@@ -127,12 +131,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Sidebar - Glassmorphism */}
       <aside 
-        className={`hidden md:flex relative z-10 h-screen w-[220px] border-r flex flex-col justify-between shadow-sm transition-all duration-500 ${isDark ? 'bg-black/40 border-white/5' : 'bg-white/5 border-white/10'}`}
+        className={`hidden md:flex relative z-10 h-screen w-[220px] border-r flex flex-col justify-between shadow-sm transition-all duration-500 ${isDark ? 'bg-black/40 border-white/5' : 'bg-white border-slate-200 text-slate-800'}`}
         style={{ backdropFilter: 'blur(30px)' }}
       >
         <div className="p-8">
           <div className="hidden md:flex items-center mb-12 px-2">
-            <Logo size="sm" href={homeHref} variant="light" />
+            <Logo size="sm" href={homeHref} variant={isDark ? "light" : "dark"} />
           </div>
           
           <nav className="space-y-1.5">
@@ -146,15 +150,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   className={`
                     flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-500 group relative
                     ${isActive 
-                      ? (isDark ? 'bg-white text-slate-950 shadow-lg' : 'bg-slate-900 text-white shadow-lg') 
-                      : (isDark ? 'text-zinc-400 hover:text-white hover:bg-white/5' : 'text-slate-500 hover:text-slate-900 hover:bg-white/10')}
+                      ? (isDark ? 'bg-white text-slate-950 shadow-lg' : 'bg-orange-600 text-white shadow-lg shadow-orange-500/10') 
+                      : (isDark ? 'text-zinc-400 hover:text-white hover:bg-white/5' : 'text-slate-600 hover:bg-orange-500/5 hover:text-orange-600')}
                   `}
                 >
                   {isActive ? (
                     <item.icon className={`w-4 h-4 ${isDark ? 'text-slate-950' : 'text-white'}`} />
                   ) : (
                     <div className="relative">
-                      <item.icon className={`w-4 h-4 ${isDark ? 'text-zinc-400 group-hover:text-white' : 'text-slate-400 group-hover:text-slate-900'}`} />
+                      <item.icon className={`w-4 h-4 ${isDark ? 'text-zinc-400 group-hover:text-white' : 'text-slate-400 group-hover:text-orange-600'}`} />
                       {item.badgeCount !== undefined && item.badgeCount > 0 ? (
                         <div className="absolute -top-1 -right-1 w-2 h-2 bg-rose-600 rounded-full border border-slate-950 shadow-sm animate-pulse" />
                       ) : null}
@@ -178,7 +182,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </nav>
         </div>
         
-        <div className={`p-8 border-t space-y-8 transition-colors duration-500 ${isDark ? 'border-white/5' : 'border-white/5'}`}>
+        <div className={`p-8 border-t space-y-8 transition-colors duration-500 ${isDark ? 'border-white/5' : 'border-slate-200'}`}>
           <button 
             onClick={handleLogout} 
             className={`w-full flex items-center gap-3 px-4 py-3 text-[10px] font-black uppercase tracking-[0.3em] transition-all group ${isDark ? 'text-zinc-400 hover:text-rose-500' : 'text-slate-400 hover:text-rose-600'}`}

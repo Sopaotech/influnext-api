@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter/foundation.dart';
+import '../services/notification_service.dart';
+import '../services/api_service.dart';
 
 class PwaWebViewScreen extends StatefulWidget {
   const PwaWebViewScreen({super.key});
@@ -29,6 +31,7 @@ class _PwaWebViewScreenState extends State<PwaWebViewScreen> {
 
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1 InfluNextMobile/1.0')
       ..setBackgroundColor(const Color(0xFF0A0A0F)) // Fundo combinando com o tema dark
       ..setNavigationDelegate(
         NavigationDelegate(
@@ -42,10 +45,30 @@ class _PwaWebViewScreenState extends State<PwaWebViewScreen> {
               _isLoading = true;
             });
           },
-          onPageFinished: (String url) {
+          onPageFinished: (String url) async {
             setState(() {
               _isLoading = false;
             });
+            
+            try {
+              final cookieManager = WebViewCookieManager();
+              final cookies = await cookieManager.getCookies(Uri.parse(url));
+              for (var cookie in cookies) {
+                if (cookie.name == 'influnext_token') {
+                  final jwtToken = cookie.value;
+                  debugPrint('🔑 [WEBVIEW SESSION] Token de login detectado nos cookies.');
+                  
+                  // Salva o token localmente no app para requisições nativas
+                  await ApiService.saveToken(jwtToken);
+                  
+                  // Sincroniza o token de push notifications (FCM) com o servidor
+                  await NotificationService().syncToken(jwtToken);
+                  break;
+                }
+              }
+            } catch (e) {
+              debugPrint('❌ [WEBVIEW SESSION] Erro ao buscar cookies: $e');
+            }
           },
           onWebResourceError: (WebResourceError error) {
             debugPrint('Erro no WebView: ${error.description}');

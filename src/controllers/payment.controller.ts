@@ -310,13 +310,35 @@ export class PaymentController {
 
         case 'payment_intent.succeeded': {
           const intent = event.data.object as any;
-          const contractId = intent.metadata.contractId;
+          const contractId = intent.metadata?.contractId;
 
           if (contractId) {
             await prisma.contract.update({
               where: { id: contractId },
               data: { escrowStatus: 'IN_PROGRESS' }
             });
+
+            const contract = await prisma.contract.findUnique({
+              where: { id: contractId },
+              include: { influencer: true }
+            });
+
+            if (contract) {
+              await prisma.notification.create({
+                data: {
+                  userId: contract.influencer.userId,
+                  message: `✅ Depósito em Escrow confirmado para o contrato: "${contract.title}". Pode iniciar a produção!`,
+                  type: 'ESCROW_CONFIRMED'
+                }
+              });
+
+              const { addNotificationJob } = await import('../queues/notification.queue');
+              await addNotificationJob(
+                contract.influencer.userId,
+                `💰 Seu pagamento foi confirmado! Pode iniciar a produção de: "${contract.title}". Valor líquido: R$ ${Number(contract.netAmount).toFixed(2)}`,
+                'ESCROW_CONFIRMED'
+              );
+            }
             console.log(`[STRIPE] ✅ Contrato ${contractId} pago. Escrow IN_PROGRESS.`);
           }
           break;

@@ -550,3 +550,25 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ error: 'Erro ao buscar dados do usuário.' });
   }
 };
+
+export const updateFcmToken = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user!.id;
+    const { token } = req.body;
+
+    if (!token) {
+      res.status(400).json({ error: 'Token FCM é obrigatório.' });
+      return;
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { fcmToken: token }
+    });
+
+    res.status(200).json({ success: true, message: 'Token FCM atualizado com sucesso.' });
+  } catch (error) {
+    console.error('[UPDATE FCM TOKEN ERROR]:', error);
+    res.status(500).json({ error: 'Erro ao atualizar token FCM.' });
+  }
+};

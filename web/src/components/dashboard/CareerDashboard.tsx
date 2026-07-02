@@ -93,7 +93,7 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
     return map[obj] || 'Crescimento Geral';
   };
 
-  const isDark = true;
+  const isDark = influencer.theme === 'dark';
 
   return (
     <div className="space-y-8 animate-in fade-in duration-1000">
@@ -101,20 +101,24 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
       {/* Neural Connection Alert */}
       {connectedPlatforms.length < 2 && (
         <div 
-          className="relative overflow-hidden p-5 rounded-[2rem] border border-white/10 bg-black/40 backdrop-blur-md shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-700"
+          className={`relative overflow-hidden p-5 rounded-[2rem] border backdrop-blur-md shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-700 ${
+            isDark 
+              ? 'bg-black/40 border-white/10' 
+              : 'bg-white/50 border-slate-200 shadow-slate-100/50'
+          }`}
         >
           {/* Subtle neural background glow */}
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-30 pointer-events-none" />
+          <div className={`absolute inset-0 bg-gradient-to-r ${isDark ? 'from-purple-500/10 to-pink-500/10' : 'from-orange-500/5 to-amber-500/5'} opacity-30 pointer-events-none`} />
           
           <div className="flex items-center gap-3 text-left relative z-10">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center flex-shrink-0 text-purple-400">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-purple-500/10 border border-purple-500/20 text-purple-400' : 'bg-orange-500/10 border border-orange-500/20 text-orange-650'}`}>
               <Sparkles className="w-5 h-5 animate-pulse" />
             </div>
             <div className="space-y-0.5">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-400">
+              <h4 className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-purple-400' : 'text-orange-600'}`}>
                 Alinhamento de Rede Neural
               </h4>
-              <p className="text-xs text-zinc-300 font-bold max-w-xl">
+              <p className={`text-xs font-bold max-w-xl ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                 {connectedPlatforms.length === 0 ? (
                   "Conecte suas redes sociais para ativar o monitoramento em tempo real, sugestões personalizadas de nicho e seu InfluScore."
                 ) : connectedPlatforms.includes('INSTAGRAM') ? (
@@ -127,7 +131,7 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
           </div>
           
           <Link href="/dashboard/settings" className="w-full md:w-auto relative z-10">
-            <button className="w-full md:w-auto px-6 py-3 bg-white text-slate-950 text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-zinc-200 active:scale-95 transition-all shadow-lg">
+            <button className={`w-full md:w-auto px-6 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl active:scale-95 transition-all shadow-lg ${isDark ? 'bg-white text-slate-950 hover:bg-zinc-200' : 'bg-orange-600 text-white hover:bg-orange-700'}`}>
               {connectedPlatforms.length === 0 ? "Conectar Redes" : connectedPlatforms.includes('INSTAGRAM') ? "Conectar TikTok" : "Conectar Instagram"}
             </button>
           </Link>
@@ -139,7 +143,7 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
         className={`relative overflow-hidden p-6 md:p-12 rounded-[2.5rem] md:rounded-[3rem] border shadow-sm group transition-all duration-300 ${
           isDark 
             ? 'bg-black/30 border-white/5 text-white' 
-            : 'bg-white/10 border-white/20 text-slate-900'
+            : 'bg-white border-slate-200 text-slate-900 shadow-md shadow-slate-100'
         }`}
         style={{ backdropFilter: 'blur(30px)' }}
       >
@@ -168,10 +172,10 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
           </div>
           
           {isEditingName && (
-            <div className={`flex gap-2 animate-in fade-in zoom-in-95 p-2 rounded-2xl border w-max mx-auto md:mx-0 ${isDark ? 'bg-black/40 border-white/5' : 'bg-white/5 border-white/10'}`}>
+            <div className={`flex gap-2 animate-in fade-in zoom-in-95 p-2 rounded-2xl border w-max mx-auto md:mx-0 ${isDark ? 'bg-black/40 border-white/5' : 'bg-white/5 border-slate-200'}`}>
               <input 
                 autoFocus
-                className={`border rounded-xl px-4 py-2 text-xs font-bold focus:outline-none w-48 ${isDark ? 'bg-white/5 border-white/5 text-white' : 'bg-white/10 border-white/10 text-slate-900'}`}
+                className={`border rounded-xl px-4 py-2 text-xs font-bold focus:outline-none w-48 ${isDark ? 'bg-white/5 border-white/5 text-white' : 'bg-white/10 border-slate-200 text-slate-900'}`}
                 placeholder="Nome da IA..."
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') saveAiName((e.target as HTMLInputElement).value);
@@ -182,20 +186,20 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
             </div>
           )}
           
-          <h2 className={`text-xl md:text-4xl font-black tracking-tighter leading-tight max-w-3xl ${isDark ? 'text-white' : 'text-slate-900'}`}>
+          <h2 className={`text-xl md:text-4xl font-black tracking-tighter leading-tight max-w-3xl ${isDark ? 'text-white' : 'text-slate-950'}`}>
             "{insight || 'Analisando o mercado para você... preparando o próximo passo.'}"
           </h2>
 
           <div className="flex flex-wrap justify-center md:justify-start gap-3 md:gap-4">
-            <div className={`px-4 md:px-5 py-2 md:py-2.5 border rounded-full flex items-center gap-2 md:gap-3 ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-white/5 border-white/10'}`}>
-              <Target size={12} className={isDark ? 'text-white' : 'text-slate-900'} />
-              <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-white/80' : 'text-slate-600'}`}>
+            <div className={`px-4 md:px-5 py-2 md:py-2.5 border rounded-full flex items-center gap-2 md:gap-3 ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-orange-50/5 border-orange-500/20'}`}>
+              <Target size={12} className={isDark ? 'text-white' : 'text-orange-650'} />
+              <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-white/80' : 'text-orange-600'}`}>
                 {getObjectiveLabel(influencer.careerObjective)}
               </span>
             </div>
-            <div className={`px-4 md:px-5 py-2 md:py-2.5 border rounded-full flex items-center gap-2 md:gap-3 ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-white/5 border-white/10'}`}>
-              <TrendingUp size={12} className={isDark ? 'text-white' : 'text-slate-900'} />
-              <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-white/80' : 'text-slate-600'}`}>
+            <div className={`px-4 md:px-5 py-2 md:py-2.5 border rounded-full flex items-center gap-2 md:gap-3 ${isDark ? 'bg-white/[0.02] border-white/5' : 'bg-orange-50/5 border-orange-500/20'}`}>
+              <TrendingUp size={12} className={isDark ? 'text-white' : 'text-orange-650'} />
+              <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-white/80' : 'text-orange-600'}`}>
                 InfluScore: {influencer.influScore}
               </span>
             </div>
@@ -208,7 +212,7 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
         {/* Daily Tasks / Calendar - Glass */}
         <div className="lg:col-span-2 space-y-6 md:space-y-8">
           <div className="flex items-center justify-between px-4">
-            <h3 className={`text-[10px] font-black uppercase tracking-[0.4em] flex items-center gap-3 ${isDark ? 'text-zinc-400' : 'text-slate-400'}`}>
+            <h3 className={`text-[10px] font-black uppercase tracking-[0.4em] flex items-center gap-3 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
               <Calendar className="w-4 h-4" /> Missões Diárias
             </h3>
             <div className="flex items-center gap-4">
@@ -240,13 +244,13 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
                       }
                     };
                   }}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-xl relative ${isDark ? 'bg-white text-slate-950 hover:bg-emerald-600 hover:text-white' : 'bg-slate-900 text-white hover:bg-emerald-600'}`}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-xl relative ${isDark ? 'bg-white text-slate-950 hover:bg-orange-600 hover:text-white' : 'bg-slate-900 text-white hover:bg-orange-600'}`}
                 >
-                  <div className="absolute inset-0 rounded-full bg-emerald-500/20 group-hover:animate-ping"></div>
+                  <div className={`absolute inset-0 rounded-full ${isDark ? 'bg-orange-500/20' : 'bg-orange-500/10'} group-hover:animate-ping`}></div>
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-mic"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
                 </button>
                 <div 
-                  className={`absolute bottom-full right-0 mb-3 w-64 p-4 rounded-2xl border text-[9px] font-black uppercase tracking-widest leading-relaxed shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-50 ${isDark ? 'bg-zinc-950/95 border-white/10 text-white/90' : 'bg-white/95 border-slate-200 text-slate-900 shadow-slate-200/50'}`}
+                  className={`absolute bottom-full right-0 mb-3 w-64 p-4 rounded-2xl border text-[9px] font-black uppercase tracking-widest leading-relaxed shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-50 ${isDark ? 'bg-zinc-950/95 border-white/10 text-white/90' : 'bg-white border-slate-200 text-slate-900 shadow-md shadow-slate-100/50'}`}
                   style={{ backdropFilter: 'blur(10px)' }}
                 >
                   🎙️ Comando de Voz / IA
@@ -261,11 +265,11 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
 
           <div className="space-y-3 md:space-y-4">
             {tasks.length === 0 && !isLoading && (
-              <div className={`py-12 md:py-20 px-6 rounded-[2.5rem] md:rounded-[3rem] border flex flex-col items-center justify-center text-center space-y-4 md:space-y-6 ${isDark ? 'bg-black/30 border-white/5' : 'bg-white/5 border-white/10'}`}>
-                <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center border ${isDark ? 'bg-white/5 text-zinc-500 border-white/5' : 'bg-white/10 text-slate-300 border-white/10'}`}>
+              <div className={`py-12 md:py-20 px-6 rounded-[2.5rem] md:rounded-[3rem] border flex flex-col items-center justify-center text-center space-y-4 md:space-y-6 ${isDark ? 'bg-black/30 border-white/5' : 'bg-white border-slate-200 shadow-md shadow-slate-100/50'}`}>
+                <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center border ${isDark ? 'bg-white/5 text-zinc-500 border-white/5' : 'bg-slate-50 text-slate-400 border-slate-200'}`}>
                   <CheckCircle2 size={32} />
                 </div>
-                <p className="text-zinc-300 font-bold text-[9px] md:text-[10px] uppercase tracking-[0.3em]">Todas as missões concluídas. <br />Você está no controle total.</p>
+                <p className={`font-bold text-[9px] md:text-[10px] uppercase tracking-[0.3em] ${isDark ? 'text-zinc-350' : 'text-slate-500'}`}>Todas as missões concluídas. <br />Você está no controle total.</p>
               </div>
             )}
 
@@ -275,25 +279,25 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
                 onClick={() => toggleTask(task.id, task.isDone)}
                 className={`p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border transition-all cursor-pointer flex items-center justify-between gap-4 group ${
                   task.isDone 
-                    ? (isDark ? 'bg-white/[0.02] border-white/5 opacity-30' : 'bg-white/5 border-white/10 opacity-40') 
-                    : (isDark ? 'bg-black/35 border-white/5 hover:bg-black/50 text-white shadow-sm' : 'bg-white/10 border-white/10 hover:bg-white/20 shadow-sm')
+                    ? (isDark ? 'bg-white/[0.02] border-white/5 opacity-30' : 'bg-slate-50 border-slate-100 opacity-40') 
+                    : (isDark ? 'bg-black/35 border-white/5 hover:bg-black/50 text-white shadow-sm' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-900 shadow-sm shadow-slate-100/50')
                 }`}
                 style={{ backdropFilter: 'blur(20px)' }}
               >
                 <div className="flex items-center gap-4 md:gap-6 flex-1 min-w-0">
-                  <div className={`transition-colors flex-shrink-0 ${task.isDone ? 'text-slate-900' : 'text-slate-300 group-hover:text-slate-900'}`}>
+                  <div className={`transition-colors flex-shrink-0 ${task.isDone ? (isDark ? 'text-zinc-600' : 'text-slate-400') : (isDark ? 'text-zinc-400 group-hover:text-white' : 'text-slate-300 group-hover:text-orange-600')}`}>
                     {task.isDone ? <CheckCircle2 className="w-6 h-6 md:w-7 md:h-7" /> : <Circle className="w-6 h-6 md:w-7 md:h-7" />}
                   </div>
                   <div className="text-left truncate">
-                    <p className={`font-black text-[10px] md:text-sm uppercase tracking-[0.2em] truncate ${task.isDone ? 'line-through text-slate-500' : (isDark ? 'text-white' : 'text-slate-900')}`}>
+                    <p className={`font-black text-[10px] md:text-sm uppercase tracking-[0.2em] truncate ${task.isDone ? 'line-through text-slate-400' : (isDark ? 'text-white' : 'text-slate-900')}`}>
                       {task.title}
                     </p>
-                    <p className={`text-[8px] md:text-[10px] font-bold uppercase mt-0.5 truncate ${isDark ? 'text-zinc-350 font-medium' : 'text-slate-400'}`}>
+                    <p className={`text-[8px] md:text-[10px] font-bold uppercase mt-0.5 truncate ${isDark ? 'text-zinc-350 font-medium' : 'text-slate-500'}`}>
                       {task.description || 'Tarefa estratégica da IA'}
                     </p>
                   </div>
                 </div>
-                <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all shadow-sm flex-shrink-0 ${isDark ? 'bg-white/5 text-zinc-400 group-hover:bg-white group-hover:text-black' : 'bg-slate-900/5 text-slate-400 group-hover:bg-slate-900 group-hover:text-white'}`}>
+                <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all shadow-sm flex-shrink-0 ${isDark ? 'bg-white/5 text-zinc-400 group-hover:bg-white group-hover:text-black' : 'bg-slate-100 text-slate-400 group-hover:bg-orange-600 group-hover:text-white'}`}>
                   <ArrowRight className="w-3 h-3 md:w-4 md:h-4" />
                 </div>
               </div>
@@ -305,43 +309,43 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
         <div className="space-y-10">
           
           <div 
-            className={`p-8 rounded-[3rem] border space-y-8 shadow-sm group cursor-pointer transition-all ${isDark ? 'bg-black/30 border-white/5 hover:bg-black/45' : 'bg-white/10 border-white/20 hover:bg-white/20'}`}
+            className={`p-8 rounded-[3rem] border space-y-8 shadow-sm group cursor-pointer transition-all ${isDark ? 'bg-black/30 border-white/5 hover:bg-black/45' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-md shadow-slate-100/50'}`}
             style={{ backdropFilter: 'blur(20px)' }}
           >
              <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform ${isDark ? 'bg-white text-slate-950' : 'bg-slate-900 text-white'}`}>
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform ${isDark ? 'bg-white text-slate-950' : 'bg-orange-600 text-white shadow-orange-500/20'}`}>
                   <Sparkles size={20} />
                 </div>
                 <div>
-                  <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${isDark ? 'text-zinc-300' : 'text-slate-400'}`}>Consultoria</p>
-                  <p className={`font-bold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Conversar com {aiName}</p>
+                  <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${isDark ? 'text-zinc-300' : 'text-slate-500'}`}>Consultoria</p>
+                  <p className={`font-bold text-sm ${isDark ? 'text-white' : 'text-slate-950'}`}>Conversar com {aiName}</p>
                 </div>
              </div>
-             <p className={`text-xs font-medium leading-relaxed ${isDark ? 'text-zinc-300' : 'text-slate-500'}`}>
+             <p className={`text-xs font-medium leading-relaxed ${isDark ? 'text-zinc-300' : 'text-slate-650'}`}>
                Precisa de ajuda com roteiros, tendências ou sua próxima grande ideia? O(a) {aiName} está pronto(a) para te ajudar a crescer.
              </p>
              <Link href="/dashboard/workspace" className="w-full block">
-                <button className={`w-full rounded-[1.5rem] font-black h-14 transition-all uppercase tracking-[0.3em] text-[10px] shadow-xl ${isDark ? 'bg-white text-slate-950 hover:bg-zinc-200' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
+                <button className={`w-full rounded-[1.5rem] font-black h-14 transition-all uppercase tracking-[0.3em] text-[10px] shadow-xl ${isDark ? 'bg-white text-slate-950 hover:bg-zinc-200' : 'bg-orange-600 text-white hover:bg-orange-700'}`}>
                   ABRIR CONSULTOR
                 </button>
              </Link>
           </div>
 
           <div 
-            className={`p-10 rounded-[3rem] border space-y-8 shadow-sm ${isDark ? 'bg-black/30 border-white/5' : 'bg-white/10 border-white/20'}`}
+            className={`p-10 rounded-[3rem] border space-y-8 shadow-sm ${isDark ? 'bg-black/30 border-white/5' : 'bg-white border-slate-200 shadow-md shadow-slate-100/50'}`}
             style={{ backdropFilter: 'blur(20px)' }}
           >
-            <h4 className={`text-[10px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-zinc-300' : 'text-slate-400'}`}>Próximo Nível</h4>
+            <h4 className={`text-[10px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-zinc-300' : 'text-slate-500'}`}>Próximo Nível</h4>
             <div className="space-y-4">
               <div className="flex justify-between items-end">
-                <span className={`font-black text-3xl tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>PRATA</span>
-                <span className={`text-[10px] font-black ${isDark ? 'text-zinc-300' : 'text-slate-400'}`}>340 / 500</span>
+                <span className={`font-black text-3xl tracking-tighter ${isDark ? 'text-white' : 'text-slate-950'}`}>PRATA</span>
+                <span className={`text-[10px] font-black ${isDark ? 'text-zinc-300' : 'text-slate-500'}`}>340 / 500</span>
               </div>
-              <div className={`h-2 w-full rounded-full overflow-hidden ${isDark ? 'bg-white/5' : 'bg-slate-900/5'}`}>
-                <div className={`h-full w-[68%] rounded-full shadow-sm ${isDark ? 'bg-white' : 'bg-slate-900'}`} />
+              <div className={`h-2 w-full rounded-full overflow-hidden ${isDark ? 'bg-white/5' : 'bg-slate-100'}`}>
+                <div className={`h-full w-[68%] rounded-full shadow-sm ${isDark ? 'bg-white' : 'bg-orange-600'}`} />
               </div>
             </div>
-            <p className="text-[10px] text-zinc-300 font-bold leading-relaxed uppercase tracking-widest">
+            <p className={`text-[10px] font-bold leading-relaxed uppercase tracking-widest ${isDark ? 'text-zinc-300' : 'text-slate-500'}`}>
               Continue realizando suas missões diárias para liberar a verificação.
             </p>
           </div>

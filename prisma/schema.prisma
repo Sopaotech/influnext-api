@@ -38,6 +38,7 @@ model User {
   trialEndsAt         DateTime?
   stripeCustomerId    String?   @unique // ID do cliente na Stripe
   stripeConnectAccountId String? @unique // ID da conta Stripe Connect (Express) do influenciador
+  fcmToken              String?          // FCM registration token for push notifications
   
   subscriptions Subscription[]
   influencer    InfluencerProfile?

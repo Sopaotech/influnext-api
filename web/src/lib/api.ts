@@ -6,14 +6,15 @@ const envApiUrl = process.env.NEXT_PUBLIC_API_URL;
 let baseApiUrl = envApiUrl;
 
 if (typeof window !== 'undefined') {
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const hostname = window.location.hostname;
+  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '10.0.2.2';
   
   if (!isLocalhost) {
     // Se não for localhost (ex: cloudflare pages preview, etc), usa a API de produção
     baseApiUrl = envApiUrl || 'https://api.influnext.com.br/v1';
   } else if (!baseApiUrl) {
-    // Se for local e não houver env, usa o padrão local
-    baseApiUrl = 'http://localhost:4000/v1';
+    // Se for local e não houver env, usa o padrão local correspondente ao host (se for emulador Android usa 10.0.2.2)
+    baseApiUrl = hostname === '10.0.2.2' ? 'http://10.0.2.2:4000/v1' : 'http://localhost:4000/v1';
   }
 } else if (!baseApiUrl) {
   baseApiUrl = 'http://localhost:4000/v1';

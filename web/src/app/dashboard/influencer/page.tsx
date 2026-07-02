@@ -42,7 +42,7 @@ export default function InfluencerDashboard() {
   }
 
   const escrowBalance = data?.kpis?.escrowBalance ?? 0;
-  const isDark = true;
+  const isDark = data?.userState?.theme === 'dark';
 
   return (
     <div className="space-y-8 md:space-y-12 pb-20">
@@ -70,11 +70,11 @@ export default function InfluencerDashboard() {
              style={{ backdropFilter: 'blur(30px)' }}
            >
               <div className="flex items-center gap-3 md:gap-4">
-                 <div className="p-3 md:p-4 bg-emerald-600 text-white rounded-xl md:rounded-2xl group-hover:rotate-12 transition-transform shadow-lg shadow-emerald-500/20">
+                 <div className="p-3 md:p-4 bg-orange-600 text-white rounded-xl md:rounded-2xl group-hover:rotate-12 transition-transform shadow-lg shadow-orange-500/20">
                     <Wallet className="w-4 md:w-5 h-4 md:h-5" />
                  </div>
                  <div className="text-left">
-                    <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest block mb-0.5 ${isDark ? 'text-emerald-450' : 'text-emerald-700'}`}>Saldo Disponível</span>
+                    <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest block mb-0.5 ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>Saldo Disponível</span>
                     <span className={`text-xl md:text-3xl font-black tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(escrowBalance)}
                     </span>
@@ -84,8 +84,8 @@ export default function InfluencerDashboard() {
                 href="/dashboard/influencer/wallet"
                 className={`rounded-full font-black text-[9px] md:text-[10px] uppercase h-10 md:h-12 px-6 md:px-8 transition-colors shadow-xl flex items-center justify-center ${
                   isDark 
-                    ? 'bg-white text-slate-950 hover:bg-emerald-600 hover:text-white' 
-                    : 'bg-slate-900 text-white hover:bg-emerald-700'
+                    ? 'bg-white text-slate-950 hover:bg-orange-600 hover:text-white' 
+                    : 'bg-slate-900 text-white hover:bg-orange-600'
                 }`}
               >
                 Sacar
@@ -100,12 +100,12 @@ export default function InfluencerDashboard() {
            }`}>
               <span className={`text-[8px] font-black uppercase tracking-[0.3em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Performance</span>
               <div className="flex items-center gap-2">
-                 <span className="text-lg md:text-2xl font-black tracking-tighter text-emerald-500">
+                 <span className="text-lg md:text-2xl font-black tracking-tighter text-orange-500">
                     {data?.kpis?.totalEarned && data.kpis.totalEarned > 0
                       ? `+R$ ${data.kpis.totalEarned >= 1000 ? `${(data.kpis.totalEarned / 1000).toFixed(0)}k` : data.kpis.totalEarned}`
                       : 'R$ 0'}
                  </span>
-                 <TrendingUp className="w-3 md:w-4 h-3 md:h-4 text-emerald-500" />
+                 <TrendingUp className="w-3 md:w-4 h-3 md:h-4 text-orange-500" />
               </div>
            </div>
         </div>

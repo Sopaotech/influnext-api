@@ -242,12 +242,6 @@ export default function SignupClient() {
 
   return (
     <div className="w-full space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 relative z-10">
-      <div className="text-center">
-        <Logo size="lg" href="/" className="justify-center" variant="dark" />
-        <p className="mt-3 text-[11px] font-black uppercase tracking-[0.4em] text-zinc-500">
-          Onboarding Experience
-        </p>
-      </div>
 
       <div className="relative">
         {/* Glow border */}
@@ -263,6 +257,18 @@ export default function SignupClient() {
 
           {/* Inner top gradient accent */}
           <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
+
+          {/* Logo + tagline (moved inside card for mobile centering and notch spacing) */}
+          <div className="text-center space-y-3 pt-4 pb-6 border-b border-zinc-100">
+            <Logo size="lg" href="/" className="justify-center" variant="dark" />
+            <div className="flex items-center justify-center gap-2">
+              <div className="h-px w-10 bg-zinc-200" />
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500">
+                Onboarding Experience
+              </p>
+              <div className="h-px w-10 bg-zinc-200" />
+            </div>
+          </div>
 
           {/* Header */}
           <div className="space-y-4">

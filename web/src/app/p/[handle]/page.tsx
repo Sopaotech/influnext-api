@@ -7,7 +7,10 @@ import Link from 'next/link';
 
 export const viewport: Viewport = {
   themeColor: '#080810',
-  colorScheme: 'dark'
+  colorScheme: 'dark',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 async function getProfileData(handle: string) {
