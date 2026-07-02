@@ -1,0 +1,37 @@
+# Tarefas
+
+- `[x]` Camada de Banco de Dados
+  - `[x]` Adicionar `fcmToken` no modelo `User` em `prisma/schema.prisma`
+  - `[x]` Sincronizar o banco de dados (`npx prisma db push`)
+- `[x]` Implementação Backend
+  - `[x]` Instalar dependência `firebase-admin`
+  - `[x]` Implementar `src/services/push-notification.service.ts`
+  - `[x]` Adicionar rota e controller para atualizar token FCM (`POST /v1/auth/fcm-token`)
+  - `[x]` Integrar envio de push no processador `src/workers/notification.worker.ts`
+  - `[x]` Disparar jobs de notificação no sucesso do Stripe (`payment_intent.succeeded`) em `src/controllers/payment.controller.ts`
+- `[x]` Implementação Mobile (Flutter)
+  - `[x]` Adicionar dependências Firebase e notificações locais em `mobile/pubspec.yaml`
+  - `[x]` Criar serviço nativo `mobile/lib/services/notification_service.dart`
+  - `[x]` Capturar cookie de login e sincronizar token em `mobile/lib/screens/pwa_webview_screen.dart`
+  - `[x]` Inicializar serviço de notificações em `mobile/lib/main.dart`
+- `[x]` Final Verification
+  - `[x]` Run backend build and verify lints (TypeScript compilation check passed with zero errors)
+  - `[ ]` Run security scan script (Skipped: Python not found in path)
+  - `[ ]` Run validation scripts (Skipped: Python not found in path)
+- `[x]` Test Suite Setup
+  - `[x]` Install `jest`, `ts-jest`, `@types/jest`
+  - `[x]` Add test script to `package.json`
+  - `[x]` Create `jest.config.js`
+- `[x]` Write Tests
+  - `[x]` Create unit tests for push notifications in `tests/push-notification.test.ts`
+  - `[x]` Create unit tests for notification worker in `tests/notification-worker.test.ts`
+- `[x]` Execute Tests
+  - `[x]` Run Jest tests and ensure all tests pass (`npm run test` - All 4 unit tests passed successfully!)
+- `[x]` Web & Auth Optimizations
+  - `[x]` Fix emulator loopback IP (`10.0.2.2`) detection in `web/src/lib/api.ts`
+  - `[x]` Make theme preference dynamic in `web/src/app/dashboard/influencer/page.tsx`
+  - `[x]` Make theme preference dynamic in `web/src/components/dashboard/CareerDashboard.tsx`
+  - `[x]` Apply white & orange theme design and responsive improvements in dashboard layout
+  - `[x]` Create `branding_brainstorm.md` based on new logo feedback
+  - `[x]` Run Next.js compile check
+
