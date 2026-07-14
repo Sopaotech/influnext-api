@@ -1,0 +1,66 @@
+✦ INFLUNEXT — RESUMO DA ARQUITETURA DE IA ✦
+
+Fala sócio! Aqui está o resumo completo de como as nossas IAs estão estruturadas no código para você se situar e começar a trampar nessa parte também.
+
+No projeto, a IA é dividida em duas frentes principais (Criadores e Empresas) rodando sobre a Gemini API (Google) e OpenAI/OpenRouter (no backend Express).
+
+---
+
+*1. IA PARA CRIADORES (INFLUENCERS)*
+A IA age como Estrategista-Chefe de Monetização e Mentor de Negócios. Segue o tom "Dark Premium" (foco 100% em ROI e caixa: "recebidos não pagam boletos").
+
+* Principais Personas:
+• *Vincenzo* (Mentor masculino): Ativo por padrão ou se o gênero for masculino.
+• *Valentina* (Mentora feminina): Ativa se a influenciadora selecionar o gênero feminino (usa pronomes "sócia", "preparada", etc.).
+
+* Regras de Negócio Implementadas no Código:
+• *Suporte a Contas Dark/Faceless:* Se o criador marcar "dark/faceless" no perfil, a IA não sugere gravar rosto ou maquiagem; foca 100% em roteiros de retenção de 3s, edição de som, voiceover/IA e banco de vídeos.
+• *Cobrança com base no Escrow:* A IA consulta as finanças do criador no banco e o cobra com base nos saldos retidos em garantia segura (Escrow). Ela avisa que o dinheiro já está depositado pela marca e só depende da postagem para cair na conta.
+• *stories espontâneos de Engajamento:* Para manter a constância e humanização do perfil, a IA equilibra as tarefas sugeridas incluindo histórias espontâneas de bastidores (nem tudo pode ser venda/publi).
+• *Memória de Performance Anti-Repetição:* O sistema analisa as tarefas anteriores executadas. Ideias que falharam (performance < 1.0) são descartadas e ela diz abertamente: "Sócio, esse tema anterior não rendeu. Vou traçar algo novo." Ideias com performance > 1.2 são escaladas.
+• *Anti-Reveal:* A IA é instruída a nunca admitir que é um robô/bot. Se questionada, ela desconversa de forma corporativa e profissional.
+
+---
+
+*2. IA PARA EMPRESAS (BRANDS)*
+O foco está na estruturação de campanhas de marketing de influência com alto ROI e proteção de caixa.
+
+* Persona Brand Mentor:
+• *Vektor* (Estrategista de Branding e Otimização de ROI): Age com clareza analítica, foco em dados regionais auditados e conversão.
+
+* Regras do Vektor no Código:
+• *Escalabilidade de Orçamento:* Orienta a marca a não torrar tudo em um "mega-influencer" logo de cara. Prioriza testes consistentes com micro/nano-influenciadores locais para validar ganchos e posicionamento.
+• *Anti-Pechincha (Anti-Bargaining):* Se a marca reclamar do preço do criador, o Vektor defende o cachê com base no InfluScore auditado do influenciador, demonstrando que pechinchar preço gera entregas fracas.
+• *Briefing de Campanha:* Gera planejamentos completos em Markdown com ganchos visuais de 3s, mensagem-chave de branding e métricas de ROI.
+
+---
+
+*3. CONSULTORIAS DE MARKETING (Relatórios 9-em-1)*
+Permite que marcas gerem 9 relatórios estratégicos estruturados de mercado (A1-A5 e O1-O4) salvos no Postgres. O plano da empresa define o modelo (GPT-4o-mini para Free/Pro, GPT-4o para Master/Enterprise):
+• *A1:* Diagnóstico de Posicionamento.
+• *A2:* Estratégia de Campanha.
+• *A3:* Análise de Crescimento e Escala.
+• *A4:* Estratégia de Retenção de Audiência.
+• *A5:* Diagnóstico de Precificação e ROI.
+• *O1:* Resposta Competitiva (Concorrentes).
+• *O2:* Auditoria de Presença Digital.
+• *O3:* Mapeamento de Nichos de Criadores.
+• *O4:* Plano de Nano & Microinfluenciadores.
+
+---
+
+*4. MÓDULOS E APIS AUXILIARES*
+• *Trend Scanner:* Varredura inteligente de tendências a cada 1 hora combinando RSS do Google Trends BR + API pública do TikTok Creative Radar (com fallbacks curados offline).
+• *Parser de Linguagem Natural:* O calendário traduz frases livres (em texto ou áudio transcrito) como "agendar post dia 15 às 14h" em tarefas do banco (usando Regex inteligente como fallback offline).
+• *Auditor de Entregas:* A IA valida se os links postados no Instagram/TikTok obedecem ao briefing do contrato e ao roteiro planejado antes de liberar o dinheiro.
+
+---
+
+*5. CAMINHO DOS ARQUIVOS NO PROJETO*
+• Lógica Geral de IA: `src/services/ai.service.ts`
+• Relatórios de Marketing: `src/services/marketing-intelligence.service.ts`
+• Scanner de Tendências: `src/services/trend-scanner.service.ts`
+• Rotas de Endpoints: `src/routes/ai.routes.ts`
+• Modelos de Banco de Dados: `prisma/schema.prisma` (Tabelas: InfluencerProfile, MarketingAnalysis, TrendReference, AIAnalysis, Contract, Task).
+
+Pra cima! 🚀

@@ -1,0 +1,53 @@
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+function redirectNoCache(url: URL) {
+  const response = NextResponse.redirect(url);
+  response.headers.set('Cache-Control', 'no-store, max-age=0');
+  return response;
+}
+
+export function proxy(request: NextRequest) {
+  const token = request.cookies.get('influnext_token')?.value;
+  const role = request.cookies.get('influnext_role')?.value;
+  const { pathname } = request.nextUrl;
+
+  // Se o usuário tentar entrar no dashboard sem token
+  if (pathname.startsWith('/dashboard') && !token) {
+    return redirectNoCache(new URL('/auth/login', request.url));
+  }
+
+  // Forçar Onboarding
+  const onboarding = request.cookies.get('influnext_onboarding')?.value;
+  if (token && onboarding === 'false' && !pathname.startsWith('/onboarding') && role === 'INFLUENCER') {
+    return redirectNoCache(new URL('/onboarding', request.url));
+  }
+
+  // Isolamento de Role (RBAC no Edge)
+  if (pathname.startsWith('/dashboard/influencer') && role !== 'INFLUENCER') {
+    if (role === 'COMPANY') return redirectNoCache(new URL('/dashboard/company', request.url));
+    if (role === 'ADMIN') return redirectNoCache(new URL('/dashboard/admin', request.url));
+  }
+
+  if (pathname.startsWith('/dashboard/company') && role !== 'COMPANY') {
+    // Permitir acesso ao formulário de contrato para fins de demonstração, mesmo se for influencer
+    if (pathname.includes('new-contract')) return NextResponse.next();
+    
+    if (role === 'INFLUENCER') return redirectNoCache(new URL('/dashboard/influencer', request.url));
+    if (role === 'ADMIN') return redirectNoCache(new URL('/dashboard/admin', request.url));
+  }
+
+  // Se o usuário logado tentar entrar no login/signup
+  if (pathname.startsWith('/auth') && token) {
+    if (role === 'COMPANY') return redirectNoCache(new URL('/dashboard/company', request.url));
+    if (role === 'INFLUENCER') return redirectNoCache(new URL('/dashboard/influencer', request.url));
+    if (role === 'ADMIN') return redirectNoCache(new URL('/dashboard/admin', request.url));
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  // A raiz '/' NÃO está no matcher — usuários não logados sempre veem a Landing Page
+  matcher: ['/dashboard/:path*', '/auth/:path*', '/onboarding/:path*'],
+};
