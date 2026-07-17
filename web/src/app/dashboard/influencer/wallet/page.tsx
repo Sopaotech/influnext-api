@@ -138,7 +138,7 @@ export default function WalletPage() {
         <h1 className="text-4xl md:text-5xl font-black text-current tracking-tighter mb-4 text-center">
           PIX Realizado!
         </h1>
-        <p className="text-zinc-550 dark:text-slate-400 text-center max-w-md mb-3 font-medium">
+        <p className="text-zinc-500 dark:text-slate-400 text-center max-w-md mb-3 font-medium">
           O valor foi enviado para processamento. Em até 1 hora útil, o crédito aparecerá na sua conta bancária vinculada ao CPF.
         </p>
         <p className="text-xs text-orange-500 mb-8 font-black uppercase tracking-wider">
@@ -179,7 +179,7 @@ export default function WalletPage() {
         <h1 className="text-4xl md:text-5xl font-black text-current tracking-tighter">
           Sua <span className="text-emerald-600 dark:text-emerald-400">Carteira</span>
         </h1>
-        <p className="text-zinc-550 dark:text-slate-400 font-medium">Saque rápido, seguro e sem taxas ocultas.</p>
+        <p className="text-zinc-500 dark:text-slate-400 font-medium">Saque rápido, seguro e sem taxas ocultas.</p>
       </header>
 
       <div className={`p-6 md:p-8 rounded-[2rem] shadow-xl border ${
@@ -310,7 +310,7 @@ export default function WalletPage() {
                 <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
                 Segurança Anti-Fraude
               </span>
-              <p className="text-xs text-zinc-550 dark:text-zinc-450 leading-relaxed font-medium">
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-medium">
                 Confirmo que li e entendi: o saque PIX é realizado <strong className="text-zinc-800 dark:text-zinc-200 font-extrabold">exclusivamente</strong> para a conta bancária vinculada ao meu CPF cadastrado. Transferências para contas de terceiros são <strong className="text-zinc-800 dark:text-zinc-200 font-extrabold">automaticamente bloqueadas</strong> pelo sistema de proteção InfluNext.
               </p>
             </div>

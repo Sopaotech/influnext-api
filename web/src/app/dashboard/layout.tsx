@@ -9,6 +9,8 @@ import { Toaster } from '@/components/ui/sonner';
 import { Logo } from '@/components/Logo';
 import dynamic from 'next/dynamic';
 
+import { useTheme } from 'next-themes';
+
 const BottomNav = dynamic(
   () => import('@/components/BottomNav').then(mod => mod.BottomNav),
   { ssr: false }
@@ -22,12 +24,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Fundo dinâmico baseado no perfil - Forçado para Dark Theme Premium
+  const { theme: globalTheme, setTheme } = useTheme();
+
   const [profileImg, setProfileImg] = useState<string | null>(null);
   const [taskCount, setTaskCount] = useState(0);
-  const [isDark, setIsDark] = useState(true);
+  
+  // Inicialização síncrona a partir do cookie para evitar flashes de tela preta
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = Cookies.get('influnext_theme');
+      if (savedTheme) {
+        return savedTheme === 'dark';
+      }
+    }
+    return true; // Padrão se não houver cookie
+  });
 
   React.useEffect(() => {
+    // Sincroniza o tema do próximo pacote no carregamento inicial
+    const savedTheme = Cookies.get('influnext_theme');
+    if (savedTheme) {
+      setIsDark(savedTheme === 'dark');
+      setTheme(savedTheme);
+    }
+
     const fetchTheme = async () => {
       try {
         const userRole = Cookies.get('influnext_role');
@@ -46,6 +66,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const userState = res.data.profile?.user || res.data.userState;
         if (userState?.theme) {
           setIsDark(userState.theme === 'dark');
+          setTheme(userState.theme);
           Cookies.set('influnext_theme', userState.theme, { expires: 7, path: '/' });
         }
 
