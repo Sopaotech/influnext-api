@@ -22,6 +22,15 @@ export const getPublicProfile = async (req: Request, res: Response): Promise<voi
         city: true,
         state: true,
         bio: true,
+        // Tabela de preços (Rate Cards)
+        rateCards: {
+          select: {
+            id: true,
+            serviceName: true,
+            price: true,
+            description: true
+          }
+        },
         // Buscamos apenas o último snapshot de métricas auditadas
         metricsHistory: {
           take: 1,

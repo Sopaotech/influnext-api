@@ -236,9 +236,8 @@ export default function SettingsPage() {
 
       await api.patch('/influencers/profile', payload);
 
-      if (rateCards.length > 0) {
-        await api.post('/influencers/rate-card', rateCards);
-      }
+      // Sempre atualiza a tabela de preços (mesmo se vazia, para permitir limpar todos os itens)
+      await api.post('/influencers/rate-card', rateCards);
 
       toast.success('✦ Ajustes sincronizados com sucesso!');
     } catch (err: any) {

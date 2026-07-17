@@ -47,7 +47,7 @@ export default function CompanyDashboard() {
         companyFeedback: talent.handle === 'demo.influencer' ? 98 : (talent.handle === 'pedro_ph' ? 95 : 92),
         negotiationBehavior: talent.handle === 'demo.influencer' ? 'Super Educado' : (talent.handle === 'pedro_ph' ? 'Colaborativo' : 'Neutro'),
         deliveryRate: 100,
-        rateCard: [
+        rateCard: (profileData.rateCards && profileData.rateCards.length > 0) ? profileData.rateCards : [
           { serviceName: 'Combo Reels + Stories', price: talent.handle === 'demo.influencer' ? 1500 : 900, description: '1x Reels no feed e 3x Stories para engajamento.' },
           { serviceName: '1x Reels de Provador', price: talent.handle === 'demo.influencer' ? 900 : 500, description: 'Reels dinâmico mostrando a coleção.' }
         ]
