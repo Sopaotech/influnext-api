@@ -9,24 +9,14 @@ import Link from 'next/link';
 import Cookies from 'js-cookie';
 
 export default function InfluencerDashboard() {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = useState<'dark' | 'light'>('light');
   const [data, setData] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Monitor theme updates
   useEffect(() => {
-    const savedTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-    const interval = setInterval(() => {
-      const currentTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;
-      if (currentTheme && currentTheme !== theme) {
-        setTheme(currentTheme);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [theme]);
+    setTheme('light');
+  }, []);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -46,15 +36,15 @@ export default function InfluencerDashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen p-10 space-y-10 animate-pulse">
+      <div className="min-h-screen p-10 space-y-10 animate-pulse bg-white">
         <div className="flex justify-between items-center">
-          <div className="h-12 w-64 bg-zinc-800/20 rounded-2xl" />
-          <div className="h-12 w-32 bg-zinc-800/20 rounded-2xl" />
+          <div className="h-12 w-64 bg-zinc-200/60 rounded-2xl" />
+          <div className="h-12 w-32 bg-zinc-200/60 rounded-2xl" />
         </div>
-        <div className="h-[300px] bg-zinc-800/20 rounded-[2.5rem]" />
+        <div className="h-[300px] bg-zinc-200/60 rounded-[2.5rem]" />
         <div className="grid grid-cols-3 gap-8">
-          <div className="col-span-2 h-[500px] bg-zinc-800/20 rounded-[2.5rem]" />
-          <div className="h-[500px] bg-zinc-800/20 rounded-[2.5rem]" />
+          <div className="col-span-2 h-[500px] bg-zinc-200/60 rounded-[2.5rem]" />
+          <div className="h-[500px] bg-zinc-200/60 rounded-[2.5rem]" />
         </div>
       </div>
     );

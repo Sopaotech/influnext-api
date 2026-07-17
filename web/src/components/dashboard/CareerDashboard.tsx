@@ -12,7 +12,9 @@ import {
   ArrowRight,
   Sparkles,
   Briefcase as BriefingIcon,
-  MessageSquare
+  MessageSquare,
+  CreditCard,
+  DollarSign
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -37,6 +39,7 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
   const [aiName, setAiName] = useState<string>('Seu Assistente');
   const [isEditingName, setIsEditingName] = useState(false);
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
+  const [rateCards, setRateCards] = useState<any[]>([]);
 
   useEffect(() => {
     const savedName = localStorage.getItem('influnext_ai_name');
@@ -58,14 +61,16 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
   const fetchCareerData = async () => {
     try {
       setIsLoading(true);
-      const [tasksRes, insightRes, connRes] = await Promise.all([
+      const [tasksRes, insightRes, connRes, rateRes] = await Promise.all([
         api.get(`/influencers/tasks`),
         api.get(`/influencers/daily-insight`),
-        api.get(`/integrations/connected`).catch(() => ({ data: { platforms: [] } }))
+        api.get(`/integrations/connected`).catch(() => ({ data: { platforms: [] } })),
+        api.get(`/influencers/rate-card`).catch(() => ({ data: [] }))
       ]);
       setTasks(tasksRes.data);
       setInsight(insightRes.data.insight);
       setConnectedPlatforms(connRes.data.platforms || []);
+      setRateCards(rateRes.data || []);
     } catch (err) {
       console.error('Erro ao carregar dados de carreira:', err);
     } finally {
@@ -349,10 +354,77 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
               Continue realizando suas missões diárias para liberar a verificação.
             </p>
           </div>
+ 
+         </div>
+       </div>
 
+      {/* Tabela de Preços (Rate Card) Section */}
+      <section className="space-y-6 md:space-y-8 mt-12 pt-6 border-t border-slate-100">
+        <div className="flex items-center justify-between px-4">
+          <div className="space-y-1">
+            <h3 className={`text-[10px] font-black uppercase tracking-[0.4em] flex items-center gap-3 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+              <DollarSign className="w-4 h-4 text-orange-600" /> Tabela de Preços (Rate Card)
+            </h3>
+            <p className={`text-[9px] font-bold uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>
+              Seus serviços e valores contratáveis pelas marcas
+            </p>
+          </div>
+          <Link href="/dashboard/settings">
+            <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest px-4 py-2 border rounded-xl hover:bg-orange-600 hover:text-white transition-all cursor-pointer ${
+              isDark ? 'border-white/10 text-white' : 'border-slate-200 text-slate-700 hover:border-orange-600'
+            }`}>
+              Editar Tabela
+            </span>
+          </Link>
         </div>
-      </div>
-    </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          {rateCards.length > 0 ? (
+            rateCards.map((rate, idx) => (
+              <div 
+                key={idx} 
+                className={`p-6 md:p-8 rounded-[2rem] hover:scale-[1.02] transition-all duration-500 group shadow-sm hover:shadow-xl border ${
+                  isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-900 shadow-sm shadow-slate-100/50'
+                }`}
+              >
+                <div className="flex justify-between items-start mb-4 md:mb-6">
+                  <div className={`p-3 rounded-xl transition-colors ${
+                    isDark ? 'bg-white/10 text-white group-hover:bg-orange-600' : 'bg-orange-50 text-orange-600 group-hover:bg-orange-650 group-hover:text-white'
+                  }`}>
+                    <Zap className="w-4 h-4" />
+                  </div>
+                  <span className="text-lg md:text-xl font-black tracking-tighter text-current">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rate.price)}
+                  </span>
+                </div>
+                <h4 className="text-base md:text-lg font-black uppercase tracking-tight mb-2 text-current">{rate.serviceName}</h4>
+                <p className={`text-[11px] md:text-xs font-medium leading-relaxed ${isDark ? 'text-zinc-350' : 'text-slate-650'}`}>{rate.description || 'Nenhuma descrição fornecida.'}</p>
+              </div>
+            ))
+          ) : (
+            <div className={`col-span-full py-12 md:py-20 rounded-[2.5rem] md:rounded-[3rem] border flex flex-col items-center justify-center text-center space-y-4 md:space-y-6 ${
+              isDark ? 'bg-white/[0.02] border-white/5' : 'bg-white border-slate-200 shadow-sm'
+            }`}>
+              <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center border ${
+                isDark ? 'bg-white/5 text-zinc-500 border-white/5' : 'bg-slate-50 text-slate-400 border-slate-200'
+              }`}>
+                <CreditCard size={32} />
+              </div>
+              <div className="space-y-1">
+                <p className={`font-black text-[10px] md:text-xs uppercase tracking-[0.3em] ${isDark ? 'text-zinc-350' : 'text-slate-900'}`}>Nenhum serviço cadastrado ainda</p>
+                <p className={`text-[9px] md:text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>Acesse as configurações para gerenciar sua tabela de preços.</p>
+              </div>
+              <Link href="/dashboard/settings">
+                <button className={`px-6 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl active:scale-95 transition-all shadow-md ${
+                  isDark ? 'bg-white text-slate-950 hover:bg-zinc-200' : 'bg-orange-600 text-white hover:bg-orange-700'
+                }`}>
+                  Configurar Serviços
+                </button>
+              </Link>
+            </div>
+          )}
+        </div>
+      </section>
+     </div>
   );
 }

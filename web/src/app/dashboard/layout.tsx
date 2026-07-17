@@ -29,24 +29,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [profileImg, setProfileImg] = useState<string | null>(null);
   const [taskCount, setTaskCount] = useState(0);
   
-  // Inicialização síncrona a partir do cookie para evitar flashes de tela preta
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const savedTheme = Cookies.get('influnext_theme');
-      if (savedTheme) {
-        return savedTheme === 'dark';
-      }
-    }
-    return true; // Padrão se não houver cookie
-  });
+  // Inicialização síncrona a partir do cookie para evitar flashes de tela preta (forçado para false / tema claro)
+  const [isDark, setIsDark] = useState(false);
 
   React.useEffect(() => {
-    // Sincroniza o tema do próximo pacote no carregamento inicial
-    const savedTheme = Cookies.get('influnext_theme');
-    if (savedTheme) {
-      setIsDark(savedTheme === 'dark');
-      setTheme(savedTheme);
-    }
+    // Sincroniza o tema no carregamento inicial (forçado para tema claro para evitar qualquer tela preta)
+    setIsDark(false);
+    setTheme('light');
+    Cookies.set('influnext_theme', 'light', { expires: 365, path: '/' });
 
     const fetchTheme = async () => {
       try {
@@ -65,9 +55,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         const userState = res.data.profile?.user || res.data.userState;
         if (userState?.theme) {
-          setIsDark(userState.theme === 'dark');
-          setTheme(userState.theme);
-          Cookies.set('influnext_theme', userState.theme, { expires: 7, path: '/' });
+          setIsDark(false);
+          setTheme('light');
+          Cookies.set('influnext_theme', 'light', { expires: 365, path: '/' });
         }
 
         // Verificação de Paywall para planos expirados/inativos
@@ -118,17 +108,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ];
 
   return (
-    <div className={`min-h-screen relative flex font-sans selection:bg-slate-900/10 overflow-hidden transition-colors duration-500 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+    <div className="min-h-screen relative flex font-sans selection:bg-slate-900/10 overflow-hidden transition-colors duration-500 text-slate-900 bg-white">
       
-      {/* Background Layer - Solid Slate base */}
-      <div className={`fixed inset-0 z-0 transition-colors duration-500 ${isDark ? 'bg-[#050508]' : 'bg-[#f8fafc]'}`} />
+      {/* Background Layer - Solid base */}
+      <div className="fixed inset-0 z-0 transition-colors duration-500 bg-white" />
       
       {/* Premium Atmospheric Background Glows & Subtle Grid */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         {/* Main orange/orange glow — top center */}
-        <div className={`absolute top-[-15%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] rounded-full blur-[130px] transition-all duration-500 ${isDark ? 'bg-orange-600/10' : 'bg-orange-500/5'}`} />
+        <div className="absolute top-[-15%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] rounded-full blur-[130px] transition-all duration-500 bg-orange-500/5" />
         {/* Pink/orange accent — bottom right */}
-        <div className={`absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full blur-[110px] transition-all duration-500 ${isDark ? 'bg-pink-600/6' : 'bg-orange-500/3'}`} />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full blur-[110px] transition-all duration-500 bg-orange-500/3" />
         {/* Subtle grid texture */}
         <div
           className="absolute inset-0 opacity-[0.015]"
@@ -153,7 +143,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Sidebar - Glassmorphism */}
       <aside 
-        className={`hidden md:flex relative z-10 h-screen w-[220px] border-r flex flex-col justify-between shadow-sm transition-all duration-500 ${isDark ? 'bg-black/40 border-white/5' : 'bg-white border-slate-200 text-slate-800'}`}
+        className="hidden md:flex relative z-10 h-screen w-[220px] border-r flex flex-col justify-between shadow-sm transition-all duration-500 bg-white border-slate-200 text-slate-850"
         style={{ backdropFilter: 'blur(30px)' }}
       >
         <div className="p-8">
@@ -236,7 +226,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <BottomNav taskCount={taskCount} />
       </div>
 
-      <Toaster theme={isDark ? 'dark' : 'light'} position="bottom-right" />
+      <Toaster theme="light" position="bottom-right" />
       
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {
