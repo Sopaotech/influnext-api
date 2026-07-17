@@ -16,7 +16,8 @@ if (!fs.existsSync(schemaPath)) {
 let schemaContent = fs.readFileSync(schemaPath, 'utf8');
 
 // Detecta se a conexão é SQLite (geralmente local) ou PostgreSQL (geralmente produção)
-const isSqlite = dbUrl.startsWith('file:') || dbUrl.includes('.db') || dbUrl === '';
+// Se DATABASE_URL estiver vazia (ex: durante o build no Docker/Railway), assume PostgreSQL por padrão
+const isSqlite = dbUrl.startsWith('file:') || dbUrl.includes('.db');
 const hasDirectUrl = !!process.env.DIRECT_URL;
 
 let newDatasource = '';
