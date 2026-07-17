@@ -120,8 +120,8 @@ export default function CompanyOnboardingPage() {
       
       {/* Glows de background */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-500/5 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-pink-500/5 blur-[120px] rounded-full" />
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-500/5 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-amber-500/5 blur-[120px] rounded-full" />
       </div>
 
       <div className="w-full max-w-xl relative space-y-6">
@@ -139,14 +139,14 @@ export default function CompanyOnboardingPage() {
           {[1, 2, 3].map((s) => (
             <div 
               key={s}
-              className={`h-1 flex-1 rounded-full transition-all duration-500 ${s <= step ? 'bg-purple-500 shadow-[0_0_15px_rgba(124,58,237,0.5)]' : 'bg-zinc-800'}`}
+              className={`h-1 flex-1 rounded-full transition-all duration-500 ${s <= step ? 'bg-orange-500 shadow-[0_0_15px_rgba(124,58,237,0.5)]' : 'bg-zinc-800'}`}
             />
           ))}
         </div>
 
         {/* Card */}
         <div className="relative">
-          <div className="absolute -inset-px rounded-[2.5rem] bg-gradient-to-b from-purple-500/20 via-pink-500/10 to-transparent pointer-events-none" />
+          <div className="absolute -inset-px rounded-[2.5rem] bg-gradient-to-b from-orange-500/20 via-amber-500/10 to-transparent pointer-events-none" />
           
           <div 
             className="relative bg-white/[0.02] border border-white/[0.08] rounded-[2.5rem] p-8 md:p-10 space-y-8 overflow-hidden"
@@ -156,12 +156,12 @@ export default function CompanyOnboardingPage() {
             {step === 1 && (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-500">
                 <div className="space-y-4">
-                  <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center border border-purple-500/20">
-                    <Building className="w-8 h-8 text-purple-500" />
+                  <div className="w-16 h-16 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20">
+                    <Building className="w-8 h-8 text-orange-500" />
                   </div>
                   <h1 className="text-3xl md:text-4xl font-black tracking-tighter leading-none">
                     BEM-VINDO AO <br />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">INFLUNEXT EMPRESAS</span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-400">INFLUNEXT EMPRESAS</span>
                   </h1>
                   <p className="text-zinc-400 text-sm font-medium leading-relaxed">
                     Vamos configurar sua central de inteligência e o questionário estratégico para ativar o matching ideal com criadores de conteúdo e a IA Vektor.
@@ -170,7 +170,7 @@ export default function CompanyOnboardingPage() {
                 
                 <Button 
                   onClick={() => setStep(2)}
-                  className="group bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white w-full h-16 rounded-[1.5rem] font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-purple-600/20 active:scale-95 flex items-center justify-center gap-2"
+                  className="group bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white w-full h-16 rounded-[1.5rem] font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-orange-600/20 active:scale-95 flex items-center justify-center gap-2"
                 >
                   CONFIGURAR CENTRAL <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
@@ -193,7 +193,7 @@ export default function CompanyOnboardingPage() {
                         value={companyName}
                         onChange={(e) => setCompanyName(e.target.value)}
                         placeholder="Ex: Minha Marca LTDA"
-                        className="h-14 bg-zinc-900/50 border-zinc-800 rounded-xl focus:border-purple-500 transition-all text-sm font-bold pl-12"
+                        className="h-14 bg-zinc-900/50 border-zinc-800 rounded-xl focus:border-orange-500 transition-all text-sm font-bold pl-12"
                       />
                       <Building className="absolute left-4 top-4 w-5 h-5 text-zinc-700" />
                     </div>
@@ -207,7 +207,7 @@ export default function CompanyOnboardingPage() {
                           value={city}
                           onChange={(e) => setCity(e.target.value)}
                           placeholder="São Paulo"
-                          className="h-14 bg-zinc-900/50 border-zinc-800 rounded-xl focus:border-purple-500 transition-all text-sm pl-12"
+                          className="h-14 bg-zinc-900/50 border-zinc-800 rounded-xl focus:border-orange-500 transition-all text-sm pl-12"
                         />
                         <MapPin className="absolute left-4 top-4.5 w-5 h-5 text-zinc-700" />
                       </div>
@@ -219,7 +219,7 @@ export default function CompanyOnboardingPage() {
                         onChange={(e) => setState(e.target.value)}
                         placeholder="SP"
                         maxLength={2}
-                        className="h-14 bg-zinc-900/50 border-zinc-800 rounded-xl focus:border-purple-500 transition-all text-sm font-bold text-center uppercase"
+                        className="h-14 bg-zinc-900/50 border-zinc-800 rounded-xl focus:border-orange-500 transition-all text-sm font-bold text-center uppercase"
                       />
                     </div>
                   </div>
@@ -229,7 +229,7 @@ export default function CompanyOnboardingPage() {
                     <select
                       value={segment}
                       onChange={(e) => setSegment(e.target.value)}
-                      className="w-full h-14 bg-[#0a0a0f] border border-white/[0.08] rounded-xl px-4 text-sm font-bold text-white focus:outline-none focus:border-purple-500 transition-all appearance-none"
+                      className="w-full h-14 bg-[#0a0a0f] border border-white/[0.08] rounded-xl px-4 text-sm font-bold text-white focus:outline-none focus:border-orange-500 transition-all appearance-none"
                     >
                       <option value="" className="bg-[#0a0a10]">Selecione...</option>
                       {COMPANY_SEGMENTS.map(s => <option key={s} value={s} className="bg-[#0a0a10]">{s}</option>)}
@@ -241,7 +241,7 @@ export default function CompanyOnboardingPage() {
                     <select
                       value={employeeCount}
                       onChange={(e) => setEmployeeCount(e.target.value)}
-                      className="w-full h-14 bg-[#0a0a0f] border border-white/[0.08] rounded-xl px-4 text-sm font-bold text-white focus:outline-none focus:border-purple-500 transition-all appearance-none"
+                      className="w-full h-14 bg-[#0a0a0f] border border-white/[0.08] rounded-xl px-4 text-sm font-bold text-white focus:outline-none focus:border-orange-500 transition-all appearance-none"
                     >
                       <option value="" className="bg-[#0a0a10]">Selecione...</option>
                       {EMPLOYEE_RANGES.map(r => <option key={r.value} value={r.value} className="bg-[#0a0a10]">{r.label}</option>)}
@@ -259,7 +259,7 @@ export default function CompanyOnboardingPage() {
                       }
                       setStep(3);
                     }}
-                    className="h-12 flex-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-black text-[10px] tracking-wider uppercase"
+                    className="h-12 flex-1 rounded-xl bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white font-black text-[10px] tracking-wider uppercase"
                   >
                     CONTINUAR
                   </Button>
@@ -281,7 +281,7 @@ export default function CompanyOnboardingPage() {
                     <select
                       value={campaignBudget}
                       onChange={(e) => setCampaignBudget(e.target.value)}
-                      className="w-full h-14 bg-[#0a0a0f] border border-white/[0.08] rounded-xl px-4 text-sm font-bold text-white focus:outline-none focus:border-purple-500 transition-all appearance-none"
+                      className="w-full h-14 bg-[#0a0a0f] border border-white/[0.08] rounded-xl px-4 text-sm font-bold text-white focus:outline-none focus:border-orange-500 transition-all appearance-none"
                     >
                       <option value="" className="bg-[#0a0a10]">Selecione...</option>
                       {BUDGET_RANGES.map(b => <option key={b.value} value={b.value} className="bg-[#0a0a10]">{b.label}</option>)}
@@ -293,7 +293,7 @@ export default function CompanyOnboardingPage() {
                     <select
                       value={salesGoal}
                       onChange={(e) => setSalesGoal(e.target.value)}
-                      className="w-full h-14 bg-[#0a0a0f] border border-white/[0.08] rounded-xl px-4 text-sm font-bold text-white focus:outline-none focus:border-purple-500 transition-all appearance-none"
+                      className="w-full h-14 bg-[#0a0a0f] border border-white/[0.08] rounded-xl px-4 text-sm font-bold text-white focus:outline-none focus:border-orange-500 transition-all appearance-none"
                     >
                       <option value="" className="bg-[#0a0a10]">Selecione...</option>
                       {SALES_GOALS.map(sg => <option key={sg.value} value={sg.value} className="bg-[#0a0a10]">{sg.label}</option>)}
@@ -305,7 +305,7 @@ export default function CompanyOnboardingPage() {
                     <select
                       value={averageTicket}
                       onChange={(e) => setAverageTicket(e.target.value)}
-                      className="w-full h-14 bg-[#0a0a0f] border border-white/[0.08] rounded-xl px-4 text-sm font-bold text-white focus:outline-none focus:border-purple-500 transition-all appearance-none"
+                      className="w-full h-14 bg-[#0a0a0f] border border-white/[0.08] rounded-xl px-4 text-sm font-bold text-white focus:outline-none focus:border-orange-500 transition-all appearance-none"
                     >
                       <option value="" className="bg-[#0a0a10]">Selecione...</option>
                       {TICKET_RANGES.map(t => <option key={t.value} value={t.value} className="bg-[#0a0a10]">{t.label}</option>)}
@@ -317,7 +317,7 @@ export default function CompanyOnboardingPage() {
                     <select
                       value={instagramPositioning}
                       onChange={(e) => setInstagramPositioning(e.target.value)}
-                      className="w-full h-14 bg-[#0a0a0f] border border-white/[0.08] rounded-xl px-4 text-sm font-bold text-white focus:outline-none focus:border-purple-500 transition-all appearance-none"
+                      className="w-full h-14 bg-[#0a0a0f] border border-white/[0.08] rounded-xl px-4 text-sm font-bold text-white focus:outline-none focus:border-orange-500 transition-all appearance-none"
                     >
                       <option value="" className="bg-[#0a0a10]">Selecione...</option>
                       {INSTAGRAM_STANDINGS.map(is => <option key={is.value} value={is.value} className="bg-[#0a0a10]">{is.label}</option>)}
@@ -330,7 +330,7 @@ export default function CompanyOnboardingPage() {
                   <Button 
                     onClick={handleCompleteOnboarding}
                     disabled={isSaving}
-                    className="h-12 flex-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-black text-[10px] tracking-wider uppercase disabled:opacity-50"
+                    className="h-12 flex-1 rounded-xl bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white font-black text-[10px] tracking-wider uppercase disabled:opacity-50"
                   >
                     {isSaving ? 'CONFIGURANDO...' : 'ATIVAR VEKTOR & PERFIL'}
                   </Button>

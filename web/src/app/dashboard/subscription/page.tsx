@@ -62,7 +62,7 @@ export default function SubscriptionPage() {
     return (
       <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700">
         <div className="space-y-1">
-          <h1 className="text-4xl font-black text-white tracking-tighter uppercase">Planos Corporativos</h1>
+          <h1 className="text-4xl font-black text-current tracking-tighter uppercase">Planos Corporativos</h1>
           <p className="text-zinc-400 font-bold">Pare de queimar orçamento com influenciadores que não trazem retorno. Contrate com segurança jurídica e auditoria de ROI.</p>
         </div>
 
@@ -113,68 +113,68 @@ export default function SubscriptionPage() {
           </div>
 
           {/* Card 2: Agency / Co-Working */}
-          <div className="border border-pink-500/20 bg-gradient-to-b from-pink-950/10 to-transparent rounded-[2.5rem] p-10 flex flex-col justify-between space-y-6 shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 bg-pink-500 text-black font-black text-[8px] uppercase tracking-widest px-3 py-1 rounded-bl-xl">
+          <div className="border border-amber-500/20 bg-gradient-to-b from-amber-950/10 to-transparent rounded-[2.5rem] p-10 flex flex-col justify-between space-y-6 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 bg-amber-500 text-black font-black text-[8px] uppercase tracking-widest px-3 py-1 rounded-bl-xl">
               Melhor Opção
             </div>
 
             <div className="space-y-4">
-              <span className="text-pink-400 text-[10px] font-black uppercase tracking-widest">Recomendado</span>
+              <span className="text-amber-400 text-[10px] font-black uppercase tracking-widest">Recomendado</span>
               <h2 className="text-2xl font-black text-white">Agency / Co-Working</h2>
               <div className="py-2 space-y-1">
-                <span className="text-sm font-bold text-pink-400">R$</span>
+                <span className="text-sm font-bold text-amber-400">R$</span>
                 <span className="text-5xl font-black text-white tracking-tighter">110,00</span>
                 <span className="text-zinc-500 text-[10px] font-bold block uppercase tracking-wider">Por mês</span>
               </div>
               <p className="text-zinc-450 text-xs font-bold leading-relaxed">A central de inteligência definitiva para marcas e agências gerenciarem criadores com ROI garantido.</p>
               <ul className="space-y-3 pt-2 text-xs text-zinc-350 font-medium">
-                <li className="flex items-center gap-3 text-pink-300 font-bold">
-                  <CheckCircle2 className="w-4 h-4 text-pink-400" />
+                <li className="flex items-center gap-3 text-amber-300 font-bold">
+                  <CheckCircle2 className="w-4 h-4 text-amber-400" />
                   <span>**Taxa de Escrow reduzida para 10%** em todas as transações</span>
                 </li>
-                <li className="flex items-center gap-3 text-pink-300 font-bold">
-                  <CheckCircle2 className="w-4 h-4 text-pink-400" />
+                <li className="flex items-center gap-3 text-amber-300 font-bold">
+                  <CheckCircle2 className="w-4 h-4 text-amber-400" />
                   <span>**Contratos e campanhas ativos ilimitados**</span>
                 </li>
                 <li className="flex items-center gap-3 font-semibold text-white">
-                  <CheckCircle2 className="w-4 h-4 text-pink-400" />
+                  <CheckCircle2 className="w-4 h-4 text-amber-400" />
                   <span>**IA Especialista em Posicionamento de Marca & Pitch comercial**</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <CheckCircle2 className="w-4 h-4 text-pink-400" />
+                  <CheckCircle2 className="w-4 h-4 text-amber-400" />
                   <span>Painel Co-working para **múltiplos usuários administradores**</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <CheckCircle2 className="w-4 h-4 text-pink-400" />
+                  <CheckCircle2 className="w-4 h-4 text-amber-400" />
                   <span>Relatórios avançados de **ROI e conversão de campanhas**</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <CheckCircle2 className="w-4 h-4 text-pink-400" />
+                  <CheckCircle2 className="w-4 h-4 text-amber-400" />
                   <span>Matching inteligente de Creators baseado em dados de público</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <CheckCircle2 className="w-4 h-4 text-pink-400" />
+                  <CheckCircle2 className="w-4 h-4 text-amber-400" />
                   <span>Auditoria automática de postagens e prazos por IA</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <CheckCircle2 className="w-4 h-4 text-pink-400" />
+                  <CheckCircle2 className="w-4 h-4 text-amber-400" />
                   <span>Faturamento corporativo unificado e exportação de NFs</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <CheckCircle2 className="w-4 h-4 text-pink-400" />
+                  <CheckCircle2 className="w-4 h-4 text-amber-400" />
                   <span>Suporte prioritário e assessoria humana de campanhas</span>
                 </li>
               </ul>
             </div>
-            {currentTier === 'ENTERPRISE' && hasActiveSub ? (
-              <div className="p-4 bg-pink-950/30 border border-pink-500/20 rounded-2xl text-center text-[10px] font-black text-pink-400 uppercase tracking-widest">
+             {currentTier === 'ENTERPRISE' && hasActiveSub ? (
+              <div className="p-4 bg-amber-950/30 border border-amber-500/20 rounded-2xl text-center text-[10px] font-black text-amber-400 uppercase tracking-widest">
                 Seu Plano Ativo
               </div>
             ) : (
               <button
                 onClick={() => handleSubscribe('plan_brand_enterprise_1')}
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-[0_0_20px_-5px_rgba(236,72,153,0.4)] disabled:opacity-50"
+                className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-[0_0_20px_-5px_rgba(245,158,11,0.4)] disabled:opacity-50"
               >
                 {isLoading && loadingPlanId === 'plan_brand_enterprise_1' ? 'Processando...' : 'Assinar Plano Agency'}
               </button>
@@ -190,7 +190,7 @@ export default function SubscriptionPage() {
     <div className="p-4 md:p-10 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/5 pb-8">
         <div className="space-y-1">
-          <h1 className="text-4xl font-black text-white tracking-tighter uppercase">Planos de Assinatura</h1>
+          <h1 className="text-4xl font-black text-current tracking-tighter uppercase">Planos de Assinatura</h1>
           <p className="text-zinc-400 font-bold">Recebidos não pagam boletos. Monetize seu conteúdo e feche contratos garantidos em dinheiro.</p>
         </div>
         {currentTier === 'FREE' && (
@@ -262,59 +262,59 @@ export default function SubscriptionPage() {
         {/* PLANO PREMIUM */}
         <div className={`border rounded-[2.5rem] p-10 flex flex-col justify-between space-y-8 transition-all duration-300 relative ${
           currentTier === 'MASTER' && hasActiveSub
-            ? 'border-purple-500/40 bg-gradient-to-b from-purple-950/10 to-transparent shadow-xl' 
-            : 'border-white/5 bg-black/35 hover:border-purple-500/20 shadow-sm'
+            ? 'border-orange-500/40 bg-gradient-to-b from-orange-950/10 to-transparent shadow-xl' 
+            : 'border-white/5 bg-black/35 hover:border-orange-500/20 shadow-sm'
         }`}>
           {currentTier === 'FREE' && (
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[8px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full shadow-lg">
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-600 to-amber-500 text-white text-[8px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full shadow-lg">
               Recomendado
             </div>
           )}
 
           <div className="space-y-6">
             <div className="space-y-1">
-              <span className="text-purple-400 text-[10px] font-black uppercase tracking-widest">Elite Creator</span>
-              <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-1.5">InfluNext Premium <Sparkles className="w-5 h-5 text-purple-400" /></h2>
+              <span className="text-orange-400 text-[10px] font-black uppercase tracking-widest">Elite Creator</span>
+              <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-1.5">InfluNext Premium <Sparkles className="w-5 h-5 text-orange-400" /></h2>
               <p className="text-zinc-400 text-xs font-bold leading-relaxed">O plano definitivo para o Creator profissional gerenciar sua carreira e faturar alto.</p>
             </div>
             
             <div className="py-4 border-y border-white/5 space-y-1">
-              <span className="text-sm font-bold text-purple-400">R$</span>
+              <span className="text-sm font-bold text-orange-400">R$</span>
               <span className="text-5xl font-black text-white tracking-tighter">49,90</span>
               <span className="text-zinc-500 text-[10px] font-bold block uppercase tracking-wider">Por mês</span>
             </div>
 
             <ul className="space-y-4 text-xs text-zinc-350 font-medium">
-              <li className="flex items-center gap-3 text-purple-300 font-semibold">
-                <CheckCircle2 className="w-4 h-4 text-purple-400" />
+              <li className="flex items-center gap-3 text-orange-300 font-semibold">
+                <CheckCircle2 className="w-4 h-4 text-orange-400" />
                 <span>**Taxa reduzida de 5%** por campanha (mais lucro líquido)</span>
               </li>
               <li className="flex items-center gap-3 font-bold text-white">
-                <CheckCircle2 className="w-4 h-4 text-purple-400" />
+                <CheckCircle2 className="w-4 h-4 text-orange-400" />
                 <span>Mentor de IA Vincenzo **Ilimitado + Gerador de Roteiros**</span>
               </li>
               <li className="flex items-center gap-3">
-                <CheckCircle2 className="w-4 h-4 text-purple-400" />
+                <CheckCircle2 className="w-4 h-4 text-orange-400" />
                 <span>**Gerenciamento de carreira escalonável** e relatórios de progresso</span>
               </li>
               <li className="flex items-center gap-3">
-                <CheckCircle2 className="w-4 h-4 text-purple-400" />
+                <CheckCircle2 className="w-4 h-4 text-orange-400" />
                 <span>**Painel de agregação de dados de postagem** (métricas centralizadas)</span>
               </li>
               <li className="flex items-center gap-3">
-                <CheckCircle2 className="w-4 h-4 text-purple-400" />
+                <CheckCircle2 className="w-4 h-4 text-orange-400" />
                 <span>Contas sociais conectadas **ilimitadas** (Insta, TikTok, YouTube)</span>
               </li>
               <li className="flex items-center gap-3">
-                <CheckCircle2 className="w-4 h-4 text-purple-400" />
+                <CheckCircle2 className="w-4 h-4 text-orange-400" />
                 <span>Contratos e Escrows ativos **ilimitados** em andamento</span>
               </li>
               <li className="flex items-center gap-3">
-                <CheckCircle2 className="w-4 h-4 text-purple-400" />
+                <CheckCircle2 className="w-4 h-4 text-orange-400" />
                 <span>Selo **"Verificado PRO"** e destaque máximo no topo das buscas</span>
               </li>
               <li className="flex items-center gap-3">
-                <CheckCircle2 className="w-4 h-4 text-purple-400" />
+                <CheckCircle2 className="w-4 h-4 text-orange-400" />
                 <span>Suporte prioritário e consultoria jurídica de contratos</span>
               </li>
             </ul>
@@ -322,14 +322,14 @@ export default function SubscriptionPage() {
 
           <div>
             {currentTier === 'MASTER' && hasActiveSub ? (
-              <div className="w-full py-4 bg-purple-950/40 border border-purple-500/20 text-purple-400 rounded-2xl text-center text-[10px] font-black uppercase tracking-widest">
+              <div className="w-full py-4 bg-orange-950/40 border border-orange-500/20 text-orange-400 rounded-2xl text-center text-[10px] font-black uppercase tracking-widest">
                 Seu Plano Ativo
               </div>
             ) : (
               <button
                 onClick={() => handleSubscribe('plan_pro_influencer_1')}
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-[0_0_20px_-5px_rgba(124,58,237,0.4)] disabled:opacity-50"
+                className="w-full bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-[0_0_20px_-5px_rgba(217,107,39,0.4)] disabled:opacity-50"
               >
                 {isLoading && loadingPlanId === 'plan_pro_influencer_1' ? 'Processando...' : 'Assinar Plano Premium'}
               </button>

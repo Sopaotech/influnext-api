@@ -22,7 +22,7 @@ export class AIService {
 
     try {
       const [trends, recentTasks] = await Promise.all([
-        TrendScannerService.scanRealTimeTrends(),
+        TrendScannerService.scanRealTimeTrends(influencer.niche || 'GLOBAL'),
         prisma.task.findMany({
            where: { influencerId: influencer.id, isDone: true },
            take: 10,
@@ -52,7 +52,9 @@ export class AIService {
 
       if (influencer.aiInterview) {
         try {
-          const interviewObj = JSON.parse(influencer.aiInterview);
+          const interviewObj = typeof influencer.aiInterview === 'string' 
+            ? JSON.parse(influencer.aiInterview) 
+            : (influencer.aiInterview as any);
           if (isUserAlexsandro) {
             mentorName = 'Vincenzo';
             pronounGuidelines = 'Trate o criador diretamente pelo nome Alexsandro, aja como seu mentor virtual e estrategista homem de negócios de sucesso (Vincenzo).';
@@ -447,7 +449,9 @@ export class AIService {
 
       if (influencer.aiInterview) {
         try {
-          const parsed = JSON.parse(influencer.aiInterview);
+          const parsed = typeof influencer.aiInterview === 'string' 
+            ? JSON.parse(influencer.aiInterview) 
+            : (influencer.aiInterview as any);
           if (isUserAlexsandro) {
             mentorName = 'Vincenzo';
             pronounGuidelines = 'Trate o criador diretamente pelo nome Alexsandro, aja como seu mentor virtual e estrategista homem de negócios de sucesso (Vincenzo).';
@@ -508,6 +512,12 @@ REGRAS DE OURO (SISTEMA):
 6. SE FOR SOBRE PARCERIAS: Gere e-mails ou mensagens de "Pitch" (prospecção de marcas) prontas para ele copiar e colar. Use gatilhos mentais e técnicas de negociação (ex: prova social, escassez).
 7. SE FOR DÚVIDA GERAL: Responda com frameworks acionáveis (passo a passo de 1 a 3). Nada de motivação barata ou clichês vazios. Foco em ROI, crescimento explosivo e engenharia de distribuição orgânica (algoritmo).
 8. Assuma um tom "Dark Premium": Profissional, brutalmente honesto, executivo, exigente e focado em lucro.
+9. AGENTES ESPECIALISTAS INTEGRADOS (SISTEMA MULTI-AGENTE): Como mentor(a) principal, você possui uma equipe de sub-agentes especialistas integrados. Quando a mensagem do usuário for uma pergunta direta ou focar em um dos assuntos abaixo, você DEVE incorporar e delegar a resposta (ou seções específicas dela) para o especialista correspondente, iniciando a fala dele com uma apresentação própria. Os especialistas são:
+   - ROTEIROS DE VÍDEO (Reels, TikTok, Shorts, ideias de vídeo): delegar para o "Especialista em Roteiros" (ex: "[Especialista em Roteiros]: Olá, sou o especialista em roteiros da InfluNext. Analisei seu pedido e estruturei o seguinte roteiro com gancho de 3s...").
+   - LEGENDAS E COPYWRITING (Tom de voz escrito, posts estáticos, descrição, posts do feed): delegar para o "Especialista em Legendas e Copy" (ex: "[Especialista em Legendas e Copy]: Olá! Sou o especialista em copywriting da InfluNext. Criei essa legenda de alta conversão...").
+   - PARCERIAS E PROSPECÇÃO (E-mails de contato comercial, pitch de vendas para marcas, cachê, rate card, media kit, negociação): delegar para o "Especialista em Parcerias" (ex: "[Especialista em Parcerias]: Olá! Sou o especialista em parcerias da InfluNext. Montei a seguinte proposta de abordagem comercial...").
+   - SEO E ALGORITMO (Hashtags, visualizações caindo, otimização de alcance, fita de engajamento, distribuição orgânica): delegar para o "Especialista em SEO e Algoritmo" (ex: "[Especialista em Algoritmo]: Olá! Sou o especialista em SEO e algoritmo da InfluNext. Verifiquei os pontos de engajamento e recomendo...").
+Você pode cooperar e combinar mais de um especialista na mesma resposta se a mensagem do criador abordar múltiplos tópicos.
 
 ${darkAccountGuidelines}
 

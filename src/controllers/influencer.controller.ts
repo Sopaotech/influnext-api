@@ -231,6 +231,54 @@ export const searchInfluencers = async (req: Request, res: Response): Promise<vo
   }
 };
 
+export const searchCompanies = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const q       = req.query.q       as string | undefined;
+    const city    = req.query.city    as string | undefined;
+    const state   = req.query.state   as string | undefined;
+    const segment = req.query.segment as string | undefined;
+
+    const where: any = {};
+
+    if (q && q.length >= 1) {
+      where.companyName = { contains: q, mode: 'insensitive' };
+    }
+
+    if (city) {
+      where.city = { contains: city, mode: 'insensitive' };
+    }
+
+    if (state && state.length === 2) {
+      where.state = { equals: state.toUpperCase() };
+    }
+
+    if (segment && segment !== 'Todos') {
+      where.segment = { contains: segment, mode: 'insensitive' };
+    }
+
+    const companies = await prisma.companyProfile.findMany({
+      where,
+      select: {
+        id:             true,
+        companyName:    true,
+        segment:        true,
+        city:           true,
+        state:          true,
+        logoUrl:        true,
+        bio:            true,
+        campaignBudget: true,
+      },
+      orderBy: { companyName: 'asc' },
+      take: 50,
+    });
+
+    res.json(companies);
+  } catch (error) {
+    console.error('[INFLUENCER] Erro na busca de empresas:', error);
+    res.status(500).json({ error: "Erro ao buscar empresas." });
+  }
+};
+
 export const updateProfile = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = (req as any).user!.id;
@@ -319,7 +367,15 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
       if (profileData.city !== undefined) influencerData.city = profileData.city;
       if (profileData.state !== undefined) influencerData.state = profileData.state;
       if (profileData.careerObjective !== undefined) influencerData.careerObjective = profileData.careerObjective;
-      if (profileData.aiInterview !== undefined) influencerData.aiInterview = profileData.aiInterview;
+      if (profileData.aiInterview !== undefined) {
+        try {
+          influencerData.aiInterview = typeof profileData.aiInterview === 'string'
+            ? JSON.parse(profileData.aiInterview)
+            : profileData.aiInterview;
+        } catch (_) {
+          influencerData.aiInterview = profileData.aiInterview;
+        }
+      }
 
       updated = await prisma.influencerProfile.update({
         where: { userId },

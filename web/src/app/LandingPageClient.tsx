@@ -466,8 +466,8 @@ export default function LandingPageClient() {
       {/* SEÇÃO ECOSSISTEMA DE IA */}
       <section id="inteligencia-ia" className="w-full max-w-7xl mx-auto px-6 lg:px-16 py-24 relative overflow-hidden">
         {/* Glows de fundo */}
-        <div className="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-purple-600/5 blur-[120px] pointer-events-none" />
-        <div className="absolute top-1/3 right-1/4 translate-x-1/2 w-[500px] h-[500px] rounded-full bg-pink-600/5 blur-[120px] pointer-events-none" />
+        <div className="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-orange-600/5 blur-[120px] pointer-events-none" />
+        <div className="absolute top-1/3 right-1/4 translate-x-1/2 w-[500px] h-[500px] rounded-full bg-amber-600/5 blur-[120px] pointer-events-none" />
 
         <div className="text-center mb-16 relative z-10">
           <p className="text-orange-650 text-[10px] font-black uppercase tracking-[0.3em] mb-3">✦ Cérebro do Ecossistema</p>
@@ -629,7 +629,7 @@ export default function LandingPageClient() {
       {/* SEÇÃO DE PLANOS & PREÇOS */}
       <section id="planos" className="w-full max-w-7xl mx-auto px-6 lg:px-16 py-20 relative overflow-hidden">
         {/* bg glows */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-purple-600/5 blur-[120px] pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-orange-600/5 blur-[120px] pointer-events-none" />
 
         <div className="text-center mb-16 relative z-10">
           <p className="text-orange-650 text-[10px] font-black uppercase tracking-[0.3em] mb-3">✦ Transparência Total</p>
@@ -801,7 +801,7 @@ export default function LandingPageClient() {
       {/* CTA FINAL */}
       <section className="w-full max-w-7xl mx-auto px-6 lg:px-16 py-12 pb-28">
         <div className="relative rounded-[3rem] overflow-hidden bg-gradient-to-br from-orange-50 via-white to-orange-100/30 border border-orange-500/10 p-12 md:p-24 text-center">
-          <div className="absolute inset-0 bg-gradient-to-t from-purple-600/5 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-orange-600/5 to-transparent" />
           <div className="relative z-10 space-y-8 max-w-4xl mx-auto">
             <p className="text-orange-650 text-[10px] font-black uppercase tracking-[0.3em]">Pronto para profissionalizar sua carreira?</p>
             <h2 className="text-xl sm:text-4xl md:text-7xl font-black tracking-tighter leading-[1.0] md:leading-[0.95] text-zinc-900">

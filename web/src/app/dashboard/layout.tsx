@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import Cookies from 'js-cookie';
-import { Home, FileText, Settings, LogOut, Menu, X, Sparkles, ShieldCheck, Store, LifeBuoy, Crown, Calendar, Search, MessageSquare, LayoutDashboard, TrendingUp, Package } from 'lucide-react';
+import { Home, FileText, Settings, LogOut, Menu, X, Sparkles, ShieldCheck, Store, LifeBuoy, Crown, Calendar, Search, MessageSquare, LayoutDashboard, TrendingUp, Package, Radio } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
 import { Logo } from '@/components/Logo';
 import dynamic from 'next/dynamic';
@@ -87,6 +87,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'Área de Trabalho', href: '/dashboard/workspace', icon: LayoutDashboard, special: true, badgeCount: taskCount },
     { name: 'Marketplace', href: '/dashboard/marketplace', icon: Store },
     { name: 'Media Kit', href: '/dashboard/mediakit', icon: Sparkles }, 
+    { name: 'Campanhas', href: '/dashboard/campaigns', icon: Radio },
     { name: 'Contratos', href: '/dashboard/contracts', icon: FileText },
     { name: 'Recebidos', href: '/dashboard/recebidos', icon: Package },
     { name: 'Relatórios', href: '/dashboard/reports', icon: TrendingUp },
@@ -103,8 +104,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       
       {/* Premium Atmospheric Background Glows & Subtle Grid */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        {/* Main violet/orange glow — top center */}
-        <div className={`absolute top-[-15%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] rounded-full blur-[130px] transition-all duration-500 ${isDark ? 'bg-violet-600/10' : 'bg-orange-500/5'}`} />
+        {/* Main orange/orange glow — top center */}
+        <div className={`absolute top-[-15%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] rounded-full blur-[130px] transition-all duration-500 ${isDark ? 'bg-orange-600/10' : 'bg-orange-500/5'}`} />
         {/* Pink/orange accent — bottom right */}
         <div className={`absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full blur-[110px] transition-all duration-500 ${isDark ? 'bg-pink-600/6' : 'bg-orange-500/3'}`} />
         {/* Subtle grid texture */}
@@ -197,8 +198,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <main className="flex-1 relative z-10 w-full h-screen pt-16 md:pt-0 overflow-y-auto custom-scrollbar">
         <div className="min-h-full">
           {isAdmin && (
-            <Link href="/dashboard/admin" className="block w-full py-2.5 bg-gradient-to-r from-violet-900/30 via-pink-950/10 to-violet-900/30 border-b border-violet-500/10 hover:from-violet-900/50 hover:to-violet-900/50 transition-all text-center">
-               <span className="inline-flex items-center justify-center gap-2 text-[10px] font-black text-violet-300 uppercase tracking-[0.3em]">
+            <Link href="/dashboard/admin" className="block w-full py-2.5 bg-gradient-to-r from-orange-900/30 via-pink-950/10 to-orange-900/30 border-b border-orange-500/10 hover:from-orange-900/50 hover:to-orange-900/50 transition-all text-center">
+               <span className="inline-flex items-center justify-center gap-2 text-[10px] font-black text-orange-300 uppercase tracking-[0.3em]">
                   <ShieldCheck className="w-3.5 h-3.5" /> Painel de Controle Admin
                </span>
             </Link>

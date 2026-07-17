@@ -11,16 +11,14 @@ import {
   Clock,
   Sparkles,
   Search,
-  ChevronUp,
-  ChevronDown,
   Target,
   Mic,
   Trash2,
-  Plus,
   X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import Cookies from 'js-cookie';
 
 interface Task {
   id: string;
@@ -44,6 +42,25 @@ function CalendarContent() {
   const router = useRouter();
   const pathname = usePathname();
 
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  // Detect theme on mount and monitor changes
+  useEffect(() => {
+    const savedTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;
+    if (savedTheme) {
+      setTheme(savedTheme);
+    }
+    
+    const interval = setInterval(() => {
+      const currentTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;
+      if (currentTheme && currentTheme !== theme) {
+        setTheme(currentTheme);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [theme]);
+
   // Memoize initial date calculation
   const initialDate = React.useMemo(() => {
     const yearParam = searchParams.get('year');
@@ -56,7 +73,6 @@ function CalendarContent() {
 
   const [currentDate, setCurrentDate] = useState(initialDate);
   const [selectedDay, setSelectedDay] = useState<number | null>(new Date().getDate());
-  const [viewMode, setViewMode] = useState<'month' | 'day'>('month');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -166,6 +182,8 @@ function CalendarContent() {
     t.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const isDark = theme === 'dark';
+
   return (
     <div className="p-4 md:p-8 space-y-8 animate-in fade-in duration-700">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 border-b border-white/[0.03] pb-10">
@@ -174,16 +192,20 @@ function CalendarContent() {
              <div className="h-1 w-8 bg-orange-600 rounded-full" />
              <span className="text-[10px] font-black text-orange-400 uppercase tracking-[0.4em]">Content_Strategy_Engine</span>
           </div>
-          <h1 className="text-4xl font-black text-white tracking-tighter leading-none">
+          <h1 className="text-4xl font-black text-current tracking-tighter leading-none">
             Calendário de <span className="text-orange-400">Conteúdo</span>
           </h1>
         </div>
-        <div className="flex items-center gap-3 bg-black/35 border border-white/5 rounded-2xl px-5 py-3 w-full md:w-96 focus-within:border-orange-500/50 transition-all duration-500 shadow-sm">
+        <div className={`flex items-center gap-3 border rounded-2xl px-5 py-3 w-full md:w-96 focus-within:border-orange-500/50 transition-all duration-500 shadow-sm ${
+          isDark ? 'bg-black/35 border-white/5' : 'bg-white border-zinc-200'
+        }`}>
           <Search className="w-4 h-4 text-zinc-500" />
           <input 
             type="text" 
             placeholder="Buscar tarefa estratégica..." 
-            className="bg-transparent border-none focus:outline-none text-[11px] text-zinc-300 w-full placeholder:text-zinc-600 font-bold"
+            className={`bg-transparent border-none focus:outline-none text-[11px] w-full font-bold ${
+              isDark ? 'text-zinc-300 placeholder:text-zinc-650' : 'text-zinc-800 placeholder:text-zinc-400'
+            }`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -192,18 +214,27 @@ function CalendarContent() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Calendar Grid */}
-        <div className="lg:col-span-3 bg-black/35 border border-white/5 rounded-[2.5rem] overflow-hidden group hover:border-orange-500/20 transition-all duration-500 shadow-sm" style={{ backdropFilter: 'blur(30px)' }}>
-          <div className="p-8 border-b border-white/5 flex items-center justify-between bg-black/10">
+        <div className={`border rounded-[2.5rem] overflow-hidden group hover:border-orange-500/20 transition-all duration-500 shadow-sm lg:col-span-3 ${
+          isDark ? 'bg-black/35 border-white/5' : 'bg-white border-zinc-200'
+        }`}>
+          <div className={`p-8 border-b flex items-center justify-between ${
+            isDark ? 'border-white/5 bg-black/10' : 'border-zinc-200 bg-zinc-50/50'
+          }`}>
             <div className="flex items-center gap-4">
               <div className="p-3 bg-orange-500/10 rounded-2xl border border-orange-500/20">
                 <CalendarIcon className="w-6 h-6 text-orange-400" />
               </div>
-              <h2 className="text-xl font-black text-white tracking-tight">
-                {monthNames[month]} <span className="text-zinc-550 ml-1">{year}</span>
+              <h2 className={`text-xl font-black tracking-tight ${isDark ? 'text-white' : 'text-zinc-800'}`}>
+                {monthNames[month]} <span className="text-zinc-500 dark:text-zinc-450 ml-1">{year}</span>
               </h2>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={prevMonth} className="p-2 hover:bg-white/5 rounded-xl transition-colors text-zinc-400">
+              <button 
+                onClick={prevMonth} 
+                className={`p-2 rounded-xl transition-colors ${
+                  isDark ? 'hover:bg-white/5 text-zinc-400' : 'hover:bg-zinc-100 text-zinc-500'
+                }`}
+              >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <button 
@@ -214,19 +245,30 @@ function CalendarContent() {
                   updateUrl(today);
                   toast.info(`Retornando para ${monthNames[today.getMonth()]}...`);
                 }} 
-                className="px-6 py-2 bg-white text-slate-950 hover:bg-orange-600 hover:text-white text-[10px] font-black uppercase rounded-xl transition-all shadow-lg"
+                className={`px-6 py-2 text-[10px] font-black uppercase rounded-xl transition-all shadow-md ${
+                  isDark 
+                    ? 'bg-white text-slate-950 hover:bg-orange-600 hover:text-white' 
+                    : 'bg-zinc-100 border border-zinc-250 text-zinc-700 hover:bg-orange-600 hover:text-white hover:border-orange-600'
+                }`}
               >
                 {monthNames[new Date().getMonth()]}
               </button>
-              <button onClick={nextMonth} className="p-2 hover:bg-white/5 rounded-xl transition-colors text-zinc-400">
+              <button 
+                onClick={nextMonth} 
+                className={`p-2 rounded-xl transition-colors ${
+                  isDark ? 'hover:bg-white/5 text-zinc-400' : 'hover:bg-zinc-100 text-zinc-500'
+                }`}
+              >
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-7 border-b border-white/5 bg-black/20">
+          <div className={`grid grid-cols-7 border-b ${
+            isDark ? 'border-white/5 bg-black/20' : 'border-zinc-200 bg-zinc-50'
+          }`}>
             {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => (
-              <div key={d} className="py-5 text-center text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+              <div key={d} className="py-5 text-center text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
                 {d}
               </div>
             ))}
@@ -245,15 +287,26 @@ function CalendarContent() {
                       setSelectedDay(prev => prev === day ? null : day);
                     }
                   }}
-                  className={`min-h-[120px] p-3 border-r border-b border-white/5 transition-colors group relative
-                    ${day ? 'hover:bg-white/[0.03] cursor-pointer' : 'bg-black/10'}
-                    ${selectedDay === day ? 'bg-orange-600/10 border-orange-500/35 ring-1 ring-orange-500/20' : ''}
-                  `}
+                  className={`min-h-[120px] p-3 border-r border-b transition-colors group relative ${
+                    isDark ? 'border-white/5' : 'border-zinc-200/80'
+                  } ${
+                    day 
+                      ? (isDark ? 'hover:bg-white/[0.03] cursor-pointer' : 'hover:bg-zinc-50/50 cursor-pointer') 
+                      : (isDark ? 'bg-black/10' : 'bg-zinc-50')
+                  } ${
+                    selectedDay === day 
+                      ? (isDark ? 'bg-orange-600/10 border-orange-500/35 ring-1 ring-orange-500/20' : 'bg-orange-50 border-orange-500/40 ring-1 ring-orange-500/10') 
+                      : ''
+                  }`}
                 >
                   {day && (
                     <>
                       <div className="flex justify-between items-start mb-2">
-                        <span className={`text-xs font-bold ${isToday ? 'bg-orange-600 text-white w-6 h-6 flex items-center justify-center rounded-lg shadow-lg' : 'text-zinc-450'}`}>
+                        <span className={`text-xs font-bold ${
+                          isToday 
+                            ? 'bg-orange-600 text-white w-6 h-6 flex items-center justify-center rounded-lg shadow-lg' 
+                            : 'text-zinc-500 dark:text-zinc-450'
+                        }`}>
                           {day}
                         </span>
                       </div>
@@ -271,19 +324,19 @@ function CalendarContent() {
                                 toast.error('Erro ao atualizar status.');
                               }
                             }}
-                            className={`px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider truncate flex items-center justify-between gap-1.5 transition-all group/task cursor-pointer
-                              ${t.isDone 
-                                ? 'bg-emerald-500/20 text-emerald-350 border border-emerald-500/30' 
+                            className={`px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider truncate flex items-center justify-between gap-1.5 transition-all group/task cursor-pointer ${
+                              t.isDone 
+                                ? (isDark ? 'bg-emerald-500/20 text-emerald-350 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-800 border border-emerald-200/80') 
                                 : t.fromAI 
-                                  ? 'bg-orange-500/25 text-orange-100 border border-orange-500/40'
-                                  : 'bg-zinc-800 text-zinc-100 border border-zinc-700/50'}
-                            `}
+                                  ? (isDark ? 'bg-orange-500/25 text-orange-100 border border-orange-500/40' : 'bg-orange-50 text-orange-850 border border-orange-200/80')
+                                  : (isDark ? 'bg-zinc-800 text-zinc-100 border border-zinc-700/50' : 'bg-zinc-50 border border-zinc-200 text-zinc-700')
+                            }`}
                           >
                             <div className="flex items-center gap-1.5 truncate">
-                              {t.isDone ? <CheckCircle2 className="w-2.5 h-2.5 flex-shrink-0 text-emerald-400" /> : <Clock className="w-2.5 h-2.5 flex-shrink-0 opacity-70" />}
+                              {t.isDone ? <CheckCircle2 className="w-2.5 h-2.5 flex-shrink-0 text-emerald-450" /> : <Clock className="w-2.5 h-2.5 flex-shrink-0 opacity-70" />}
                               <span className="truncate flex items-center gap-1.5">
                                 {formatTaskTime(t.scheduledDate) && (
-                                  <span className="text-orange-300 font-bold bg-orange-500/10 px-1 py-0.5 rounded border border-orange-500/20 text-[8px] flex-shrink-0">{formatTaskTime(t.scheduledDate)}</span>
+                                  <span className="text-orange-400 font-bold bg-orange-500/10 px-1 py-0.5 rounded border border-orange-500/20 text-[8px] flex-shrink-0">{formatTaskTime(t.scheduledDate)}</span>
                                 )}
                                 <span className="truncate">{t.title}</span>
                               </span>
@@ -317,7 +370,9 @@ function CalendarContent() {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-[#0d0b1a] border border-white/[0.05] rounded-[2rem] p-8 space-y-8 h-fit">
+          <div className={`border rounded-[2rem] p-8 space-y-8 h-fit ${
+            isDark ? 'bg-[#131110] border-white/[0.05]' : 'bg-white border-zinc-200 shadow-md shadow-zinc-100'
+          }`}>
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 flex items-center gap-3">
                <Sparkles className="w-4 h-4 text-orange-500" /> Navegação Rápida
             </h3>
@@ -346,7 +401,7 @@ function CalendarContent() {
                    className={`py-2 text-[9px] font-black uppercase rounded-lg border transition-all ${
                      isActive
                        ? 'bg-orange-600 border-orange-500 text-white'
-                       : 'bg-white/5 border-white/10 text-zinc-550 hover:text-zinc-350'
+                       : (isDark ? 'bg-white/5 border-white/10 text-zinc-500 hover:text-zinc-300' : 'bg-zinc-50 border-zinc-200 text-zinc-600 hover:bg-zinc-100')
                    }`}
                  >
                    {tab.label}
@@ -355,10 +410,10 @@ function CalendarContent() {
                })}
             </div>
 
-            <div className="space-y-4 pt-4 border-t border-white/[0.04]">
+            <div className={`space-y-4 pt-4 border-t ${isDark ? 'border-white/[0.04]' : 'border-zinc-100'}`}>
                 <div className="flex items-center justify-between">
                    <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
-                      <Clock className="w-3.5 h-3.5 text-zinc-600" /> {selectedDay ? `Tarefas: ${selectedDay}/${month + 1}` : 'Próximos Passos'}
+                      <Clock className="w-3.5 h-3.5 text-zinc-650" /> {selectedDay ? `Tarefas: ${selectedDay}/${month + 1}` : 'Próximos Passos'}
                    </h3>
                    {selectedDay && (
                      <button 
@@ -377,12 +432,14 @@ function CalendarContent() {
                         try {
                           const res = await api.patch(`/tasks/${t.id}/toggle`);
                           setTasks(prev => prev.map(task => task.id === t.id ? res.data : task));
-                          toast.success('Status da tarefa atualizado!');
+                          toast.success('Status da tarefa updated!');
                         } catch (err) {
                           toast.error('Erro ao atualizar status.');
                         }
                       }}
-                      className="group cursor-pointer p-2 rounded-xl hover:bg-white/[0.02] transition-all flex items-center justify-between"
+                      className={`group cursor-pointer p-2 rounded-xl transition-all flex items-center justify-between ${
+                        isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-zinc-50'
+                      }`}
                     >
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         <div className="mt-1 flex-shrink-0">
@@ -393,7 +450,11 @@ function CalendarContent() {
                           )}
                         </div>
                         <div className="space-y-1 min-w-0">
-                          <p className={`text-[11px] font-bold transition-colors line-clamp-1 ${t.isDone ? 'text-zinc-500 line-through' : 'text-zinc-300 group-hover:text-white'}`}>
+                          <p className={`text-[11px] font-bold transition-colors line-clamp-1 ${
+                            t.isDone 
+                              ? 'text-zinc-500 line-through' 
+                              : (isDark ? 'text-zinc-355 group-hover:text-white' : 'text-zinc-700 group-hover:text-zinc-950')
+                          }`}>
                             {t.title}
                           </p>
                           <p className="text-[9px] text-zinc-500 font-medium flex items-center gap-1.5 flex-wrap">
@@ -426,7 +487,7 @@ function CalendarContent() {
 
                   {(selectedDay ? getTasksForDay(selectedDay).length : tasks.filter(t => !t.isDone).length) === 0 && (
                     <div className="text-center py-6">
-                      <p className="text-[10px] text-zinc-600 font-bold italic">Nenhuma tarefa encontrada!</p>
+                      <p className="text-[10px] text-zinc-500 font-bold italic">Nenhuma tarefa encontrada!</p>
                     </div>
                   )}
                </div>
@@ -441,13 +502,17 @@ function CalendarContent() {
                 setNewTaskDate(`${year}-${month}-${day}`);
                 setShowAddModal(true);
               }}
-              className="w-full py-3 bg-orange-600/20 border border-orange-500/35 hover:bg-orange-600/40 text-orange-200 text-[10px] font-black uppercase rounded-xl transition-all shadow-md shadow-orange-900/10"
+              className={`w-full py-3 text-[10px] font-black uppercase rounded-xl transition-all shadow-md ${
+                isDark 
+                  ? 'bg-orange-600/20 border border-orange-500/35 hover:bg-orange-600/40 text-orange-200 shadow-orange-900/10' 
+                  : 'bg-orange-50 border border-orange-200 text-orange-850 hover:bg-orange-100 shadow-orange-100/50'
+              }`}
             >
               Criar Nova Tarefa
             </button>
 
             {/* AI Assistant Command */}
-            <div className="pt-4 border-t border-white/5 space-y-3">
+            <div className={`pt-4 border-t space-y-3 ${isDark ? 'border-white/5' : 'border-zinc-100'}`}>
                <div className="flex items-center gap-2 text-[9px] font-black text-orange-400 uppercase tracking-widest">
                   <Sparkles className="w-3 h-3" /> Assistente_Estratégico
                </div>
@@ -457,7 +522,11 @@ function CalendarContent() {
                     placeholder="Agendar post dia 10 sobre..."
                     value={commandInput}
                     onChange={(e) => setCommandInput(e.target.value)}
-                    className="w-full bg-black/35 border border-white/5 rounded-2xl px-6 py-4 text-sm text-white focus:outline-none focus:border-orange-500/50 transition-all placeholder:text-zinc-600 font-sans pr-12 shadow-sm"
+                    className={`w-full border rounded-2xl px-6 py-4 text-sm focus:outline-none focus:border-orange-500/50 transition-all font-sans pr-12 shadow-sm ${
+                      isDark 
+                        ? 'bg-black/35 border-white/5 text-white placeholder:text-zinc-600' 
+                        : 'bg-zinc-50 border-zinc-200 text-zinc-800 placeholder:text-zinc-400 focus:bg-white'
+                    }`}
                     onKeyDown={async (e) => {
                        if (e.key === 'Enter') {
                           const command = commandInput;
@@ -483,34 +552,42 @@ function CalendarContent() {
                      >
                        <Mic className={`w-4 h-4 transition-all ${isListening ? 'text-red-500 animate-pulse scale-110' : 'text-orange-500 hover:scale-110'}`} />
                      </button>
-                     <span className="text-[8px] font-black text-zinc-400 bg-white/5 px-1.5 py-0.5 rounded border border-white/10 uppercase tracking-tighter">Enter</span>
+                     <span className={`text-[8px] font-black px-1.5 py-0.5 rounded border uppercase tracking-tighter ${
+                       isDark ? 'text-zinc-400 bg-white/5 border-white/10' : 'text-zinc-550 bg-zinc-100 border-zinc-200'
+                     }`}>Enter</span>
                   </div>
                </div>
-               <p className="text-[8px] text-zinc-500 font-medium italic">Ex: "Adicionar vídeo dia 15", "Mudar live para amanhã"</p>
+               <p className="text-[8px] text-zinc-555 font-medium italic">Ex: "Adicionar vídeo dia 15", "Mudar live para amanhã"</p>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-orange-950 via-amber-950 to-slate-900 border border-orange-500/30 rounded-3xl p-8 shadow-2xl shadow-orange-900/20 relative overflow-hidden">
+          <div className={`border rounded-3xl p-8 shadow-2xl relative overflow-hidden ${
+            isDark 
+              ? 'bg-gradient-to-br from-orange-950 via-amber-950 to-slate-900 border-orange-500/30 shadow-orange-900/20' 
+              : 'bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200 shadow-orange-100/30 text-zinc-800'
+          }`}>
              <div className="absolute top-0 right-0 p-4 opacity-10">
-                <Target className="w-12 h-12 text-white" />
+                <Target className="w-12 h-12 text-current" />
              </div>
-            <h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2">
+            <h4 className={`text-[10px] font-black uppercase tracking-widest mb-6 flex items-center gap-2 ${
+              isDark ? 'text-white' : 'text-zinc-800'
+            }`}>
                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Meta Mensal de Conteúdo
             </h4>
             <div className="space-y-4">
                <div className="flex justify-between items-end">
-                  <span className="text-[10px] font-black text-white uppercase tracking-widest">Progresso Total</span>
-                  <span className="text-2xl font-black text-white italic">
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-white' : 'text-zinc-650'}`}>Progresso Total</span>
+                  <span className={`text-2xl font-black italic ${isDark ? 'text-white' : 'text-zinc-850'}`}>
                     {tasks.length > 0 ? Math.round((tasks.filter(t => t.isDone).length / tasks.length) * 100) : 0}%
                   </span>
                </div>
-               <div className="h-3 w-full bg-black/40 rounded-full overflow-hidden border border-white/5">
+               <div className={`h-3 w-full rounded-full overflow-hidden border ${isDark ? 'bg-black/40 border-white/5' : 'bg-zinc-200 border-zinc-250'}`}>
                   <div 
                     className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(16,185,129,0.5)]" 
                     style={{ width: `${tasks.length > 0 ? (tasks.filter(t => t.isDone).length / tasks.length) * 100 : 0}%` }}
                   />
                </div>
-               <p className="text-[10px] text-white font-bold leading-relaxed">
+               <p className={`text-[10px] font-bold leading-relaxed ${isDark ? 'text-white' : 'text-zinc-700'}`}>
                  Você concluiu {tasks.filter(t => t.isDone).length} de {tasks.length} entregas estratégicas planejadas. Mantenha a constância!
                </p>
             </div>
@@ -520,10 +597,14 @@ function CalendarContent() {
 
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-[#0f0c24] border border-white/10 rounded-[2.5rem] p-8 max-w-md w-full space-y-6 shadow-2xl relative animate-in zoom-in-95 duration-300">
+          <div className={`border p-8 max-w-md w-full space-y-6 shadow-2xl relative rounded-[2.5rem] animate-in zoom-in-95 duration-300 ${
+            isDark ? 'bg-[#0f0c24] border-white/10' : 'bg-white border-zinc-200'
+          }`}>
             <button 
               onClick={() => setShowAddModal(false)}
-              className="absolute top-6 right-6 p-2 text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-all"
+              className={`absolute top-6 right-6 p-2 rounded-full transition-all ${
+                isDark ? 'text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10' : 'text-zinc-500 hover:text-zinc-950 bg-zinc-100 hover:bg-zinc-200'
+              }`}
             >
               <X className="w-4 h-4" />
             </button>
@@ -532,33 +613,43 @@ function CalendarContent() {
                 <div className="h-1 w-6 bg-orange-600 rounded-full" />
                 <span className="text-[9px] font-black text-orange-400 uppercase tracking-widest">Nova_Tarefa</span>
               </div>
-              <h3 className="text-2xl font-black text-white tracking-tight">Agendar no Cronograma</h3>
+              <h3 className={`text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-zinc-800'}`}>Agendar no Cronograma</h3>
             </div>
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Título da Tarefa</label>
+                <label className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Título da Tarefa</label>
                 <input 
                   type="text" 
                   placeholder="Ex: Gravar Reels espontâneo sobre a rotina" 
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
-                  className="w-full bg-black/45 border border-white/10 rounded-2xl px-5 py-3.5 text-sm text-white focus:outline-none focus:border-orange-500/50 transition-all font-sans"
+                  className={`w-full border rounded-2xl px-5 py-3.5 text-sm focus:outline-none transition-all font-sans ${
+                    isDark 
+                      ? 'bg-black/45 border-white/10 text-white focus:border-orange-500/50' 
+                      : 'bg-zinc-50 border-zinc-200 text-zinc-800 focus:border-orange-400 focus:bg-white'
+                  }`}
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Data de Agendamento</label>
+                <label className="text-[10px] font-black text-zinc-555 dark:text-zinc-400 uppercase tracking-widest">Data de Agendamento</label>
                 <input 
                   type="date" 
                   value={newTaskDate}
                   onChange={(e) => setNewTaskDate(e.target.value)}
-                  className="w-full bg-black/45 border border-white/10 rounded-2xl px-5 py-3.5 text-sm text-white focus:outline-none focus:border-orange-500/50 transition-all font-sans [color-scheme:dark]"
+                  className={`w-full border rounded-2xl px-5 py-3.5 text-sm focus:outline-none transition-all font-sans [color-scheme:dark] ${
+                    isDark 
+                      ? 'bg-black/45 border-white/10 text-white focus:border-orange-500/50' 
+                      : 'bg-zinc-50 border-zinc-200 text-zinc-800 focus:border-orange-400 focus:bg-white'
+                  }`}
                 />
               </div>
             </div>
             <div className="flex items-center gap-3 pt-2">
               <button 
                 onClick={() => setShowAddModal(false)}
-                className="flex-1 py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white text-[10px] font-black uppercase rounded-2xl transition-all"
+                className={`flex-1 py-3.5 border rounded-2xl text-[10px] font-black uppercase transition-all ${
+                  isDark ? 'bg-white/5 hover:bg-white/10 border-white/10 text-zinc-400 hover:text-white' : 'bg-zinc-50 hover:bg-zinc-100 border-zinc-200 text-zinc-650 hover:text-zinc-800'
+                }`}
               >
                 Cancelar
               </button>

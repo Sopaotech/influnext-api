@@ -1,9 +1,11 @@
 "use client";
+
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Wallet, ShieldCheck, Zap, CheckCircle2, RefreshCw, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import Cookies from 'js-cookie';
 
 interface BalanceData {
   availableBalance: number;
@@ -12,6 +14,7 @@ interface BalanceData {
 }
 
 export default function WalletPage() {
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [cpf, setCpf] = useState('');
   const [amount, setAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -24,6 +27,21 @@ export default function WalletPage() {
     completedContracts: 0,
     currency: 'BRL'
   });
+
+  // Monitor theme updates
+  useEffect(() => {
+    const savedTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;
+    if (savedTheme) {
+      setTheme(savedTheme);
+    }
+    const interval = setInterval(() => {
+      const currentTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;
+      if (currentTheme && currentTheme !== theme) {
+        setTheme(currentTheme);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [theme]);
 
   const handleInjectDemoBalance = async () => {
     setIsInjectingDemo(true);
@@ -109,31 +127,35 @@ export default function WalletPage() {
     }
   };
 
+  const isDark = theme === 'dark';
+
   if (success) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 animate-in fade-in zoom-in duration-500">
         <div className="w-24 h-24 bg-emerald-500/20 rounded-full flex items-center justify-center mb-8 shadow-2xl">
           <CheckCircle2 className="w-12 h-12 text-emerald-500 animate-pulse" />
         </div>
-        <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter mb-4 text-center">
+        <h1 className="text-4xl md:text-5xl font-black text-current tracking-tighter mb-4 text-center">
           PIX Realizado!
         </h1>
-        <p className="text-slate-500 text-center max-w-md mb-3">
+        <p className="text-zinc-550 dark:text-slate-400 text-center max-w-md mb-3 font-medium">
           O valor foi enviado para processamento. Em até 1 hora útil, o crédito aparecerá na sua conta bancária vinculada ao CPF.
         </p>
-        <p className="text-xs text-slate-400 mb-8 font-medium">
+        <p className="text-xs text-orange-500 mb-8 font-black uppercase tracking-wider">
           ✦ Proteção Anti-Fraude Ativa — Somente CPF cadastrado
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
           <button
             onClick={() => { setSuccess(false); setCpf(''); setAmount(''); setConfirmedSecurity(false); fetchBalance(); }}
-            className="bg-white border border-slate-200 text-slate-900 px-6 py-3 rounded-full font-bold hover:bg-slate-50 transition-colors"
+            className={`px-6 py-3 rounded-full font-bold border transition-colors ${
+              isDark ? 'bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800' : 'bg-white border-zinc-200 text-zinc-850 hover:bg-zinc-50'
+            }`}
           >
             Novo Saque
           </button>
           <Link
             href="/dashboard/influencer"
-            className="bg-slate-900 text-white px-8 py-3 rounded-full font-bold hover:bg-emerald-600 transition-colors shadow-lg text-center"
+            className="bg-slate-900 dark:bg-white text-white dark:text-slate-950 px-8 py-3 rounded-full font-bold hover:bg-emerald-600 dark:hover:bg-emerald-500 dark:hover:text-white transition-colors shadow-lg text-center"
           >
             Voltar ao Escritório
           </Link>
@@ -145,58 +167,63 @@ export default function WalletPage() {
   const canSubmit = confirmedSecurity && balanceData.availableBalance > 0 && !isProcessing;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <Link href="/dashboard/influencer" className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold transition-colors">
+    <div className="max-w-3xl mx-auto space-y-8 pb-20 animate-in fade-in duration-500">
+      <Link 
+        href="/dashboard/influencer" 
+        className="inline-flex items-center gap-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 font-bold transition-colors"
+      >
         <ArrowLeft className="w-4 h-4" /> Voltar
       </Link>
 
       <header className="space-y-2">
-        <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter drop-shadow-[0_2px_8px_rgba(255,255,255,0.4)]">
-          Sua <span className="text-emerald-500">Carteira</span>
+        <h1 className="text-4xl md:text-5xl font-black text-current tracking-tighter">
+          Sua <span className="text-emerald-600 dark:text-emerald-400">Carteira</span>
         </h1>
-        <p className="text-slate-500 font-medium">Saque rápido, seguro e sem taxas ocultas.</p>
+        <p className="text-zinc-550 dark:text-slate-400 font-medium">Saque rápido, seguro e sem taxas ocultas.</p>
       </header>
 
-      <div className="bg-white/40 border border-white/50 p-6 md:p-8 rounded-[2rem] shadow-xl" style={{ backdropFilter: 'blur(20px)' }}>
+      <div className={`p-6 md:p-8 rounded-[2rem] shadow-xl border ${
+        isDark ? 'bg-black/35 border-white/5' : 'bg-white border-zinc-200 shadow-zinc-100/50'
+      }`}>
 
         {/* Balance Display */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-900 text-white p-6 md:p-8 rounded-[1.5rem] mb-8 shadow-2xl relative overflow-hidden group">
-          <div className="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/20 blur-[50px] rounded-full group-hover:bg-emerald-500/30 transition-colors" />
-          <div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Saldo Liberado</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-zinc-950 border border-zinc-800 text-white p-6 md:p-8 rounded-[1.5rem] mb-8 shadow-2xl relative overflow-hidden group">
+          <div className="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/10 blur-[50px] rounded-full group-hover:bg-emerald-500/20 transition-colors" />
+          <div className="relative z-10">
+            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block mb-1">Saldo Liberado</span>
             {isLoadingBalance ? (
-              <div className="h-10 w-40 bg-slate-800 animate-pulse rounded-xl" />
+              <div className="h-10 w-40 bg-zinc-900 animate-pulse rounded-xl" />
             ) : (
               <span className="text-4xl md:text-5xl font-black tracking-tighter text-emerald-400">
                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(balanceData.availableBalance)}
               </span>
             )}
             {!isLoadingBalance && balanceData.completedContracts > 0 && (
-              <span className="text-[10px] text-slate-400 mt-1 block">
-                <TrendingUp className="inline w-3 h-3 mr-1" />
+              <span className="text-[10px] text-zinc-400 mt-1 block">
+                <TrendingUp className="inline w-3 h-3 mr-1 text-emerald-400" />
                 {balanceData.completedContracts} contrato{balanceData.completedContracts !== 1 ? 's' : ''} concluído{balanceData.completedContracts !== 1 ? 's' : ''}
               </span>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 relative z-10">
             <button
               type="button"
               onClick={handleInjectDemoBalance}
               disabled={isInjectingDemo}
-              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50 z-10 shadow-lg"
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50 shadow-lg active:scale-95"
               title="Simular Saldo para Demonstração"
             >
-              {isInjectingDemo ? 'Gerando...' : 'Injetar Saldo Demo'}
+              {isInjectingDemo ? 'Gerando...' : 'Saque Rápido Demo'}
             </button>
             <button
               type="button"
               onClick={fetchBalance}
               disabled={isLoadingBalance}
-              className="p-3 bg-slate-800 rounded-full hover:bg-slate-700 transition-colors disabled:opacity-50 z-10"
+              className="p-3 bg-zinc-900 rounded-full hover:bg-zinc-800 transition-colors disabled:opacity-50"
             >
-              <RefreshCw className={`w-4 h-4 text-slate-400 ${isLoadingBalance ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 text-zinc-400 ${isLoadingBalance ? 'animate-spin' : ''}`} />
             </button>
-            <Wallet className="w-10 h-10 text-emerald-500/50 hidden sm:block z-10" />
+            <Wallet className="w-10 h-10 text-emerald-500/30 hidden sm:block" />
           </div>
         </div>
 
@@ -204,14 +231,18 @@ export default function WalletPage() {
         <form onSubmit={handleWithdraw} className="space-y-6">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Valor do Saque (R$)</label>
+              <label className="block text-sm font-bold text-zinc-650 dark:text-zinc-300 mb-2">Valor do Saque (R$)</label>
               <div className="relative">
                 <input
                   type="number"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="Ex: 500.00"
-                  className="w-full bg-white/50 border border-slate-200 rounded-xl px-4 py-3 text-lg font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                  className={`w-full border rounded-xl px-4 py-3 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all ${
+                    isDark 
+                      ? 'bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-650' 
+                      : 'bg-zinc-50 border-zinc-200 text-zinc-800 placeholder:text-zinc-400 focus:bg-white'
+                  }`}
                   required
                   min={1}
                   max={balanceData.availableBalance}
@@ -221,7 +252,7 @@ export default function WalletPage() {
                   <button
                     type="button"
                     onClick={() => setAmount(balanceData.availableBalance.toFixed(2))}
-                    className="absolute right-3 top-3 text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded-lg hover:bg-emerald-100 transition-colors"
+                    className="absolute right-3 top-3 text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded-lg hover:bg-emerald-500/20 transition-colors"
                   >
                     MAX
                   </button>
@@ -230,14 +261,18 @@ export default function WalletPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Chave PIX (Apenas o seu CPF)</label>
+              <label className="block text-sm font-bold text-zinc-650 dark:text-zinc-300 mb-2">Chave PIX (Apenas o seu CPF)</label>
               <input
                 type="text"
                 value={cpf}
                 onChange={(e) => setCpf(formatCPF(e.target.value))}
                 placeholder="000.000.000-00"
                 maxLength={14}
-                className="w-full bg-white/50 border border-slate-200 rounded-xl px-4 py-3 text-lg font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                className={`w-full border rounded-xl px-4 py-3 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all ${
+                  isDark 
+                    ? 'bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-650' 
+                    : 'bg-zinc-50 border-zinc-200 text-zinc-800 placeholder:text-zinc-400 focus:bg-white'
+                }`}
                 required
               />
             </div>
@@ -248,7 +283,7 @@ export default function WalletPage() {
             className={`flex items-start gap-4 p-4 rounded-2xl border cursor-pointer transition-all duration-300 select-none ${
               confirmedSecurity
                 ? 'bg-emerald-500/10 border-emerald-500/30'
-                : 'bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10'
+                : isDark ? 'bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10' : 'bg-amber-50/40 border-amber-200 hover:bg-amber-50'
             }`}
           >
             <div className="relative mt-0.5 shrink-0">
@@ -261,7 +296,7 @@ export default function WalletPage() {
               <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${
                 confirmedSecurity
                   ? 'bg-emerald-500 border-emerald-500'
-                  : 'bg-white border-amber-400'
+                  : isDark ? 'bg-zinc-900 border-amber-500/40' : 'bg-white border-amber-400'
               }`}>
                 {confirmedSecurity && (
                   <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -271,12 +306,12 @@ export default function WalletPage() {
               </div>
             </div>
             <div className="flex-1">
-              <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-slate-600 mb-1">
+              <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-amber-600 mb-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
                 Segurança Anti-Fraude
               </span>
-              <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                Confirmo que li e entendi: o saque PIX é realizado <strong className="text-slate-700">exclusivamente</strong> para a conta bancária vinculada ao meu CPF cadastrado. Transferências para contas de terceiros são <strong className="text-slate-700">automaticamente bloqueadas</strong> pelo sistema de proteção InfluNext.
+              <p className="text-xs text-zinc-550 dark:text-zinc-450 leading-relaxed font-medium">
+                Confirmo que li e entendi: o saque PIX é realizado <strong className="text-zinc-800 dark:text-zinc-200 font-extrabold">exclusivamente</strong> para a conta bancária vinculada ao meu CPF cadastrado. Transferências para contas de terceiros são <strong className="text-zinc-800 dark:text-zinc-200 font-extrabold">automaticamente bloqueadas</strong> pelo sistema de proteção InfluNext.
               </p>
             </div>
           </label>
@@ -286,7 +321,7 @@ export default function WalletPage() {
             disabled={!canSubmit}
             className={`w-full h-14 rounded-full font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all duration-300 shadow-xl ${
               !canSubmit
-                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600 cursor-not-allowed'
                 : 'bg-emerald-600 text-white hover:bg-emerald-500 hover:scale-[1.02] active:scale-100'
             }`}
           >
@@ -302,7 +337,7 @@ export default function WalletPage() {
           </button>
 
           {balanceData.availableBalance <= 0 && !isLoadingBalance && (
-            <p className="text-center text-xs text-slate-400 font-medium">
+            <p className="text-center text-xs text-zinc-500 font-medium">
               Seu saldo disponível será liberado após a conclusão de contratos.
             </p>
           )}

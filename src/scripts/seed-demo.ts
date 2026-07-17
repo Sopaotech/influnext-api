@@ -207,7 +207,37 @@ Para hoje, ordenei 3 ações práticas: grave o Reels da coleção focando em tr
   });
   console.log('✅ Vídeos de referência do Trend Vault populados!');
 
-  // ── 7. Missão Diária (No perfil do influenciador) ──────────────────────────────
+  // ── 7a. RateCards (Catálogo de Serviços) ──────────────────────────────────────
+  console.log('🌱 [SEED] Gerando catálogo de serviços (RateCards)...');
+  await prisma.rateCard.deleteMany({ where: { influencerId: influencerProfile.id } });
+  await prisma.rateCard.createMany({
+    data: [
+      {
+        influencerId: influencerProfile.id,
+        serviceName: "Combo Fashion Post (1x Reels + 3x Stories)",
+        price: 1500.00,
+        currency: "BRL",
+        description: "Combo ideal para lançamento de coleções. Inclui Reels completo mostrando os produtos no corpo e 3 sequências de Stories para engajamento e CTA direto de vendas."
+      },
+      {
+        influencerId: influencerProfile.id,
+        serviceName: "1x Reels de Provador",
+        price: 900.00,
+        currency: "BRL",
+        description: "Gravação de Reels dinâmico com transições ágeis exibindo até 4 looks selecionados da marca com áudio viral em alta."
+      },
+      {
+        influencerId: influencerProfile.id,
+        serviceName: "Sequência de Stories Patrocinados (3 telas)",
+        price: 500.00,
+        currency: "BRL",
+        description: "Inserção de links diretos para o e-commerce, stickers de interação e cupom de desconto exclusivo."
+      }
+    ]
+  });
+  console.log('✅ Catálogo de serviços populado!');
+
+  // ── 7b. Missão Diária (No perfil do influenciador) ──────────────────────────────
   await prisma.influencerProfile.update({
     where: { id: influencerProfile.id },
     data: {
@@ -216,6 +246,139 @@ Para hoje, ordenei 3 ações práticas: grave o Reels da coleção focando em tr
     }
   });
   console.log('✅ Missão diária atribuída ao perfil do influenciador!');
+
+  // ── 7c. Contratos Simulados (Demo Contracts) ───────────────────────────────────
+  console.log('🌱 [SEED] Gerando contratos simulados...');
+  const today = new Date();
+  await prisma.deliverable.deleteMany({
+    where: {
+      contract: {
+        OR: [
+          { influencerId: influencerProfile.id },
+          { companyId: companyProfile.id }
+        ]
+      }
+    }
+  });
+
+  await prisma.contract.deleteMany({
+    where: {
+      OR: [
+        { influencerId: influencerProfile.id },
+        { companyId: companyProfile.id }
+      ]
+    }
+  });
+
+  const contract1 = await prisma.contract.create({
+    data: {
+      companyId: companyProfile.id,
+      influencerId: influencerProfile.id,
+      title: "Campanha Summer Collection 2026",
+      briefing: "Campanha focada na linha de linho premium da Coleção de Verão. O criador deve produzir 1 Reels mostrando 3 looks diferentes de linho e marcar a conta da marca.",
+      aiScript: "Gancho: '3 looks de linho da Zara que parecem caros mas custaram pouco...' transições com whoosh e call to action no final.",
+      budget: 5000.00,
+      platformFee: 750.00,
+      netAmount: 4250.00,
+      escrowStatus: "COMPLETED",
+      contractType: "SPOT",
+      companySigned: true,
+      influencerSigned: true,
+      deliverables: {
+        create: [
+          {
+            type: "1x Reels de Provador",
+            deadline: new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000), // 2 dias atrás
+            status: "COMPLETED",
+            proofUrl: "https://www.instagram.com/reel/C_summer_collection_linho"
+          }
+        ]
+      }
+    }
+  });
+
+  const contract2 = await prisma.contract.create({
+    data: {
+      companyId: companyProfile.id,
+      influencerId: influencerProfile.id,
+      title: "Branding Audiovisual outono 2026",
+      briefing: "Apresentação estética e minimalista do vestuário de outono da marca, focando em alta fidelidade visual.",
+      aiScript: "Vídeo focado em paleta de cores terrosas e transições suaves com música ambiente.",
+      budget: 5000.00,
+      platformFee: 750.00,
+      netAmount: 4250.00,
+      escrowStatus: "IN_PROGRESS",
+      contractType: "SPOT",
+      companySigned: true,
+      influencerSigned: true,
+      deliverables: {
+        create: [
+          {
+            type: "1x Reels Conceitual",
+            deadline: new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000), // daqui a 5 dias
+            status: "PENDING"
+          }
+        ]
+      }
+    }
+  });
+
+  // Contrato 3: Aguardando Assinatura da Empresa (DRAFT)
+  const contract3 = await prisma.contract.create({
+    data: {
+      companyId: companyProfile.id,
+      influencerId: influencerProfile.id,
+      title: "Cápsula Primavera 2026",
+      briefing: "Campanha de lançamento da Coleção Primavera. O criador assinou e aguarda assinatura corporativa.",
+      aiScript: "Sequência de stories de transição focados na nova coleção florida.",
+      budget: 3500.00,
+      platformFee: 525.00,
+      netAmount: 2975.00,
+      escrowStatus: "DRAFT",
+      contractType: "SPOT",
+      companySigned: false,
+      influencerSigned: true,
+      deliverables: {
+        create: [
+          {
+            type: "3x Instagram Stories",
+            deadline: new Date(today.getTime() + 15 * 24 * 60 * 60 * 1000),
+            status: "PENDING"
+          }
+        ]
+      }
+    }
+  });
+
+  // Contrato 4: Entregável em Análise (UNDER_REVIEW) - Alimenta Fila de Ação Necessária
+  const contract4 = await prisma.contract.create({
+    data: {
+      companyId: companyProfile.id,
+      influencerId: influencerProfile.id,
+      title: "Parceria Inverno 2026",
+      briefing: "Divulgação do casaco corta-vento impermeável da marca.",
+      aiScript: "Vídeo sob chuva testando a tecnologia do produto em 15 segundos.",
+      budget: 4500.00,
+      platformFee: 675.00,
+      netAmount: 3825.00,
+      escrowStatus: "IN_PROGRESS",
+      contractType: "SPOT",
+      companySigned: true,
+      influencerSigned: true,
+      deliverables: {
+        create: [
+          {
+            type: "1x Vídeo Teste de Impermeabilidade",
+            deadline: new Date(today.getTime() - 1 * 24 * 60 * 60 * 1000),
+            status: "UNDER_REVIEW",
+            proofUrl: "https://instagram.com/p/C_inverno_impermeavel"
+          }
+        ]
+      }
+    }
+  });
+
+  console.log('✅ Contratos e Deliverables simulados gerados (incluindo testes de assinatura e fila de revisão)!');
 
   // ── 8. Recebidos Simulados (Para a central de recebidos/envios) ─────────────────
   console.log('🌱 [SEED] Gerando recebidos simulados...');
@@ -284,7 +447,7 @@ Para hoje, ordenei 3 ações práticas: grave o Reels da coleção focando em tr
   console.log('🌱 [SEED] Gerando tarefas iniciais no calendário...');
   await prisma.task.deleteMany({ where: { influencerId: influencerProfile.id } });
   
-  const today = new Date();
+  today.setTime(new Date().getTime());
   const day1 = new Date(today);
   day1.setDate(today.getDate() + 1);
   day1.setHours(12, 0, 0, 0); // 12:00

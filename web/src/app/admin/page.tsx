@@ -18,7 +18,7 @@ export default async function AdminPage() {
   const stats = await getAdminStats();
 
   const cards = [
-    { label: 'Criadores', value: stats?.influencers ?? '—', icon: '👤', color: 'purple' },
+    { label: 'Criadores', value: stats?.influencers ?? '—', icon: '👤', color: 'orange' },
     { label: 'Empresas', value: stats?.companies ?? '—', icon: '🏢', color: 'blue' },
     { label: 'Contratos Ativos', value: stats?.activeContracts ?? '—', icon: '📄', color: 'emerald' },
     { label: 'Volume em Escrow', value: stats?.escrowVolume ? `R$ ${stats.escrowVolume.toLocaleString('pt-BR')}` : '—', icon: '🛡️', color: 'pink' },
@@ -30,8 +30,8 @@ export default async function AdminPage() {
         {/* Header */}
         <header className="flex items-center justify-between">
           <div>
-            <Link href="/" className="text-xl font-black tracking-tighter drop-shadow-[0_0_15px_rgba(168,85,247,0.4)]">
-              INFLUNEX<span className="text-purple-400 -rotate-12 inline-block">↗</span>
+            <Link href="/" className="text-xl font-black tracking-tighter drop-shadow-[0_0_15px_rgba(217,107,39,0.4)]">
+              INFLUNEX<span className="text-orange-400 -rotate-12 inline-block">↗</span>
             </Link>
             <h1 className="text-3xl font-black mt-2">Painel Administrativo</h1>
             <p className="text-zinc-500 text-sm">Visão geral do ecossistema em tempo real.</p>

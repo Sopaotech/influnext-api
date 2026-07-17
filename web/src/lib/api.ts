@@ -118,7 +118,18 @@ export interface CompanyDashboardResponse {
     title: string;
     budget: number;
     escrowStatus: string;
-    influencer: { handle: string };
+    influencerId: string;
+    influencer: { handle: string; metricsHistory?: any[] };
+  }>;
+  recommendedTalents?: Array<{
+    id: string;
+    handle: string;
+    niche: string;
+    influScore: number;
+    scoreClass: string;
+    growth: string;
+    reputation: string;
+    pitch: string;
   }>;
 }
 

@@ -422,7 +422,7 @@ export const socialLogin = async (req: Request, res: Response): Promise<void> =>
       }) as any;
 
       // 2. Criar o InfluencerProfile
-      const aiInterview = JSON.stringify({
+      const aiInterview = {
         dream: 'Trabalhar com grandes marcas',
         followersGoal: '100.000 seguidores',
         incomeTarget: 'Publis/Parcerias',
@@ -432,7 +432,7 @@ export const socialLogin = async (req: Request, res: Response): Promise<void> =>
         frequency: '3 vezes por semana',
         boughtFollowers: 'Não, todo o crescimento foi orgânico',
         gender: gender || 'feminino'
-      });
+      };
 
       const profile = await prisma.influencerProfile.create({
         data: {
@@ -440,7 +440,7 @@ export const socialLogin = async (req: Request, res: Response): Promise<void> =>
           handle: username,
           niche: niche || 'Lifestyle',
           careerObjective: 'CONTRACTS',
-          aiInterview,
+          aiInterview: aiInterview as any,
           influScore: 78,
           scoreClass: 'SILVER',
           verifiedMetrics: true,

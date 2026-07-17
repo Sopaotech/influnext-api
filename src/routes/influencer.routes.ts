@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { 
   searchInfluencers, 
+  searchCompanies,
   updateProfile, 
   getMyMission, 
   completeMission, 
@@ -20,6 +21,7 @@ const router = Router();
 
 // Busca pública (usada pelo Marketplace — autenticados via token)
 router.get('/search', authenticate, searchInfluencers);
+router.get('/companies/search', authenticate, searchCompanies);
 
 // Rotas protegidas de Perfil e Missão (Legado)
 router.patch('/profile', authenticate, updateProfile);

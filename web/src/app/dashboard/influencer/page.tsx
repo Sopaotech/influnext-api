@@ -1,15 +1,32 @@
 "use client";
+
 import React, { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
-import { Sparkles, Wallet, LogOut, Bell, Settings, TrendingUp } from 'lucide-react';
+import { Sparkles, Wallet, TrendingUp } from 'lucide-react';
 import { CareerDashboard } from '@/components/dashboard/CareerDashboard';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import Cookies from 'js-cookie';
 
 export default function InfluencerDashboard() {
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [data, setData] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Monitor theme updates
+  useEffect(() => {
+    const savedTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;
+    if (savedTheme) {
+      setTheme(savedTheme);
+    }
+    const interval = setInterval(() => {
+      const currentTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;
+      if (currentTheme && currentTheme !== theme) {
+        setTheme(currentTheme);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [theme]);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -25,37 +42,38 @@ export default function InfluencerDashboard() {
     fetchDashboard();
   }, []);
 
+  const isDark = theme === 'dark';
+
   if (isLoading) {
     return (
       <div className="min-h-screen p-10 space-y-10 animate-pulse">
         <div className="flex justify-between items-center">
-          <div className="h-12 w-64 bg-white/10 rounded-2xl" />
-          <div className="h-12 w-32 bg-white/10 rounded-2xl" />
+          <div className="h-12 w-64 bg-zinc-800/20 rounded-2xl" />
+          <div className="h-12 w-32 bg-zinc-800/20 rounded-2xl" />
         </div>
-        <div className="h-[300px] bg-white/10 rounded-[2.5rem]" />
+        <div className="h-[300px] bg-zinc-800/20 rounded-[2.5rem]" />
         <div className="grid grid-cols-3 gap-8">
-          <div className="col-span-2 h-[500px] bg-white/10 rounded-[2.5rem]" />
-          <div className="h-[500px] bg-white/10 rounded-[2.5rem]" />
+          <div className="col-span-2 h-[500px] bg-zinc-800/20 rounded-[2.5rem]" />
+          <div className="h-[500px] bg-zinc-800/20 rounded-[2.5rem]" />
         </div>
       </div>
     );
   }
 
   const escrowBalance = data?.kpis?.escrowBalance ?? 0;
-  const isDark = data?.userState?.theme === 'dark';
 
   return (
     <div className="space-y-8 md:space-y-12 pb-20">
       
       {/* Header Summary - Glassy & Minimal */}
-      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8 animate-in fade-in slide-in-from-top-4 duration-1000">
+      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8 animate-in fade-in duration-500">
         <div className="space-y-1 text-center lg:text-left">
           <div className="flex items-center justify-center lg:justify-start gap-2">
             <Sparkles className="w-3 md:w-4 h-3 md:h-4 text-slate-400 animate-pulse" />
             <span className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Gestão Inteligente</span>
           </div>
-          <h1 className={`text-3xl sm:text-4xl md:text-7xl font-black tracking-tighter leading-none ${isDark ? 'text-white' : 'text-slate-900 drop-shadow-[0_2px_8px_rgba(255,255,255,0.4)]'}`}>
-            Escritório <span className={`${isDark ? 'text-zinc-400' : 'text-slate-500'} font-medium italic`}>Digital</span>
+          <h1 className="text-3xl sm:text-4xl md:text-7xl font-black tracking-tighter leading-none text-current">
+            Escritório <span className="text-zinc-550 dark:text-zinc-400 font-medium italic">Digital</span>
           </h1>
         </div>
 
@@ -65,7 +83,7 @@ export default function InfluencerDashboard() {
              className={`px-5 md:px-8 py-4 md:py-6 rounded-[2rem] md:rounded-[2.5rem] flex items-center justify-between sm:justify-start gap-4 md:gap-6 shadow-xl transition-all group w-full sm:w-auto ${
                isDark 
                  ? 'bg-black/35 border border-white/5 hover:bg-black/50 text-white' 
-                 : 'bg-white/40 border border-white/50 hover:bg-white/60 text-slate-900'
+                 : 'bg-white border border-zinc-200 hover:bg-white/60 text-slate-900 shadow-zinc-100/50'
              }`}
              style={{ backdropFilter: 'blur(30px)' }}
            >
@@ -75,7 +93,7 @@ export default function InfluencerDashboard() {
                  </div>
                  <div className="text-left">
                     <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest block mb-0.5 ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>Saldo Disponível</span>
-                    <span className={`text-xl md:text-3xl font-black tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    <span className="text-xl md:text-3xl font-black tracking-tighter text-current">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(escrowBalance)}
                     </span>
                  </div>
@@ -116,7 +134,7 @@ export default function InfluencerDashboard() {
         id: data?.profile?.id,
         careerObjective: data?.profile?.careerObjective || 'GROWTH',
         influScore: data?.kpis?.influScore || 0,
-        theme: data?.userState?.theme
+        theme: theme
       }} />
 
       {/* Footer Branding - Transparent */}
@@ -131,5 +149,3 @@ export default function InfluencerDashboard() {
     </div>
   );
 }
-
-

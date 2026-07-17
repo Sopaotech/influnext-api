@@ -4,6 +4,7 @@ import { UserRole } from '../types/roles';
 import { ScoringService } from '../services/scoring.service';
 import { InstagramService } from '../services/instagram.service';
 import { AIService } from '../services/ai.service';
+import { TrendScannerService } from '../services/trend-scanner.service';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import { seedDemo } from '../scripts/seed-demo';
@@ -347,8 +348,8 @@ export const simulateInstagramConnection = async (req: Request, res: Response): 
       where: { id: influencer.id },
       data: { 
         verifiedMetrics: true,
-        insights: JSON.stringify(insightsJson),
-        topPosts: JSON.stringify(postsWithInsights),
+        insights: insightsJson as any,
+        topPosts: postsWithInsights as any,
         profileImageUrl: profilePicture,
         handle: username
       }
@@ -726,8 +727,8 @@ export const simulateFlowStep = async (req: Request, res: Response): Promise<voi
           where: { id: influencer.id },
           data: {
             verifiedMetrics: true,
-            insights: JSON.stringify(insightsJson),
-            topPosts: JSON.stringify(postsWithInsights),
+            insights: insightsJson as any,
+            topPosts: postsWithInsights as any,
             profileImageUrl: profilePicture,
             handle: cleanHandle,
             niche: 'Fashion & Lifestyle',
@@ -991,5 +992,31 @@ export const simulateFlowStep = async (req: Request, res: Response): Promise<voi
   } catch (error: any) {
     console.error('[SIMULATE FLOW STEP] Erro na etapa:', error);
     res.status(500).json({ error: `Erro na execução da etapa: ${error.message}` });
+  }
+};
+
+/**
+ * GET /integrations/trends
+ * Retorna as tendências do nicho específico do criador logado
+ */
+export const getTrends = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const profile = await prisma.influencerProfile.findUnique({
+      where: { userId },
+      select: { niche: true }
+    });
+
+    const niche = profile?.niche || 'GLOBAL';
+    const trends = await TrendScannerService.scanRealTimeTrends(niche);
+
+    res.json({
+      success: true,
+      niche,
+      trends
+    });
+  } catch (error) {
+    console.error('[TRENDS] Erro ao buscar tendências:', error);
+    res.status(500).json({ error: 'Erro ao buscar tendências.' });
   }
 };

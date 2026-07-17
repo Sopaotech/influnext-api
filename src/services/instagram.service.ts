@@ -308,8 +308,8 @@ export class InstagramService {
           handle: username,
           profileImageUrl: profilePicture,
           verifiedMetrics: true,
-          insights: JSON.stringify(insightsJson),
-          topPosts: JSON.stringify(postsWithInsights),
+          insights: insightsJson as any,
+          topPosts: postsWithInsights as any,
         },
       });
 

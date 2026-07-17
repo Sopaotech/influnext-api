@@ -119,20 +119,20 @@ function SocialCallbackContent() {
     <div className="min-h-screen bg-[#050508] flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md bg-zinc-900/50 border border-zinc-800 p-8 rounded-3xl backdrop-blur-xl relative overflow-hidden">
         {/* Glow Effect */}
-        <div className="absolute -top-24 -left-24 w-48 h-48 bg-purple-600/10 blur-[100px] rounded-full" />
+        <div className="absolute -top-24 -left-24 w-48 h-48 bg-orange-600/10 blur-[100px] rounded-full" />
         <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-blue-600/10 blur-[100px] rounded-full" />
 
         <div className="relative z-10 flex flex-col items-center space-y-8">
           {status === 'loading' && (
             <>
               <div className="relative">
-                <div className="absolute inset-0 bg-purple-600/20 blur-3xl rounded-full animate-pulse" />
-                <Loader2 className="w-16 h-16 text-purple-500 animate-spin relative" />
+                <div className="absolute inset-0 bg-orange-600/20 blur-3xl rounded-full animate-pulse" />
+                <Loader2 className="w-16 h-16 text-orange-500 animate-spin relative" />
               </div>
               <div className="text-center space-y-3">
                 <h2 className="text-2xl font-black text-white uppercase tracking-wider">Sincronizando...</h2>
                 <p className="text-zinc-400 text-sm font-medium">
-                  Estamos vinculando sua conta do <span className="text-purple-400 font-bold">{platform?.toUpperCase()}</span> ao radar InfluNext.
+                  Estamos vinculando sua conta do <span className="text-orange-400 font-bold">{platform?.toUpperCase()}</span> ao radar InfluNext.
                 </p>
               </div>
             </>
@@ -219,7 +219,7 @@ export default function SocialCallbackPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-[#050508] flex flex-col items-center justify-center">
-        <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
+        <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
       </div>
     }>
       <SocialCallbackContent />

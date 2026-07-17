@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
 export const viewport: Viewport = {
-  themeColor: '#080810',
+  themeColor: '#131110',
   colorScheme: 'dark',
   width: 'device-width',
   initialScale: 1,
@@ -54,7 +54,7 @@ export default async function PublicProfile(props: { params: Promise<{ handle: s
   const roiPercentage = ((profile.avgROI - 1) * 100).toFixed(0);
 
   return (
-    <div className="min-h-screen bg-[#080810] text-[#e8e0f5] selection:bg-purple-500/30 font-sans">
+    <div className="min-h-screen bg-[#131110] text-[#f5ebe0] selection:bg-orange-500/30 font-sans">
       
       <div className="max-w-[450px] mx-auto px-6 py-12 space-y-10">
         
@@ -70,17 +70,17 @@ export default async function PublicProfile(props: { params: Promise<{ handle: s
                  </div>
                )}
             </div>
-            <div className="absolute -bottom-2 -right-2 bg-emerald-500 rounded-full p-1.5 border-4 border-[#080810] z-20 shadow-lg">
+            <div className="absolute -bottom-2 -right-2 bg-emerald-500 rounded-full p-1.5 border-4 border-[#131110] z-20 shadow-lg">
                <ShieldCheck className="w-5 h-5 text-white" />
             </div>
             {/* Background Glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-purple-500/10 blur-[50px] rounded-full" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-orange-500/10 blur-[50px] rounded-full" />
           </div>
 
           <div className="space-y-1">
              <div className="flex items-center justify-center gap-2">
                 <h1 className="text-3xl font-black tracking-tighter">@{profile.handle}</h1>
-                {profile.verifiedMetrics && <ShieldCheck className="w-5 h-5 text-purple-400" />}
+                {profile.verifiedMetrics && <ShieldCheck className="w-5 h-5 text-orange-400" />}
              </div>
              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">Certificado de Ativo InfluNext</p>
           </div>
@@ -110,10 +110,10 @@ export default async function PublicProfile(props: { params: Promise<{ handle: s
 
         {/* Core Metrics Grid */}
         <main className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400">
-          <MetricCard title="Seguidores" value={latestMetrics.followers.toLocaleString('pt-BR')} icon={Users} />
-          <MetricCard title="Engajamento" value={`${latestMetrics.engagementRate}%`} icon={Activity} />
-          <MetricCard title="Alcance" value={latestMetrics.reachLast30Days.toLocaleString('pt-BR')} icon={Target} />
-          <MetricCard title="Views Médias" value={latestMetrics.avgViews.toLocaleString('pt-BR')} icon={Eye} />
+           <MetricCard title="Seguidores" value={latestMetrics.followers.toLocaleString('pt-BR')} icon={Users} />
+           <MetricCard title="Engajamento" value={`${latestMetrics.engagementRate}%`} icon={Activity} />
+           <MetricCard title="Alcance" value={latestMetrics.reachLast30Days.toLocaleString('pt-BR')} icon={Target} />
+           <MetricCard title="Views Médias" value={latestMetrics.avgViews.toLocaleString('pt-BR')} icon={Eye} />
         </main>
 
         {/* Proof of Performance Gallery */}
@@ -130,10 +130,10 @@ export default async function PublicProfile(props: { params: Promise<{ handle: s
                       href={task.proofUrl} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="flex items-center justify-between p-4 bg-zinc-900/50 border border-zinc-800 rounded-2xl hover:border-purple-500/50 transition-all group"
+                      className="flex items-center justify-between p-4 bg-zinc-900/50 border border-zinc-800 rounded-2xl hover:border-orange-500/50 transition-all group"
                     >
                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                          <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-orange-400 group-hover:scale-110 transition-transform">
                              <LinkIcon className="w-4 h-4" />
                           </div>
                           <div>
@@ -141,7 +141,7 @@ export default async function PublicProfile(props: { params: Promise<{ handle: s
                              <p className="text-[8px] font-bold text-emerald-500 uppercase">Impacto: {task.performanceMultiplier.toFixed(1)}x</p>
                           </div>
                        </div>
-                       <ArrowRight className="w-4 h-4 text-zinc-700 group-hover:text-purple-400 group-hover:translate-x-1 transition-all" />
+                       <ArrowRight className="w-4 h-4 text-zinc-700 group-hover:text-orange-400 group-hover:translate-x-1 transition-all" />
                     </a>
                  ))}
               </div>
@@ -175,11 +175,11 @@ export default async function PublicProfile(props: { params: Promise<{ handle: s
       </div>
 
       {/* Conversion Footer */}
-      <footer className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#080810] via-[#080810] to-transparent z-50">
+      <footer className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#131110] via-[#131110] to-transparent z-50">
         <div className="max-w-[450px] mx-auto">
           <Link 
             href={`/register?influencerId=${profile.id}&role=COMPANY`}
-            className="w-full h-16 bg-[#e8e0f5] text-[#080810] font-black rounded-3xl shadow-[0_20px_40px_rgba(139,92,246,0.3)] transition-all active:scale-95 flex items-center justify-center gap-3 group"
+            className="w-full h-16 bg-[#d96b27] text-[#131110] font-black rounded-3xl shadow-[0_20px_40px_rgba(217,107,39,0.25)] transition-all active:scale-95 flex items-center justify-center gap-3 group"
           >
             <ShieldCheck className="w-5 h-5" />
             Contratar via Escrow Seguro 🛡️

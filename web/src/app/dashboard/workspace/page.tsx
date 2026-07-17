@@ -135,7 +135,7 @@ export default function AIWorkspacePage() {
         const companyRes = await api.get('/dashboard/company').catch(() => null);
         setMentorName('Vektor');
         setChatMessages([
-          { role: 'mentor', text: 'Olá! Eu sou o Vektor, seu estrategista de posicionamento e branding aqui na InfluNext. Meu papel é desenhar campanhas de alta conversão, propor ideias de posts para seus produtos e estruturar pitches comerciais. O que vamos planejar hoje?' }
+          { role: 'mentor', text: 'Olá! Eu sou o Vektor, seu coordenador estratégico de IA aqui na InfluNext. Sob minha tutela, você tem acesso a uma rede de especialistas sob custódia: Vincenzo (roteiros e ganchos), Sofia (segurança e escrow de contratos) e Valentina (identidade e design visual). Fale comigo sobre qualquer aspecto das suas campanhas, briefings, orçamentos ou análise de ROI — processarei os dados e filtrarei a base de negócios integrada automaticamente para você!' }
         ]);
         if (companyRes?.data?.userState?.theme) {
           setTheme(companyRes.data.userState.theme);
@@ -325,27 +325,27 @@ export default function AIWorkspacePage() {
     setTimeout(() => {
       setChatMessages(prev => [...prev, { role: 'user', text: 'Oi Vincenzo, como posso aumentar o ROI na minha próxima campanha com a Zara?' }]);
       
-      // Passo 2: Vincenzo começa a digitar e responde
+      // Passo 2: Especialista em Roteiros responde
       setTimeout(() => {
-        const reply1 = `Fala Alexsandro! Para a Zara, precisamos focar em um gancho altamente magnético de 3 segundos no Reels. Sugiro este script pronto:
+        const reply1 = `[Especialista em Roteiros]: Fala Alexsandro! Para a Zara, precisamos focar em um gancho altamente magnético de 3 segundos no Reels. Sugiro este script pronto:
 
 🎬 "3 peças indispensáveis da Zara que parecem de grife mas custam menos de R$ 150..."
 
 Use cortes dinâmicos rápidos nas transições de look, adicione som de transição física (whoosh) e chame para ação direcionando para o link da bio. Isso triplica a retenção orgânica do algoritmo local.`;
         setChatMessages(prev => [...prev, { role: 'mentor', text: reply1 }]);
-        speak(reply1);
+        speak(reply1.replace(/\[.*?\]:\s*/, '')); // Fala limpa sem a tag
         
         // Passo 3: Usuário pergunta sobre segurança e pagamento
         setTimeout(() => {
           setChatMessages(prev => [...prev, { role: 'user', text: 'Excelente. E sobre o pagamento? Como garanto que vou receber pelo Reels sem calotes?' }]);
           
-          // Passo 4: Vincenzo explica o Escrow
+          // Passo 4: Especialista em Parcerias explica o Escrow
           setTimeout(() => {
-            const reply2 = `Fica tranquilo, sócio! O orçamento acordado de R$ 3.500,00 já foi depositado pela marca e está bloqueado com total segurança na conta de garantia (Escrow) da InfluNext. 
+            const reply2 = `[Especialista em Parcerias]: Fica tranquilo, sócio! O orçamento acordado de R$ 3.500,00 já foi depositado pela marca e está bloqueado com total segurança na conta de garantia (Escrow) da InfluNext. 
 
 Assim que você gravar e subir o link da entrega aqui no painel, nossa Inteligência Artificial fará a auditoria automática do vídeo em tempo real (verificando o gancho de 3 segundos e as regras do briefing). Com tudo correto, o pagamento é liberado direto na sua carteira na mesma hora!`;
             setChatMessages(prev => [...prev, { role: 'mentor', text: reply2 }]);
-            speak(reply2);
+            speak(reply2.replace(/\[.*?\]:\s*/, '')); // Fala limpa sem a tag
             setIsChatting(false);
           }, 3500);
 
@@ -396,7 +396,7 @@ Estando tudo correto, o pagamento de R$ 4.250,00 líquidos é liberado da conta 
     }, 1000);
   };
 
-  const isDark = true;
+  const isDark = theme === 'dark';
   const isCompany = user?.role === 'COMPANY';
 
   if (isLoading) {
@@ -415,18 +415,18 @@ Estando tudo correto, o pagamento de R$ 4.250,00 líquidos é liberado da conta 
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2 mb-2">
-               <div className={`h-1.5 w-10 ${isCompany ? 'bg-pink-600' : 'bg-orange-600'} rounded-full`} />
-               <span className={`text-[10px] font-black ${isCompany ? 'text-pink-500' : 'text-orange-500'} uppercase tracking-[0.4em]`}>
+               <div className={`h-1.5 w-10 ${isCompany ? 'bg-amber-600' : 'bg-orange-600'} rounded-full`} />
+               <span className={`text-[10px] font-black ${isCompany ? 'text-amber-500' : 'text-orange-500'} uppercase tracking-[0.4em]`}>
                  {isCompany ? 'Link Neural Corporativo v2.1' : 'Link Neural Estratégico v2.1'}
                </span>
             </div>
             <h1 className={`text-5xl md:text-7xl font-black tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Área de <span className={`text-transparent bg-clip-text bg-gradient-to-r ${isCompany ? 'from-pink-400 via-orange-400 to-pink-500' : 'from-orange-500 via-pink-500 to-amber-500'}`}>Trabalho</span>
+              Área de <span className={`text-transparent bg-clip-text bg-gradient-to-r ${isCompany ? 'from-amber-400 via-orange-400 to-amber-500' : 'from-orange-500 via-amber-500 to-orange-400'}`}>Trabalho</span>
             </h1>
             <p className={`text-[11px] font-black max-w-lg uppercase tracking-widest px-3 py-1.5 rounded-lg w-fit border ${
               isDark 
-                ? (isCompany ? 'bg-pink-950/30 border-pink-500/10 text-pink-300' : 'bg-orange-950/30 border-orange-500/10 text-orange-300') 
-                : (isCompany ? 'bg-pink-500/10 border-pink-500/20 text-pink-700' : 'bg-orange-500/10 border-orange-500/20 text-purple-700')
+                ? (isCompany ? 'bg-amber-950/30 border-amber-500/10 text-amber-300' : 'bg-orange-950/30 border-orange-500/10 text-orange-300') 
+                : (isCompany ? 'bg-amber-500/10 border-amber-500/20 text-amber-700' : 'bg-orange-500/10 border-orange-500/20 text-orange-700')
             }`}>
               {isCompany ? 'Sua central estratégica para posicionamento de marca e gestão de ROI.' : 'Sua unidade de processamento tático e inteligência de mercado.'}
             </p>
@@ -581,7 +581,7 @@ Estando tudo correto, o pagamento de R$ 4.250,00 líquidos é liberado da conta 
             
             {/* Widget 1: Filosofia de Orçamento Vektor */}
             <div className={`border p-6 rounded-[2rem] space-y-4 border-l-4 border-l-amber-500 shadow-sm relative overflow-hidden ${
-              isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
+              isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100 shadow-zinc-100/50'
             }`}>
               <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/5 blur-3xl rounded-full" />
               <h3 className={`text-[10px] font-black uppercase tracking-widest flex items-center justify-between ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -589,30 +589,30 @@ Estando tudo correto, o pagamento de R$ 4.250,00 líquidos é liberado da conta 
                     <Building className="w-4 h-4 text-amber-500" /> FILOSOFIA DE PITCH & ROI
                  </div>
               </h3>
-              <p className="text-xs text-zinc-300 leading-relaxed font-bold">
+              <p className={`text-xs leading-relaxed font-bold ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                 "Não queime seu orçamento em campanhas únicas gigantes. Faça contratações consistentes, teste ganchos e otimize o ROI."
               </p>
-              <div className="pt-2 border-t border-white/5 text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-relaxed">
+              <div className={`pt-2 border-t text-[9px] font-black uppercase tracking-widest leading-relaxed ${isDark ? 'border-white/5 text-zinc-500' : 'border-zinc-100 text-slate-550'}`}>
                 💡 Contratar influenciadores com InfluScores adequados ao seu ticket médio maximiza as conversões.
               </div>
             </div>
 
             {/* Widget 2: Recomendação Inteligente */}
-            <div className={`border p-6 rounded-[2rem] space-y-4 border-l-4 border-l-pink-500 shadow-sm relative overflow-hidden ${
-              isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
+            <div className={`border p-6 rounded-[2rem] space-y-4 border-l-4 border-l-amber-500 shadow-sm relative overflow-hidden ${
+              isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100 shadow-zinc-100/50'
             }`}>
-              <div className="absolute -top-10 -right-10 w-32 h-32 bg-pink-500/5 blur-3xl rounded-full" />
+              <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/5 blur-3xl rounded-full" />
               <h3 className={`text-[10px] font-black uppercase tracking-widest flex items-center justify-between ${isDark ? 'text-white' : 'text-slate-900'}`}>
                  <div className="flex items-center gap-2">
-                    <Target className="w-4 h-4 text-pink-500" /> RECOMENDAÇÃO INTELIGENTE
+                    <Target className="w-4 h-4 text-amber-500" /> RECOMENDAÇÃO INTELIGENTE
                  </div>
               </h3>
-              <p className="text-xs text-zinc-300 leading-relaxed font-medium">
+              <p className={`text-xs leading-relaxed font-medium ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                 Vektor analisa o ticket médio da sua empresa e o nicho de produto para te ajudar a filtrar o catálogo ideal no Marketplace.
               </p>
               <Button 
                 onClick={() => router.push('/dashboard/marketplace')}
-                className="w-full h-11 bg-gradient-to-r from-pink-600 to-orange-600 hover:from-pink-500 hover:to-orange-500 text-white font-black text-[9px] uppercase tracking-widest rounded-xl transition-all shadow-sm"
+                className="w-full h-11 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-black text-[9px] uppercase tracking-widest rounded-xl transition-all shadow-sm"
               >
                 IR PARA O MARKETPLACE ➔
               </Button>
@@ -620,7 +620,7 @@ Estando tudo correto, o pagamento de R$ 4.250,00 líquidos é liberado da conta 
 
             {/* Widget 3: Criador Destaque (Match Perfeito) */}
             <div className={`border p-6 rounded-[2rem] space-y-4 border-l-4 border-l-orange-500 shadow-sm relative overflow-hidden ${
-              isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
+              isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100 shadow-zinc-100/50'
             }`}>
               <div className="absolute -top-10 -right-10 w-32 h-32 bg-orange-500/5 blur-3xl rounded-full" />
               <h3 className={`text-[10px] font-black uppercase tracking-widest flex items-center justify-between ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -633,11 +633,11 @@ Estando tudo correto, o pagamento de R$ 4.250,00 líquidos é liberado da conta 
                   DI
                 </div>
                 <div className="space-y-0.5">
-                  <p className="text-[10px] font-black text-white uppercase tracking-tight">@demo.influencer</p>
-                  <p className="text-[8px] text-zinc-550 font-bold uppercase">Fashion & Lifestyle • 370K segs</p>
+                  <p className={`text-sm font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>@demo.influencer</p>
+                  <p className={`text-[8px] font-bold uppercase ${isDark ? 'text-zinc-550' : 'text-slate-500'}`}>Fashion & Lifestyle • 370K segs</p>
                 </div>
               </div>
-              <p className="text-[10px] text-zinc-400 leading-normal font-medium">
+              <p className={`text-[10px] leading-normal font-medium ${isDark ? 'text-zinc-400' : 'text-slate-650'}`}>
                 Vektor identificou 94% de afinidade com a sua Coleção de Verão de Linho. O ROI estimado é de +14%.
               </p>
               <Button 
@@ -646,6 +646,35 @@ Estando tudo correto, o pagamento de R$ 4.250,00 líquidos é liberado da conta 
               >
                 PROPOR CONTRATO ➔
               </Button>
+            </div>
+
+            {/* Widget 4: Agentes de IA Especializados sob Custódia */}
+            <div className={`border p-6 rounded-[2rem] space-y-4 border-l-4 border-l-purple-500 shadow-sm relative overflow-hidden ${
+              isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100 shadow-zinc-100/50'
+            }`}>
+              <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-500/5 blur-3xl rounded-full" />
+              <h3 className={`text-[10px] font-black uppercase tracking-widest flex items-center justify-between ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                 <div className="flex items-center gap-2">
+                    <BrainCircuit className="w-4 h-4 text-purple-500" /> AGENTES SOB CUSTÓDIA
+                 </div>
+              </h3>
+              <p className={`text-[10px] leading-normal font-medium ${isDark ? 'text-zinc-450' : 'text-slate-600'}`}>
+                Vektor gerencia e consulta especialistas sob demanda para responder suas dúvidas no chat:
+              </p>
+              <div className={`space-y-3 pt-2 border-t ${isDark ? 'border-white/5' : 'border-zinc-100'}`}>
+                <div className="flex gap-2 text-[10px]">
+                  <span className="font-black text-orange-400">Vincenzo:</span>
+                  <span className={isDark ? 'text-zinc-400' : 'text-slate-600'}>Criação de ganchos virais de 3s e roteiros de engajamento para provadores.</span>
+                </div>
+                <div className="flex gap-2 text-[10px]">
+                  <span className="font-black text-pink-400">Valentina:</span>
+                  <span className={isDark ? 'text-zinc-400' : 'text-slate-600'}>Branding, identidade visual, análise estética e posicionamento de moda.</span>
+                </div>
+                <div className="flex gap-2 text-[10px]">
+                  <span className="font-black text-emerald-400">Sofia:</span>
+                  <span className={isDark ? 'text-zinc-400' : 'text-slate-600'}>Auditoria automatizada de entregáveis por IA e governança de saldos em Escrow.</span>
+                </div>
+              </div>
             </div>
             
           </div>
@@ -783,17 +812,46 @@ Estando tudo correto, o pagamento de R$ 4.250,00 líquidos é liberado da conta 
                         <p className="text-[10px] uppercase font-black tracking-[0.3em] text-zinc-500">Aguardando Conexão...</p>
                       </div>
                     ) : (
-                      chatMessages.map((msg, idx) => (
-                        <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-500`}>
-                          <div className={`max-w-[85%] p-5 rounded-3xl text-[13px] leading-relaxed border break-words shadow-lg ${
-                            msg.role === 'user' 
-                              ? 'bg-orange-600 text-white border-orange-500 shadow-md rounded-tr-sm' 
-                              : (isDark ? 'bg-white/5 border-white/5 text-zinc-200 rounded-tl-sm shadow-black/50' : 'bg-slate-50 border-slate-100 text-slate-700 rounded-tl-sm')
-                          }`}>
-                            {msg.text}
+                      chatMessages.map((msg, idx) => {
+                        const matchAgent = msg.text.match(/^\[(Especialista em Roteiros|Especialista em Legendas e Copy|Especialista em Parcerias|Especialista em SEO e Algoritmo)\]:\s*([\s\S]*)$/i);
+                        const hasAgent = !!matchAgent;
+                        const agentName = hasAgent ? matchAgent[1] : '';
+                        const cleanText = hasAgent ? matchAgent[2] : msg.text;
+
+                        let agentBadgeStyle = '';
+                        let agentLabel = '';
+                        if (agentName.includes('Roteiro')) {
+                          agentBadgeStyle = 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
+                          agentLabel = 'Especialista em Roteiros';
+                        } else if (agentName.includes('Legenda') || agentName.includes('Copy')) {
+                          agentBadgeStyle = 'bg-orange-500/10 text-orange-400 border-orange-500/20';
+                          agentLabel = 'Especialista em Copy';
+                        } else if (agentName.includes('Parcerias')) {
+                          agentBadgeStyle = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+                          agentLabel = 'Especialista em Parcerias';
+                        } else if (agentName.includes('SEO') || agentName.includes('Algoritmo')) {
+                          agentBadgeStyle = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+                          agentLabel = 'Especialista em SEO & Algoritmo';
+                        }
+
+                        return (
+                          <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-500`}>
+                            <div className={`max-w-[85%] p-5 rounded-3xl text-[13px] leading-relaxed border break-words shadow-lg ${
+                              msg.role === 'user' 
+                                ? 'bg-orange-600 text-white border-orange-500 shadow-md rounded-tr-sm' 
+                                : (isDark ? 'bg-white/5 border-white/5 text-zinc-200 rounded-tl-sm shadow-black/50' : 'bg-slate-50 border-slate-100 text-slate-700 rounded-tl-sm')
+                            }`}>
+                              {hasAgent && (
+                                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border mb-3 ${agentBadgeStyle}`}>
+                                  <Sparkles className="w-3 h-3" />
+                                  {agentLabel}
+                                </div>
+                              )}
+                              <p className="whitespace-pre-wrap">{cleanText}</p>
+                            </div>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                     {isChatting && (
                       <div className="flex justify-start animate-in fade-in duration-300">
@@ -969,15 +1027,15 @@ Estando tudo correto, o pagamento de R$ 4.250,00 líquidos é liberado da conta 
                  </div>
                 
                  {/* CRIADORES DE REFERÊNCIA */}
-                 <div className={`border p-6 rounded-[2rem] space-y-4 border-l-4 border-l-rose-500 shadow-sm relative overflow-hidden ${
+                 <div className={`border p-6 rounded-[2rem] space-y-4 border-l-4 border-l-orange-500 shadow-sm relative overflow-hidden ${
                    isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
                  }`}>
-                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-rose-500/5 blur-3xl rounded-full" />
+                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-orange-500/5 blur-3xl rounded-full" />
                     <h3 className={`text-[10px] font-black uppercase tracking-widest flex items-center justify-between ${isDark ? 'text-white' : 'text-slate-900'}`}>
                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-rose-500" /> CRIADORES DE REFERÊNCIA
+                          <User className="w-4 h-4 text-orange-500" /> CRIADORES DE REFERÊNCIA
                        </div>
-                       <span className="text-rose-500 text-[8px] font-black border border-rose-100 px-2 py-0.5 rounded-full">PERFIS EM ALTA</span>
+                       <span className="text-orange-500 text-[8px] font-black border border-orange-100 px-2 py-0.5 rounded-full">PERFIS EM ALTA</span>
                     </h3>
                     <div className="space-y-3">
                       {[
@@ -988,20 +1046,20 @@ Estando tudo correto, o pagamento de R$ 4.250,00 líquidos é liberado da conta 
                         <div 
                           key={idx}
                           onClick={() => window.open(profile.link, '_blank')}
-                          className={`p-3 border rounded-2xl flex items-center justify-between group hover:border-rose-400 hover:bg-white/[0.02] cursor-pointer transition-all ${
+                          className={`p-3 border rounded-2xl flex items-center justify-between group hover:border-orange-400 hover:bg-white/[0.02] cursor-pointer transition-all ${
                             isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-100'
                           }`}
                         >
                           <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-rose-500/10 flex items-center justify-center border border-rose-500/20 text-rose-400 font-bold text-xs uppercase">
+                            <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center border border-orange-500/20 text-orange-400 font-bold text-xs uppercase">
                               {profile.name.charAt(0)}
                             </div>
                             <div className="space-y-0.5 text-left">
-                              <p className="text-[10px] font-black text-white group-hover:text-rose-400 transition-colors uppercase tracking-tight">{profile.name}</p>
+                              <p className="text-[10px] font-black text-white group-hover:text-orange-400 transition-colors uppercase tracking-tight">{profile.name}</p>
                               <p className="text-[8px] text-zinc-500 font-medium">{profile.handle} • {profile.niche}</p>
                             </div>
                           </div>
-                          <span className="text-[8px] font-black text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/10">
+                          <span className="text-[8px] font-black text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-full border border-orange-500/10">
                             {profile.followers}
                           </span>
                         </div>
@@ -1010,19 +1068,19 @@ Estando tudo correto, o pagamento de R$ 4.250,00 líquidos é liberado da conta 
                  </div>
                 
                  {/* Trending Audio Widget */}
-                 <div className={`border p-6 rounded-3xl space-y-4 shadow-sm border-t-4 border-t-pink-500 ${
+                 <div className={`border p-6 rounded-3xl space-y-4 shadow-sm border-t-4 border-t-orange-500 ${
                    isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
                  }`}>
-                    <h3 className="text-pink-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                    <h3 className="text-orange-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
                        <Music className="w-3 h-3" /> ÁUDIOS EM ALTA (TENDÊNCIAS)
                     </h3>
                     <div className="space-y-2">
                        {analysis.recommendations.trendingNow?.audios.map((audio: string, idx: number) => (
-                         <div key={idx} className={`p-3 border rounded-xl flex items-center justify-between group hover:border-pink-200 transition-all ${
+                         <div key={idx} className={`p-3 border rounded-xl flex items-center justify-between group hover:border-orange-200 transition-all ${
                            isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-100'
                          }`}>
                             <span className={`text-[9px] font-bold truncate max-w-[120px] ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>{audio}</span>
-                            <span className="text-[8px] font-black text-pink-600">🔥 EM ALTA</span>
+                            <span className="text-[8px] font-black text-orange-600">🔥 EM ALTA</span>
                          </div>
                        ))}
                     </div>

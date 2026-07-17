@@ -79,10 +79,10 @@ export default function OnboardingPage() {
   ];
 
   const colors = [
-    { name: 'Roxo Elite', value: '#a855f7' },
+    { name: 'Laranja Cobre', value: '#d96b27' },
     { name: 'Azul Tech', value: '#3b82f6' },
     { name: 'Verde ROI', value: '#10b981' },
-    { name: 'Rosa Impacto', value: '#f43f5e' },
+    { name: 'Vermelho Fogo', value: '#ef4444' },
     { name: 'Âmbar Criativo', value: '#f59e0b' }
   ];
 
@@ -239,7 +239,7 @@ export default function OnboardingPage() {
     <div className={`min-h-screen transition-colors duration-700 ${theme === 'light' ? 'bg-slate-50 text-slate-900' : 'bg-[#050508] text-white'} flex flex-col items-center justify-center p-6 overflow-hidden`}>
       
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className={`absolute top-[-10%] left-[-10%] w-[40%] h-[40%] ${theme === 'light' ? 'bg-purple-500/5' : 'bg-purple-500/10'} blur-[120px] rounded-full animate-pulse`} />
+        <div className={`absolute top-[-10%] left-[-10%] w-[40%] h-[40%] ${theme === 'light' ? 'bg-orange-500/5' : 'bg-orange-500/10'} blur-[120px] rounded-full animate-pulse`} />
         <div className={`absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] ${theme === 'light' ? 'bg-blue-500/5' : 'bg-blue-500/10'} blur-[120px] rounded-full animate-pulse`} />
       </div>
 
@@ -249,7 +249,7 @@ export default function OnboardingPage() {
           {[1, 2, 3, 4, 5].map((s) => (
             <div 
               key={s}
-              className={`h-1 flex-1 rounded-full transition-all duration-700 ${s <= step ? 'bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.6)]' : theme === 'light' ? 'bg-slate-200' : 'bg-zinc-800'}`}
+              className={`h-1 flex-1 rounded-full transition-all duration-700 ${s <= step ? 'bg-orange-500 shadow-[0_0_15px_rgba(217,107,39,0.6)]' : theme === 'light' ? 'bg-slate-200' : 'bg-zinc-800'}`}
             />
           ))}
         </div>
@@ -258,12 +258,12 @@ export default function OnboardingPage() {
         {step === 1 && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
             <div className="space-y-4">
-              <div className={`w-16 h-16 ${theme === 'light' ? 'bg-purple-50' : 'bg-purple-500/10'} rounded-2xl flex items-center justify-center border ${theme === 'light' ? 'border-purple-100' : 'border-purple-500/20'}`}>
-                <Sparkles className="w-8 h-8 text-purple-500" />
+              <div className={`w-16 h-16 ${theme === 'light' ? 'bg-orange-50' : 'bg-orange-500/10'} rounded-2xl flex items-center justify-center border ${theme === 'light' ? 'border-orange-100' : 'border-orange-500/20'}`}>
+                <Sparkles className="w-8 h-8 text-orange-500" />
               </div>
               <h1 className="text-4xl md:text-5xl font-black tracking-tighter leading-tight">
                 BEM-VINDO À <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-blue-500">NOVA ERA</span> DA INFLUÊNCIA.
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-blue-500">NOVA ERA</span> DA INFLUÊNCIA.
               </h1>
               <p className={`${theme === 'light' ? 'text-slate-500' : 'text-zinc-400'} text-lg font-medium max-w-md`}>
                 Você acaba de entrar no workspace mais avançado do mercado. Vamos configurar sua inteligência para começar.
@@ -289,9 +289,9 @@ export default function OnboardingPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <button 
                 onClick={() => setTheme('dark')}
-                className={`p-6 rounded-[2rem] border-2 text-left space-y-4 transition-all ${theme === 'dark' ? 'border-purple-500 bg-purple-500/5' : theme === 'light' ? 'border-slate-200 bg-white opacity-60 hover:opacity-100' : 'border-zinc-800 bg-transparent opacity-40 hover:opacity-100'}`}
+                className={`p-6 rounded-[2rem] border-2 text-left space-y-4 transition-all ${theme === 'dark' ? 'border-orange-500 bg-orange-500/5' : theme === 'light' ? 'border-slate-200 bg-white opacity-60 hover:opacity-100' : 'border-zinc-800 bg-transparent opacity-40 hover:opacity-100'}`}
               >
-                <div className={`w-12 h-12 ${theme === 'light' ? 'bg-slate-900' : 'bg-zinc-900'} rounded-xl flex items-center justify-center border border-white/5`}><Moon className="w-6 h-6 text-purple-400" /></div>
+                <div className={`w-12 h-12 ${theme === 'light' ? 'bg-slate-900' : 'bg-zinc-900'} rounded-xl flex items-center justify-center border border-white/5`}><Moon className="w-6 h-6 text-orange-400" /></div>
                 <div>
                   <p className="font-black text-sm uppercase tracking-widest">Dark Mode</p>
                   <p className={`text-[10px] ${theme === 'light' ? 'text-slate-400' : 'text-zinc-500'} font-bold`}>Foco total em performance.</p>
@@ -299,9 +299,9 @@ export default function OnboardingPage() {
               </button>
               <button 
                 onClick={() => setTheme('light')}
-                className={`p-6 rounded-[2rem] border-2 text-left space-y-4 transition-all ${theme === 'light' ? 'border-purple-500 bg-white' : 'border-zinc-800 bg-transparent opacity-40 hover:opacity-100'}`}
+                className={`p-6 rounded-[2rem] border-2 text-left space-y-4 transition-all ${theme === 'light' ? 'border-orange-500 bg-white' : 'border-zinc-800 bg-transparent opacity-40 hover:opacity-100'}`}
               >
-                <div className={`w-12 h-12 ${theme === 'light' ? 'bg-white' : 'bg-zinc-100'} rounded-xl flex items-center justify-center border border-zinc-200 shadow-sm`}><Sun className="w-6 h-6 text-purple-600" /></div>
+                <div className={`w-12 h-12 ${theme === 'light' ? 'bg-white' : 'bg-zinc-100'} rounded-xl flex items-center justify-center border border-zinc-200 shadow-sm`}><Sun className="w-6 h-6 text-orange-600" /></div>
                 <div>
                   <p className="font-black text-sm uppercase tracking-widest">Clean Mode</p>
                   <p className={`text-[10px] ${theme === 'light' ? 'text-slate-400' : 'text-zinc-500'} font-bold`}>Clareza e precisão analítica.</p>
@@ -324,8 +324,8 @@ export default function OnboardingPage() {
             </div>
 
             <div className="flex gap-4 pt-4">
-              <Button onClick={() => setStep(1)} variant="outline" className={`h-14 px-10 rounded-2xl ${theme === 'light' ? 'border-slate-200 bg-white text-slate-400' : 'border-white/[0.05] bg-white/[0.02] text-zinc-500'} font-black tracking-widest uppercase text-[10px] hover:text-purple-500 transition-colors`}>Voltar</Button>
-              <Button onClick={() => setStep(3)} className="h-14 flex-1 rounded-[1.5rem] bg-purple-600 hover:bg-purple-500 font-black shadow-[0_15px_30px_rgba(124,58,237,0.3)] transition-all">PRÓXIMO PASSO</Button>
+              <Button onClick={() => setStep(1)} variant="outline" className={`h-14 px-10 rounded-2xl ${theme === 'light' ? 'border-slate-200 bg-white text-slate-400' : 'border-white/[0.05] bg-white/[0.02] text-zinc-500'} font-black tracking-widest uppercase text-[10px] hover:text-orange-500 transition-colors`}>Voltar</Button>
+              <Button onClick={() => setStep(3)} className="h-14 flex-1 rounded-[1.5rem] bg-orange-600 hover:bg-orange-500 font-black shadow-[0_15px_30px_rgba(124,58,237,0.3)] transition-all">PRÓXIMO PASSO</Button>
             </div>
           </div>
         )}
@@ -346,7 +346,7 @@ export default function OnboardingPage() {
                      value={handle}
                      onChange={(e) => setHandle(e.target.value)}
                      placeholder="o_melhor_criador"
-                     className={`h-16 ${theme === 'light' ? 'bg-white border-slate-200 text-slate-900' : 'bg-zinc-900/50 border-zinc-800'} rounded-2xl focus:border-purple-500 transition-all font-black text-xl pl-12`}
+                     className={`h-16 ${theme === 'light' ? 'bg-white border-slate-200 text-slate-900' : 'bg-zinc-900/50 border-zinc-800'} rounded-2xl focus:border-orange-500 transition-all font-black text-xl pl-12`}
                    />
                    <AtSign className={`absolute left-4 top-5 w-6 h-6 ${theme === 'light' ? 'text-slate-300' : 'text-zinc-700'}`} />
                 </div>
@@ -358,7 +358,7 @@ export default function OnboardingPage() {
                      value={niche}
                      onChange={(e) => setNiche(e.target.value)}
                      placeholder="Games, Lifestyle, Tech..."
-                     className={`h-16 ${theme === 'light' ? 'bg-white border-slate-200 text-slate-900' : 'bg-zinc-900/50 border-zinc-800'} rounded-2xl focus:border-purple-500 transition-all font-black text-lg pl-12`}
+                     className={`h-16 ${theme === 'light' ? 'bg-white border-slate-200 text-slate-900' : 'bg-zinc-900/50 border-zinc-800'} rounded-2xl focus:border-orange-500 transition-all font-black text-lg pl-12`}
                    />
                    <Target className={`absolute left-4 top-5 w-6 h-6 ${theme === 'light' ? 'text-slate-300' : 'text-zinc-700'}`} />
                 </div>
@@ -375,7 +375,7 @@ export default function OnboardingPage() {
                    }
                    setStep(4);
                 }} 
-                className="h-14 flex-1 rounded-[1.5rem] bg-purple-600 hover:bg-purple-500 font-black shadow-[0_15px_30px_rgba(124,58,237,0.3)] transition-all"
+                className="h-14 flex-1 rounded-[1.5rem] bg-orange-600 hover:bg-orange-500 font-black shadow-[0_15px_30px_rgba(124,58,237,0.3)] transition-all"
               >
                 PROSSEGUIR
               </Button>
@@ -808,7 +808,7 @@ export default function OnboardingPage() {
 
       {/* Footer Branding */}
       <div className={`mt-16 flex items-center gap-3 ${theme === 'light' ? 'opacity-20' : 'opacity-30'}`}>
-        <Rocket className={`w-4 h-4 ${theme === 'light' ? 'text-slate-900' : 'text-purple-500'}`} />
+        <Rocket className={`w-4 h-4 ${theme === 'light' ? 'text-slate-900' : 'text-orange-500'}`} />
         <span className={`text-[10px] font-black tracking-[0.4em] ${theme === 'light' ? 'text-slate-900' : 'text-zinc-500'} uppercase`}>InfluNext // Neural_Experience_2026</span>
       </div>
       <InstagramOnboardingModal 

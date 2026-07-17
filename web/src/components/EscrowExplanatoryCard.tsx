@@ -1,22 +1,44 @@
 'use client';
 
 import React from 'react';
-import { ShieldCheck, Coins, Sparkles, ArrowRightLeft, UserCheck } from 'lucide-react';
+import { ShieldCheck, Coins, Sparkles, UserCheck } from 'lucide-react';
+import Cookies from 'js-cookie';
 
 export function EscrowExplanatoryCard() {
+  const [theme, setTheme] = React.useState<'dark' | 'light'>('dark');
+
+  React.useEffect(() => {
+    const savedTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;
+    if (savedTheme) {
+      setTheme(savedTheme);
+    }
+    
+    // Polling interval to check theme updates
+    const interval = setInterval(() => {
+      const currentTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;
+      if (currentTheme && currentTheme !== theme) {
+        setTheme(currentTheme);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [theme]);
+
+  const isDark = theme === 'dark';
+
   const steps = [
     {
-      icon: <Coins className="w-5 h-5 text-violet-400" />,
+      icon: <Coins className="w-5 h-5 text-orange-400" />,
       title: '1. Depósito Garantido',
       description: 'A empresa deposita o orçamento contratado na plataforma antes da produção começar.',
     },
     {
-      icon: <ShieldCheck className="w-5 h-5 text-indigo-400" />,
+      icon: <ShieldCheck className="w-5 h-5 text-amber-400" />,
       title: '2. Saldo Retido',
       description: 'O valor fica retido com total segurança em uma conta de garantia (Escrow) da InfluNext.',
     },
     {
-      icon: <Sparkles className="w-5 h-5 text-pink-400" />,
+      icon: <Sparkles className="w-5 h-5 text-orange-400" />,
       title: '3. Validação por IA',
       description: 'O criador posta e entrega o link. Nossa IA audita o conteúdo e valida a publicação.',
     },
@@ -28,10 +50,12 @@ export function EscrowExplanatoryCard() {
   ];
 
   return (
-    <div className="relative p-6 md:p-8 rounded-[2rem] border border-white/5 bg-gradient-to-br from-white/[0.02] to-transparent backdrop-blur-xl overflow-hidden shadow-2xl">
+    <div className={`relative p-6 md:p-8 rounded-[2rem] border overflow-hidden shadow-xl ${
+      isDark ? 'border-white/5 bg-gradient-to-br from-white/[0.02] to-transparent' : 'border-zinc-200 bg-white shadow-zinc-100'
+    }`}>
       {/* Background glow effects */}
-      <div className="absolute top-0 right-0 w-[250px] h-[250px] rounded-full bg-violet-600/5 blur-[80px] pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[200px] h-[200px] rounded-full bg-pink-600/5 blur-[70px] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[250px] h-[250px] rounded-full bg-orange-600/5 blur-[80px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[200px] h-[200px] rounded-full bg-amber-600/5 blur-[70px] pointer-events-none" />
 
       <div className="relative z-10 flex flex-col md:flex-row gap-6 md:gap-8 items-center md:items-start">
         {/* Left Side: Intro and badge */}
@@ -40,10 +64,10 @@ export function EscrowExplanatoryCard() {
             <ShieldCheck className="w-3.5 h-3.5" />
             Transação 100% Protegida
           </div>
-          <h3 className="text-lg font-black text-white leading-tight">
+          <h3 className={`text-lg font-black leading-tight ${isDark ? 'text-white' : 'text-zinc-800'}`}>
             Como funciona o nosso Escrow Seguro?
           </h3>
-          <p className="text-zinc-400 text-xs font-bold leading-relaxed">
+          <p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>
             Eliminamos calotes e permutas sem valor. Criadores produzem protegidos sabendo que o saldo existe, e marcas pagam pelo resultado entregue.
           </p>
         </div>
@@ -53,14 +77,20 @@ export function EscrowExplanatoryCard() {
           {steps.map((step, idx) => (
             <div 
               key={idx} 
-              className="p-4 rounded-2xl border border-white/5 bg-zinc-950/40 hover:bg-zinc-950/70 transition-all duration-350 flex gap-3.5"
+              className={`p-4 rounded-2xl border transition-all duration-350 flex gap-3.5 ${
+                isDark 
+                  ? 'border-white/5 bg-zinc-950/40 hover:bg-zinc-950/70' 
+                  : 'border-zinc-200 bg-zinc-50 hover:bg-zinc-100/50'
+              }`}
             >
-              <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center flex-shrink-0">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border ${
+                isDark ? 'bg-white/[0.02] border-white/5' : 'bg-white border-zinc-200'
+              }`}>
                 {step.icon}
               </div>
               <div className="space-y-1">
-                <h4 className="text-xs font-black text-white uppercase tracking-wider">{step.title}</h4>
-                <p className="text-[10px] text-zinc-400 font-bold leading-relaxed">{step.description}</p>
+                <h4 className={`text-xs font-black uppercase tracking-wider ${isDark ? 'text-white' : 'text-zinc-800'}`}>{step.title}</h4>
+                <p className={`text-[10px] font-bold leading-relaxed ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>{step.description}</p>
               </div>
             </div>
           ))}

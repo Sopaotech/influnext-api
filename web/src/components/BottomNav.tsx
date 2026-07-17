@@ -22,7 +22,7 @@ export function BottomNav({ taskCount = 0 }: { taskCount?: number }) {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0d0b1a]/85 backdrop-blur-xl border-t border-white/[0.05] pb-safe">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#131110]/85 backdrop-blur-xl border-t border-white/[0.05] pb-safe">
       <div className="flex items-center justify-around h-16 px-1">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
@@ -42,11 +42,11 @@ export function BottomNav({ taskCount = 0 }: { taskCount?: number }) {
                 
                 {/* Instagram Style Badge */}
                 {item.badgeCount !== undefined && item.badgeCount > 0 ? (
-                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-rose-600 rounded-full border border-[#0d0b1a] shadow-lg z-20 animate-pulse" />
+                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-rose-600 rounded-full border border-[#131110] shadow-lg z-20 animate-pulse" />
                 ) : null}
 
                 {isActive && (item.badgeCount === undefined || item.badgeCount <= 0) ? (
-                  <div className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-orange-500 rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)] animate-pulse z-20" />
+                  <div className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-orange-500 rounded-full shadow-[0_0_10px_rgba(217,107,39,0.5)] animate-pulse z-20" />
                 ) : null}
               </div>
               <span className="text-[8px] font-bold uppercase tracking-wide truncate max-w-[50px] text-center">{item.name}</span>

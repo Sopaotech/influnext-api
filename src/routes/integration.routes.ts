@@ -7,13 +7,17 @@ import {
   syncPlatformMetrics,
   simulateInstagramConnection,
   triggerTokenRenewalDebug,
-  simulateFlowStep
+  simulateFlowStep,
+  getTrends
 } from '../controllers/integration.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import { authorize } from '../middlewares/role.middleware';
 import { UserRole } from '../types/roles';
 
 const router = Router();
+
+// Obter tendências do nicho do criador
+router.get('/trends', authenticate, getTrends);
 
 // Listar plataformas conectadas
 router.get('/connected', authenticate, getConnectedPlatforms);

@@ -32,7 +32,7 @@ export function AppStandbyNotice() {
       <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-slate-950/85 p-5 shadow-2xl backdrop-blur-xl">
         {/* Glow de Fundo Sutil */}
         <div className="absolute -right-20 -top-20 -z-10 h-40 w-40 rounded-full bg-orange-500/10 blur-[80px]" />
-        <div className="absolute -bottom-20 -left-20 -z-10 h-40 w-40 rounded-full bg-pink-500/10 blur-[80px]" />
+        <div className="absolute -bottom-20 -left-20 -z-10 h-40 w-40 rounded-full bg-amber-500/10 blur-[80px]" />
 
         {/* Botão de Fechar */}
         <button
@@ -68,7 +68,7 @@ export function AppStandbyNotice() {
         <div className="mt-4 flex items-center justify-end gap-3 border-t border-white/[0.06] pt-3">
           <button
             onClick={handleDismiss}
-            className="rounded-lg bg-gradient-to-r from-orange-600 to-pink-600 hover:from-orange-500 hover:to-pink-500 px-4 py-1.5 text-xs font-bold text-white shadow-lg active:scale-[0.98] transition-all duration-200"
+            className="rounded-lg bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 px-4 py-1.5 text-xs font-bold text-white shadow-lg active:scale-[0.98] transition-all duration-200"
           >
             Entendido
           </button>

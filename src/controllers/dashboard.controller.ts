@@ -167,6 +167,43 @@ export const getCompanyDashboard = async (req: Request, res: Response): Promise<
         .reduce((sum: number, c: any) => sum + Number(c.budget), 0),
     };
 
+    // Buscar 3 influenciadores em destaque para o radar da empresa
+    const influencers = await prisma.influencerProfile.findMany({
+      take: 3,
+      orderBy: { influScore: 'desc' }
+    });
+
+    const recommendedTalents = influencers.map(inf => {
+      let reputation = 'Profissional dedicada, excelente comunicação e engajamento acima da média.';
+      let pitch = 'Produzo conteúdo dinâmico e estético para marcas inovadoras.';
+      let growth = '+5.0%';
+
+      if (inf.handle === 'demo.influencer') {
+        reputation = 'Extremamente profissional, cumpre prazos rigorosamente e entrega alto engajamento em provadores.';
+        pitch = 'Produzo reels dinâmicos focados em conversão direta de vendas para marcas de vestuário premium.';
+        growth = '+12.4%';
+      } else if (inf.handle === 'lucas_filmes') {
+        reputation = 'Edição cinematográfica premium, vídeos curtos virais com alta retenção de público.';
+        pitch = 'Roteirizo e edito vídeos dinâmicos de alta conversão para marcas de tecnologia.';
+        growth = '+8.5%';
+      } else if (inf.handle === 'pedro_ph') {
+        reputation = 'Criativo e proativo, ótima direção artística e alinhamento ágil de briefing.';
+        pitch = 'Combino fotografias artísticas e mini-documentários de marca com alta estética visual.';
+        growth = '+5.2%';
+      }
+
+      return {
+        id: inf.id,
+        handle: inf.handle,
+        niche: inf.niche || 'Geral',
+        influScore: inf.influScore,
+        scoreClass: inf.scoreClass,
+        growth,
+        reputation,
+        pitch
+      };
+    });
+
     res.json({ 
       stats, 
       userState: company.user, 
@@ -192,9 +229,10 @@ export const getCompanyDashboard = async (req: Request, res: Response): Promise<
         bio: (company as any).bio || null,
       },
       rateCards: (company as any).rateCards || [],
+      recommendedTalents
     });
   } catch (error) {
     console.error('[DASHBOARD] Erro ao carregar company:', error);
-    res.status(500).json({ error: 'Erro ao carregar dashboard.' });
+    res.status(550).json({ error: 'Erro ao carregar dashboard.' });
   }
 };

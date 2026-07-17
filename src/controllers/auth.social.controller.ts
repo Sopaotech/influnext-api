@@ -313,8 +313,8 @@ export class SocialAuthController {
         const errorMsgStr = error.message || '';
         const apiMsgStr = error.response?.data?.error?.message || '';
         
-        if (errorMsgStr.includes('Facebook') || errorMsgStr.includes('Página') || apiMsgStr.includes('Facebook') || apiMsgStr.includes('business')) {
-          clientMessage = 'Não encontramos nenhuma conta do Instagram Profissional vinculada à sua Página do Facebook. Use a Conexão Pessoal para logar sem burocracia.';
+        if (errorMsgStr.includes('profissional') || apiMsgStr.includes('business') || apiMsgStr.includes('professional')) {
+          clientMessage = 'Não encontramos nenhuma conta do Instagram Profissional (Creator ou Business). Verifique suas configurações na conta do Instagram.';
         } else if (error.response?.data?.error_message) {
           clientMessage = `Erro do Instagram: ${error.response.data.error_message}`;
         }

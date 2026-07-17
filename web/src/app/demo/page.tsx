@@ -190,16 +190,16 @@ export default function DemoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#07040d] text-white flex flex-col font-sans selection:bg-orange-600/30">
+    <div className="min-h-screen bg-[#131110] text-white flex flex-col font-sans selection:bg-orange-600/30">
       
       {/* Background Glows */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[55%] bg-purple-900/20 blur-[130px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[55%] bg-blue-900/10 blur-[130px] rounded-full animate-pulse" />
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[55%] bg-orange-900/20 blur-[130px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[55%] bg-orange-950/20 blur-[130px] rounded-full animate-pulse" />
       </div>
 
       {/* Header */}
-      <header className="relative z-10 border-b border-[#2e2452]/50 bg-[#0d091a]/40 backdrop-blur-md px-8 py-5 flex items-center justify-between">
+      <header className="relative z-10 border-b border-[#2e2724]/50 bg-[#1a1716]/40 backdrop-blur-md px-8 py-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="h-2 w-10 bg-orange-600 rounded-full" />
           <span className="text-xs font-black uppercase tracking-[0.4em] text-orange-400">InfluNext Neural Engine</span>
@@ -208,7 +208,7 @@ export default function DemoPage() {
           <button 
             onClick={handleResetSimulation}
             disabled={isExecuting}
-            className="px-4 py-2 border border-[#2e2452] hover:bg-white/5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all disabled:opacity-40"
+            className="px-4 py-2 border border-[#2e2724] hover:bg-white/5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all disabled:opacity-40"
           >
             <RotateCcw className="w-3.5 h-3.5" /> Reiniciar Simulador
           </button>
@@ -230,8 +230,8 @@ export default function DemoPage() {
             {/* STEP 1: Connect Instagram */}
             <div className={`p-6 rounded-2xl border transition-all ${
               currentStep === 1 
-                ? 'bg-[#181136]/50 border-orange-500 shadow-xl shadow-orange-500/5' 
-                : 'bg-[#100b24]/30 border-[#2e2452]/40 opacity-60'
+                ? 'bg-[#241f1c]/50 border-orange-500 shadow-xl shadow-orange-500/5' 
+                : 'bg-[#1a1716]/30 border-[#2e2724]/40 opacity-60'
             }`}>
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-2">
@@ -251,7 +251,7 @@ export default function DemoPage() {
                           type="text"
                           value={username}
                           onChange={(e) => setUsername(e.target.value)}
-                          className="w-full h-9 bg-[#110c26] border border-[#2e2452] rounded-xl pl-6 pr-3 text-xs font-bold text-white focus:outline-none focus:border-orange-500"
+                          className="w-full h-9 bg-[#131110] border border-[#2e2724] rounded-xl pl-6 pr-3 text-xs font-bold text-white focus:outline-none focus:border-orange-500"
                         />
                       </div>
                       <button 
@@ -271,8 +271,8 @@ export default function DemoPage() {
             {/* STEP 2: AI Strategy Guidance */}
             <div className={`p-6 rounded-2xl border transition-all ${
               currentStep === 2 
-                ? 'bg-[#181136]/50 border-orange-500 shadow-xl shadow-orange-500/5' 
-                : 'bg-[#100b24]/30 border-[#2e2452]/40 opacity-60'
+                ? 'bg-[#241f1c]/50 border-orange-500 shadow-xl shadow-orange-500/5' 
+                : 'bg-[#1a1716]/30 border-[#2e2724]/40 opacity-60'
             }`}>
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-2">
@@ -301,8 +301,8 @@ export default function DemoPage() {
             {/* STEP 3: Brand Contract Proposal */}
             <div className={`p-6 rounded-2xl border transition-all ${
               currentStep === 3 
-                ? 'bg-[#181136]/50 border-orange-500 shadow-xl shadow-orange-500/5' 
-                : 'bg-[#100b24]/30 border-[#2e2452]/40 opacity-60'
+                ? 'bg-[#241f1c]/50 border-orange-500 shadow-xl shadow-orange-500/5' 
+                : 'bg-[#1a1716]/30 border-[#2e2724]/40 opacity-60'
             }`}>
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-2">
@@ -331,8 +331,8 @@ export default function DemoPage() {
             {/* STEP 4: Escrow Deposit */}
             <div className={`p-6 rounded-2xl border transition-all ${
               currentStep === 4 
-                ? 'bg-[#181136]/50 border-orange-500 shadow-xl shadow-orange-500/5' 
-                : 'bg-[#100b24]/30 border-[#2e2452]/40 opacity-60'
+                ? 'bg-[#241f1c]/50 border-orange-500 shadow-xl shadow-orange-500/5' 
+                : 'bg-[#1a1716]/30 border-[#2e2724]/40 opacity-60'
             }`}>
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-2">
@@ -361,8 +361,8 @@ export default function DemoPage() {
             {/* STEP 5: Work Submission & AI Audit */}
             <div className={`p-6 rounded-2xl border transition-all ${
               currentStep === 5 
-                ? 'bg-[#181136]/50 border-orange-500 shadow-xl shadow-orange-500/5' 
-                : 'bg-[#100b24]/30 border-[#2e2452]/40 opacity-60'
+                ? 'bg-[#241f1c]/50 border-orange-500 shadow-xl shadow-orange-500/5' 
+                : 'bg-[#1a1716]/30 border-[#2e2724]/40 opacity-60'
             }`}>
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-2">
@@ -391,8 +391,8 @@ export default function DemoPage() {
             {/* STEP 6: Release & Payout */}
             <div className={`p-6 rounded-2xl border transition-all ${
               currentStep === 6 
-                ? 'bg-[#181136]/50 border-orange-500 shadow-xl shadow-orange-500/5' 
-                : 'bg-[#100b24]/30 border-[#2e2452]/40 opacity-60'
+                ? 'bg-[#241f1c]/50 border-orange-500 shadow-xl shadow-orange-500/5' 
+                : 'bg-[#1a1716]/30 border-[#2e2724]/40 opacity-60'
             }`}>
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-2">
@@ -420,8 +420,8 @@ export default function DemoPage() {
 
             {/* Simulated Workspace & IA Recommendations Preview */}
             {dbData.aiAnalysis && (
-              <div className="bg-[#100b24]/60 border border-orange-500/20 rounded-[32px] p-6 space-y-6 mt-8 animate-in fade-in duration-500">
-                <div className="flex items-center gap-3 border-b border-[#2e2452]/40 pb-4">
+              <div className="bg-[#1a1716]/60 border border-orange-500/20 rounded-[32px] p-6 space-y-6 mt-8 animate-in fade-in duration-500">
+                <div className="flex items-center gap-3 border-b border-[#2e2724]/40 pb-4">
                   <Sparkles className="w-5 h-5 text-orange-400" />
                   <div>
                     <h3 className="text-xs font-black uppercase tracking-[0.2em] text-orange-400">Workspace do Influenciador (Simulado por IA)</h3>
@@ -445,7 +445,7 @@ export default function DemoPage() {
                         { day: 'Sexta', task: '🎥 Reels: Review Impermeabilidade Zara', desc: 'Demonstrar na prática a qualidade do corta-vento.', type: 'Reels' },
                         { day: 'Sábado', task: '📸 Stories: Rotina Espontânea de Sábado', desc: 'Conexão e engajamento genuíno com o público local.', type: 'Stories' }
                       ].map((item, idx) => (
-                        <div key={idx} className="p-3 bg-[#181236]/30 border border-[#2e2452]/20 rounded-xl flex items-start gap-3">
+                        <div key={idx} className="p-3 bg-[#241f1c]/30 border border-[#2e2724]/20 rounded-xl flex items-start gap-3">
                           <div className="text-[9px] font-black text-orange-400 uppercase w-14 pt-0.5">{item.day}</div>
                           <div className="flex-1 space-y-0.5">
                             <p className="text-[10px] font-black text-white uppercase tracking-tight">{item.task}</p>
@@ -460,7 +460,7 @@ export default function DemoPage() {
                   {/* Column 2: Recommended IA Guidelines */}
                   <div className="space-y-6">
                     {/* brand support */}
-                    <div className="p-5 bg-[#181236]/30 border border-[#2e2452]/20 rounded-2xl space-y-3 border-l-4 border-l-amber-500">
+                    <div className="p-5 bg-[#241f1c]/30 border border-[#2e2724]/20 rounded-2xl space-y-3 border-l-4 border-l-amber-500">
                       <div className="flex items-center gap-2">
                         <Building className="w-4 h-4 text-amber-400" />
                         <h4 className="text-[9px] font-black text-white uppercase tracking-widest">Auxílio à Empresa (Vektor AI)</h4>
@@ -471,7 +471,7 @@ export default function DemoPage() {
                     </div>
 
                     {/* influencer support */}
-                    <div className="p-5 bg-[#181236]/30 border border-[#2e2452]/20 rounded-2xl space-y-3 border-l-4 border-l-orange-500">
+                    <div className="p-5 bg-[#241f1c]/30 border border-[#2e2724]/20 rounded-2xl space-y-3 border-l-4 border-l-orange-500">
                       <div className="flex items-center gap-2">
                         <User className="w-4 h-4 text-orange-400" />
                         <h4 className="text-[9px] font-black text-white uppercase tracking-widest">Auxílio ao Criador (Vincenzo AI)</h4>
@@ -504,38 +504,38 @@ export default function DemoPage() {
         <div className="space-y-6">
           
           {/* Database Monitor Stats Panel */}
-          <div className="bg-[#100b24]/60 border border-[#2e2452]/50 rounded-[32px] p-6 space-y-6">
+          <div className="bg-[#1a1716]/60 border border-[#2e2724]/50 rounded-[32px] p-6 space-y-6">
             <div>
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-400 mb-1">Database Monitor</h3>
               <p className="text-xs text-zinc-400 font-bold uppercase">Estado Real das Variáveis no Banco de Dados</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-[#181236]/40 border border-[#2e2452]/30 rounded-2xl text-center space-y-1">
+              <div className="p-4 bg-[#241f1c]/40 border border-[#2e2724]/30 rounded-2xl text-center space-y-1">
                 <span className="text-[9px] font-black uppercase text-zinc-400 tracking-wider">InfluScore</span>
                 <p className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-400">
                   {dbData.influScore || '---'}
                 </p>
               </div>
-              <div className="p-4 bg-[#181236]/40 border border-[#2e2452]/30 rounded-2xl text-center space-y-1">
+              <div className="p-4 bg-[#241f1c]/40 border border-[#2e2724]/30 rounded-2xl text-center space-y-1">
                 <span className="text-[9px] font-black uppercase text-zinc-400 tracking-wider">Score Class</span>
                 <p className="text-xs font-black uppercase text-orange-300">
                   {dbData.scoreClass || '---'}
                 </p>
               </div>
-              <div className="p-4 bg-[#181236]/40 border border-[#2e2452]/30 rounded-2xl text-center space-y-1">
+              <div className="p-4 bg-[#241f1c]/40 border border-[#2e2724]/30 rounded-2xl text-center space-y-1">
                 <span className="text-[9px] font-black uppercase text-zinc-400 tracking-wider">Seguidores</span>
                 <p className="text-xl font-black text-zinc-200">
                   {dbData.followers ? dbData.followers.toLocaleString() : '---'}
                 </p>
               </div>
-              <div className="p-4 bg-[#181236]/40 border border-[#2e2452]/30 rounded-2xl text-center space-y-1">
+              <div className="p-4 bg-[#241f1c]/40 border border-[#2e2724]/30 rounded-2xl text-center space-y-1">
                 <span className="text-[9px] font-black uppercase text-zinc-400 tracking-wider">Engajamento</span>
                 <p className="text-xl font-black text-zinc-200">
                   {dbData.engagementRate ? `${dbData.engagementRate}%` : '---'}
                 </p>
               </div>
-              <div className="col-span-2 p-4 bg-[#181236]/40 border border-[#2e2452]/30 rounded-2xl text-center space-y-1">
+              <div className="col-span-2 p-4 bg-[#241f1c]/40 border border-[#2e2724]/30 rounded-2xl text-center space-y-1">
                 <span className="text-[9px] font-black uppercase text-zinc-400 tracking-wider">Saldo Carteira (Influencer Wallet)</span>
                 <p className="text-2xl font-black text-emerald-400">
                   R$ {dbData.walletBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -543,7 +543,7 @@ export default function DemoPage() {
               </div>
             </div>
 
-            <div className="border-t border-[#2e2452]/30 pt-4 space-y-3">
+            <div className="border-t border-[#2e2724]/30 pt-4 space-y-3">
               <div className="flex justify-between items-center text-xs">
                 <span className="text-zinc-500 font-bold uppercase">Status Escrow:</span>
                 <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
@@ -565,7 +565,7 @@ export default function DemoPage() {
           </div>
 
           {/* AI Mentoring Live Chat */}
-          <div className="bg-[#100b24]/60 border border-[#2e2452]/50 rounded-[32px] p-6 flex flex-col h-[380px]">
+          <div className="bg-[#1a1716]/60 border border-[#2e2724]/50 rounded-[32px] p-6 flex flex-col h-[380px]">
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-1">
                 <Sparkles className="w-4 h-4 text-orange-400" />
@@ -575,13 +575,13 @@ export default function DemoPage() {
             </div>
 
             {/* Chat Messages */}
-            <div className="flex-1 overflow-y-auto space-y-3 p-3 bg-black/20 rounded-2xl border border-[#2e2452]/20 text-[11px] mb-3">
+            <div className="flex-1 overflow-y-auto space-y-3 p-3 bg-black/20 rounded-2xl border border-[#2e2724]/20 text-[11px] mb-3">
               {chatHistory.map((chat, idx) => (
                 <div key={idx} className={`flex flex-col ${chat.sender === 'user' ? 'items-end' : 'items-start'}`}>
                   <div className={`p-3 rounded-2xl max-w-[85%] leading-relaxed ${
                     chat.sender === 'user' 
                       ? 'bg-orange-600 text-white rounded-tr-none' 
-                      : 'bg-[#181236]/60 border border-[#2e2452]/30 text-zinc-200 rounded-tl-none'
+                      : 'bg-[#241f1c]/60 border border-[#2e2724]/30 text-zinc-200 rounded-tl-none'
                   }`}>
                     {chat.text}
                   </div>
@@ -603,7 +603,7 @@ export default function DemoPage() {
                 onChange={(e) => setChatMessage(e.target.value)}
                 placeholder="Pergunte ao mentor de IA..."
                 disabled={!dbData.aiAnalysis || isChatLoading}
-                className="flex-1 h-10 px-4 bg-[#110c26] border border-[#2e2452] rounded-xl text-xs text-white focus:outline-none focus:border-orange-500 disabled:opacity-40"
+                className="flex-1 h-10 px-4 bg-[#131110] border border-[#2e2724] rounded-xl text-xs text-white focus:outline-none focus:border-orange-500 disabled:opacity-40"
               />
               <button 
                 type="submit"
@@ -620,7 +620,7 @@ export default function DemoPage() {
       </main>
 
       {/* Safety Notice Footer */}
-      <footer className="border-t border-[#2e2452]/30 py-4 text-center text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em] relative z-10 flex items-center justify-center gap-2">
+      <footer className="border-t border-[#2e2724]/30 py-4 text-center text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em] relative z-10 flex items-center justify-center gap-2">
         <Lock className="w-3.5 h-3.5" /> InfluNext // Sandbox Demo Simulation System // 2026
       </footer>
 

@@ -134,7 +134,7 @@ export default function AdminDashboard() {
             GovernanceHub // FounderLevel
           </div>
           <h1 className={`text-5xl font-black tracking-tighter ${isDark ? 'text-white' : 'text-slate-950'}`}>
-            Análise de <span className={`text-transparent bg-clip-text bg-gradient-to-r ${isDark ? 'from-orange-500 to-pink-500' : 'from-orange-600 to-amber-600'}`}>Mercado</span>
+            Análise de <span className={`text-transparent bg-clip-text bg-gradient-to-r ${isDark ? 'from-orange-500 to-amber-500' : 'from-orange-600 to-amber-600'}`}>Mercado</span>
           </h1>
         </div>
         <div className="flex items-center gap-3">
@@ -244,7 +244,7 @@ export default function AdminDashboard() {
                  onClick={handleStartIgConnection}
                  className={`px-6 py-4 rounded-2xl flex items-center gap-3 transition-all group border ${isDark ? 'bg-white/[0.04] hover:bg-white/[0.08] border-white/[0.08]' : 'bg-slate-50 border-slate-200 hover:bg-slate-100/85 text-slate-800'}`}
                >
-                 <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 flex items-center justify-center shadow-lg">
+                 <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-yellow-400 via-pink-500 to-orange-600 flex items-center justify-center shadow-lg">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
                       <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
                       <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
