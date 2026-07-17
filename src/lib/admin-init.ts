@@ -103,6 +103,35 @@ export async function ensureAdminExists() {
       }
     });
 
+    // Popula a tabela de preços do influenciador demo (Rate Cards)
+    await prisma.rateCard.deleteMany({ where: { influencerId: influencerProfile.id } });
+    await prisma.rateCard.createMany({
+      data: [
+        {
+          influencerId: influencerProfile.id,
+          serviceName: "Combo Fashion Post (1x Reels + 3x Stories)",
+          price: 1500.00,
+          currency: "BRL",
+          description: "Combo ideal para lançamento de coleções. Inclui Reels completo mostrando os produtos no corpo e 3 sequências de Stories para engajamento e CTA direto de vendas."
+        },
+        {
+          influencerId: influencerProfile.id,
+          serviceName: "1x Reels de Provador",
+          price: 900.00,
+          currency: "BRL",
+          description: "Gravação de Reels dinâmico com transições ágeis exibindo até 4 looks selecionados da marca com áudio viral em alta."
+        },
+        {
+          influencerId: influencerProfile.id,
+          serviceName: "Sequência de Stories Patrocinados (3 telas)",
+          price: 500.00,
+          currency: "BRL",
+          description: "Inserção de links diretos para o e-commerce, stickers de interação e cupom de desconto exclusivo."
+        }
+      ]
+    });
+    console.log(`[ADMIN-INIT] ✅ Tabela de preços (Rate Cards) criada para @demo.influencer`);
+
     // 2. Empresa Demo
     const companyUser = await prisma.user.upsert({
       where: { email: 'empresa@demo.influnext.com.br' },
