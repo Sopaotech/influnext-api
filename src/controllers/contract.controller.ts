@@ -363,7 +363,13 @@ export const releasePayment = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const contract = await prisma.contract.findUnique({ where: { id } });
+    const contract = await prisma.contract.findUnique({
+      where: { id },
+      include: {
+        influencer: { include: { user: true } },
+        company: { include: { user: true } }
+      }
+    });
 
     if (!contract) {
       res.status(404).json({ error: "Contrato não encontrado." });
@@ -402,8 +408,25 @@ export const releasePayment = async (req: Request, res: Response): Promise<void>
         throw new Error("Conflito: Transação já processada ou estado inválido.");
       }
 
-      return tx.contract.findUnique({ where: { id } });
+      await tx.notification.create({
+        data: {
+          userId: contract.influencer.userId,
+          message: `💰 Pagamento liberado! O valor líquido de R$ ${(contract.netAmount || contract.budget * 0.93).toFixed(2)} referente ao contrato "${contract.title}" foi liberado com sucesso.`,
+          type: 'PAYMENT_RELEASED'
+        }
+      });
+
+      return tx.contract.findUnique({
+        where: { id },
+        include: { influencer: true, company: true }
+      });
     });
+
+    await addNotificationJob(
+      contract.influencer.userId,
+      `💰 O pagamento de R$ ${(contract.netAmount || contract.budget * 0.93).toFixed(2)} do contrato "${contract.title}" foi liberado!`,
+      'PAYMENT_RELEASED'
+    );
 
     res.json({ message: "Pagamento liberado com sucesso.", contract: updated });
   } catch (error: any) {

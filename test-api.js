@@ -3,9 +3,9 @@ const axios = require('axios');
 async function test() {
   console.log('Logging in...');
   try {
-    const loginRes = await axios.post('http://localhost:4000/v1/auth/login', {
-      email: 'alexsandro@influnext.com.br',
-      password: '123456'
+    const loginRes = await axios.post('https://api.influnext.com.br/v1/auth/login', {
+      email: 'empresa@demo.influnext.com.br',
+      password: 'Demo@2026!'
     });
     
     const token = loginRes.data.token;
