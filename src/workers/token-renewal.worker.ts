@@ -1,19 +1,12 @@
 import { Worker } from 'bullmq';
-import { Redis } from 'ioredis';
 import { PrismaClient } from '@prisma/client';
 import { InstagramService } from '../services/instagram.service';
 import { TikTokService } from '../services/tiktok.service';
 import { addNotificationJob } from '../queues/notification.queue';
+import { createRedisClient } from '../lib/redis';
 
 const prisma = new PrismaClient();
-
-const redisConnection = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
-  maxRetriesPerRequest: null,
-  lazyConnect: true,
-  retryStrategy: (times) => Math.min(times * 5000, 60000)
-});
-
-redisConnection.on('error', () => {});
+const redisConnection = createRedisClient();
 
 export const runTokenRenewalLogic = async () => {
   console.log('[TOKEN_RENEWAL] Iniciando verificação de renovação de tokens...');

@@ -1,16 +1,9 @@
 import { Worker } from 'bullmq';
-import IORedis from 'ioredis';
 import { prisma } from '../lib/prisma';
 import { sendPushNotification } from '../services/push-notification.service';
+import { createRedisClient } from '../lib/redis';
 
-const connection = new IORedis(process.env.REDIS_URL || 'redis://localhost:6379', {
-  maxRetriesPerRequest: null,
-  lazyConnect: true,
-  retryStrategy: (times) => Math.min(times * 5000, 60000)
-});
-
-// Silenciar logs de erro de conexão
-connection.on('error', () => {});
+const connection = createRedisClient();
 
 export const processNotification = async (job: any) => {
   const { userId, message, type } = job.data;
