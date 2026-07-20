@@ -93,7 +93,8 @@ function SocialCallbackContent() {
       console.error('Erro no callback social:', error);
       setStatus('error');
       
-      const message = error.response?.data?.message || 'Falha ao conectar conta social. Verifique sua conexão ou tente novamente.';
+      const message = error.response?.data?.error || error.response?.data?.message || 'Falha ao conectar conta social. Verifique sua conexão ou tente novamente.';
+      const errorType = error.response?.data?.errorType || 'no_creator_account';
       setErrorMessage(message);
       toast.error(message);
 
@@ -102,7 +103,8 @@ function SocialCallbackContent() {
           type: 'social-auth-error', 
           platform, 
           status: 'error', 
-          error: message 
+          error: message,
+          errorType
         }, window.location.origin);
         setTimeout(() => {
           window.close();

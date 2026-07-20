@@ -131,8 +131,9 @@ export default function OnboardingPage() {
       fetchIntegrations();
     } else if (status === 'error') {
       const errorType = params.get('error');
-      const errorMsg = errorType === 'no_business_account'
-        ? 'Sua conta do Instagram não está vinculada a uma Página do Facebook ou não é Profissional.'
+      const isAccountTypeError = errorType === 'no_business_account' || errorType === 'no_creator_account';
+      const errorMsg = isAccountTypeError
+        ? 'Sua conta do Instagram é Pessoal. A Meta exige uma conta do tipo Criador de Conteúdo ou Comercial para conectar à API.'
         : 'Erro ao conectar com a rede social.';
       toast.error(errorMsg);
     }

@@ -93,16 +93,10 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
         throw new Error('URL de autenticação não retornada pelo servidor.');
       }
 
-      // Simula os passos de loading antes de redirecionar
-      for (let i = 0; i < SYNC_STEPS.length - 1; i++) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        setSyncStep(i + 1);
-      }
-
       // Notifica o componente pai que o fluxo OAuth foi iniciado
       onConfirm('oauth');
 
-      // Redireciona para o Instagram OAuth
+      // Redireciona imediatamente para o Instagram OAuth
       window.location.href = authUrl;
     } catch (err: any) {
       const message =

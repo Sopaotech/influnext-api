@@ -149,11 +149,12 @@ export default function SettingsPage() {
       });
       window.history.replaceState({}, '', window.location.pathname);
     } else if (status === 'error') {
+      const isAccountTypeError = error === 'no_business_account' || error === 'no_creator_account';
       toast.error('Falha na conexão social', {
-        description: error === 'no_business_account' 
-          ? 'Não encontramos uma conta do Instagram Business vinculada à sua página.'
+        description: isAccountTypeError
+          ? 'Sua conta do Instagram é Pessoal. A Meta exige uma conta de Criador de Conteúdo ou Comercial para liberar o acesso à API. É gratuito e rápido de alterar no app!'
           : 'Ocorreu um erro ao processar a autenticação.',
-        duration: 5000
+        duration: 7000
       });
       window.history.replaceState({}, '', window.location.pathname);
     }

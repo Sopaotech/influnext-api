@@ -57,6 +57,7 @@ export class SocialAuthController {
     const urls = {
       instagram: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=instagram_business_basic&response_type=code&state=register_instagram`,
       tiktok: `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${frontendUrl}/auth/callback/tiktok&state=register_tiktok`,
+      google: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/google&response_type=code&scope=openid%20email%20profile&state=register_google`,
       youtube: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/youtube&response_type=code&scope=https://www.googleapis.com/auth/youtube.readonly&state=register_youtube&access_type=offline&prompt=consent`
     };
 
@@ -309,18 +310,27 @@ export class SocialAuthController {
       console.error(`[SOCIAL_AUTH] Erro no callback ${platform}:`, error.response?.data || error.message);
       
       let clientMessage = 'Falha na autenticação social. Por favor, tente novamente.';
+      let errorType = 'error';
       if (platform === 'instagram') {
-        const errorMsgStr = error.message || '';
-        const apiMsgStr = error.response?.data?.error?.message || '';
+        const errorMsgStr = (error.message || '').toLowerCase();
+        const apiMsgStr = (error.response?.data?.error?.message || '').toLowerCase();
         
-        if (errorMsgStr.includes('profissional') || apiMsgStr.includes('business') || apiMsgStr.includes('professional')) {
-          clientMessage = 'Não encontramos nenhuma conta do Instagram Profissional (Creator ou Business). Verifique suas configurações na conta do Instagram.';
+        if (
+          errorMsgStr.includes('creator') || 
+          errorMsgStr.includes('business') || 
+          errorMsgStr.includes('profissional') ||
+          apiMsgStr.includes('business') || 
+          apiMsgStr.includes('professional') ||
+          apiMsgStr.includes('creator')
+        ) {
+          errorType = 'no_creator_account';
+          clientMessage = 'Sua conta do Instagram é Pessoal. A Meta exige uma conta do tipo Criador de Conteúdo ou Comercial para liberar a conexão com a API.';
         } else if (error.response?.data?.error_message) {
           clientMessage = `Erro do Instagram: ${error.response.data.error_message}`;
         }
       }
       
-      res.status(400).json({ error: clientMessage, details: error.response?.data });
+      res.status(400).json({ error: clientMessage, errorType, details: error.response?.data });
     }
   }
 }
