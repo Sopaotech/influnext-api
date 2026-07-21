@@ -1,7 +1,14 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { stripe } from '../lib/stripe';
+import crypto from 'crypto';
 
 const prisma = new PrismaClient();
+
+const getFrontendUrl = () => {
+  const url = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
+  return url.endsWith('/') ? url.slice(0, -1) : url;
+};
 
 export const getPublicProfile = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -40,7 +47,8 @@ export const getPublicProfile = async (req: Request, res: Response): Promise<voi
             engagementRate: true,
             reachLast30Days: true,
             avgViews: true,
-            capturedAt: true
+            capturedAt: true,
+            integrityHash: true
           }
         },
         // Buscamos as redes conectadas para mostrar os ícones, sem vazar AccessTokens
@@ -84,3 +92,166 @@ export const getPublicProfile = async (req: Request, res: Response): Promise<voi
     res.status(500).json({ error: "Erro ao carregar Media Kit." });
   }
 };
+
+/**
+ * POST /v1/p/instant-checkout
+ * Permite contratação direta via checkout instantâneo no Mídia Kit Público
+ */
+export const createInstantCheckout = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { handle, rateCardId, brandEmail, brandName, campaignTitle, briefing } = req.body;
+
+    if (!handle || !brandEmail || !campaignTitle) {
+      res.status(400).json({ error: "Parâmetros obrigatórios: handle, brandEmail, campaignTitle." });
+      return;
+    }
+
+    const influencer = await prisma.influencerProfile.findUnique({
+      where: { handle },
+      include: { rateCards: true }
+    });
+
+    if (!influencer) {
+      res.status(404).json({ error: "Influenciador não encontrado." });
+      return;
+    }
+
+    let serviceName = "Campanha Personalizada";
+    let budget = 500; // Valor base padrão caso não venha rateCardId
+
+    if (rateCardId) {
+      const rateCard = influencer.rateCards.find(rc => rc.id === rateCardId);
+      if (rateCard) {
+        serviceName = rateCard.serviceName;
+        budget = rateCard.price;
+      }
+    }
+
+    // Localizar ou criar User + CompanyProfile para a marca contratante
+    let brandUser = await prisma.user.findUnique({
+      where: { email: brandEmail }
+    });
+
+    if (!brandUser) {
+      const randomPassword = crypto.randomBytes(16).toString('hex');
+      brandUser = await prisma.user.create({
+        data: {
+          email: brandEmail,
+          passwordHash: randomPassword,
+          role: 'COMPANY',
+          onboardingCompleted: true,
+          company: {
+            create: {
+              companyName: brandName || brandEmail.split('@')[0],
+              taxId: `GUEST-${Date.now()}`
+            }
+          }
+        }
+      });
+    }
+
+    let companyProfile = await prisma.companyProfile.findUnique({
+      where: { userId: brandUser.id }
+    });
+
+    if (!companyProfile) {
+      companyProfile = await prisma.companyProfile.create({
+        data: {
+          userId: brandUser.id,
+          companyName: brandName || brandEmail.split('@')[0],
+          taxId: `GUEST-${Date.now()}`
+        }
+      });
+    }
+
+    // Criar o Contrato de Escrow
+    const ESCROW_FEE_RATE = 0.07;
+    const platformFee = budget * ESCROW_FEE_RATE;
+    const netAmount = budget - platformFee;
+
+    const contract = await prisma.contract.create({
+      data: {
+        companyId: companyProfile.id,
+        influencerId: influencer.id,
+        title: campaignTitle || `Contratação Direta: ${serviceName}`,
+        briefing: briefing || `Contratação direta via Mídia Kit Público por ${brandName || brandEmail}`,
+        budget,
+        platformFee,
+        netAmount,
+        successFeeRate: ESCROW_FEE_RATE,
+        escrowStatus: 'PENDING_PAYMENT',
+        contractType: 'SPOT',
+        companySigned: true,
+        companyIp: (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || req.ip || '127.0.0.1',
+        deliverables: {
+          create: [{
+            type: serviceName,
+            deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 dias
+            status: 'PENDING'
+          }]
+        }
+      }
+    });
+
+    // Notificar o influenciador sobre a nova proposta recebida no mídia kit público
+    await prisma.notification.create({
+      data: {
+        userId: influencer.userId,
+        message: `🎯 Nova contratação direta pelo Mídia Kit Público: "${campaignTitle}" de ${brandName || brandEmail} (R$ ${budget.toFixed(2)}).`,
+        type: 'CONTRACT_OFFER'
+      }
+    });
+
+    // Se o serviço da Stripe não estiver ativo, fallback gracioso
+    if (!stripe) {
+      res.status(200).json({
+        contractId: contract.id,
+        checkoutUrl: `${getFrontendUrl()}/p/${handle}?checkout=simulated&contractId=${contract.id}`
+      });
+      return;
+    }
+
+    const totalAmountWithFee = budget * (1 + ESCROW_FEE_RATE);
+    const amountInCents = Math.round(totalAmountWithFee * 100);
+
+    const session = await stripe.checkout.sessions.create({
+      customer_email: brandEmail,
+      payment_method_types: ['card', 'pix'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'brl',
+            product_data: {
+              name: `Contrato Direto: ${serviceName} (@${influencer.handle})`,
+              description: `Garantia de Entrega Escrow Influnext (${campaignTitle})`,
+            },
+            unit_amount: amountInCents,
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: `${getFrontendUrl()}/p/${handle}?checkout=success&contractId=${contract.id}`,
+      cancel_url: `${getFrontendUrl()}/p/${handle}?checkout=canceled`,
+      metadata: {
+        contractId: contract.id,
+        type: 'contract_escrow'
+      }
+    });
+
+    await prisma.contract.update({
+      where: { id: contract.id },
+      data: { externalTxId: session.id }
+    });
+
+    res.status(200).json({
+      contractId: contract.id,
+      checkoutUrl: session.url
+    });
+
+  } catch (error: any) {
+    console.error('[INSTANT CHECKOUT] Erro ao processar:', error);
+    res.status(500).json({ error: error.message || "Erro ao processar contratação instantânea." });
+  }
+};
+

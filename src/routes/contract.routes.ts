@@ -7,19 +7,24 @@ import {
   updateContractScript, 
   cancelAndRefundContract, 
   releasePayment,
-  acceptContract 
+  acceptContract,
+  generateROIReport
 } from '../controllers/contract.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import { authorize } from '../middlewares/role.middleware';
 import { UserRole } from '../types/roles';
 import { contractBudgetGuard } from '../middlewares/security.middleware';
+import { sanitizeContactData } from '../middlewares/contact-sanitizer.middleware';
 
 const router = Router();
 
-router.post('/', authenticate, contractBudgetGuard, createContract);
+router.post('/', authenticate, contractBudgetGuard, sanitizeContactData, createContract);
 router.get('/', authenticate, getMyContracts);
 router.get('/:id', authenticate, getContractById);
 router.patch('/:id/script', authenticate, updateContractScript);
+
+// Geração de Relatório de ROI por IA
+router.post('/:id/roi-report', authenticate, generateROIReport);
 
 // Assinatura eletrônica / Aceite do influenciador
 router.post('/:id/accept', authenticate, authorize([UserRole.INFLUENCER]), acceptContract);
@@ -34,3 +39,4 @@ router.post('/:id/pay', authenticate, authorize([UserRole.ADMIN, UserRole.COMPAN
 router.post('/:id/cancel', authenticate, authorize([UserRole.ADMIN, UserRole.COMPANY]), cancelAndRefundContract);
 
 export default router;
+

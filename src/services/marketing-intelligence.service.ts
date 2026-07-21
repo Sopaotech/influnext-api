@@ -276,4 +276,79 @@ Defina antes da campanha: taxa de conversão mínima esperada, CPV (custo por vi
 2. Mapear 10 criadores no nicho alvo e analisar os últimos 3 posts de cada um
 3. Definir o orçamento por creator tier e aprovar internamente`;
   }
+
+  /**
+   * Gera o Relatório de ROI e Performance da Campanha por Inteligência Artificial
+   */
+  static async generateCampaignROIReport(contractId: string): Promise<{
+    contractId: string;
+    roiMultiplier: number;
+    cpmBrl: number;
+    efficiencyVsMarket: number;
+    aiReportMarkdown: string;
+  }> {
+    const contract = await prisma.contract.findUnique({
+      where: { id: contractId },
+      include: {
+        influencer: {
+          include: {
+            metricsHistory: { take: 1, orderBy: { capturedAt: 'desc' } }
+          }
+        },
+        company: true,
+        deliverables: true
+      }
+    });
+
+    if (!contract) {
+      throw new Error("Contrato não encontrado.");
+    }
+
+    const latestMetrics = contract.influencer.metricsHistory[0] || {
+      avgViews: 5000,
+      engagementRate: 3.5,
+      reachLast30Days: 25000,
+      followers: 10000
+    };
+
+    const budget = contract.budget;
+    const avgViews = Math.max(latestMetrics.avgViews, 100);
+    const cpmBrl = (budget / avgViews) * 1000;
+    
+    const MARKET_CPM_BENCHMARK = 35.00;
+    const efficiencyVsMarket = Math.round(((MARKET_CPM_BENCHMARK - cpmBrl) / MARKET_CPM_BENCHMARK) * 100);
+    const roiMultiplier = Number(Math.max(1.2, (MARKET_CPM_BENCHMARK / Math.max(cpmBrl, 5))).toFixed(2));
+
+    const prompt = `
+# Relatório de ROI e Performance da Campanha — Influnext AI
+
+## Dados do Contrato Auditado
+- **Campanha**: "${contract.title}"
+- **Empresa Contratante**: ${contract.company.companyName}
+- **Influenciador**: @${contract.influencer.handle} (InfluScore: ${contract.influencer.influScore})
+- **Investimento Total (Escrow)**: R$ ${budget.toFixed(2)}
+- **Views Médias Auditadas (SHA-256)**: ${avgViews.toLocaleString('pt-BR')}
+- **CPM Calculado**: R$ ${cpmBrl.toFixed(2)} por mil visualizações
+- **Eficiência Estimada vs Mercado**: +${efficiencyVsMarket}%
+
+## Tarefa
+Gere um relatório executivo de ROI assinado pela Influnext Marketing Intelligence.
+Inclua:
+1. Resumo do Desempenho e Eficiência Financeira (CPM vs Mercado).
+2. Análise de Impacto de Marca (Awareness & Conversão Estimada).
+3. Conclusão da IA com recomendação de Recontratação com 1-Clique.
+`.trim();
+
+    const planTier = 'PRO';
+    const aiReportMarkdown = await MarketingIntelligenceService.callAI(prompt, planTier);
+
+    return {
+      contractId,
+      roiMultiplier,
+      cpmBrl: Number(cpmBrl.toFixed(2)),
+      efficiencyVsMarket,
+      aiReportMarkdown
+    };
+  }
 }
+

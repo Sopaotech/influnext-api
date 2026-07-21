@@ -695,3 +695,20 @@ export const cancelAndRefundContract = async (req: Request, res: Response): Prom
     res.status(500).json({ error: "Erro ao cancelar o contrato." });
   }
 };
+
+/**
+ * POST /v1/contracts/:id/roi-report
+ * Gera o Relatório de ROI e Eficiência da Campanha por Inteligência Artificial
+ */
+export const generateROIReport = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { MarketingIntelligenceService } = await import('../services/marketing-intelligence.service');
+    const report = await MarketingIntelligenceService.generateCampaignROIReport(id);
+    res.json(report);
+  } catch (error: any) {
+    console.error('[CONTRACT ROI REPORT] Erro ao gerar relatório:', error);
+    res.status(500).json({ error: error.message || "Erro ao gerar relatório de ROI da campanha." });
+  }
+};
+

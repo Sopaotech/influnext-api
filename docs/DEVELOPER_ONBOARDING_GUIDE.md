@@ -39,9 +39,11 @@ A InfluNext é dividida em **dois pilares** para maximizar velocidade de entrega
 
 ```
 influnext-api-main/
-├── docs/                       # Guias de IA e Onboarding do Desenvolvedor
+├── docs/                       # Guias de IA, Segurança e Onboarding
 │   ├── AI_SYSTEMS_GUIDE.md     # Personas, regras de negócio e prompts da IA
+│   ├── ANTI_FRAUD_AND_SECURITY_POLICY.md # Política de integridade e prevenção à fraude
 │   └── DEVELOPER_ONBOARDING_GUIDE.md  # Este arquivo
+
 ├── src/                        # API Backend (Node.js/TypeScript)
 │   ├── controllers/            # Controladores (Validação de entrada com Zod e responses)
 │   ├── middlewares/            # Autenticação de token JWT e permissões de roles

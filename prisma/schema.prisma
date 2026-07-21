@@ -111,7 +111,11 @@ model InfluencerProfile {
   aiAnalyses      AIAnalysis[]
   trendVault      TrendReference[]
   rateCards       RateCard[]
+
+  @@index([niche, scoreClass, influScore])
+  @@index([city, state])
 }
+
 
 model TrendReference {
   id           String   @id @default(uuid())
@@ -225,6 +229,9 @@ model Contract {
   influencer      InfluencerProfile @relation(fields: [influencerId], references: [id])
   deliverables    Deliverable[]
   createdAt       DateTime          @default(now())
+
+  @@index([companyId, escrowStatus])
+  @@index([influencerId, escrowStatus])
 }
 
 model Deliverable {
@@ -236,6 +243,7 @@ model Deliverable {
   proofUrl    String?  
   
   contract    Contract @relation(fields: [contractId], references: [id])
+  @@index([contractId, status])
 }
 
 model Notification {
@@ -277,7 +285,11 @@ model RateCard {
   
   influencer      InfluencerProfile? @relation(fields: [influencerId], references: [id])
   company         CompanyProfile?    @relation(fields: [companyId], references: [id])
+
+  @@index([influencerId])
+  @@index([companyId])
 }
+
 
 model AdminStrategy {
   id              String   @id @default(uuid())

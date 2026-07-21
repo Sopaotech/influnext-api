@@ -24,9 +24,10 @@ app.use(cors({
   credentials: true
 }));
 
-// Middleware de Analytics (Movido para ser carregado sob demanda)
 // Webhook da Stripe precisa do body cru (Buffer) ANTES do express.json() processar a requisição
 app.use('/v1/payments/webhook', express.raw({ type: 'application/json' }));
+app.use('/v1/webhooks/stripe', express.raw({ type: 'application/json' }));
+
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
