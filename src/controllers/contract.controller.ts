@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma';
 import { z } from 'zod';
 import { addNotificationJob } from '../queues/notification.queue';
 import { BriefingService } from '../services/briefing.service';
+import { calcContractFees, FREE_BRAND_ACTIVE_CONTRACT_LIMIT } from '../lib/fees';
 import crypto from 'crypto';
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
@@ -24,10 +25,6 @@ const createContractSchema = z.object({
   deliverables: z.array(deliverableSchema).min(1, 'Pelo menos um entregável é obrigatório.'),
   contractType: z.enum(['SPOT', 'RETAINER']).optional(),
 });
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const PLATFORM_TAKE_RATE = 0.10; // 10% de comissão
 
 // ─── Controllers ──────────────────────────────────────────────────────────────
 
@@ -51,12 +48,13 @@ export const createContract = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Enforce 3 active contracts limit for Free brands
+    // Enforce active contracts limit for Free brands (FREE = max 3 ativos)
     const brandTier = company.user?.subscriptionTier || 'FREE';
     const brandStatus = company.user?.subscriptionStatus || 'INACTIVE';
-    const isBrandFree = !(brandTier === 'ENTERPRISE' && brandStatus === 'ACTIVE');
+    // Conta como PREMIUM se tiver tier diferente de FREE e status ACTIVE
+    const isBrandPremium = brandStatus === 'ACTIVE' && (brandTier === 'PRO' || brandTier === 'MASTER' || brandTier === 'ENTERPRISE');
 
-    if (isBrandFree) {
+    if (!isBrandPremium) {
       const activeContractsCount = await prisma.contract.count({
         where: {
           companyId: company.id,
@@ -64,10 +62,10 @@ export const createContract = async (req: Request, res: Response): Promise<void>
         }
       });
 
-      if (activeContractsCount >= 3) {
+      if (activeContractsCount >= FREE_BRAND_ACTIVE_CONTRACT_LIMIT) {
         res.status(403).json({ 
           error: "limit_reached",
-          message: "Você atingiu o limite máximo de 3 contratos ativos em andamento no plano gratuito. Para criar contratos ilimitados e ter taxa de intermediação de Escrow zerada (0%), faça o upgrade do seu perfil para o plano Agency! 🚀" 
+          message: `Você atingiu o limite de ${FREE_BRAND_ACTIVE_CONTRACT_LIMIT} contratos ativos no plano gratuito. Faça upgrade para o plano Premium e tenha contratos ilimitados com taxa reduzida de 7%! 🚀` 
         });
         return;
       }
@@ -88,7 +86,8 @@ export const createContract = async (req: Request, res: Response): Promise<void>
     }
     // ────────────────────────────────────────────────────────────────────────
 
-    // Buscar o plano do influenciador contratado para definir a taxa dinâmica
+    // Buscar o plano do influenciador para calcular a taxa correta
+    // FREE = 15% | PRO/MASTER/ENTERPRISE = 7% (modelo aprovado julho/2026)
     const influencerProfile = await prisma.influencerProfile.findUnique({
       where: { id: influencerId },
       include: { user: { select: { subscriptionTier: true } } }
@@ -99,19 +98,10 @@ export const createContract = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const tier = influencerProfile.user?.subscriptionTier || 'FREE';
-    let successFeeRate = 0.15;
-    if (tier === 'PRO') {
-      successFeeRate = 0.10;
-    } else if (tier === 'MASTER') {
-      successFeeRate = 0.05;
-    } else if (tier === 'ENTERPRISE') {
-      successFeeRate = 0.00;
-    }
+    const creatorTier = influencerProfile.user?.subscriptionTier || 'FREE';
 
-    // ─── Cálculo do Take Rate Dinâmico ──────────────────────────────────────
-    const platformFee = budget * successFeeRate;
-    const netAmount   = budget - platformFee;
+    // ─── Cálculo do Take Rate via fees.ts (Fonte Única de Verdade) ──────────
+    const { successFeeRate, platformFee, netAmount } = calcContractFees(budget, creatorTier);
     // ────────────────────────────────────────────────────────────────────────
 
     const clientIp = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || req.ip || '127.0.0.1';
@@ -411,7 +401,7 @@ export const releasePayment = async (req: Request, res: Response): Promise<void>
       await tx.notification.create({
         data: {
           userId: contract.influencer.userId,
-          message: `💰 Pagamento liberado! O valor líquido de R$ ${(contract.netAmount || contract.budget * 0.93).toFixed(2)} referente ao contrato "${contract.title}" foi liberado com sucesso.`,
+          message: `💰 Pagamento liberado! O valor líquido de R$ ${(contract.netAmount ?? contract.budget).toFixed(2)} referente ao contrato "${contract.title}" foi liberado com sucesso.`,
           type: 'PAYMENT_RELEASED'
         }
       });
@@ -424,7 +414,7 @@ export const releasePayment = async (req: Request, res: Response): Promise<void>
 
     await addNotificationJob(
       contract.influencer.userId,
-      `💰 O pagamento de R$ ${(contract.netAmount || contract.budget * 0.93).toFixed(2)} do contrato "${contract.title}" foi liberado!`,
+      `💰 O pagamento de R$ ${(contract.netAmount ?? contract.budget).toFixed(2)} do contrato "${contract.title}" foi liberado!`,
       'PAYMENT_RELEASED'
     );
 
@@ -469,9 +459,12 @@ export const getMyContracts = async (req: Request, res: Response): Promise<void>
         orderBy: { createdAt: 'desc' }
       });
     } else if (userRole === UserRole.ADMIN) {
+      const skip = parseInt(req.query.skip as string || '0', 10);
       contracts = await prisma.contract.findMany({
         include: { influencer: true, company: true, deliverables: true },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+        skip: isNaN(skip) ? 0 : skip,
       });
     }
 

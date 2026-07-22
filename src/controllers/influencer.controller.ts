@@ -578,7 +578,9 @@ export const requestWithdraw = async (req: Request, res: Response): Promise<void
     });
 
     const totalEarned = completedContracts.reduce((acc, c) => {
-      return acc + (c.netAmount || c.budget * 0.85); // 85% líquido se netAmount não definido
+      // netAmount já reflete a taxa correta (FREE=15%, Premium=7%)
+      // Se por algum motivo netAmount é nulo, usa o budget completo como fallback conservador
+      return acc + (c.netAmount ?? c.budget);
     }, 0);
 
     // Calcular saques totais já feitos (não rejeitados e não cancelados)
@@ -697,7 +699,7 @@ export const getBalance = async (req: Request, res: Response): Promise<void> => 
     });
 
     const totalEarned = completedContracts.reduce((acc, c) => {
-      return acc + (c.netAmount || c.budget * 0.85);
+      return acc + (c.netAmount ?? c.budget);
     }, 0);
 
     // Calcular saques totais já feitos (não rejeitados e não cancelados)
@@ -711,7 +713,7 @@ export const getBalance = async (req: Request, res: Response): Promise<void> => 
 
     // 1. Adicionar Contratos Concluídos como receitas
     for (const c of completedContracts) {
-      const amount = Number(c.netAmount || c.budget * 0.85);
+      const amount = Number(c.netAmount ?? c.budget);
       transactions.push({
         id: `CTR-${c.id.substring(0, 4).toUpperCase()}`,
         dateRaw: c.createdAt,
@@ -764,7 +766,7 @@ export const getBalance = async (req: Request, res: Response): Promise<void> => 
       if (date.getFullYear() === currentYear) {
         const monthIndex = date.getMonth();
         if (monthIndex >= 0 && monthIndex < 12) {
-          monthlyData[monthIndex].value += Number(c.netAmount || c.budget * 0.85);
+          monthlyData[monthIndex].value += Number(c.netAmount ?? c.budget);
         }
       }
     }
@@ -827,15 +829,22 @@ export const seedDemoBalance = async (req: Request, res: Response): Promise<void
     }
 
     // Criar o contrato de demonstração concluído
+    // Taxa FREE (15%) aplicada corretamente ao contrato demo
+    const demoBudget = 2500.00;
+    const demoFeeRate = 0.15; // Conta demo é FREE
+    const demoPlatformFee = demoBudget * demoFeeRate; // R$ 375,00
+    const demoNetAmount = demoBudget - demoPlatformFee; // R$ 2.125,00
+
     const contract = await prisma.contract.create({
       data: {
         companyId: company.id,
         influencerId: influencer.id,
         title: 'Campanha Demonstrativa de Engajamento v2.1',
         briefing: 'Divulgação de posts demonstrativos no workspace para investidores.',
-        budget: 2500.00,
-        platformFee: 375.00, // 15% taxa
-        netAmount: 2125.00,  // 85% líquido
+        budget: demoBudget,
+        platformFee: demoPlatformFee,
+        netAmount: demoNetAmount,
+        successFeeRate: demoFeeRate,
         escrowStatus: 'COMPLETED'
       }
     });

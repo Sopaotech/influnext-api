@@ -1,9 +1,9 @@
 import { Worker } from 'bullmq';
 import { prisma } from '../lib/prisma';
 import { sendPushNotification } from '../services/push-notification.service';
-import { createRedisClient } from '../lib/redis';
+import { redisConnection } from '../lib/redis';
 
-const connection = createRedisClient();
+
 
 export const processNotification = async (job: any) => {
   const { userId, message, type } = job.data;
@@ -28,7 +28,7 @@ export const processNotification = async (job: any) => {
   return { success: true };
 };
 
-export const notificationWorker = new Worker('notifications', processNotification, { connection });
+export const notificationWorker = new Worker('notifications', processNotification, { connection: redisConnection });
 
 notificationWorker.on('error', () => {
   // Ignora erro de conexão do Redis para não derrubar o host

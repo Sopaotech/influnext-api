@@ -378,7 +378,7 @@ export default function CompanyDashboard() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right py-6 pr-6" onClick={(e) => e.stopPropagation()}>
-                        {contract.escrowStatus === 'DRAFT' && (
+                        {contract.escrowStatus === 'PENDING_PAYMENT' && (
                           <button 
                             onClick={async () => {
                               if (confirm('Confirmar depósito Escrow para iniciar a campanha?')) {
@@ -394,6 +394,11 @@ export default function CompanyDashboard() {
                           >
                             Depositar
                           </button>
+                        )}
+                        {contract.escrowStatus === 'DRAFT' && (
+                          <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest bg-zinc-800/10 dark:bg-zinc-800/30 px-3 py-1.5 rounded-lg border border-zinc-700/20">
+                            Aguardando Creator
+                          </span>
                         )}
                         {contract.escrowStatus === 'COMPLETED' && (
                           <Link

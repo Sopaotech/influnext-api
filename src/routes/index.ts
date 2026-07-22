@@ -28,7 +28,8 @@ routes.use('/dashboard', dashboardRoutes);
 routes.use('/admin', adminRoutes);
 routes.use('/p', publicRoutes);
 routes.use('/influencers', influencerRoutes);
-routes.use('/influencer', influencerRoutes);
+// REMOVIDO: routes.use('/influencer', influencerRoutes) — rota duplicada eliminada
+
 routes.use('/ai', aiRoutes);
 routes.use('/payments', paymentRoutes);
 routes.use('/webhooks', webhookRoutes);

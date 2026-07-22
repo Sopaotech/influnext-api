@@ -16,7 +16,7 @@ export class AIService {
    */  static async generateCareerStrategy(influencer: any, metrics: MetricSnapshot, activeContracts: any[]): Promise<{ mentorGreeting: string; trends: any[]; suggestedTasks: any[]; videoInspirations: any[]; trendingNow: any; videoReferences: any[] }> {
     const apiKey = process.env.GEMINI_API_KEY;
     
-    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
+    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY' || apiKey.includes('sua_chave')) {
       throw new Error('✦ IA InfluNext: GEMINI_API_KEY não configurada no ambiente.');
     }
 
@@ -413,7 +413,7 @@ export class AIService {
   static async chatWithMentor(influencerId: string, message: string): Promise<string> {
     const apiKey = process.env.GEMINI_API_KEY;
     
-    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
+    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY' || apiKey.includes('sua_chave')) {
       return `Como Mentor InfluNext (Modo Offline), recebi sua mensagem: "${message}". Configure a GEMINI_API_KEY no backend para ativar a inteligência avançada.`;
     }
 
@@ -538,7 +538,7 @@ ${contractsContext}`;
   static async chatWithBrandMentor(companyId: string, message: string): Promise<string> {
     const apiKey = process.env.GEMINI_API_KEY;
     
-    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
+    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY' || apiKey.includes('sua_chave')) {
       return `Como Vektor (Modo Offline), recebi sua mensagem: "${message}". Configure a GEMINI_API_KEY no backend para ativar a inteligência avançada.`;
     }
 
@@ -615,7 +615,7 @@ ${contractsContext}`;
   static async generateCampaignBriefing(influencerHandle: string, campaignTitle: string): Promise<string> {
     const apiKey = process.env.GEMINI_API_KEY;
     
-    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
+    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY' || apiKey.includes('sua_chave')) {
       return `[MOCK BRIEFING] Campanha: ${campaignTitle}. Objetivo: Aumentar conversão e autoridade. Deliverables: Conforme acordado. Foco em autenticidade.`;
     }
 
@@ -723,7 +723,7 @@ Responda apenas com o texto do briefing e planejamento, formatado em Markdown si
     const apiKey = process.env.GEMINI_API_KEY;
     
     // Se não tiver chave, tenta usar o parser local inteligente
-    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
+    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY' || apiKey.includes('sua_chave')) {
        const localResult = runLocalParser(message);
        if (localResult) return localResult;
        return { action: 'UNKNOWN' };
@@ -846,7 +846,7 @@ JSON de retorno:`;
       };
     }
 
-    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
+    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY' || apiKey.includes('sua_chave')) {
       // Mock de validação em modo offline/desenvolvimento
       const approved = Math.random() > 0.15; // 85% de chance de aprovação na simulação offline
       return {

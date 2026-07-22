@@ -1,9 +1,7 @@
 import { Worker } from 'bullmq';
-import { PrismaClient } from '@prisma/client';
-import { createRedisClient } from '../lib/redis';
+import { prisma } from '../lib/prisma';
+import { redisConnection } from '../lib/redis';
 
-const prisma = new PrismaClient();
-const redisConnection = createRedisClient();
 
 export const cleanupWorker = new Worker(
   'cleanup-tasks',

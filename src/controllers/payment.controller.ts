@@ -95,10 +95,12 @@ export class PaymentController {
         return res.status(400).json({ error: 'O contrato precisa ser aceito e assinado eletronicamente pelo influenciador antes de efetuar o pagamento.' });
       }
 
-      // Taxa de intermediação de escrow unificada em 7% (modelo híbrido: mensalidade + 7% take-rate)
-      const ESCROW_FEE_RATE = 0.07;
-      const totalAmount = contract.budget * (1 + ESCROW_FEE_RATE);
+      // Usa a taxa já calculada e salva no contrato (via fees.ts em createContract)
+      // FREE creators = 15%, Premium creators = 7%
+      const feeRate = contract.successFeeRate ?? 0.15;
+      const totalAmount = contract.budget + (contract.budget * feeRate);
       const amountInCents = Math.round(totalAmount * 100);
+      const feePercent = Math.round(feeRate * 100);
 
       if (!stripe) {
         return res.status(500).json({ error: 'Serviço de pagamentos não configurado.' });
@@ -112,7 +114,7 @@ export class PaymentController {
               currency: 'brl',
               product_data: {
                 name: `Contrato: ${contract.title}`,
-                description: `Pagamento em Escrow (Cachê R$ ${contract.budget.toFixed(2)} + 7% taxa de intermediação R$ ${(contract.budget * 0.07).toFixed(2)})`,
+                description: `Pagamento em Escrow (Cachê R$ ${contract.budget.toFixed(2)} + ${feePercent}% taxa de intermediação R$ ${(contract.budget * feeRate).toFixed(2)})`,
               },
               unit_amount: amountInCents,
             },
@@ -165,10 +167,11 @@ export class PaymentController {
         return res.status(400).json({ error: 'O contrato precisa ser aceito e assinado eletronicamente pelo influenciador antes de efetuar o pagamento.' });
       }
 
-      // Taxa de intermediação de escrow unificada em 7% (modelo híbrido: mensalidade + 7% take-rate)
-      const ESCROW_FEE_RATE = 0.07;
-      const totalAmount = contract.budget * (1 + ESCROW_FEE_RATE);
+      // Usa a taxa já calculada e salva no contrato (via fees.ts em createContract)
+      const feeRate = contract.successFeeRate ?? 0.15;
+      const totalAmount = contract.budget + (contract.budget * feeRate);
       const amountInCents = Math.round(totalAmount * 100);
+      const feePercent = Math.round(feeRate * 100);
 
       if (!stripe) {
         return res.status(500).json({ error: 'Serviço de pagamentos não configurado.' });
@@ -182,7 +185,7 @@ export class PaymentController {
           contractId: contract.id,
           type: 'contract_escrow'
         },
-        description: `Pagamento de Escrow: ${contract.title} (Cachê R$ ${contract.budget.toFixed(2)} + 7% taxa de intermediação R$ ${(contract.budget * 0.07).toFixed(2)})`
+        description: `Pagamento de Escrow: ${contract.title} (Cachê R$ ${contract.budget.toFixed(2)} + ${feePercent}% taxa de intermediação R$ ${(contract.budget * feeRate).toFixed(2)})`
       });
 
       // Atualizar contrato com o ID da transação externa
@@ -248,10 +251,13 @@ export class PaymentController {
               });
 
               let subscriptionTier = 'FREE';
-              if (planId === 'plan_pro_influencer_1' || planId === 'plan_master_influencer_1') {
-                subscriptionTier = 'MASTER';
+              // Mapear planId do Stripe para o tier correto
+              if (planId === 'plan_pro_influencer_1') {
+                subscriptionTier = 'PRO';    // Creator Premium (R$59,90/mês) → taxa 7%
+              } else if (planId === 'plan_master_influencer_1') {
+                subscriptionTier = 'MASTER'; // Company Premium (R$120,00/mês) → taxa 7%
               } else if (planId === 'plan_brand_enterprise_1') {
-                subscriptionTier = 'ENTERPRISE';
+                subscriptionTier = 'ENTERPRISE'; // Enterprise → taxa 7%
               }
 
               await prisma.user.update({

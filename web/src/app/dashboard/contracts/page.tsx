@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { FileText, ShieldCheck, Clock, CheckCircle2, ExternalLink, Zap, ChevronDown, ChevronUp, Brain, Sparkles, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import Cookies from 'js-cookie';
+import Link from 'next/link';
 
 import { EscrowExplanatoryCard } from '@/components/EscrowExplanatoryCard';
 
@@ -323,6 +324,85 @@ export default function ContractsPage() {
 
                               {/* Entregáveis e Submissão */}
                               <div className="lg:col-span-1 space-y-4">
+                                 {/* Ações de Assinatura e Escrow de acordo com a regra de negócios */}
+                                 {userRole === 'INFLUENCER' && contract.escrowStatus === 'DRAFT' && (
+                                   <div className={`p-6 border rounded-2xl space-y-3 shadow-md ${
+                                     isDark ? 'bg-[#241a15] border-orange-500/30' : 'bg-orange-50 border-orange-200'
+                                   }`}>
+                                     <h4 className={`text-xs font-black uppercase tracking-wider ${isDark ? 'text-orange-400' : 'text-orange-850'}`}>Proposta Pendente</h4>
+                                     <p className="text-[10px] text-zinc-505 dark:text-zinc-400 font-medium leading-relaxed">
+                                       Você precisa revisar a proposta e assinar eletronicamente para habilitar o depósito do patrocinador.
+                                     </p>
+                                     <button 
+                                       onClick={async (e) => {
+                                         e.stopPropagation();
+                                         if (confirm('Deseja assinar eletronicamente e aceitar esta proposta de contrato?')) {
+                                           try {
+                                             await api.post(`/contracts/${contract.id}/accept`);
+                                             toast.success('Contrato assinado eletronicamente com sucesso!');
+                                             const res = await api.get('/contracts');
+                                             setContracts(res.data);
+                                           } catch (err: any) {
+                                             toast.error(err.response?.data?.error || 'Erro ao assinar contrato.');
+                                           }
+                                         }
+                                       }}
+                                       className="w-full py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-orange-600 hover:bg-orange-500 text-white transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
+                                     >
+                                       <ShieldCheck className="w-3.5 h-3.5" /> Assinar e Aceitar Contrato
+                                     </button>
+                                   </div>
+                                 )}
+
+                                 {userRole === 'COMPANY' && contract.escrowStatus === 'PENDING_PAYMENT' && (
+                                   <div className={`p-6 border rounded-2xl space-y-3 shadow-md ${
+                                     isDark ? 'bg-[#15241b] border-emerald-500/30' : 'bg-emerald-50 border-emerald-200'
+                                   }`}>
+                                     <h4 className={`text-xs font-black uppercase tracking-wider ${isDark ? 'text-emerald-400' : 'text-emerald-850'}`}>Aguardando Depósito</h4>
+                                     <p className="text-[10px] text-zinc-505 dark:text-zinc-400 font-medium leading-relaxed">
+                                       O Creator aceitou e assinou a proposta! Deposite o valor em garantia no cofre do Escrow para iniciar a produção.
+                                     </p>
+                                     <div className="flex flex-col gap-2">
+                                       <Link href={`/dashboard/contracts/${contract.id}/pay`} className="w-full">
+                                         <button className="w-full py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5">
+                                           Depositar via Stripe
+                                         </button>
+                                       </Link>
+                                       <button 
+                                         onClick={async (e) => {
+                                           e.stopPropagation();
+                                           if (confirm('Confirmar depósito Escrow simulado para iniciar a campanha?')) {
+                                             try {
+                                               await api.post(`/contracts/${contract.id}/pay`);
+                                               toast.success('Depósito Escrow simulado com sucesso!');
+                                               const res = await api.get('/contracts');
+                                               setContracts(res.data);
+                                             } catch (err: any) {
+                                               toast.error(err.response?.data?.error || 'Erro ao confirmar depósito.');
+                                             }
+                                           }
+                                         }}
+                                         className={`w-full py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all active:scale-95 ${
+                                           isDark ? 'border-zinc-800 text-zinc-400 hover:bg-white/5' : 'border-zinc-250 text-zinc-650 hover:bg-zinc-100'
+                                         }`}
+                                       >
+                                         Simular Depósito (Mock)
+                                       </button>
+                                     </div>
+                                   </div>
+                                 )}
+
+                                 {userRole === 'COMPANY' && contract.escrowStatus === 'DRAFT' && (
+                                   <div className={`p-6 border rounded-2xl space-y-3 shadow-md ${
+                                     isDark ? 'bg-[#1a1716] border-[#2e2724]' : 'bg-white border-zinc-200'
+                                   }`}>
+                                     <h4 className="text-xs font-black uppercase tracking-wider text-zinc-500">Proposta Enviada</h4>
+                                     <p className="text-[10px] text-zinc-505 dark:text-zinc-500 font-medium leading-relaxed">
+                                       Aguardando o Creator aceitar e assinar eletronicamente o contrato para habilitar o pagamento em Escrow.
+                                     </p>
+                                   </div>
+                                 )}
+
                                  <div className="flex items-center gap-2 text-[10px] font-black text-emerald-500 dark:text-emerald-400 uppercase tracking-widest">
                                     <ShieldCheck className="w-3.5 h-3.5" /> Entregáveis / Ação de Escrow
                                  </div>

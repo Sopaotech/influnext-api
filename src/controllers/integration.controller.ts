@@ -416,7 +416,7 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
           client_secret: process.env.TIKTOK_CLIENT_SECRET!,
           code: code as string,
           grant_type: 'authorization_code',
-          redirect_uri: `${process.env.NEXT_PUBLIC_API_URL}/integrations/tiktok/callback`,
+          redirect_uri: `${getFrontendUrl(req)}/auth/callback/tiktok`,
         }).toString(), 
         { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
       );

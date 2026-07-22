@@ -66,11 +66,12 @@ export default function CheckoutClient({ contractId }: { contractId: string }) {
     );
   }
 
-  const isAgency = user?.subscriptionTier === 'ENTERPRISE' && user?.subscriptionStatus === 'ACTIVE';
-  const escrowFeeRate = isAgency ? 0.10 : 0.15;
+  const feeRate = contract.successFeeRate ?? (user?.subscriptionTier === 'PRO' || user?.subscriptionTier === 'MASTER' || user?.subscriptionTier === 'ENTERPRISE' ? 0.07 : 0.15);
+  const feePercent = Math.round(feeRate * 100);
   const budget = contract.budget || 0;
-  const escrowFee = budget * escrowFeeRate;
+  const escrowFee = contract.platformFee ?? (budget * feeRate);
   const totalAmount = budget + escrowFee;
+  const isFree = feeRate > 0.07;
 
   return (
     <div className="max-w-2xl mx-auto bg-[#0a0a0f] rounded-3xl border border-white/10 p-8 md:p-10 shadow-2xl relative overflow-hidden animate-in fade-in duration-700">
@@ -80,7 +81,7 @@ export default function CheckoutClient({ contractId }: { contractId: string }) {
         <span className="text-amber-500 text-[10px] font-black uppercase tracking-widest block mb-2">Checkout Seguro</span>
         <h2 className="text-3xl font-black text-white tracking-tighter uppercase">Finalizar Contratação</h2>
         <p className="text-zinc-400 text-xs font-semibold mt-1">
-          Campanha: <span className="text-white">{contract.campaignName || 'Campanha de Marketing'}</span>
+          Campanha: <span className="text-white">{contract.title || contract.campaignName || 'Campanha de Marketing'}</span>
         </p>
       </div>
       
@@ -106,18 +107,18 @@ export default function CheckoutClient({ contractId }: { contractId: string }) {
         <div className="flex justify-between items-center text-xs">
           <div className="flex items-center gap-1.5 text-zinc-400 font-medium">
             <span>Taxa Operacional Escrow</span>
-            <span className="text-[10px] text-zinc-500">({isAgency ? '10%' : '15%'})</span>
+            <span className="text-[10px] text-amber-400 font-bold">({feePercent}%)</span>
           </div>
           <span className="text-white font-bold">R$ {escrowFee.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
         </div>
 
-        {!isAgency && escrowFee > 0 && (
+        {isFree && (
           <div className="bg-amber-500/5 border border-amber-500/10 rounded-xl p-3 text-[10px] text-amber-400 font-medium flex items-center gap-2">
             <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <span>
-              Você está pagando 15% de comissão transacional. Assine o <strong>Plano Agency por R$ 110,00/mês</strong> e reduza sua taxa para apenas 10%, além de liberar painel co-working, mais analytics e suporte por IA especialista!
+              Você está na conta Free (taxa de {feePercent}%). Assine o <strong>Plano Premium</strong> por apenas R$ 59,90/mês e reduza sua taxa de intermediação para <strong>apenas 7%</strong>!
             </span>
           </div>
         )}

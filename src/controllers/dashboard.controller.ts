@@ -72,7 +72,8 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
       where: { influencerId: profile.id, escrowStatus: 'COMPLETED' },
       select: { netAmount: true, budget: true }
     });
-    const totalEarned = completedContracts.reduce((sum: number, c: any) => sum + Number(c.netAmount || c.budget * 0.85), 0);
+    const totalEarned = completedContracts.reduce((sum: number, c: any) => sum + Number(c.netAmount ?? c.budget), 0);
+
 
     // KPI: Contratos ativos (qualquer status não concluído)
     const activeContractsCount = profile.contracts.length;

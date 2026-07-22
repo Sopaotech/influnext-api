@@ -1,7 +1,10 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 import { routes } from './routes';
+import { trackPageView } from './middlewares/analytics.middleware';
 
 dotenv.config();
 
@@ -29,20 +32,17 @@ app.use('/v1/payments/webhook', express.raw({ type: 'application/json' }));
 app.use('/v1/webhooks/stripe', express.raw({ type: 'application/json' }));
 
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ limit: '2mb', extended: true }));
 app.use((req, res, next) => {
-  console.log(`[REQUEST] ${req.method} ${req.url}`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`[REQUEST] ${req.method} ${req.url}`);
+  }
   res.on('finish', () => {
     if (res.statusCode === 404) {
-      try {
-        const fs = require('fs');
-        const path = require('path');
-        const logLine = `[404 ERROR] ${new Date().toISOString()} - ${req.method} ${req.url} - Headers: ${JSON.stringify(req.headers)}\n`;
-        fs.appendFileSync(path.join(__dirname, '../404-debug.log'), logLine);
-      } catch (err) {
-        console.error('Failed to write 404 debug log:', err);
-      }
+      const logLine = `[404] ${new Date().toISOString()} ${req.method} ${req.url}\n`;
+      // fs.appendFile é assíncrono — não bloqueia o event loop
+      fs.appendFile(path.join(__dirname, '../404-debug.log'), logLine, () => {});
     }
   });
   next();
@@ -57,6 +57,9 @@ app.get('/', (req, res) => {
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'online', timestamp: new Date().toISOString() });
 });
+
+// Rastreamento de Page Views (fire-and-forget, não bloqueia respostas)
+app.use(trackPageView);
 
 // Todas as suas rotas começarão com /v1
 app.use('/v1', routes);

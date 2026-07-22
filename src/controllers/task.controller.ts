@@ -1,10 +1,8 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { z } from 'zod';
 import { addPostAnalysisJob } from '../queues/post-analyzer.queue';
 import { CalendarService } from '../services/calendar.service';
-
-const prisma = new PrismaClient();
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 

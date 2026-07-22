@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { generateIntegrityHash } from '../utils/audit';
 import { ScoringService } from './scoring.service';
-
-const prisma = new PrismaClient();
 
 export class AuditorService {
   /**

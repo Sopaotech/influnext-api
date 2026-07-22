@@ -225,12 +225,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
 
-    console.log('[AUTH DEBUG]', { 
-      email, 
-      userRole: user.role, 
-      isMatch 
-    });
-
     if (!isMatch) {
       console.warn('[AUTH LOGIN FAIL]', { email, reason: 'Password mismatch' });
       res.status(401).json({ error: 'Credenciais inválidas.' });

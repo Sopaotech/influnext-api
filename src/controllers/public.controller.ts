@@ -1,9 +1,8 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { stripe } from '../lib/stripe';
+import { calcContractFees } from '../lib/fees';
 import crypto from 'crypto';
-
-const prisma = new PrismaClient();
 
 const getFrontendUrl = () => {
   const url = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
@@ -108,7 +107,10 @@ export const createInstantCheckout = async (req: Request, res: Response): Promis
 
     const influencer = await prisma.influencerProfile.findUnique({
       where: { handle },
-      include: { rateCards: true }
+      include: { 
+        rateCards: true,
+        user: { select: { subscriptionTier: true } }
+      }
     });
 
     if (!influencer) {
@@ -164,10 +166,9 @@ export const createInstantCheckout = async (req: Request, res: Response): Promis
       });
     }
 
-    // Criar o Contrato de Escrow
-    const ESCROW_FEE_RATE = 0.07;
-    const platformFee = budget * ESCROW_FEE_RATE;
-    const netAmount = budget - platformFee;
+    // Taxa baseada no tier do influenciador (FREE=15%, Premium=7%)
+    const creatorTier = (influencer as any).user?.subscriptionTier || 'FREE';
+    const { successFeeRate: ESCROW_FEE_RATE, platformFee, netAmount, totalChargedToCompany } = calcContractFees(budget, creatorTier);
 
     const contract = await prisma.contract.create({
       data: {
@@ -211,8 +212,7 @@ export const createInstantCheckout = async (req: Request, res: Response): Promis
       return;
     }
 
-    const totalAmountWithFee = budget * (1 + ESCROW_FEE_RATE);
-    const amountInCents = Math.round(totalAmountWithFee * 100);
+    const amountInCents = Math.round(totalChargedToCompany * 100);
 
     const session = await stripe.checkout.sessions.create({
       customer_email: brandEmail,
@@ -223,7 +223,7 @@ export const createInstantCheckout = async (req: Request, res: Response): Promis
             currency: 'brl',
             product_data: {
               name: `Contrato Direto: ${serviceName} (@${influencer.handle})`,
-              description: `Garantia de Entrega Escrow Influnext (${campaignTitle})`,
+              description: `Garantia de Entrega Escrow Influnext (${campaignTitle}) - Taxa ${Math.round(ESCROW_FEE_RATE * 100)}%`,
             },
             unit_amount: amountInCents,
           },
