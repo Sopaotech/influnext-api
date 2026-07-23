@@ -18,7 +18,10 @@ import {
   CreditCard,
   Building,
   Activity,
-  Layers
+  Layers,
+  Link,
+  Copy,
+  CheckCircle2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Cookies from 'js-cookie';
@@ -27,6 +30,7 @@ export default function MediaKitPage() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   const userRole = Cookies.get('influnext_role');
   const isCompany = userRole === 'COMPANY';
@@ -72,6 +76,16 @@ export default function MediaKitPage() {
     const url = `${window.location.origin}/p/${handle}`;
     navigator.clipboard.writeText(url);
     toast.success('Link do perfil público copiado!');
+  };
+
+  const handleCopyBioLink = () => {
+    const handle = data?.profile?.handle || '';
+    if (!handle) return;
+    const url = `${window.location.origin}/p/${handle}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    toast.success('Link da bio copiado! Cole direto no Instagram. 💜');
+    setTimeout(() => setCopied(false), 2500);
   };
 
   const isDark = theme === 'dark';
@@ -175,6 +189,81 @@ export default function MediaKitPage() {
           </button>
         </div>
       </header>
+
+      {/* Bio Link Widget — somente para influenciadores */}
+      {!isCompany && data?.profile?.handle && (
+        <section className={`rounded-[2.5rem] p-8 border relative overflow-hidden ${
+          isDark 
+            ? 'bg-gradient-to-br from-pink-950/60 via-fuchsia-950/40 to-violet-950/60 border-pink-500/20' 
+            : 'bg-gradient-to-br from-pink-50 via-fuchsia-50 to-violet-50 border-pink-200'
+        }`}>
+          {/* Glow decorativo */}
+          <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-pink-500/10 blur-3xl pointer-events-none" />
+          <div className="absolute -left-8 -bottom-8 w-48 h-48 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-pink-500/15 border border-pink-500/20">
+                  <Link className="w-4 h-4 text-pink-400" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-pink-400">Link_Para_Bio_Do_Instagram</span>
+              </div>
+              <h2 className={`text-xl md:text-2xl font-black tracking-tighter ${
+                isDark ? 'text-white' : 'text-zinc-900'
+              }`}>
+                Seu Mídia Kit Auditado na Bio
+              </h2>
+              <p className={`text-sm font-medium max-w-md leading-relaxed ${
+                isDark ? 'text-zinc-400' : 'text-zinc-600'
+              }`}>
+                Cole este link direto na bio do seu Instagram. Marcas clicam e contratam você em 1 toque — com Escrow garantido e métricas verificadas.
+              </p>
+              {/* URL display */}
+              <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl border font-mono text-sm w-fit ${
+                isDark ? 'bg-white/5 border-white/10 text-zinc-300' : 'bg-white border-zinc-200 text-zinc-700'
+              }`}>
+                <Globe className="w-4 h-4 text-pink-400 flex-shrink-0" />
+                <span className="truncate max-w-[240px] md:max-w-xs">
+                  {typeof window !== 'undefined' ? window.location.origin : 'https://influnext.app'}/p/{data.profile.handle}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row md:flex-col gap-3">
+              {/* Botão principal de copiar */}
+              <button
+                onClick={handleCopyBioLink}
+                className={`group px-8 py-4 rounded-2xl flex items-center justify-center gap-3 font-black text-[11px] uppercase tracking-widest transition-all duration-300 shadow-xl ${
+                  copied
+                    ? 'bg-emerald-500 text-white shadow-emerald-500/30 scale-95'
+                    : 'bg-gradient-to-r from-pink-600 to-violet-600 hover:from-pink-500 hover:to-violet-500 text-white shadow-pink-600/30 hover:scale-105 hover:shadow-pink-500/40'
+                }`}
+              >
+                {copied ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    Copiado!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+                    Copiar Link da Bio
+                  </>
+                )}
+              </button>
+
+              {/* Badge de Métricas Verificadas */}
+              <div className={`flex items-center gap-2 px-4 py-3 rounded-2xl border justify-center ${
+                isDark ? 'bg-white/5 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+              }`}>
+                <ShieldCheck className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest">SHA-256 Verified</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Main Stats Grid */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">

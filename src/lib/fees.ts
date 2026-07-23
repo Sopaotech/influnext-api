@@ -61,3 +61,61 @@ export function calcContractFees(budget: number, creatorTier: string | null | un
  */
 export const FREE_BRAND_ACTIVE_CONTRACT_LIMIT = 3;
 export const FREE_INFLUENCER_PLATFORM_LIMIT = 1; // Apenas 1 plataforma social no FREE
+
+// ─── Penalidades por Atraso de Entrega (Late Delivery SLA) ───────────────────
+/**
+ * MODELO DE PENALIDADE APROVADO (julho/2026):
+ * - 5% do netAmount do creator por dia de atraso
+ * - Teto máximo: 50% do netAmount (proteção contra penalidade excessiva)
+ * - O valor penalizado é revertido como crédito à empresa contratante
+ */
+
+/** Taxa de penalidade por dia de atraso (5% do netAmount) */
+export const LATE_PENALTY_RATE_PER_DAY = 0.05;
+
+/** Teto máximo da penalidade: 50% do netAmount */
+export const LATE_PENALTY_MAX_RATE = 0.50;
+
+/** Penalidade fixa de InfluScore por dia de atraso (sem justificativa aceita) */
+export const LATE_PENALTY_INFLUSCORE_PER_DAY = 50;
+
+/**
+ * Calcula a penalidade financeira por atraso de entrega de um entregável.
+ *
+ * @param netAmount - Valor líquido que o creator receberia sem penalidade (R$)
+ * @param deadline  - Data limite acordada para a entrega
+ * @param submittedAt - Data real de submissão (default: agora)
+ * @returns { daysLate, penaltyRate, penaltyAmount, adjustedNetAmount }
+ *
+ * @example
+ * // Creator atrasou 3 dias em uma entrega de R$ 1.000 líquidos
+ * calcLatePenalty(1000, new Date('2026-07-01'), new Date('2026-07-04'))
+ * // → { daysLate: 3, penaltyRate: 0.15, penaltyAmount: 150, adjustedNetAmount: 850 }
+ */
+export function calcLatePenalty(
+  netAmount: number,
+  deadline: Date,
+  submittedAt: Date = new Date()
+): {
+  daysLate: number;
+  penaltyRate: number;
+  penaltyAmount: number;
+  adjustedNetAmount: number;
+  isLate: boolean;
+} {
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const rawDiff = submittedAt.getTime() - deadline.getTime();
+  const daysLate = rawDiff > 0 ? Math.ceil(rawDiff / msPerDay) : 0;
+
+  if (daysLate === 0) {
+    return { daysLate: 0, penaltyRate: 0, penaltyAmount: 0, adjustedNetAmount: netAmount, isLate: false };
+  }
+
+  // Calcula a taxa com teto de 50%
+  const rawRate = LATE_PENALTY_RATE_PER_DAY * daysLate;
+  const penaltyRate = Math.min(rawRate, LATE_PENALTY_MAX_RATE);
+  const penaltyAmount = parseFloat((netAmount * penaltyRate).toFixed(2));
+  const adjustedNetAmount = parseFloat((netAmount - penaltyAmount).toFixed(2));
+
+  return { daysLate, penaltyRate, penaltyAmount, adjustedNetAmount, isLate: true };
+}

@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma';
 import { z } from 'zod';
 import { addNotificationJob } from '../queues/notification.queue';
 import { AIService } from '../services/ai.service';
+import { calcLatePenalty, LATE_PENALTY_INFLUSCORE_PER_DAY } from '../lib/fees';
 
 const submitSchema = z.object({
   proofUrl: z.string().url('O link da prova deve ser uma URL válida do Instagram ou TikTok.'),
@@ -28,6 +29,7 @@ export const submitWork = async (req: Request, res: Response): Promise<void> => 
     }
 
     const { proofUrl } = parsed.data;
+    const submittedAt = new Date();
 
     // 1. Verificação de Propriedade (ReBAC)
     // Buscamos o entregável e garantimos que ele pertence ao contrato onde o userId logado é o influenciador
@@ -45,6 +47,7 @@ export const submitWork = async (req: Request, res: Response): Promise<void> => 
             title: true, 
             briefing: true,
             aiScript: true,
+            netAmount: true,
             company: { select: { userId: true } } 
           } 
         } 
@@ -62,6 +65,20 @@ export const submitWork = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
+    // ─── Cálculo de Penalidade por Atraso (Late Delivery SLA) ────────────────
+    const contractNetAmount = deliverable.contract.netAmount ?? 0;
+    const latePenalty = calcLatePenalty(contractNetAmount, deliverable.deadline, submittedAt);
+
+    // Monta mensagem de penalidade para incluir nas notificações
+    const latePenaltyMessage = latePenalty.isLate
+      ? ` ⚠️ ENTREGA COM ATRASO DE ${latePenalty.daysLate} DIA(S): Penalidade de R$ ${latePenalty.penaltyAmount.toFixed(2)} (${(latePenalty.penaltyRate * 100).toFixed(0)}% do cachê) aplicada conforme SLA.`
+      : '';
+
+    const influScorePenalty = latePenalty.isLate
+      ? latePenalty.daysLate * LATE_PENALTY_INFLUSCORE_PER_DAY
+      : 0;
+    // ─────────────────────────────────────────────────────────────────────────
+
     // Executar a auditoria automática da IA
     const auditResult = await AIService.auditDeliverableLink(
       proofUrl,
@@ -77,6 +94,7 @@ export const submitWork = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
+    // Transação: atualiza entregável + notifica empresa + aplica penalidade no InfluScore se houver atraso
     const [updatedDeliverable] = await prisma.$transaction([
       prisma.deliverable.update({
         where: { id },
@@ -88,15 +106,22 @@ export const submitWork = async (req: Request, res: Response): Promise<void> => 
       prisma.notification.create({
         data: {
           userId: deliverable.contract.company.userId,
-          message: `Nova entrega no contrato "${deliverable.contract.title}". Auditoria da IA: ${auditResult.approved ? 'Aprovada' : 'Atenção Requerida'} (Confiança: ${auditResult.confidenceScore}%). ${auditResult.feedback}`,
+          message: `Nova entrega no contrato "${deliverable.contract.title}". Auditoria da IA: ${auditResult.approved ? 'Aprovada' : 'Atenção Requerida'} (Confiança: ${auditResult.confidenceScore}%).${latePenaltyMessage} ${auditResult.feedback}`,
           type: 'SUBMISSION_REVIEW'
         }
-      })
+      }),
+      // Se houver atraso, penaliza o InfluScore do criador
+      ...(latePenalty.isLate ? [
+        prisma.influencerProfile.updateMany({
+          where: { userId },
+          data: { influScore: { decrement: influScorePenalty } }
+        })
+      ] : [])
     ]);
 
     await addNotificationJob(
       deliverable.contract.company.userId,
-      `Nova entrega para revisão no contrato: ${deliverable.contract.title}. Auditoria IA: ${auditResult.approved ? 'Aprovada' : 'Atenção Requerida'}.`,
+      `Nova entrega para revisão no contrato: ${deliverable.contract.title}. Auditoria IA: ${auditResult.approved ? 'Aprovada' : 'Atenção Requerida'}.${latePenaltyMessage}`,
       'SUBMISSION_REVIEW'
     );
 
@@ -107,6 +132,14 @@ export const submitWork = async (req: Request, res: Response): Promise<void> => 
         approved: auditResult.approved,
         confidenceScore: auditResult.confidenceScore,
         feedback: auditResult.feedback
+      },
+      latePenalty: {
+        isLate: latePenalty.isLate,
+        daysLate: latePenalty.daysLate,
+        penaltyRate: latePenalty.penaltyRate,
+        penaltyAmount: latePenalty.penaltyAmount,
+        adjustedNetAmount: latePenalty.adjustedNetAmount,
+        influScorePenalty
       }
     });
   } catch (error) {
