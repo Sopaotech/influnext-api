@@ -28,7 +28,7 @@ export function MetricCard({
   
   const cardBg = isDark 
     ? 'bg-white/[0.04] border-white/[0.08] hover:border-orange-500/30 hover:bg-white/[0.06] hover:shadow-[0_20px_50px_-20px_rgba(249,115,22,0.15)]' 
-    : 'bg-white border-slate-200 hover:border-orange-500/30 hover:shadow-[0_20px_50px_-20px_rgba(249,115,22,0.1)]';
+    : 'bg-white border-slate-200 hover:border-orange-200 hover:shadow-md';
 
   const iconBg = isDark
     ? 'bg-white/[0.04] border-white/[0.08] group-hover:bg-orange-500/15 group-hover:border-orange-500/30'
@@ -36,15 +36,15 @@ export function MetricCard({
 
   const iconColor = isDark
     ? 'text-zinc-400 group-hover:text-orange-400'
-    : 'text-slate-400 group-hover:text-orange-600';
+    : 'text-slate-400 group-hover:text-orange-500';
 
-  const titleColor = isDark ? 'text-zinc-500' : 'text-slate-500';
+  const titleColor = isDark ? 'text-zinc-500' : 'text-slate-400';
   
   const valueColor = isDark 
     ? 'text-white group-hover:text-orange-400' 
-    : 'text-slate-900 group-hover:text-orange-700';
+    : 'text-slate-900 group-hover:text-orange-600';
 
-  const descColor = isDark ? 'text-zinc-450 border-white/[0.06]' : 'text-slate-500 border-slate-100';
+  const descColor = isDark ? 'text-zinc-450 border-white/[0.06]' : 'text-slate-400 border-slate-100';
 
   return (
     <div className={`group relative overflow-hidden rounded-[2rem] border p-4 md:p-6 transition-all duration-500 ${cardBg} ${className}`}>

@@ -18,39 +18,43 @@ export function InfluScoreCard({ score }: InfluScoreCardProps) {
 
   const tier = getTier(score);
 
-  // Configurações visuais por Tier - Premium Palette
+  // Configurações visuais por Tier - Light Mode Premium Palette
   const configs = {
     BRONZE: {
-      bg: "from-[#1a110a] to-[#26180e]",
-      border: "border-orange-900/30",
-      glow: "shadow-orange-900/10",
-      bar: "bg-gradient-to-r from-orange-700 to-orange-400",
-      text: "text-orange-200",
-      icon: "text-orange-500"
+      bg: "from-white to-slate-50",
+      border: "border-orange-200/50",
+      glow: "shadow-[0_10px_40px_-15px_rgba(249,115,22,0.15)]",
+      bar: "bg-gradient-to-r from-orange-400 to-orange-300",
+      text: "text-slate-800",
+      icon: "text-orange-500",
+      iconBg: "bg-orange-50 border-orange-100"
     },
     SILVER: {
-      bg: "from-[#0f172a] to-[#1e293b]",
-      border: "border-slate-800",
-      glow: "shadow-slate-900/20",
-      bar: "bg-gradient-to-r from-slate-500 to-slate-300",
-      text: "text-slate-200",
-      icon: "text-slate-400"
+      bg: "from-white to-slate-50",
+      border: "border-slate-200",
+      glow: "shadow-[0_10px_40px_-15px_rgba(148,163,184,0.2)]",
+      bar: "bg-gradient-to-r from-slate-400 to-slate-300",
+      text: "text-slate-800",
+      icon: "text-slate-500",
+      iconBg: "bg-slate-100 border-slate-200"
     },
     GOLD: {
-      bg: "from-[#1a1600] to-[#2b2400]",
-      border: "border-yellow-900/30",
-      glow: "shadow-yellow-900/10",
-      bar: "bg-gradient-to-r from-yellow-600 to-yellow-300",
-      text: "text-yellow-100",
-      icon: "text-yellow-500"
+      bg: "from-white to-amber-50/30",
+      border: "border-amber-200/60",
+      glow: "shadow-[0_10px_40px_-15px_rgba(245,158,11,0.15)]",
+      bar: "bg-gradient-to-r from-amber-400 to-amber-300",
+      text: "text-slate-800",
+      icon: "text-amber-500",
+      iconBg: "bg-amber-50 border-amber-100"
     },
     ELITE: {
-      bg: "from-[#0f0b1a] to-[#1a0b2e]",
-      border: "border-orange-500/20",
-      glow: "shadow-orange-500/10",
-      bar: "bg-gradient-to-r from-orange-600 to-orange-400",
-      text: "text-orange-200",
-      icon: "text-orange-500"
+      bg: "from-slate-900 to-black",
+      border: "border-slate-800",
+      glow: "shadow-[0_15px_50px_-15px_rgba(249,115,22,0.4)]",
+      bar: "bg-gradient-to-r from-orange-500 to-amber-400",
+      text: "text-white",
+      icon: "text-orange-500",
+      iconBg: "bg-white/5 border-white/10"
     }
   };
 
@@ -58,67 +62,67 @@ export function InfluScoreCard({ score }: InfluScoreCardProps) {
 
   return (
     <div className={`
-      relative overflow-hidden rounded-3xl p-5 md:p-6 border bg-gradient-to-br ${config.bg} ${config.border} shadow-2xl ${config.glow}
-      flex flex-col gap-4 md:gap-6 animate-in fade-in zoom-in-95 duration-700
+      relative overflow-hidden rounded-[2rem] p-6 border bg-gradient-to-br ${config.bg} ${config.border} ${config.glow}
+      flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-700
     `}>
       {/* Premium Decorative elements */}
-      <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-white/5 to-transparent blur-3xl -mr-10 -mt-10 rounded-full" />
+      <div className={`absolute top-0 right-0 w-48 h-48 blur-3xl -mr-10 -mt-10 rounded-full ${tier === 'ELITE' ? 'bg-gradient-to-br from-orange-500/10 to-transparent' : 'bg-gradient-to-br from-slate-200/50 to-transparent'}`} />
       
       <div className="flex items-start justify-between z-10">
-        <div className="flex items-center gap-3 md:gap-4">
-          <div className={`p-3 md:p-4 rounded-2xl bg-white/5 border border-white/10 ${config.icon} shadow-inner`}>
-            {tier === 'ELITE' ? <Sparkles className="w-6 h-6 md:w-8 md:h-8" /> : <Trophy className="w-6 h-6 md:w-8 md:h-8" />}
+        <div className="flex items-center gap-4">
+          <div className={`p-4 rounded-2xl border ${config.iconBg} ${config.icon} shadow-sm`}>
+            {tier === 'ELITE' ? <Sparkles className="w-8 h-8" /> : <Trophy className="w-8 h-8" />}
           </div>
           <div>
-            <div className="flex items-center gap-2 mb-0.5 md:mb-1">
-               <span className="text-[9px] md:text-[10px] font-black tracking-[0.2em] uppercase text-zinc-500">Classificação Atual</span>
+            <div className="flex items-center gap-2 mb-1">
+               <span className={`text-[10px] font-black tracking-[0.2em] uppercase ${tier === 'ELITE' ? 'text-zinc-400' : 'text-slate-400'}`}>Classificação Atual</span>
                {tier === 'ELITE' && (
                  <div className="bg-orange-500/10 px-2 py-0.5 rounded-full flex items-center gap-1 border border-orange-500/20">
-                    <Zap className="w-2 h-2 md:w-2.5 md:h-2.5 text-orange-400" />
-                    <span className="text-[7px] md:text-[8px] font-black text-orange-300 uppercase">Top 1%</span>
+                    <Zap className="w-2.5 h-2.5 text-orange-400" />
+                    <span className="text-[8px] font-black text-orange-500 uppercase">Top 1%</span>
                  </div>
                )}
             </div>
             <div className="flex items-center gap-2">
-              <span className={`text-2xl md:text-3xl font-black tracking-tighter ${tier === 'ELITE' ? 'text-white' : 'text-zinc-100'}`}>
+              <span className={`text-3xl font-black tracking-tighter ${config.text}`}>
                 {tier}
               </span>
-              <ShieldCheck className="w-4 h-4 md:w-5 md:h-5 text-emerald-400/80" />
+              <ShieldCheck className={`w-5 h-5 ${tier === 'ELITE' ? 'text-orange-500' : 'text-emerald-500'}`} />
             </div>
           </div>
         </div>
 
-        <div className="text-right">
-          <div className="relative inline-block">
-             <div className={`text-4xl md:text-5xl font-black tracking-tighter ${tier === 'ELITE' ? 'text-transparent bg-clip-text bg-gradient-to-br from-white to-orange-400' : 'text-white'}`}>
+        <div className="text-right flex flex-col items-end">
+          <div className="flex items-baseline justify-end gap-0.5">
+             <div className={`text-5xl font-black tracking-tighter leading-none ${tier === 'ELITE' ? 'text-transparent bg-clip-text bg-gradient-to-br from-white to-orange-200' : 'text-slate-900'}`}>
                {score}
              </div>
-             <div className="absolute -top-1 -right-4">
-                <span className="text-zinc-500 font-bold text-xs">/100</span>
+             <div className={`${tier === 'ELITE' ? 'text-zinc-500' : 'text-slate-400'} font-bold text-sm leading-none`}>
+                /100
              </div>
           </div>
-          <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-1">Pontuação Global</div>
+          <div className={`text-[10px] font-black uppercase tracking-widest mt-2 ${tier === 'ELITE' ? 'text-zinc-500' : 'text-slate-400'}`}>Pontuação Global</div>
         </div>
       </div>
 
       <div className="space-y-3 z-10">
-        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-zinc-500 px-1">
+        <div className={`flex justify-between text-[10px] font-black uppercase tracking-widest px-1 ${tier === 'ELITE' ? 'text-zinc-500' : 'text-slate-400'}`}>
           <span>Sincronização Ativa</span>
           <span>Próximo Nível: {tier === 'ELITE' ? 'MAX' : tier === 'GOLD' ? '86+' : tier === 'SILVER' ? '61+' : '31+'}</span>
         </div>
-        <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5 p-[1px]">
+        <div className={`h-2.5 w-full rounded-full overflow-hidden border p-[1px] ${tier === 'ELITE' ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'}`}>
           <div 
-            className={`h-full ${config.bar} rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(139,92,246,0.3)]`} 
+            className={`h-full ${config.bar} rounded-full transition-all duration-1000 ease-out shadow-sm`} 
             style={{ width: `${score}%` }}
           />
         </div>
       </div>
 
-      <footer className="flex items-center gap-3 pt-4 border-t border-white/5 z-10 opacity-60 hover:opacity-100 transition-opacity">
-        <div className="bg-zinc-800/50 p-1.5 rounded-lg">
-           <Info className="w-3.5 h-3.5 text-zinc-400" />
+      <footer className={`flex items-center gap-3 pt-4 border-t z-10 transition-opacity ${tier === 'ELITE' ? 'border-white/10 opacity-70 hover:opacity-100' : 'border-slate-100 opacity-80 hover:opacity-100'}`}>
+        <div className={`p-1.5 rounded-lg ${tier === 'ELITE' ? 'bg-zinc-800/50' : 'bg-slate-50'}`}>
+           <Info className={`w-3.5 h-3.5 ${tier === 'ELITE' ? 'text-zinc-400' : 'text-slate-400'}`} />
         </div>
-        <p className="text-[9px] leading-relaxed text-zinc-500 font-bold uppercase tracking-tight">
+        <p className={`text-[9px] leading-relaxed font-bold uppercase tracking-tight ${tier === 'ELITE' ? 'text-zinc-400' : 'text-slate-500'}`}>
           O InfluScore é dinâmico e reflete sua autoridade digital nos últimos 30 dias.
         </p>
       </footer>

@@ -43,13 +43,13 @@ export function SHA256AuditModal({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-zinc-400 hover:text-white bg-zinc-800/50 rounded-full transition-all hover:rotate-90"
+          className="absolute top-4 right-4 p-2 text-slate-500 hover:text-slate-900 bg-slate-100 rounded-full transition-all hover:rotate-90"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Modal Header */}
-        <div className="flex items-center gap-4 border-b border-zinc-800 pb-5">
+        <div className="flex items-center gap-4 border-b border-slate-200 pb-5">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-orange-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shadow-lg">
             <ShieldCheck className="w-7 h-7" />
           </div>
@@ -60,22 +60,22 @@ export function SHA256AuditModal({
               </span>
             </div>
             <h2 className="text-lg font-black tracking-tight mt-1">Selo SHA-256 Verified</h2>
-            <p className="text-xs text-zinc-400">Certificado de Autenticidade Telemétrica @{handle}</p>
+            <p className="text-xs text-slate-500">Certificado de Autenticidade Telemétrica @{handle}</p>
           </div>
         </div>
 
         {/* Hash Details */}
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-1.5">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
               <Lock className="w-3.5 h-3.5 text-orange-400" />
               Hash Criptográfico SHA-256 (Audit Trail)
             </label>
-            <div className="flex items-center justify-between p-3.5 bg-black/60 border border-zinc-800 rounded-2xl font-mono text-xs text-orange-300 break-all group">
+            <div className="flex items-center justify-between p-3.5 bg-black/60 border border-slate-200 rounded-2xl font-mono text-xs text-orange-300 break-all group">
               <span className="truncate mr-2 select-all">{formattedHash}</span>
               <button
                 onClick={handleCopy}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-orange-500 hover:text-black rounded-xl text-[10px] font-bold transition-all shrink-0"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-200 hover:bg-orange-500 hover:text-black rounded-xl text-[10px] font-bold transition-all shrink-0"
               >
                 {copied ? (
                   <>
@@ -92,18 +92,18 @@ export function SHA256AuditModal({
 
           {/* Verification Indicators */}
           <div className="grid grid-cols-2 gap-3 pt-2">
-            <div className="p-3 bg-zinc-900/60 border border-zinc-800 rounded-2xl flex items-center gap-3">
+            <div className="p-3 bg-slate-50/60 border border-slate-200 rounded-2xl flex items-center gap-3">
               <Cpu className="w-5 h-5 text-orange-400 shrink-0" />
               <div>
-                <p className="text-[9px] font-black uppercase tracking-wider text-zinc-500">Fonte dos Dados</p>
+                <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Fonte dos Dados</p>
                 <p className="text-xs font-bold text-zinc-200">API Oficial Meta / TikTok</p>
               </div>
             </div>
 
-            <div className="p-3 bg-zinc-900/60 border border-zinc-800 rounded-2xl flex items-center gap-3">
+            <div className="p-3 bg-slate-50/60 border border-slate-200 rounded-2xl flex items-center gap-3">
               <Calendar className="w-5 h-5 text-emerald-400 shrink-0" />
               <div>
-                <p className="text-[9px] font-black uppercase tracking-wider text-zinc-500">Última Auditoria</p>
+                <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Última Auditoria</p>
                 <p className="text-[11px] font-bold text-zinc-200 truncate">{auditDate}</p>
               </div>
             </div>
@@ -114,7 +114,7 @@ export function SHA256AuditModal({
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
               Garantia Anti-Fraude Photoshop
             </p>
-            <p className="text-[10px] text-zinc-400 leading-relaxed">
+            <p className="text-[10px] text-slate-500 leading-relaxed">
               Este hash é gerado no momento exato em que os servidores da Influnext efetuam handshake seguro com as APIs das redes sociais, impedindo qualquer manipulação manual.
             </p>
           </div>
@@ -124,7 +124,7 @@ export function SHA256AuditModal({
         <div className="pt-2">
           <button
             onClick={onClose}
-            className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold text-xs rounded-2xl transition-all"
+            className="w-full py-3 bg-slate-200 hover:bg-zinc-700 text-zinc-200 font-bold text-xs rounded-2xl transition-all"
           >
             Fechar Auditoria
           </button>

@@ -68,6 +68,23 @@ export const getPublicProfile = async (req: Request, res: Response): Promise<voi
             proofUrl: true,
             performanceMultiplier: true
           }
+        },
+        // Buscamos os reviews das marcas
+        reviews: {
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+          select: {
+            id: true,
+            rating: true,
+            comment: true,
+            createdAt: true,
+            company: {
+              select: {
+                companyName: true,
+                logoUrl: true
+              }
+            }
+          }
         }
       }
     });

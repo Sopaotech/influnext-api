@@ -14,7 +14,7 @@ async function getProfileData(handle: string) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/v1';
   try {
     const res = await fetch(`${apiUrl}/p/${handle}`, {
-      next: { revalidate: 60 }
+      cache: 'no-store'
     });
     if (!res.ok) return null;
     return res.json();

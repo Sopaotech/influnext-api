@@ -665,12 +665,18 @@ export default function SignupClient() {
             </div>
           )}
 
-          <div className="pt-4 border-t border-zinc-100 text-center relative z-10">
+          <div className="pt-4 border-t border-zinc-100 text-center relative z-10 space-y-3">
             <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
               Já possui conta?{' '}
               <Link href="/auth/login" className="text-[#d96b27] hover:text-[#c65e21] transition-colors font-black">
                 Fazer Login
               </Link>
+            </p>
+            <p className="text-[8px] text-zinc-400 leading-relaxed">
+              Ao criar uma conta, você concorda com os nossos{' '}
+              <Link href="/termos" target="_blank" className="text-[#d96b27] font-bold hover:underline">Termos de Uso</Link>
+              {' '}e com a nossa{' '}
+              <Link href="/privacidade" target="_blank" className="text-[#d96b27] font-bold hover:underline">Política de Privacidade</Link>.
             </p>
           </div>
         </div>

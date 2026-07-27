@@ -329,12 +329,21 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Security badge */}
       <div className="flex items-center justify-center gap-2 opacity-30">
         <Shield className="w-3 h-3 text-zinc-500" />
         <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">
           SSL · AES-256 · Conexão Segura
         </span>
+      </div>
+
+      <div className="flex items-center justify-center gap-4">
+        <Link href="/termos" target="_blank" className="text-[8px] text-zinc-400 hover:text-[#d96b27] transition-colors font-bold uppercase tracking-widest">
+          Termos de Uso
+        </Link>
+        <span className="text-zinc-300">·</span>
+        <Link href="/privacidade" target="_blank" className="text-[8px] text-zinc-400 hover:text-[#d96b27] transition-colors font-bold uppercase tracking-widest">
+          Privacidade
+        </Link>
       </div>
 
       {socialModalOpen && (

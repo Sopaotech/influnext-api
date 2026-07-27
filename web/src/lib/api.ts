@@ -60,8 +60,10 @@ api.interceptors.response.use(
     }
 
     if (error.response?.status === 401) {
-      Cookies.remove('influnext_token');
-      Cookies.remove('influnext_role');
+      console.error(`❌ [401 UNAUTHORIZED]: A requisição para ${error.config?.url} falhou com 401.`);
+      
+      Cookies.remove('influnext_token', { path: '/' });
+      Cookies.remove('influnext_role', { path: '/' });
       
       // Evitar loop infinito se já estivermos na página de login
       if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {

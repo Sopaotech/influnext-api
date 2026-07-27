@@ -111,6 +111,7 @@ model InfluencerProfile {
   aiAnalyses      AIAnalysis[]
   trendVault      TrendReference[]
   rateCards       RateCard[]
+  reviews         Review[]
 
   @@index([niche, scoreClass, influScore])
   @@index([city, state])
@@ -128,6 +129,22 @@ model TrendReference {
   expiresAt    DateTime // Data de criação + 20 dias
   
   influencer   InfluencerProfile @relation(fields: [influencerId], references: [id])
+}
+
+model Review {
+  id              String   @id @default(uuid())
+  contractId      String   @unique
+  influencerId    String
+  companyId       String
+  rating          Int      
+  comment         String?
+  createdAt       DateTime @default(now())
+  
+  contract        Contract          @relation(fields: [contractId], references: [id])
+  influencer      InfluencerProfile @relation(fields: [influencerId], references: [id])
+  company         CompanyProfile    @relation(fields: [companyId], references: [id])
+
+  @@index([influencerId])
 }
 
 model CompanyProfile {
@@ -149,6 +166,7 @@ model CompanyProfile {
   contracts       Contract[]
   rateCards       RateCard[]
   recebidos       Recebido[]
+  reviews         Review[]
   marketingAnalyses MarketingAnalysis[]
 }
 
@@ -228,6 +246,7 @@ model Contract {
   company         CompanyProfile    @relation(fields: [companyId], references: [id])
   influencer      InfluencerProfile @relation(fields: [influencerId], references: [id])
   deliverables    Deliverable[]
+  review          Review?
   createdAt       DateTime          @default(now())
 
   @@index([companyId, escrowStatus])
