@@ -13,10 +13,16 @@ export default function InfluencerDashboard() {
   const [data, setData] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Monitor theme updates
   useEffect(() => {
-    setTheme('light');
-  }, []);
+    if (data?.userState?.theme) {
+      setTheme(data.userState.theme);
+    } else if (data?.profile?.theme) {
+      setTheme(data.profile.theme);
+    } else {
+      // Default to light if no theme is found, or dark if preferred
+      setTheme('light');
+    }
+  }, [data]);
 
   useEffect(() => {
     const fetchDashboard = async () => {

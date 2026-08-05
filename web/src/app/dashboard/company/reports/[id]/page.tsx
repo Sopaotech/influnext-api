@@ -4,6 +4,7 @@ import { ArrowLeft, Target, TrendingUp, Users, CheckCircle2, FileText, Sparkles,
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import Cookies from 'js-cookie';
+import ReactMarkdown from 'react-markdown';
 
 interface ContractData {
   id: string;
@@ -22,6 +23,13 @@ export default function CampaignReportPage({ params }: { params: { id: string } 
   const [contract, setContract] = useState<ContractData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [aiReport, setAiReport] = useState<{
+    roiMultiplier: number;
+    cpmBrl: number;
+    efficiencyVsMarket: number;
+    aiReportMarkdown: string;
+  } | null>(null);
 
   // Monitor theme updates
   useEffect(() => {
@@ -52,6 +60,19 @@ export default function CampaignReportPage({ params }: { params: { id: string } 
     };
     fetchContract();
   }, [params.id]);
+
+  const handleGenerateReport = async () => {
+    setIsGenerating(true);
+    try {
+      const res = await api.post(`/contracts/${params.id}/roi-report`);
+      setAiReport(res.data);
+    } catch (err: any) {
+      console.error('[CAMPAIGN_REPORT] Erro ao gerar relatório IA:', err);
+      setError('Falha ao gerar o relatório com Inteligência Artificial.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const isDark = theme === 'dark';
 
@@ -92,8 +113,8 @@ export default function CampaignReportPage({ params }: { params: { id: string } 
   const impressions = Math.floor(budget * (30 + (influScore % 10)));
   const estimatedClicks = Math.floor(budget * 2.15);
   const engagement = (4.2 + (influScore % 30) / 10).toFixed(1);
-  const estimatedRoi = (20 + (influScore % 15) + (budget > 1000 ? 5 : 0)).toFixed(1);
-  const cpm = (budget / (impressions / 1000)).toFixed(2);
+  const estimatedRoi = aiReport ? aiReport.roiMultiplier : (20 + (influScore % 15) + (budget > 1000 ? 5 : 0)).toFixed(1);
+  const cpm = aiReport ? aiReport.cpmBrl.toFixed(2) : (budget / (impressions / 1000)).toFixed(2);
   const cpc = (budget / estimatedClicks).toFixed(2);
 
   const escrowLabelMap: Record<string, string> = {
@@ -151,11 +172,38 @@ export default function CampaignReportPage({ params }: { params: { id: string } 
           <div className="p-3 bg-white/10 rounded-2xl flex-shrink-0">
             <Sparkles className="w-6 h-6 text-orange-500" />
           </div>
-          <div className="space-y-2">
-            <h3 className="text-xs font-black text-orange-500 uppercase tracking-widest">Inteligência InfluNext Analisa:</h3>
-            <p className={`text-lg md:text-xl font-medium leading-relaxed ${isDark ? 'text-slate-200' : 'text-zinc-800'}`}>
-              "Excelente escolha! Esta campanha com <span className="font-black text-current">@{influencerHandle}</span> superou a média de engajamento do segmento em <span className="font-black text-current">15%</span>. O custo por clique estimado ficou em R$ {cpc}, gerando um alto potencial de conversão e retorno para o seu negócio."
-            </p>
+          <div className="space-y-4 w-full">
+            <h3 className="text-xs font-black text-orange-500 uppercase tracking-widest">Relatório Analítico de IA</h3>
+            
+            {!aiReport && !isGenerating && (
+              <div className="pt-2">
+                <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-zinc-600'}`}>
+                  Clique abaixo para que a nossa Inteligência Artificial analise as métricas finais do contrato, 
+                  compare com os benchmarks de mercado e gere um relatório de ROI e Eficiência executivo.
+                </p>
+                <button 
+                  onClick={handleGenerateReport}
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg active:scale-95 text-sm flex items-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" /> Gerar Relatório de ROI
+                </button>
+              </div>
+            )}
+
+            {isGenerating && (
+              <div className="pt-4 flex items-center gap-3">
+                <Loader2 className="w-5 h-5 text-orange-500 animate-spin" />
+                <span className="text-sm font-bold text-orange-500 animate-pulse">A Inteligência Artificial está analisando as métricas e escrevendo o relatório...</span>
+              </div>
+            )}
+
+            {aiReport && (
+              <div className={`prose prose-sm md:prose-base max-w-none ${isDark ? 'prose-invert prose-p:text-slate-200 prose-headings:text-white' : 'prose-p:text-zinc-800 prose-headings:text-zinc-900'}`}>
+                <ReactMarkdown>
+                  {aiReport.aiReportMarkdown}
+                </ReactMarkdown>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -187,8 +235,8 @@ export default function CampaignReportPage({ params }: { params: { id: string } 
           isDark ? 'bg-orange-950/20 border-orange-500/30 text-white' : 'bg-orange-50 border-orange-200 text-orange-700 shadow-orange-100/50'
         }`}>
            <TrendingUp className="w-6 h-6 text-orange-500 mb-4" />
-           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-605">ROI Estimado</p>
-           <p className="text-2xl md:text-3xl font-black tracking-tighter mt-1 text-current">+{estimatedRoi}%</p>
+           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-605">Eficiência vs Mercado</p>
+           <p className="text-2xl md:text-3xl font-black tracking-tighter mt-1 text-current">{aiReport ? `+${aiReport.efficiencyVsMarket}%` : '+--%'}</p>
         </div>
       </div>
 

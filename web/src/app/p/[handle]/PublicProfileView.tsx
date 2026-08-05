@@ -7,12 +7,14 @@ import { Users, Target, Activity, Eye, ShieldCheck, ArrowRight, Zap, Trophy, Lin
 
 import { SHA256AuditModal } from '@/components/SHA256AuditModal';
 import { InstantCheckoutModal } from '@/components/InstantCheckoutModal';
+import { toast } from 'sonner';
 
 interface PublicProfileViewProps {
   profile: any;
+  checkoutStatus?: string;
 }
 
-export function PublicProfileView({ profile }: PublicProfileViewProps) {
+export function PublicProfileView({ profile, checkoutStatus }: PublicProfileViewProps) {
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [selectedRateCard, setSelectedRateCard] = useState<any | null>(null);
@@ -27,6 +29,25 @@ export function PublicProfileView({ profile }: PublicProfileViewProps) {
   };
 
   const roiPercentage = ((profile.avgROI - 1) * 100).toFixed(0);
+
+  React.useEffect(() => {
+    if (checkoutStatus === 'success') {
+      toast.success('Pagamento efetuado com sucesso!', {
+        description: 'O valor está seguro no Escrow e o influenciador foi notificado.',
+        duration: 5000,
+      });
+    } else if (checkoutStatus === 'simulated') {
+      toast.success('Checkout Simulado Concluído!', {
+        description: 'O contrato foi gerado em modo de simulação (Stripe não configurada).',
+        duration: 5000,
+      });
+    } else if (checkoutStatus === 'canceled') {
+      toast.error('Pagamento cancelado.', {
+        description: 'O pagamento não foi concluído e nenhum valor foi debitado.',
+        duration: 5000,
+      });
+    }
+  }, [checkoutStatus]);
 
   const handleOpenCheckout = (rateCard?: any) => {
     setSelectedRateCard(rateCard || null);

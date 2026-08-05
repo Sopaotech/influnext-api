@@ -384,12 +384,34 @@ export const releasePayment = async (req: Request, res: Response): Promise<void>
       return;
     }
 
+    // ─── Stripe Connect Transfer ──────────────────────────────────────────────
+    const { StripeConnectService } = await import('../services/stripe-connect.service');
+    let transferId: string | null = null;
+
+    if (contract.influencer.user.stripeConnectAccountId) {
+      try {
+        const transfer = await StripeConnectService.transferToConnectedAccount(
+          contract.influencer.user.stripeConnectAccountId,
+          contract.netAmount ?? contract.budget,
+          `Pagamento de Escrow: ${contract.title}`,
+          contract.externalTxId || undefined // Pode ser um cs_ ou pi_ se veio do Checkout
+        );
+        transferId = transfer.id;
+      } catch (err: any) {
+        res.status(502).json({ error: err.message || "Falha de comunicação com o gateway de pagamento." });
+        return;
+      }
+    } else {
+      console.warn(`[CONTRACT] ⚠️ Influenciador ${contract.influencer.id} não tem conta Stripe Connect vinculada! Nenhuma transferência real foi feita.`);
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     const updated = await prisma.$transaction(async (tx) => {
       const updatedContract = await tx.contract.updateMany({
         where: { id, releaseTxId: null },
         data: {
           escrowStatus: 'COMPLETED',
-          releaseTxId: idempotencyKey,
+          releaseTxId: transferId || idempotencyKey, // Salva o ID real da Stripe ou o IdempotencyKey de fallback
           idempotencyKey
         }
       });

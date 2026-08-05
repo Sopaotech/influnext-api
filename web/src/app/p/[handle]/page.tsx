@@ -41,12 +41,15 @@ export async function generateMetadata(props: { params: Promise<{ handle: string
   };
 }
 
-export default async function PublicProfile(props: { params: Promise<{ handle: string }> }) {
+export default async function PublicProfile(props: { params: Promise<{ handle: string }>, searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const params = await props.params;
+  const searchParams = await props.searchParams;
   const profile = await getProfileData(params.handle);
 
   if (!profile) notFound();
 
-  return <PublicProfileView profile={profile} />;
+  const checkoutStatus = typeof searchParams?.checkout === 'string' ? searchParams.checkout : undefined;
+
+  return <PublicProfileView profile={profile} checkoutStatus={checkoutStatus} />;
 }
 
