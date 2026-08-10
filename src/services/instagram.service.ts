@@ -92,7 +92,8 @@ export class InstagramService {
         platformId: igUserId, // ID único do usuário no Instagram
       };
     } catch (error: any) {
-      console.error('[INSTAGRAM SERVICE] Erro ao trocar código por token:', error.response?.data || error.message);
+      const errData = error.response?.data?.error || error.response?.data || error.message;
+      console.error('[INSTAGRAM SERVICE] Erro ao trocar código por token:', JSON.stringify(errData, null, 2));
       throw new Error('Falha na autenticação com Instagram. Verifique se a conta é do tipo Creator ou Business.');
     }
   }
@@ -114,7 +115,8 @@ export class InstagramService {
         expiresIn: res.data.expires_in || 5184000,
       };
     } catch (error: any) {
-      console.error('[INSTAGRAM SERVICE] Erro ao renovar token:', error.response?.data || error.message);
+      const errData = error.response?.data?.error || error.response?.data || error.message;
+      console.error('[INSTAGRAM SERVICE] Erro ao renovar token:', JSON.stringify(errData, null, 2));
       throw new Error('Falha ao renovar token do Instagram. O usuário precisa reconectar a conta.');
     }
   }
@@ -134,7 +136,8 @@ export class InstagramService {
       });
       return res.data;
     } catch (error: any) {
-      console.error('[INSTAGRAM SERVICE] Erro ao buscar perfil:', error.response?.data || error.message);
+      const errData = error.response?.data?.error || error.response?.data || error.message;
+      console.error('[INSTAGRAM SERVICE] Erro ao buscar perfil:', JSON.stringify(errData, null, 2));
       throw new Error('Falha ao obter dados do perfil. Verifique se a conta Instagram é do tipo Creator ou Business.');
     }
   }
@@ -341,7 +344,8 @@ export class InstagramService {
         avgViews,
       };
     } catch (err: any) {
-      console.error('[INSTAGRAM_SYNC] ❌ Erro na sincronização:', err.response?.data || err.message);
+      const errData = err.response?.data?.error || err.response?.data || err.message;
+      console.error('[INSTAGRAM_SYNC] ❌ Erro na sincronização:', JSON.stringify(errData, null, 2));
       throw new Error(`Falha ao sincronizar métricas do Instagram: ${err.message}`);
     }
   }

@@ -170,7 +170,8 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
       : `${getFrontendUrl(req)}/dashboard/settings?status=success&platform=instagram`;
     res.redirect(redirectUrl);
   } catch (error: any) {
-    console.error('[INSTAGRAM] Erro no callback:', error.response?.data || error.message);
+    const errData = error.response?.data?.error || error.response?.data || error.message || error;
+    console.error('[INSTAGRAM] Erro no callback:', JSON.stringify(errData, null, 2));
     
     let errorType = 'error';
     if (error.message && (error.message.includes('Creator') || error.message.includes('Business') || error.message.includes('profissional'))) {
@@ -485,8 +486,9 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
       ? `${getFrontendUrl(req)}/onboarding?status=success&platform=tiktok`
       : `${getFrontendUrl(req)}/dashboard/settings?status=success&platform=tiktok`;
     res.redirect(redirectUrl);
-  } catch (error) {
-    console.error('[TIKTOK] Erro no callback:', error);
+  } catch (error: any) {
+    const errData = error.response?.data?.error || error.response?.data || error.message || error;
+    console.error('[TIKTOK] Erro no callback:', JSON.stringify(errData, null, 2));
     const redirectUrl = isFromOnboarding
       ? `${getFrontendUrl(req)}/onboarding?status=error`
       : `${getFrontendUrl(req)}/dashboard/settings?status=error`;

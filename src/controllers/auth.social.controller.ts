@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import axios from 'axios';
 import { ScoringService } from '../services/scoring.service';
 import { InstagramService } from '../services/instagram.service';
+import { TikTokService } from '../services/tiktok.service';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
@@ -280,11 +281,10 @@ export class SocialAuthController {
           console.error('[INSTAGRAM] Falha na sincronização de dados reais:', err);
         });
       } else if (platformName === 'TIKTOK') {
-        await prisma.influencerProfile.update({
-          where: { id: profile.id },
-          data: { verifiedMetrics: true }
+        // Executar sincronização real do TikTok em background
+        TikTokService.syncTikTokData(profile.id, accessToken, platformId).catch(err => {
+          console.error('[TIKTOK] Falha na sincronização de dados reais:', err);
         });
-        await ScoringService.calculateAndPersist(profile.id);
       }
 
       if (isRegister) {

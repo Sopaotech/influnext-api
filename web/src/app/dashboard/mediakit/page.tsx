@@ -194,20 +194,20 @@ export default function MediaKitPage() {
       {!isCompany && data?.profile?.handle && (
         <section className={`rounded-[2.5rem] p-8 border relative overflow-hidden ${
           isDark 
-            ? 'bg-gradient-to-br from-pink-950/60 via-fuchsia-950/40 to-violet-950/60 border-pink-500/20' 
-            : 'bg-gradient-to-br from-pink-50 via-fuchsia-50 to-violet-50 border-pink-200'
+            ? 'bg-gradient-to-br from-orange-950/40 via-amber-950/20 to-zinc-950 border-orange-500/20 shadow-2xl shadow-orange-500/5' 
+            : 'bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100/50 border-orange-200 shadow-xl shadow-orange-500/5'
         }`}>
           {/* Glow decorativo */}
-          <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-pink-500/10 blur-3xl pointer-events-none" />
-          <div className="absolute -left-8 -bottom-8 w-48 h-48 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
+          <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-orange-500/10 blur-3xl pointer-events-none" />
+          <div className="absolute -left-8 -bottom-8 w-48 h-48 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
 
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-pink-500/15 border border-pink-500/20">
-                  <Link className="w-4 h-4 text-pink-400" />
+                <div className="p-2 rounded-xl bg-orange-500/15 border border-orange-500/20">
+                  <Link className="w-4 h-4 text-orange-500" />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-pink-400">Link_Para_Bio_Do_Instagram</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-orange-500">Link_Para_Bio_Do_Instagram</span>
               </div>
               <h2 className={`text-xl md:text-2xl font-black tracking-tighter ${
                 isDark ? 'text-white' : 'text-zinc-900'
@@ -223,7 +223,7 @@ export default function MediaKitPage() {
               <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl border font-mono text-sm w-fit ${
                 isDark ? 'bg-white/5 border-white/10 text-zinc-300' : 'bg-white border-zinc-200 text-zinc-700'
               }`}>
-                <Globe className="w-4 h-4 text-pink-400 flex-shrink-0" />
+                <Globe className="w-4 h-4 text-orange-500 flex-shrink-0" />
                 <span className="truncate max-w-[240px] md:max-w-xs">
                   {typeof window !== 'undefined' ? window.location.origin : 'https://influnext.app'}/p/{data.profile.handle}
                 </span>
@@ -237,7 +237,7 @@ export default function MediaKitPage() {
                 className={`group px-8 py-4 rounded-2xl flex items-center justify-center gap-3 font-black text-[11px] uppercase tracking-widest transition-all duration-300 shadow-xl ${
                   copied
                     ? 'bg-emerald-500 text-white shadow-emerald-500/30 scale-95'
-                    : 'bg-gradient-to-r from-pink-600 to-violet-600 hover:from-pink-500 hover:to-violet-500 text-white shadow-pink-600/30 hover:scale-105 hover:shadow-pink-500/40'
+                    : 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white shadow-orange-600/30 hover:scale-105 hover:shadow-orange-500/40'
                 }`}
               >
                 {copied ? (
