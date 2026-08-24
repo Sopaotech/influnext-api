@@ -11,9 +11,32 @@ interface AIAnalysisResult {
 }
 
 export class AIService {
+  public static async generateContentWithFallback(genAI: GoogleGenerativeAI, prompt: string) {
+    const modelsToTry = [
+      process.env.GEMINI_MODEL,
+      'gemini-2.0-flash',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro',
+      'gemini-pro'
+    ].filter(Boolean) as string[];
+
+    let lastError;
+    for (const modelName of modelsToTry) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        return result;
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    throw lastError;
+  }
+
   /**
    * Gera uma estratégia de carreira real usando Gemini AI.
-   */  static async generateCareerStrategy(influencer: any, metrics: MetricSnapshot, activeContracts: any[]): Promise<{ mentorGreeting: string; trends: any[]; suggestedTasks: any[]; videoInspirations: any[]; trendingNow: any; videoReferences: any[] }> {
+   */
+  static async generateCareerStrategy(influencer: any, metrics: MetricSnapshot, activeContracts: any[]): Promise<{ mentorGreeting: string; trends: any[]; suggestedTasks: any[]; videoInspirations: any[]; trendingNow: any; videoReferences: any[] }> {
     const apiKey = process.env.GEMINI_API_KEY;
     
     if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY' || apiKey.includes('sua_chave')) {
@@ -32,13 +55,6 @@ export class AIService {
       ]);
 
       const genAI = new GoogleGenerativeAI(apiKey);
-      // Alterado para 'gemini-1.5-flash-latest' para maior compatibilidade ou fallback para 'gemini-pro'
-      let model;
-      try {
-        model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      } catch (err) {
-        model = genAI.getGenerativeModel({ model: "gemini-pro" });
-      }
 
       let interviewContext = '';
       let gender = 'masculino';
@@ -172,7 +188,7 @@ export class AIService {
 
       DÊ 3 ORDENS DIRETAS. RETORNE ESTRITAMENTE EM JSON.`;
 
-      const result = await model.generateContent(prompt);
+      const result = await AIService.generateContentWithFallback(genAI, prompt);
       const response = await result.response;
       const text = response.text();
     
@@ -860,7 +876,13 @@ JSON de retorno:`;
 
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const modelsToTry = [
+        process.env.GEMINI_MODEL,
+        'gemini-2.0-flash',
+        'gemini-1.5-flash',
+        'gemini-1.5-pro',
+        'gemini-pro'
+      ].filter(Boolean) as string[];
 
       const prompt = `Você é o auditor de entregas por IA do INFLUNEXT. 
 Sua tarefa é analisar o link da publicação entregue por um influenciador e auditar se ela está em conformidade com as regras do contrato.
@@ -884,9 +906,18 @@ INSTRUÇÕES DE AUDITORIA:
 
 Retorne APENAS o JSON limpo:`;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text().replace(/```json|```/g, '').trim();
+      let text = '';
+      for (const modelName of modelsToTry) {
+        try {
+          const model = genAI.getGenerativeModel({ model: modelName });
+          const result = await model.generateContent(prompt);
+          const response = await result.response;
+          text = response.text().replace(/```json|```/g, '').trim();
+          if (text) break;
+        } catch {
+          continue;
+        }
+      }
       
       try {
         const parsed = JSON.parse(text);

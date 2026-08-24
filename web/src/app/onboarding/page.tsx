@@ -26,7 +26,7 @@ import {
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 
-const InstagramOnboardingModal = dynamic<any>(
+const InstagramOnboardingModal = dynamic(
   () => import('@/components/InstagramOnboardingModal').then(mod => mod.InstagramOnboardingModal),
   { ssr: false }
 );
@@ -42,7 +42,7 @@ export default function OnboardingPage() {
   const [accentColor, setAccentColor] = useState('#a855f7');
   const [handle, setHandle] = useState('');
   const [niche, setNiche] = useState('');
-  const [authUrls, setAuthUrls] = useState<any>(null);
+  const [authUrls, setAuthUrls] = useState<{ instagram?: string; tiktok?: string } | null>(null);
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
   const [careerObjective, setCareerObjective] = useState('');
 
@@ -171,8 +171,9 @@ export default function OnboardingPage() {
       Cookies.set('influnext_onboarding', 'true', { expires: 7 });
       toast.success('✦ Sistema Configurado! Bem-vindo à nova elite digital.');
       router.push('/dashboard/influencer');
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Erro ao salvar onboarding.');
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { error?: string } } };
+      toast.error(errorObj.response?.data?.error || 'Erro ao salvar onboarding.');
     } finally {
       setIsSaving(false);
     }
@@ -190,7 +191,7 @@ export default function OnboardingPage() {
     );
   };
 
-  const handleConnect = (url: string) => {
+  const handleConnect = (url?: string) => {
     if (!url || url === '#') {
       toast.error('Configuração de API pendente no servidor.');
       return;
@@ -228,8 +229,9 @@ export default function OnboardingPage() {
       });
       
       router.push('/dashboard/influencer');
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Erro ao simular conexão.');
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { error?: string } } };
+      toast.error(errorObj.response?.data?.error || 'Erro ao simular conexão.');
     } finally {
       setIsSaving(false);
       setIsIgModalOpen(false);

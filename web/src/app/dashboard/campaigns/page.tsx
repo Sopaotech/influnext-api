@@ -1,43 +1,33 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
 import { 
   Radio, 
   TrendingUp, 
-  Users, 
   ShoppingBag, 
-  DollarSign, 
   Link as LinkIcon, 
-  Tag, 
-  Calendar, 
   CheckCircle2, 
-  Clock, 
-  ShieldCheck, 
-  ArrowRight,
-  Sparkles,
   ExternalLink,
-  MessageSquare,
-  Building,
-  Activity,
-  Layers
+  Building
 } from 'lucide-react';
 import Link from 'next/link';
 import Cookies from 'js-cookie';
 import { toast } from 'sonner';
 
 export default function CampaignsPage() {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;
+      if (savedTheme) return savedTheme;
+    }
+    return 'dark';
+  });
   const [isLoading, setIsLoading] = useState(true);
   const userRole = Cookies.get('influnext_role');
   const isCompany = userRole === 'COMPANY';
 
   // Monitor theme updates
   useEffect(() => {
-    const savedTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
     const interval = setInterval(() => {
       const currentTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;
       if (currentTheme && currentTheme !== theme) {

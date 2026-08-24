@@ -21,6 +21,20 @@ import { api } from '@/lib/api';
 import Cookies from 'js-cookie';
 import { toast } from 'sonner';
 
+interface MonthlyReportItem {
+  month: string;
+  value: number;
+}
+
+interface TransactionReportItem {
+  id: string;
+  date: string;
+  desc: string;
+  amount: number;
+  status: string;
+  type?: string;
+}
+
 export default function ReportsPage() {
   const router = useRouter();
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
@@ -57,12 +71,12 @@ export default function ReportsPage() {
         setIsLoading(true);
         if (isCompany) {
           // Para empresas, buscamos os dados corporativos
-          const companyRes = await api.get('/dashboard/company').catch(() => null);
-          if (companyRes?.data) {
+          const companyRes = await api.get<{ contracts?: Array<{ escrowStatus?: string; budget?: number | string }> }>('/dashboard/company').catch(() => null);
+          if (companyRes?.data?.contracts) {
             // Configurar faturamento simulado baseado em contratos concluídos
             const total = companyRes.data.contracts
-              .filter((c: any) => c.escrowStatus === 'COMPLETED')
-              .reduce((sum: number, c: any) => sum + Number(c.budget), 0);
+              .filter((c) => c.escrowStatus === 'COMPLETED')
+              .reduce((sum: number, c) => sum + Number(c.budget || 0), 0);
             setBalance(total);
             
             // Simular dados mensais
@@ -91,8 +105,8 @@ export default function ReportsPage() {
         } else {
           // Para influenciadores, fluxo normal de saldo
           const [balanceRes, integrationsRes] = await Promise.all([
-            api.get('/influencers/balance').catch(() => ({ data: { availableBalance: 0, monthlyData: null, transactions: [] } })),
-            api.get('/integrations/connected').catch(() => ({ data: { platforms: [] } }))
+            api.get<{ availableBalance?: number; monthlyData?: MonthlyReportItem[]; transactions?: TransactionReportItem[] }>('/influencers/balance').catch(() => ({ data: { availableBalance: 0, monthlyData: [], transactions: [] } })),
+            api.get<{ platforms?: string[] }>('/integrations/connected').catch(() => ({ data: { platforms: [] } }))
           ]);
           
           setBalance(balanceRes.data.availableBalance || 0);
@@ -106,7 +120,7 @@ export default function ReportsPage() {
             setConnectedPlatforms(integrationsRes.data.platforms || []);
           }
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Erro ao buscar dados do relatório:', err);
       } finally {
         setIsLoading(false);
@@ -116,7 +130,7 @@ export default function ReportsPage() {
   }, [isCompany]);
 
   // Dados Base (Inicialmente de exemplo)
-  const baseMonthlyData = [
+  const baseMonthlyData: MonthlyReportItem[] = [
     { month: 'Jan', value: 0 },
     { month: 'Fev', value: 0 },
     { month: 'Mar', value: 0 },
@@ -131,12 +145,12 @@ export default function ReportsPage() {
     { month: 'Dez', value: 0 },
   ];
 
-  const baseTransactions = [
+  const baseTransactions: TransactionReportItem[] = [
     { id: 'TRX-101', date: '14/06/2026', desc: 'Summer Collection - Marca Premium', amount: 4250.00, status: 'Concluído', type: 'Campanha' }
   ];
 
-  const [monthlyData, setMonthlyData] = useState<any[]>(baseMonthlyData);
-  const [transactions, setTransactions] = useState<any[]>(baseTransactions);
+  const [monthlyData, setMonthlyData] = useState<MonthlyReportItem[]>(baseMonthlyData);
+  const [transactions, setTransactions] = useState<TransactionReportItem[]>(baseTransactions);
 
   // Simulação de Filtro de Dados
   const handleFilter = () => {

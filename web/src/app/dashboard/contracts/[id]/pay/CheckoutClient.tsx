@@ -3,10 +3,25 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck } from 'lucide-react';
 
+interface CheckoutContract {
+  id: string;
+  title?: string;
+  campaignName?: string;
+  budget?: number;
+  successFeeRate?: number;
+  platformFee?: number;
+  [key: string]: unknown;
+}
+
+interface CheckoutUser {
+  subscriptionTier?: string;
+  [key: string]: unknown;
+}
+
 export default function CheckoutClient({ contractId }: { contractId: string }) {
   const [isLoading, setIsLoading] = useState(false);
-  const [contract, setContract] = useState<any>(null);
-  const [user, setUser] = useState<any>(null);
+  const [contract, setContract] = useState<CheckoutContract | null>(null);
+  const [user, setUser] = useState<CheckoutUser | null>(null);
   const [isFetching, setIsFetching] = useState(true);
 
   useEffect(() => {

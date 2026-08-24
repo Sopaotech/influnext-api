@@ -8,6 +8,9 @@ interface InfluScoreCardProps {
 }
 
 export function InfluScoreCard({ score }: InfluScoreCardProps) {
+  // Normaliza o score para a escala 0-100 se vier na escala 0-1000 do backend
+  const normalizedScore = Math.min(100, Math.max(0, score > 100 ? Math.round(score / 10) : Math.round(score)));
+
   // Define o tier baseado no score (Unificado 0-100)
   const getTier = (s: number) => {
     if (s <= 30) return "BRONZE";
@@ -16,7 +19,7 @@ export function InfluScoreCard({ score }: InfluScoreCardProps) {
     return "ELITE";
   };
 
-  const tier = getTier(score);
+  const tier = getTier(normalizedScore);
 
   // Configurações visuais por Tier - Light Mode Premium Palette
   const configs = {
@@ -95,7 +98,7 @@ export function InfluScoreCard({ score }: InfluScoreCardProps) {
         <div className="text-right flex flex-col items-end">
           <div className="flex items-baseline justify-end gap-0.5">
              <div className={`text-5xl font-black tracking-tighter leading-none ${tier === 'ELITE' ? 'text-transparent bg-clip-text bg-gradient-to-br from-white to-orange-200' : 'text-slate-900'}`}>
-               {score}
+               {normalizedScore}
              </div>
              <div className={`${tier === 'ELITE' ? 'text-zinc-500' : 'text-slate-400'} font-bold text-sm leading-none`}>
                 /100
@@ -113,7 +116,7 @@ export function InfluScoreCard({ score }: InfluScoreCardProps) {
         <div className={`h-2.5 w-full rounded-full overflow-hidden border p-[1px] ${tier === 'ELITE' ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'}`}>
           <div 
             className={`h-full ${config.bar} rounded-full transition-all duration-1000 ease-out shadow-sm`} 
-            style={{ width: `${score}%` }}
+            style={{ width: `${normalizedScore}%` }}
           />
         </div>
       </div>

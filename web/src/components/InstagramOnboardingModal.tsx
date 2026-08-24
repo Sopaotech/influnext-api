@@ -98,10 +98,11 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
 
       // Redireciona imediatamente para o Instagram OAuth
       window.location.href = authUrl;
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { error?: string } }; message?: string };
       const message =
-        err?.response?.data?.error ||
-        err?.message ||
+        errorObj?.response?.data?.error ||
+        errorObj?.message ||
         'Erro ao iniciar autenticação. Tente novamente.';
       setError(message);
       setScreen('tutorial');
@@ -122,7 +123,7 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
       await new Promise((resolve) => setTimeout(resolve, 1000));
       onConfirm('simulate', sandboxUsername, sandboxRange);
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError('Erro ao iniciar simulação.');
     } finally {
       setIsSimulating(false);

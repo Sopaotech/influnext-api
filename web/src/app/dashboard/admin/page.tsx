@@ -25,12 +25,21 @@ interface AdminStats {
   serverTime: string;
 }
 
+interface AdminTicket {
+  id: string;
+  category: string;
+  subject: string;
+  message: string;
+  user: { email: string };
+  [key: string]: unknown;
+}
+
 export default function AdminDashboard() {
   const [data, setData] = useState<AdminStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [strategy, setStrategy] = useState<any>(null);
+  const [strategy, setStrategy] = useState<{ content?: string } | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [tickets, setTickets] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<AdminTicket[]>([]);
   const [grantIdentifier, setGrantIdentifier] = useState('');
   const [isGranting, setIsGranting] = useState(false);
   const [theme, setTheme] = useState('dark');
@@ -45,14 +54,14 @@ export default function AdminDashboard() {
 
   const handleStartIgConnection = () => {
     const id = toast.loading('Iniciando conexão com Instagram da Empresa...');
-    api.get('/auth/social/urls').then(res => {
+    api.get<{ instagram?: string }>('/auth/social/urls').then(res => {
       if (res.data.instagram) window.location.href = res.data.instagram;
     }).catch(() => toast.error('Erro ao buscar URL de conexão.', { id }));
   };
 
   const handleStartTikTokConnection = () => {
     const id = toast.loading('Iniciando conexão com TikTok da Empresa...');
-    api.get('/auth/social/urls').then(res => {
+    api.get<{ tiktok?: string }>('/auth/social/urls').then(res => {
       if (res.data.tiktok) window.location.href = res.data.tiktok;
     }).catch(() => toast.error('Erro ao buscar URL de conexão.', { id }));
   };
@@ -70,7 +79,7 @@ export default function AdminDashboard() {
 
   const fetchTickets = async () => {
     try {
-      const res = await api.get('/support/admin');
+      const res = await api.get<AdminTicket[]>('/support/admin');
       setTickets(res.data);
     } catch (err) {
       console.error('Erro ao buscar tickets:', err);
@@ -80,7 +89,7 @@ export default function AdminDashboard() {
   const handleGenerateStrategy = async () => {
     try {
       setIsGenerating(true);
-      const res = await api.get('/admin/growth-strategy');
+      const res = await api.get<{ content?: string }>('/admin/growth-strategy');
       setStrategy(res.data);
     } catch (err) {
       console.error('Erro ao gerar estratégia:', err);
@@ -96,17 +105,18 @@ export default function AdminDashboard() {
     }
     try {
       setIsGranting(true);
-      const res = await api.post('/admin/grant-pro', { identifier: grantIdentifier });
+      const res = await api.post<{ message: string }>('/admin/grant-pro', { identifier: grantIdentifier });
       toast.success(res.data.message);
       setGrantIdentifier('');
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Erro ao liberar acesso');
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { error?: string } } };
+      toast.error(errorObj.response?.data?.error || 'Erro ao liberar acesso');
     } finally {
       setIsGranting(false);
     }
   };
 
-  const formatCurrency = (value: any) => {
+  const formatCurrency = (value: number | string) => {
     const num = Number(value) || 0;
     return new Intl.NumberFormat('pt-BR', { 
       style: 'currency', 
@@ -320,7 +330,7 @@ export default function AdminDashboard() {
               <LifeBuoy className={`w-3.5 h-3.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`} /> Chamados de Suporte
            </h3>
            <div className="space-y-3">
-              {tickets.length > 0 ? tickets.map((t: any) => (
+              {tickets.length > 0 ? tickets.map((t) => (
                 <div key={t.id} className={`p-4 border rounded-2xl flex items-center justify-between group transition-all ${isDark ? 'bg-white/[0.02] border-white/[0.06] hover:border-orange-500/40 hover:bg-white/[0.04]' : 'bg-slate-50 border-slate-200 hover:border-orange-500/40 hover:bg-slate-100/80 text-slate-800'}`}>
                    <div className="space-y-1">
                       <div className="flex items-center gap-2">

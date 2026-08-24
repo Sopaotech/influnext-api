@@ -50,7 +50,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           setProfileImg(res.data.profile.logoUrl);
         }
         
-        const pendingCount = res.data.tasks?.filter((t: any) => !t.isDone).length || 0;
+        const pendingCount = res.data.tasks?.filter((t: { isDone?: boolean }) => !t.isDone).length || 0;
         setTaskCount(pendingCount);
 
         const userState = res.data.profile?.user || res.data.userState;

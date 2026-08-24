@@ -28,8 +28,23 @@ interface Task {
   scheduledDate: string;
 }
 
+interface RateCardItem {
+  price: number;
+  serviceName: string;
+  description?: string;
+  [key: string]: unknown;
+}
+
+interface CareerInfluencer {
+  id: string;
+  influScore: number;
+  careerObjective: string;
+  theme?: 'dark' | 'light';
+  [key: string]: unknown;
+}
+
 interface CareerDashboardProps {
-  influencer: any;
+  influencer: CareerInfluencer;
 }
 
 export function CareerDashboard({ influencer }: CareerDashboardProps) {
@@ -39,7 +54,7 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
   const [aiName, setAiName] = useState<string>('Seu Assistente');
   const [isEditingName, setIsEditingName] = useState(false);
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
-  const [rateCards, setRateCards] = useState<any[]>([]);
+  const [rateCards, setRateCards] = useState<RateCardItem[]>([]);
 
   useEffect(() => {
     const savedName = localStorage.getItem('influnext_ai_name');
@@ -89,7 +104,7 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
   };
 
   const getObjectiveLabel = (obj: string) => {
-    const map: any = {
+    const map: Record<string, string> = {
       'SALES': 'Foco em Vendas',
       'FAME': 'Foco em Crescimento',
       'CONTRACTS': 'Foco em Marcas',
@@ -231,13 +246,26 @@ export function CareerDashboard({ influencer }: CareerDashboardProps) {
                       toast.error('Seu navegador não suporta reconhecimento de voz.');
                       return;
                     }
-                    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-                    const recognition = new SpeechRecognition();
+                    const win = window as unknown as {
+                      SpeechRecognition?: new () => {
+                        lang: string;
+                        start: () => void;
+                        onresult: (event: { results: Array<Array<{ transcript: string }>> }) => void;
+                      };
+                      webkitSpeechRecognition?: new () => {
+                        lang: string;
+                        start: () => void;
+                        onresult: (event: { results: Array<Array<{ transcript: string }>> }) => void;
+                      };
+                    };
+                    const SpeechRecognitionClass = win.SpeechRecognition || win.webkitSpeechRecognition;
+                    if (!SpeechRecognitionClass) return;
+                    const recognition = new SpeechRecognitionClass();
                     recognition.lang = 'pt-BR';
                     recognition.start();
                     toast('🎙️ Ouvindo... Fale sua tarefa.');
 
-                    recognition.onresult = async (event: any) => {
+                    recognition.onresult = async (event: { results: Array<Array<{ transcript: string }>> }) => {
                       const transcript = event.results[0][0].transcript;
                       toast(`Processando: "${transcript}"...`);
                       try {

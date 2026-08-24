@@ -1,7 +1,7 @@
 import { Worker } from 'bullmq';
 import { prisma } from '../lib/prisma';
 import { redisConnection } from '../lib/redis';
-
+import { ScoringService } from '../services/scoring.service';
 
 export const postAnalyzerWorker = new Worker(
   'post-analyzer',
@@ -25,7 +25,10 @@ export const postAnalyzerWorker = new Worker(
         data: { performanceMultiplier: multiplier }
       });
 
-      console.log(`[ANALYZER] Task ${taskId} Performance: ${multiplier.toFixed(2)}x`);
+      // Recalcular e atualizar o InfluScore do influenciador após a análise do post
+      await ScoringService.calculateAndPersist(task.influencer.id);
+
+      console.log(`[ANALYZER] Task ${taskId} Performance: ${multiplier.toFixed(2)}x - Score atualizado.`);
     } catch (error) {
       // Erro logado apenas internamente
     }

@@ -39,7 +39,7 @@ export default function LoginPage() {
       }
 
       window.location.href = url;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[SOCIAL AUTH REDIRECT] Erro:', err);
       setError('Erro ao redirecionar para login social. Tente novamente.');
     } finally {
@@ -59,7 +59,7 @@ export default function LoginPage() {
     setError('');
     setIsLoading(true);
     try {
-      const res = await api.post<any>('/auth/social-login', {
+      const res = await api.post<LoginResponse>('/auth/social-login', {
         platform: socialPlatform,
         username: socialHandle,
         gender: socialGender,
@@ -67,8 +67,9 @@ export default function LoginPage() {
       });
       setSocialModalOpen(false);
       completeLogin(res.data);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao conectar via rede social.');
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { error?: string } } };
+      setError(errorObj.response?.data?.error || 'Erro ao conectar via rede social.');
     } finally {
       setIsLoading(false);
     }
@@ -102,15 +103,16 @@ export default function LoginPage() {
     setError('');
     setIsLoading(true);
     try {
-      const res = await api.post<any>('/auth/login', { email, password });
-      if (res.data.status === 'PENDING_2FA') {
+      const res = await api.post<LoginResponse & { status?: string; tempToken?: string }>('/auth/login', { email, password });
+      if (res.data.status === 'PENDING_2FA' && res.data.tempToken) {
         setTempToken(res.data.tempToken);
         setStep('otp');
       } else {
         completeLogin(res.data);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Credenciais inválidas.');
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { error?: string } } };
+      setError(errorObj.response?.data?.error || 'Credenciais inválidas.');
     } finally {
       setIsLoading(false);
     }
@@ -123,8 +125,9 @@ export default function LoginPage() {
     try {
       const res = await api.post<LoginResponse>('/auth/2fa/verify', { tempToken, code: otpCode });
       completeLogin(res.data);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Código inválido.');
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { error?: string } } };
+      setError(errorObj.response?.data?.error || 'Código inválido.');
     } finally {
       setIsLoading(false);
     }

@@ -29,6 +29,17 @@ interface Task {
   fromAI: boolean;
 }
 
+interface SpeechRecognitionInstance {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  onstart: () => void;
+  onend: () => void;
+  onerror: () => void;
+  onresult: (event: { results: Array<Array<{ transcript: string }>> }) => void;
+  start: () => void;
+}
+
 const formatTaskTime = (dateStr: string) => {
   const date = new Date(dateStr);
   const hours = date.getHours();
@@ -84,7 +95,8 @@ function CalendarContent() {
 
   const startListening = () => {
     if (typeof window === 'undefined') return;
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const win = window as unknown as { SpeechRecognition?: new () => SpeechRecognitionInstance; webkitSpeechRecognition?: new () => SpeechRecognitionInstance };
+    const SpeechRecognition = win.SpeechRecognition || win.webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
       toast.error('Seu navegador não suporta reconhecimento de voz.');
@@ -100,7 +112,7 @@ function CalendarContent() {
     recognition.onend = () => setIsListening(false);
     recognition.onerror = () => setIsListening(false);
     
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: { results: Array<Array<{ transcript: string }>> }) => {
       const transcript = event.results[0][0].transcript;
       setCommandInput(transcript);
       toast.success(`Transcrito: "${transcript}"`);
@@ -538,8 +550,9 @@ function CalendarContent() {
                              toast.success('✦ Inteligência Aplicada! Tarefa adicionada ao cronograma.', { id });
                              setCommandInput('');
                              fetchTasks(); 
-                          } catch (err: any) {
-                             toast.error(err.response?.data?.error || 'Não consegui processar esse comando agora.', { id });
+                          } catch (err: unknown) {
+                             const errorObj = err as { response?: { data?: { error?: string } } };
+                             toast.error(errorObj.response?.data?.error || 'Não consegui processar esse comando agora.', { id });
                           }
                        }
                     }}
@@ -670,8 +683,9 @@ function CalendarContent() {
                     toast.success('✦ Tarefa agendada com sucesso!', { id });
                     setNewTaskTitle('');
                     setShowAddModal(false);
-                  } catch (err: any) {
-                    toast.error(err.response?.data?.error || 'Erro ao criar tarefa.', { id });
+                  } catch (err: unknown) {
+                    const errorObj = err as { response?: { data?: { error?: string } } };
+                    toast.error(errorObj.response?.data?.error || 'Erro ao criar tarefa.', { id });
                   }
                 }}
                 className="flex-1 py-3.5 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-amber-500 text-white text-[10px] font-black uppercase rounded-2xl transition-all shadow-lg shadow-orange-900/30 border border-orange-500/30"

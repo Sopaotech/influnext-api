@@ -84,9 +84,10 @@ export function InstantCheckoutModal({
       } else {
         throw new Error('URL de checkout não retornada pela API.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[INSTANT CHECKOUT ERROR]', err);
-      setError(err.message || 'Falha ao conectar com o serviço de pagamento.');
+      const errorObj = err as { message?: string };
+      setError(errorObj.message || 'Falha ao conectar com o serviço de pagamento.');
       setLoading(false);
     }
   };

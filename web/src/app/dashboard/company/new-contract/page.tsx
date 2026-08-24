@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { api, searchInfluencers, createContract, InfluencerSearchItem } from '@/lib/api';
@@ -52,8 +52,8 @@ function NewContractForm() {
     return () => clearInterval(interval);
   }, [theme]);
 
-  const { register, control, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<FormValues>({
-    resolver: zodResolver(formSchema) as any,
+  const { register, control, handleSubmit, setValue, getValues, formState: { errors, isSubmitting } } = useForm<FormValues>({
+    resolver: zodResolver(formSchema) as unknown as Resolver<FormValues>,
     defaultValues: {
       title: '',
       budget: 0,
@@ -111,8 +111,9 @@ function NewContractForm() {
       await createContract(data);
       toast.success('Proposta enviada com sucesso ao Influenciador!');
       router.push('/dashboard/company');
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Erro ao criar o contrato.');
+    } catch (error: unknown) {
+      const errorObj = error as { response?: { data?: { error?: string } } };
+      toast.error(errorObj.response?.data?.error || 'Erro ao criar o contrato.');
     }
   };
 
@@ -257,9 +258,9 @@ function NewContractForm() {
                   if (!selectedInfluencer) return toast.error('Selecione um influenciador primeiro.');
                   const loadingToast = toast.loading('IA está elaborando seu briefing...');
                   try {
-                    const res = await api.post('/ai/generate-briefing', {
+                    const res = await api.post<{ briefing: string }>('/ai/generate-briefing', {
                       influencerHandle: selectedInfluencer.handle,
-                      campaignTitle: control._formValues.title || 'Campanha de Marketing'
+                      campaignTitle: getValues('title') || 'Campanha de Marketing'
                     });
                     setValue('briefing', res.data.briefing, { shouldValidate: true });
                     toast.dismiss(loadingToast);

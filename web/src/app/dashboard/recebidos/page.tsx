@@ -27,6 +27,15 @@ interface Recebido {
   };
 }
 
+interface SearchInfluencerItem {
+  id: string;
+  handle: string;
+  profileImageUrl?: string;
+  niche?: string;
+  influScore?: number;
+  [key: string]: unknown;
+}
+
 export default function RecebidosPage() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [role, setRole] = useState<'INFLUENCER' | 'COMPANY' | 'ADMIN' | null>(null);
@@ -53,7 +62,7 @@ export default function RecebidosPage() {
 
   // Search influencers
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchInfluencerItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
   // Monitor theme updates
@@ -81,12 +90,12 @@ export default function RecebidosPage() {
     try {
       setIsLoading(true);
       if (activeRole === 'COMPANY') {
-        const res = await api.get('/recebidos/company');
+        const res = await api.get<Recebido[]>('/recebidos/company');
         setRecebidos(res.data);
       } else {
         const [res, profileRes] = await Promise.all([
-          api.get('/recebidos/influencer'),
-          api.get('/dashboard/influencer')
+          api.get<Recebido[]>('/recebidos/influencer'),
+          api.get<{ profile?: { shippingAddress?: string; poBox?: string; shareAddress?: boolean } }>('/dashboard/influencer')
         ]);
         setRecebidos(res.data);
         if (profileRes.data.profile) {
@@ -95,7 +104,7 @@ export default function RecebidosPage() {
           setShareAddress(profileRes.data.profile.shareAddress || false);
         }
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Erro ao buscar dados de recebidos:', err);
     } finally {
       setIsLoading(false);
@@ -112,7 +121,7 @@ export default function RecebidosPage() {
         shareAddress
       });
       toast.success('✦ Endereço de envio atualizado com sucesso!');
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Erro ao atualizar endereço.');
     } finally {
       setIsSavingAddress(false);
@@ -124,7 +133,7 @@ export default function RecebidosPage() {
       await api.patch(`/recebidos/${id}/status`, { status: newStatus });
       toast.success('✦ Recebido marcado como recebido com sucesso! O remetente foi notificado.');
       if (role) fetchData(role);
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Erro ao atualizar status.');
     }
   };
@@ -138,16 +147,16 @@ export default function RecebidosPage() {
     try {
       setIsSearching(true);
       const cleanQ = q.startsWith('@') ? q.slice(1) : q;
-      const res = await api.get(`/influencers/search?q=${cleanQ}`);
+      const res = await api.get<SearchInfluencerItem[]>(`/influencers/search?q=${cleanQ}`);
       setSearchResults(res.data || []);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Erro ao pesquisar influenciadores:', err);
     } finally {
       setIsSearching(false);
     }
   };
 
-  const selectInfluencer = (inf: any) => {
+  const selectInfluencer = (inf: SearchInfluencerItem) => {
     setForm({
       ...form,
       influencerId: inf.id,
@@ -184,7 +193,7 @@ export default function RecebidosPage() {
         shippingCarrier: 'Correios',
       });
       if (role) fetchData(role);
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Erro ao registrar recebido.');
     } finally {
       setIsSendingPackage(false);

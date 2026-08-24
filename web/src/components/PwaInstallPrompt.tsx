@@ -3,8 +3,13 @@
 import { useEffect, useState } from 'react';
 import { Download, X, Share2 } from 'lucide-react';
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 export function PwaInstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIos, setIsIos] = useState(false);
 
@@ -12,7 +17,7 @@ export function PwaInstallPrompt() {
     // 1. Verificar se o app já está rodando em modo standalone (instalado)
     const isStandalone = 
       window.matchMedia('(display-mode: standalone)').matches || 
-      (window.navigator as any).standalone === true;
+      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
 
     if (isStandalone) return;
 
@@ -28,7 +33,7 @@ export function PwaInstallPrompt() {
     // 4. Capturar o evento beforeinstallprompt para navegadores baseados em Chromium (Chrome, Edge, etc.)
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
       // Mostrar o prompt após 3 segundos
       setTimeout(() => {
         setShowPrompt(true);
@@ -123,7 +128,7 @@ export function PwaInstallPrompt() {
                 Toque em <Share2 className="h-3.5 w-3.5 text-orange-400" /> na barra inferior
               </span>
               <span className="font-medium text-slate-300">
-                e escolha 'Adicionar à Tela de Início'
+                e escolha &apos;Adicionar à Tela de Início&apos;
               </span>
             </div>
           ) : (

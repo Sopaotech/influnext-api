@@ -21,8 +21,9 @@ export function DeliverableReviewCard({ deliverableId, contractTitle, influencer
       setLoading(true);
       await approveDeliverable(deliverableId);
       onSuccess();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao aprovar entrega.');
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { error?: string } } };
+      setError(errorObj.response?.data?.error || 'Erro ao aprovar entrega.');
       setLoading(false);
     }
   };
@@ -36,8 +37,9 @@ export function DeliverableReviewCard({ deliverableId, contractTitle, influencer
       setLoading(true);
       await rejectDeliverable(deliverableId, reason);
       onSuccess();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao rejeitar entrega.');
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { error?: string } } };
+      setError(errorObj.response?.data?.error || 'Erro ao rejeitar entrega.');
       setLoading(false);
     }
   };

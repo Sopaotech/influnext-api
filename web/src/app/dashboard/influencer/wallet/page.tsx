@@ -1,16 +1,31 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Wallet, ShieldCheck, Zap, CheckCircle2, RefreshCw, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Wallet, ShieldCheck, Zap, CheckCircle2, RefreshCw, TrendingUp, ArrowDownRight, ArrowUpRight, History } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import Cookies from 'js-cookie';
 
+interface TransactionItem {
+  id: string;
+  date: string;
+  desc: string;
+  amount: number;
+  status: string;
+}
+
+interface MonthlyDataItem {
+  month: string;
+  value: number;
+}
+
 interface BalanceData {
   availableBalance: number;
   completedContracts: number;
   currency: string;
+  transactions?: TransactionItem[];
+  monthlyData?: MonthlyDataItem[];
 }
 
 export default function WalletPage() {
@@ -51,8 +66,9 @@ export default function WalletPage() {
         description: 'Um contrato COMPLETED de R$ 2.500,00 foi gerado.'
       });
       await fetchBalance();
-    } catch (err: any) {
-      const msg = err?.response?.data?.error || 'Erro ao simular saldo.';
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { error?: string } } };
+      const msg = errorObj.response?.data?.error || 'Erro ao simular saldo.';
       toast.error(msg);
     } finally {
       setIsInjectingDemo(false);
@@ -66,7 +82,7 @@ export default function WalletPage() {
   const fetchBalance = async () => {
     setIsLoadingBalance(true);
     try {
-      const res = await api.get('/influencers/balance');
+      const res = await api.get<BalanceData>('/influencers/balance');
       setBalanceData(res.data);
     } catch {
       setBalanceData({ availableBalance: 0, completedContracts: 0, currency: 'BRL' });
@@ -119,8 +135,9 @@ export default function WalletPage() {
       toast.success('PIX processado com sucesso!', {
         description: 'Seu saldo será liberado em até 1 hora útil.'
       });
-    } catch (err: any) {
-      const msg = err?.response?.data?.error || 'Erro ao processar saque. Tente novamente.';
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { error?: string } } };
+      const msg = errorObj.response?.data?.error || 'Erro ao processar saque. Tente novamente.';
       toast.error(msg);
     } finally {
       setIsProcessing(false);
@@ -342,6 +359,82 @@ export default function WalletPage() {
             </p>
           )}
         </form>
+      </div>
+
+      {/* Histórico de Transações e Extrato */}
+      <div className={`p-6 md:p-8 rounded-[2rem] shadow-xl border space-y-6 ${
+        isDark ? 'bg-black/35 border-white/5' : 'bg-white border-zinc-200 shadow-zinc-100/50'
+      }`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl">
+              <History className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black tracking-tight text-current">Histórico de Transações</h2>
+              <p className="text-xs text-zinc-500 font-medium">Entradas por campanhas e saques via PIX</p>
+            </div>
+          </div>
+          <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest bg-zinc-800/40 px-3 py-1 rounded-full">
+            {balanceData.transactions?.length || 0} Registros
+          </span>
+        </div>
+
+        {balanceData.transactions && balanceData.transactions.length > 0 ? (
+          <div className="space-y-3">
+            {balanceData.transactions.map((tx, idx: number) => {
+              const isCredit = tx.amount > 0;
+              return (
+                <div
+                  key={tx.id || idx}
+                  className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
+                    isDark
+                      ? 'bg-zinc-900/60 border-zinc-800/80 hover:bg-zinc-900'
+                      : 'bg-zinc-50/80 border-zinc-200/80 hover:bg-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`p-3 rounded-xl ${
+                      isCredit
+                        ? 'bg-emerald-500/10 text-emerald-500'
+                        : 'bg-orange-500/10 text-orange-500'
+                    }`}>
+                      {isCredit ? <ArrowDownRight className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
+                    </div>
+                    <div>
+                      <span className="text-sm font-bold text-current block leading-snug">{tx.desc}</span>
+                      <span className="text-[11px] text-zinc-500 font-medium block">
+                        {tx.date} • ID: {tx.id}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className={`text-base font-black tracking-tight block ${
+                      isCredit ? 'text-emerald-500' : 'text-orange-500'
+                    }`}>
+                      {isCredit ? '+' : ''}{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(tx.amount)}
+                    </span>
+                    <span className={`inline-block text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                      tx.status === 'Concluído' || tx.status === 'Processado'
+                        ? 'bg-emerald-500/10 text-emerald-500'
+                        : tx.status === 'Processando'
+                        ? 'bg-amber-500/10 text-amber-500'
+                        : 'bg-red-500/10 text-red-500'
+                    }`}>
+                      {tx.status}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-10 border border-dashed border-zinc-800 rounded-2xl">
+            <History className="w-8 h-8 text-zinc-600 mx-auto mb-2 opacity-50" />
+            <p className="text-sm font-bold text-zinc-400">Nenhuma transação registrada ainda.</p>
+            <p className="text-xs text-zinc-500 mt-1">Conclua contratos ou simule com o botão "Saque Rápido Demo".</p>
+          </div>
+        )}
       </div>
     </div>
   );

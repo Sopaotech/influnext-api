@@ -8,23 +8,83 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
 
+interface SpeechRecognitionInstance {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  onstart: () => void;
+  onend: () => void;
+  onerror: () => void;
+  onresult: (event: { results: Array<Array<{ transcript: string }>> }) => void;
+  start: () => void;
+}
+
+interface VideoInspiration {
+  title?: string;
+  hook?: string;
+  whyItWorks?: string;
+  platform?: string;
+}
+
+interface SuggestedTask {
+  title?: string;
+  description?: string;
+}
+
+interface TrendItem {
+  videoType?: string;
+  duration?: string;
+  music?: string;
+}
+
 interface AIAnalysis {
   id: string;
   analysisText: string;
   recommendations: {
-    trends: any[];
-    suggestedTasks: any[];
-    videoInspirations: any[];
+    trends: TrendItem[];
+    suggestedTasks: SuggestedTask[];
+    videoInspirations: VideoInspiration[];
     trendingNow?: { audios: string[]; topics: string[] };
   };
   trendVault: { id: string; title: string; videoUrl: string; thumbnail: string; expiresAt: string }[];
   generatedAt: string;
 }
 
+interface TelemetryItem {
+  title: string;
+  performanceMultiplier: number;
+}
+
+interface WorkspaceTask {
+  id: string;
+  title: string;
+  description?: string;
+  isDone: boolean;
+  scheduledDate: string;
+}
+
+interface TrendVaultItem {
+  id?: string;
+  title: string;
+  videoUrl?: string;
+  thumbnail?: string;
+  niche?: string;
+  tags?: string;
+  expiresAt?: string;
+}
+
+interface WorkspaceUser {
+  role?: string;
+  subscriptionTier?: string;
+  subscriptionStatus?: string;
+  trialEndsAt?: string;
+  [key: string]: unknown;
+}
+
 export default function AIWorkspacePage() {
   const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
-  const [telemetry, setTelemetry] = useState<any[]>([]);
-  const [tasks, setTasks] = useState<any[]>([]);
+  const [telemetry, setTelemetry] = useState<TelemetryItem[]>([]);
+  const [tasks, setTasks] = useState<WorkspaceTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCreatingTasks, setIsCreatingTasks] = useState(false);
@@ -39,11 +99,11 @@ export default function AIWorkspacePage() {
   const router = useRouter();
   const chatEndRef = React.useRef<HTMLDivElement>(null);
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
-  const [trendVault, setTrendVault] = useState<any[]>([]);
+  const [trendVault, setTrendVault] = useState<TrendVaultItem[]>([]);
   const [theme, setTheme] = useState<string>('dark');
-  const [user, setUser] = useState<any>(null);
-  const isTrialActive = user?.subscriptionStatus === 'TRIAL' && user?.trialEndsAt && new Date(user.trialEndsAt) > new Date();
-  const isPro = user?.role === 'ADMIN' || user?.subscriptionStatus === 'ACTIVE' || isTrialActive || (user?.subscriptionTier && user?.subscriptionTier !== 'FREE');
+  const [user, setUser] = useState<WorkspaceUser | null>(null);
+  const isTrialActive = Boolean(user?.subscriptionStatus === 'TRIAL' && user?.trialEndsAt && new Date(String(user.trialEndsAt)) > new Date());
+  const isPro = Boolean(user?.role === 'ADMIN' || user?.subscriptionStatus === 'ACTIVE' || isTrialActive || (user?.subscriptionTier && user?.subscriptionTier !== 'FREE'));
 
   // Registrar Convite de Evento Presencial
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
@@ -80,7 +140,7 @@ export default function AIWorkspacePage() {
       setEventDetails('');
       
       toast.success('✦ Convite de evento registrado e enviado ao Mentor!');
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Erro ao enviar detalhes do evento ao Mentor.');
     } finally {
       setIsRegisteringEvent(false);
@@ -99,9 +159,10 @@ export default function AIWorkspacePage() {
   useEffect(() => {
     fetchLatestAnalysis();
 
-    const handleThemeUpdate = (e: any) => {
-      if (e.detail?.theme) {
-        setTheme(e.detail.theme);
+    const handleThemeUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<{ theme?: string }>;
+      if (customEvent.detail?.theme) {
+        setTheme(customEvent.detail.theme);
       }
     };
     window.addEventListener('theme-updated', handleThemeUpdate);
@@ -114,7 +175,7 @@ export default function AIWorkspacePage() {
       const userRole = Cookies.get('influnext_role');
 
       const [res, telRes, connRes, meRes, tasksRes] = await Promise.all([
-        api.get<AIAnalysis>('/ai/latest').catch(() => ({ data: { analysisText: null, recommendations: [] } as any })),
+        api.get<AIAnalysis>('/ai/latest').catch(() => ({ data: { analysisText: '', recommendations: { trends: [], suggestedTasks: [], videoInspirations: [] }, trendVault: [], generatedAt: '', id: '' } })),
         api.get('/tasks/telemetry').catch(() => ({ data: [] })),
         api.get('/integrations/connected').catch(() => ({ data: { platforms: [] } })),
         api.get('/auth/me').catch(() => null),
@@ -178,7 +239,7 @@ export default function AIWorkspacePage() {
           }
         }
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Erro ao buscar análise:', err);
     } finally {
       setIsLoading(false);
@@ -193,12 +254,13 @@ export default function AIWorkspacePage() {
     }
     try {
       setIsGenerating(true);
-      const res = await api.post<any>('/ai/generate');
+      const res = await api.post<AIAnalysis>('/ai/generate');
       setAnalysis(res.data);
       toast.success('✦ Análise neural concluída!');
       await fetchLatestAnalysis();
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Erro ao gerar análise.');
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { error?: string } } };
+      toast.error(errorObj.response?.data?.error || 'Erro ao gerar análise.');
     } finally {
       setIsGenerating(false);
     }
@@ -209,17 +271,17 @@ export default function AIWorkspacePage() {
 
     try {
       setIsCreatingTasks(true);
-      const res = await api.post('/tasks/ai-generate', analysis.recommendations.suggestedTasks);
+      const res = await api.post<{ tasks: WorkspaceTask[] }>('/tasks/ai-generate', analysis.recommendations.suggestedTasks);
       toast.success(`✦ ${res.data.tasks.length} tarefas adicionadas ao seu cronograma!`);
       router.push('/dashboard/tasks');
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Erro ao criar plano de ação.');
     } finally {
       setIsCreatingTasks(false);
     }
   };
 
-  const handleUseInspiration = async (inspiration: any) => {
+  const handleUseInspiration = async (inspiration: VideoInspiration) => {
     try {
       setIsCreatingTasks(true);
       const taskData = [{
@@ -230,7 +292,7 @@ export default function AIWorkspacePage() {
       await api.post('/tasks/ai-generate', taskData);
       toast.success('🔥 Ideia convertida em tarefa no seu cronograma!');
       router.push('/dashboard/tasks');
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Erro ao converter ideia.');
     } finally {
       setIsCreatingTasks(false);
@@ -247,11 +309,11 @@ export default function AIWorkspacePage() {
     setIsChatting(true);
 
     try {
-      const res = await api.post('/ai/chat', { message: userMessage });
+      const res = await api.post<{ reply: string }>('/ai/chat', { message: userMessage });
       const reply = res.data.reply;
       setChatMessages(prev => [...prev, { role: 'mentor', text: reply }]);
       speak(reply);
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('O Mentor está ocupado processando dados no momento.');
     } finally {
       setIsChatting(false);
@@ -260,7 +322,8 @@ export default function AIWorkspacePage() {
 
   const startListening = () => {
     if (typeof window === 'undefined') return;
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const win = window as unknown as { SpeechRecognition?: new () => SpeechRecognitionInstance; webkitSpeechRecognition?: new () => SpeechRecognitionInstance };
+    const SpeechRecognition = win.SpeechRecognition || win.webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
       toast.error('Seu navegador não suporta reconhecimento de voz.');
@@ -276,7 +339,7 @@ export default function AIWorkspacePage() {
     recognition.onend = () => setIsListening(false);
     recognition.onerror = () => setIsListening(false);
     
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: { results: Array<Array<{ transcript: string }>> }) => {
       const transcript = event.results[0][0].transcript;
       setChatInput(transcript);
       toast.success(`Entendi: "${transcript}"`);
@@ -936,7 +999,7 @@ Estando tudo correto, o pagamento de R$ 4.250,00 líquidos é liberado da conta 
                 </section>
     
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {analysis.recommendations.videoInspirations?.map((ins: any, idx: number) => (
+                    {analysis.recommendations.videoInspirations?.map((ins, idx: number) => (
                      <div key={idx} className={`border p-6 rounded-3xl group hover:border-orange-300 transition-all shadow-sm ${
                        isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
                      }`}>
@@ -1094,7 +1157,7 @@ Estando tudo correto, o pagamento de R$ 4.250,00 líquidos é liberado da conta 
                        <ClipboardList className="w-3 h-3" /> CRONOGRAMA DE AÇÃO
                     </h3>
                     <div className="space-y-3">
-                       {analysis.recommendations.trends.map((trend: any, idx: number) => (
+                       {analysis.recommendations.trends.map((trend, idx: number) => (
                          <div key={idx} className={`flex items-start gap-3 p-3 rounded-xl border transition-all ${
                            isDark ? 'bg-white/5 border-white/5 hover:bg-black/40 text-zinc-300' : 'bg-slate-50 border-slate-100 hover:bg-white'
                          }`}>
@@ -1117,7 +1180,7 @@ Estando tudo correto, o pagamento de R$ 4.250,00 líquidos é liberado da conta 
                     </h3>
                     <div className="space-y-3">
                        {tasks.length > 0 ? (
-                         tasks.map((task: any) => (
+                         tasks.map((task) => (
                            <div 
                              key={task.id} 
                              onClick={() => handleToggleTask(task.id)}

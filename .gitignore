@@ -38,3 +38,4 @@ yarn-error.log*
 
 # temporary files
 scratch/
+web/eslint-report.json

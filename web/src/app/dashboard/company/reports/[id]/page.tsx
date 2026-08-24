@@ -49,9 +49,9 @@ export default function CampaignReportPage({ params }: { params: { id: string } 
   useEffect(() => {
     const fetchContract = async () => {
       try {
-        const res = await api.get(`/contracts/${params.id}`);
+        const res = await api.get<ContractData>(`/contracts/${params.id}`);
         setContract(res.data);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('[CAMPAIGN_REPORT] Erro ao buscar contrato:', err);
         setError('Não foi possível carregar os detalhes do relatório desta campanha.');
       } finally {
@@ -64,9 +64,14 @@ export default function CampaignReportPage({ params }: { params: { id: string } 
   const handleGenerateReport = async () => {
     setIsGenerating(true);
     try {
-      const res = await api.post(`/contracts/${params.id}/roi-report`);
+      const res = await api.post<{
+        roiMultiplier: number;
+        cpmBrl: number;
+        efficiencyVsMarket: number;
+        aiReportMarkdown: string;
+      }>(`/contracts/${params.id}/roi-report`);
       setAiReport(res.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[CAMPAIGN_REPORT] Erro ao gerar relatório IA:', err);
       setError('Falha ao gerar o relatório com Inteligência Artificial.');
     } finally {

@@ -27,7 +27,36 @@ import { BACKGROUNDS } from '@/lib/constants';
 import Cookies from 'js-cookie';
 import dynamic from 'next/dynamic';
 
-const InstagramOnboardingModal = dynamic<any>(
+interface InstagramOnboardingModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (mode: 'oauth' | 'simulate', username?: string, followersRange?: string) => void;
+}
+
+interface RateCardItem {
+  serviceName: string;
+  price: number;
+  description: string;
+}
+
+interface ProfileData {
+  handle?: string;
+  niche?: string;
+  bio?: string;
+  city?: string;
+  state?: string;
+  companyName?: string;
+  segment?: string;
+  logoUrl?: string;
+  profileImageUrl?: string;
+  taxId?: string;
+  employeeCount?: string;
+  campaignBudget?: string;
+  scoreClass?: string;
+  [key: string]: unknown;
+}
+
+const InstagramOnboardingModal = dynamic<InstagramOnboardingModalProps>(
   () => import('@/components/InstagramOnboardingModal').then(mod => mod.InstagramOnboardingModal),
   { ssr: false }
 );
@@ -69,19 +98,14 @@ export default function SettingsPage() {
 
   const [selectedBg, setSelectedBg] = useState(BACKGROUNDS[0].url);
   const [accentColor, setAccentColor] = useState('#a855f7');
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [rateCards, setRateCards] = useState<any[]>([]);
+  const [rateCards, setRateCards] = useState<RateCardItem[]>([]);
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
-  const [authUrls, setAuthUrls] = useState<any>(null);
-  const [showAllBgs, setShowAllBgs] = useState(false);
+  const [authUrls, setAuthUrls] = useState<{ instagram?: string; tiktok?: string; youtube?: string } | null>(null);
   const [isIgModalOpen, setIsIgModalOpen] = useState(false);
   
-  const [igUsername, setIgUsername] = useState('');
-  const [ttUsername, setTtUsername] = useState('');
-  const [ytUsername, setYtUsername] = useState('');
   const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null);
 
   const handleSimulateSync = async (platform: string, username: string, followersRange?: string) => {
@@ -96,7 +120,7 @@ export default function SettingsPage() {
         toast.success(`✦ ${platform} conectado por busca direta!`);
         await fetchIntegrations();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       toast.error('Erro ao conectar perfil.');
     } finally {
@@ -180,8 +204,9 @@ export default function SettingsPage() {
         }
       }
       if (res.data.userState?.accentColor) setAccentColor(res.data.userState.accentColor);
-    } catch (err: any) {
-      if (err.response?.status !== 404) {
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { status?: number; data?: { error?: string } } };
+      if (errorObj.response?.status !== 404) {
         toast.error('Erro ao carregar dados do perfil');
       }
     }
@@ -189,9 +214,9 @@ export default function SettingsPage() {
 
   const fetchRateCard = async () => {
     try {
-      const res = await api.get('/influencers/rate-card');
+      const res = await api.get<RateCardItem[]>('/influencers/rate-card');
       setRateCards(res.data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Erro ao buscar rate card:', err);
     }
   };
@@ -200,12 +225,12 @@ export default function SettingsPage() {
     try {
       if (isCompany) return;
       const [connRes, urlsRes] = await Promise.all([
-        api.get('/integrations/connected'),
-        api.get('/integrations/urls')
+        api.get<{ platforms?: string[] }>('/integrations/connected'),
+        api.get<{ instagram?: string; tiktok?: string; youtube?: string }>('/integrations/urls')
       ]);
       setConnectedPlatforms(connRes.data.platforms || []);
       setAuthUrls(urlsRes.data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Erro ao buscar integrações:', err);
     }
   };
@@ -214,25 +239,25 @@ export default function SettingsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         theme: selectedBg,
         accentColor,
-        bio: profile.bio || null,
-        city: profile.city || null,
-        state: profile.state || null,
+        bio: profile?.bio || null,
+        city: profile?.city || null,
+        state: profile?.state || null,
       };
 
       if (isCompany) {
-        payload.companyName = profile.companyName || profile.handle;
-        payload.segment = profile.segment || profile.niche;
-        payload.logoUrl = profile.logoUrl || profile.profileImageUrl || null;
-        payload.taxId = profile.taxId || null;
-        payload.employeeCount = profile.employeeCount || null;
-        payload.campaignBudget = profile.campaignBudget || null;
+        payload.companyName = profile?.companyName || profile?.handle;
+        payload.segment = profile?.segment || profile?.niche;
+        payload.logoUrl = profile?.logoUrl || profile?.profileImageUrl || null;
+        payload.taxId = profile?.taxId || null;
+        payload.employeeCount = profile?.employeeCount || null;
+        payload.campaignBudget = profile?.campaignBudget || null;
       } else {
-        payload.handle = profile.handle;
-        payload.niche = profile.niche;
-        payload.profileImageUrl = profile.profileImageUrl || null;
+        payload.handle = profile?.handle;
+        payload.niche = profile?.niche;
+        payload.profileImageUrl = profile?.profileImageUrl || null;
       }
 
       await api.patch('/influencers/profile', payload);
@@ -241,15 +266,16 @@ export default function SettingsPage() {
       await api.post('/influencers/rate-card', rateCards);
 
       toast.success('✦ Ajustes sincronizados com sucesso!');
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.error || 'Erro ao salvar alterações.';
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { error?: string } } };
+      const errorMsg = errorObj.response?.data?.error || 'Erro ao salvar alterações.';
       toast.error(errorMsg);
     } finally {
       setSaving(false);
     }
   };
 
-  const handleConnect = (url: string) => {
+  const handleConnect = (url?: string) => {
      if (!url) {
         toast.error('Configuração de API pendente no servidor.');
         return;

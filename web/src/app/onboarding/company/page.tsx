@@ -108,8 +108,9 @@ export default function CompanyOnboardingPage() {
       Cookies.set('influnext_onboarding', 'true', cookieOptions);
       toast.success('✦ Perfil Corporativo Configurado! Iniciando matching de influenciadores.');
       router.push('/dashboard/company');
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Erro ao salvar perfil corporativo.');
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { error?: string } } };
+      toast.error(errorObj.response?.data?.error || 'Erro ao salvar perfil corporativo.');
     } finally {
       setIsSaving(false);
     }

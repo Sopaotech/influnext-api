@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
+import { api, approveDeliverable, rejectDeliverable } from '@/lib/api';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, ShieldCheck, Clock, CheckCircle2, ExternalLink, Zap, ChevronDown, ChevronUp, Brain, Sparkles, Loader2, Send } from 'lucide-react';
+import { FileText, ShieldCheck, Clock, CheckCircle2, XCircle, ExternalLink, Zap, ChevronDown, ChevronUp, Brain, Sparkles, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import Cookies from 'js-cookie';
 import Link from 'next/link';
@@ -119,10 +119,52 @@ export default function ContractsPage() {
         delete copy[deliverableId];
         return copy;
       });
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Erro ao enviar link.');
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { error?: string } } };
+      toast.error(errorObj.response?.data?.error || 'Erro ao enviar link.');
     } finally {
       setSubmittingIds(prev => ({ ...prev, [deliverableId]: false }));
+    }
+  };
+
+  const [actionLoadingIds, setActionLoadingIds] = useState<Record<string, boolean>>({});
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+
+  const handleApproveDeliverable = async (deliverableId: string) => {
+    setActionLoadingIds(prev => ({ ...prev, [deliverableId]: true }));
+    try {
+      await approveDeliverable(deliverableId);
+      toast.success('Entregável APROVADO! O pagamento Escrow foi liberado para o influenciador.');
+      const res = await api.get<Contract[]>('/contracts');
+      setContracts(res.data);
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { error?: string } } };
+      toast.error(errorObj.response?.data?.error || 'Erro ao aprovar entregável.');
+    } finally {
+      setActionLoadingIds(prev => ({ ...prev, [deliverableId]: false }));
+    }
+  };
+
+  const handleRejectDeliverable = async (deliverableId: string) => {
+    if (!rejectReason.trim()) {
+      toast.error('Informe o motivo do ajuste antes de enviar.');
+      return;
+    }
+
+    setActionLoadingIds(prev => ({ ...prev, [deliverableId]: true }));
+    try {
+      await rejectDeliverable(deliverableId, rejectReason);
+      toast.success('Solicitação de ajuste enviada ao influenciador.');
+      setRejectingId(null);
+      setRejectReason('');
+      const res = await api.get<Contract[]>('/contracts');
+      setContracts(res.data);
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { error?: string } } };
+      toast.error(errorObj.response?.data?.error || 'Erro ao enviar solicitação de ajuste.');
+    } finally {
+      setActionLoadingIds(prev => ({ ...prev, [deliverableId]: false }));
     }
   };
 
@@ -340,10 +382,11 @@ export default function ContractsPage() {
                                            try {
                                              await api.post(`/contracts/${contract.id}/accept`);
                                              toast.success('Contrato assinado eletronicamente com sucesso!');
-                                             const res = await api.get('/contracts');
+                                             const res = await api.get<Contract[]>('/contracts');
                                              setContracts(res.data);
-                                           } catch (err: any) {
-                                             toast.error(err.response?.data?.error || 'Erro ao assinar contrato.');
+                                           } catch (err: unknown) {
+                                             const errorObj = err as { response?: { data?: { error?: string } } };
+                                             toast.error(errorObj.response?.data?.error || 'Erro ao assinar contrato.');
                                            }
                                          }
                                        }}
@@ -375,10 +418,11 @@ export default function ContractsPage() {
                                              try {
                                                await api.post(`/contracts/${contract.id}/pay`);
                                                toast.success('Depósito Escrow simulado com sucesso!');
-                                               const res = await api.get('/contracts');
+                                               const res = await api.get<Contract[]>('/contracts');
                                                setContracts(res.data);
-                                             } catch (err: any) {
-                                               toast.error(err.response?.data?.error || 'Erro ao confirmar depósito.');
+                                             } catch (err: unknown) {
+                                               const errorObj = err as { response?: { data?: { error?: string } } };
+                                               toast.error(errorObj.response?.data?.error || 'Erro ao confirmar depósito.');
                                              }
                                            }
                                          }}
@@ -402,6 +446,25 @@ export default function ContractsPage() {
                                      </p>
                                    </div>
                                  )}
+
+                                 {contract.escrowStatus === 'COMPLETED' && (
+                                    <div className={`p-5 border rounded-2xl space-y-3 shadow-md ${
+                                      isDark ? 'bg-gradient-to-r from-orange-950/30 to-amber-950/20 border-orange-500/30' : 'bg-orange-50 border-orange-200'
+                                    }`}>
+                                      <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-orange-500">
+                                        <Sparkles className="w-4 h-4" /> Relatório de ROI da IA
+                                      </div>
+                                      <p className="text-[10px] text-zinc-600 dark:text-zinc-400 font-medium leading-relaxed">
+                                        Campanha finalizada com sucesso! Acesse o relatório analítico assinado pela IA com cálculo de CPM, eficiência de mercado e sugestões de recontratação.
+                                      </p>
+                                      <Link
+                                        href={`/dashboard/company/reports/${contract.id}`}
+                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-orange-600 hover:bg-orange-500 text-white transition-all shadow-md active:scale-95"
+                                      >
+                                        <FileText className="w-3.5 h-3.5" /> Visualizar Relatório de ROI
+                                      </Link>
+                                    </div>
+                                  )}
 
                                  <div className="flex items-center gap-2 text-[10px] font-black text-emerald-500 dark:text-emerald-400 uppercase tracking-widest">
                                     <ShieldCheck className="w-3.5 h-3.5" /> Entregáveis / Ação de Escrow
@@ -438,15 +501,81 @@ export default function ContractsPage() {
                                             </div>
 
                                             {isReview && d.proofUrl && (
-                                              <div className={`pt-2 border-t ${isDark ? 'border-zinc-800/40' : 'border-zinc-100'}`}>
-                                                <a 
-                                                  href={d.proofUrl} 
-                                                  target="_blank" 
-                                                  rel="noreferrer" 
-                                                  className="text-[9px] text-blue-500 hover:underline flex items-center gap-1 font-bold uppercase tracking-widest"
-                                                >
-                                                  Ver Link Enviado <ExternalLink className="w-3 h-3" />
-                                                </a>
+                                              <div className={`pt-3 space-y-3 border-t ${isDark ? 'border-zinc-800/40' : 'border-zinc-100'}`}>
+                                                <div className="flex items-center justify-between">
+                                                  <a 
+                                                    href={d.proofUrl} 
+                                                    target="_blank" 
+                                                    rel="noreferrer" 
+                                                    className="text-[9px] text-blue-500 hover:underline flex items-center gap-1 font-bold uppercase tracking-widest"
+                                                  >
+                                                    Ver Link Enviado <ExternalLink className="w-3 h-3" />
+                                                  </a>
+                                                </div>
+
+                                                {(userRole === 'COMPANY' || userRole === 'ADMIN') && (
+                                                  <div className="space-y-2 pt-1">
+                                                    {rejectingId === d.id ? (
+                                                      <div className="space-y-2 animate-in fade-in">
+                                                        <textarea
+                                                          value={rejectReason}
+                                                          onChange={(e) => setRejectReason(e.target.value)}
+                                                          placeholder="Descreva o motivo do ajuste necessário..."
+                                                          className={`w-full border rounded-xl p-3 text-xs resize-none ${
+                                                            isDark ? 'bg-black/45 border-zinc-800 text-zinc-200' : 'bg-zinc-50 border-zinc-200 text-zinc-800'
+                                                          }`}
+                                                          rows={3}
+                                                        />
+                                                        <div className="flex justify-end gap-2">
+                                                          <button
+                                                            type="button"
+                                                            onClick={() => { setRejectingId(null); setRejectReason(''); }}
+                                                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
+                                                              isDark ? 'border-zinc-800 text-zinc-400' : 'border-zinc-200 text-zinc-600'
+                                                            }`}
+                                                          >
+                                                            Cancelar
+                                                          </button>
+                                                          <button
+                                                            type="button"
+                                                            onClick={() => handleRejectDeliverable(d.id)}
+                                                            disabled={actionLoadingIds[d.id]}
+                                                            className="px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest bg-rose-600 hover:bg-rose-500 text-white transition-colors flex items-center gap-1"
+                                                          >
+                                                            {actionLoadingIds[d.id] ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Confirmar Ajuste'}
+                                                          </button>
+                                                        </div>
+                                                      </div>
+                                                    ) : (
+                                                      <div className="flex gap-2">
+                                                        <button
+                                                          type="button"
+                                                          onClick={() => handleApproveDeliverable(d.id)}
+                                                          disabled={actionLoadingIds[d.id]}
+                                                          className="flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-md flex items-center justify-center gap-1.5 active:scale-95"
+                                                        >
+                                                          {actionLoadingIds[d.id] ? (
+                                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                          ) : (
+                                                            <>
+                                                              <CheckCircle2 className="w-3.5 h-3.5" /> Aprovar Entrega & Liberar Escrow
+                                                            </>
+                                                          )}
+                                                        </button>
+                                                        <button
+                                                          type="button"
+                                                          onClick={() => setRejectingId(d.id)}
+                                                          disabled={actionLoadingIds[d.id]}
+                                                          className={`px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-1.5 ${
+                                                            isDark ? 'border-rose-500/30 text-rose-400 hover:bg-rose-500/10' : 'border-rose-200 text-rose-600 hover:bg-rose-50'
+                                                          }`}
+                                                        >
+                                                          <XCircle className="w-3.5 h-3.5" /> Pedir Ajuste
+                                                        </button>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                )}
                                               </div>
                                             )}
 

@@ -31,10 +31,10 @@ function SocialCallbackContent() {
 
     setStatus('loading');
     try {
-      const res = await api.get<any>(`/auth/social/callback/${platform}?code=${code}&state=${state}`);
+      const res = await api.get<{ token?: string; user?: { role: 'INFLUENCER' | 'COMPANY' | 'ADMIN'; onboardingCompleted: boolean } }>(`/auth/social/callback/${platform}?code=${code}&state=${state}`);
       setStatus('success');
       
-      if (res.data?.token) {
+      if (res.data?.token && res.data?.user) {
         const cookieOptions = {
           expires: 7,
           secure: window.location.protocol === 'https:',
@@ -89,12 +89,13 @@ function SocialCallbackContent() {
           router.push(`/dashboard/settings?status=success&platform=${platform}`);
         }
       }, 2000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro no callback social:', error);
       setStatus('error');
       
-      const message = error.response?.data?.error || error.response?.data?.message || 'Falha ao conectar conta social. Verifique sua conexão ou tente novamente.';
-      const errorType = error.response?.data?.errorType || 'no_creator_account';
+      const errObj = error as { response?: { data?: { error?: string; message?: string; errorType?: string } } };
+      const message = errObj.response?.data?.error || errObj.response?.data?.message || 'Falha ao conectar conta social. Verifique sua conexão ou tente novamente.';
+      const errorType = errObj.response?.data?.errorType || 'no_creator_account';
       setErrorMessage(message);
       toast.error(message);
 

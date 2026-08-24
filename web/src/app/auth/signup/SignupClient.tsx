@@ -107,10 +107,10 @@ export default function SignupClient() {
   const typeParam = searchParams.get('type') || 'influencer';
 
   const [userType, setUserType] = useState(typeParam);
-  const [socialUrls, setSocialUrls] = useState<any>(null);
+  const [socialUrls, setSocialUrls] = useState<{ google?: string; instagram?: string; tiktok?: string } | null>(null);
 
   React.useEffect(() => {
-    api.get('/auth/social/public-urls')
+    api.get<{ google?: string; instagram?: string; tiktok?: string }>('/auth/social/public-urls')
       .then(res => setSocialUrls(res.data))
       .catch(err => console.error('Erro ao carregar URLs sociais públicas:', err));
   }, []);
@@ -166,10 +166,10 @@ export default function SignupClient() {
     setIsLoading(true);
     try {
       const role = isInfluencer ? 'INFLUENCER' : 'COMPANY';
-      const res = await api.post<any>('/auth/signup', { email, password, role });
+      await api.post('/auth/signup', { email, password, role });
 
       // Immediately login to get the JWT
-      const loginRes = await api.post<any>('/auth/login', { email, password });
+      const loginRes = await api.post<{ token: string; user: { role: 'INFLUENCER' | 'COMPANY' | 'ADMIN'; onboardingCompleted: boolean } }>('/auth/login', { email, password });
       Cookies.set('influnext_token', loginRes.data.token, cookieOptions);
       Cookies.set('influnext_role', loginRes.data.user.role, cookieOptions);
 
@@ -178,13 +178,14 @@ export default function SignupClient() {
       } else {
         setStep(2);
       }
-    } catch (err: any) {
-      let msg = err.response?.data?.error;
-      if (!msg && err.response?.data?.errors) {
-        msg = Object.values(err.response.data.errors).flat().join(' | ');
+    } catch (err: unknown) {
+      const errObj = err as { response?: { data?: { error?: string; errors?: Record<string, string[]> } }; message?: string };
+      let msg = errObj.response?.data?.error;
+      if (!msg && errObj.response?.data?.errors) {
+        msg = Object.values(errObj.response.data.errors).flat().join(' | ');
       }
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://influnext-api-production.up.railway.app/v1';
-      setError(`${msg || err.message || 'Erro de conexão'} (URL: ${apiUrl})`);
+      setError(`${msg || errObj.message || 'Erro de conexão'} (URL: ${apiUrl})`);
     } finally {
       setIsLoading(false);
     }
@@ -220,13 +221,14 @@ export default function SignupClient() {
         });
         router.push('/dashboard/company');
       }
-    } catch (err: any) {
-      let msg = err.response?.data?.error;
-      if (!msg && err.response?.data?.errors) {
-        msg = Object.values(err.response.data.errors).flat().join(' | ');
+    } catch (err: unknown) {
+      const errObj = err as { response?: { data?: { error?: string; errors?: Record<string, string[]> } }; message?: string };
+      let msg = errObj.response?.data?.error;
+      if (!msg && errObj.response?.data?.errors) {
+        msg = Object.values(errObj.response.data.errors).flat().join(' | ');
       }
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://influnext-api-production.up.railway.app/v1';
-      setError(`${msg || err.message || 'Erro de conexão'} (URL: ${apiUrl})`);
+      setError(`${msg || errObj.message || 'Erro de conexão'} (URL: ${apiUrl})`);
     } finally {
       setIsLoading(false);
     }

@@ -8,9 +8,17 @@ import { toast } from 'sonner';
 import { LifeBuoy, Send, Clock, CheckCircle2, AlertCircle, MessageSquare, Loader2 } from 'lucide-react';
 import Cookies from 'js-cookie';
 
+interface SupportTicket {
+  id: string;
+  subject: string;
+  message: string;
+  category: string;
+  status: string;
+}
+
 export default function SupportPage() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [tickets, setTickets] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [form, setForm] = useState({ subject: '', message: '', category: 'SUPPORT' });
@@ -36,9 +44,9 @@ export default function SupportPage() {
 
   const fetchTickets = async () => {
     try {
-      const res = await api.get('/support/my');
+      const res = await api.get<SupportTicket[]>('/support/my');
       setTickets(res.data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Erro ao buscar tickets:', err);
     } finally {
       setIsLoading(false);
@@ -55,7 +63,7 @@ export default function SupportPage() {
       toast.success('Chamado aberto com sucesso! Nossa equipe responderá em breve.');
       setForm({ subject: '', message: '', category: 'SUPPORT' });
       fetchTickets();
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error('Erro ao enviar chamado.');
     } finally {
       setIsSending(false);

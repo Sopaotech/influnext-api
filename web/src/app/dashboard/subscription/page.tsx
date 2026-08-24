@@ -10,21 +10,25 @@ import {
   Target,
   Sparkles
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+interface UserData {
+  role?: string;
+  subscriptionTier?: string;
+  subscriptionStatus?: string;
+  [key: string]: unknown;
+}
 
 export default function SubscriptionPage() {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserData | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const { api } = await import('@/lib/api');
-        const res = await api.get('/auth/me');
+        const res = await api.get<UserData>('/auth/me');
         setUser(res.data);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Erro ao buscar usuário:', err);
       }
     };
@@ -37,14 +41,14 @@ export default function SubscriptionPage() {
       setLoadingPlanId(planId);
       const { api } = await import('@/lib/api');
 
-      const res = await api.post('/payments/create-subscription', {
+      const res = await api.post<{ url?: string }>('/payments/create-subscription', {
         planId
       });
 
       if (res.data.url) {
         window.location.href = res.data.url;
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Erro ao iniciar checkout:', err);
       alert('Não foi possível iniciar o checkout. Tente novamente mais tarde.');
     } finally {

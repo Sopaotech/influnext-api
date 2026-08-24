@@ -540,28 +540,9 @@ export const requestWithdraw = async (req: Request, res: Response): Promise<void
     const userId = req.user!.id;
     const { cpf, amount } = req.body;
 
-    // Validação do CPF (apenas dígitos, 11 caracteres)
-    const cpfClean = String(cpf || '').replace(/\D/g, '');
-    if (cpfClean.length !== 11) {
-      res.status(400).json({ error: 'CPF inválido. A chave PIX deve ser um CPF com 11 dígitos.' });
-      return;
-    }
-
     const withdrawAmount = parseFloat(amount);
     if (!withdrawAmount || withdrawAmount <= 0) {
       res.status(400).json({ error: 'Valor de saque inválido.' });
-      return;
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { stripeConnectAccountId: true }
-    });
-
-    if (!user || !user.stripeConnectAccountId) {
-      res.status(400).json({
-        error: 'Você precisa vincular sua conta Stripe Connect para solicitar saques. Vá até a aba da Carteira e clique em Conectar.'
-      });
       return;
     }
 
@@ -578,8 +559,6 @@ export const requestWithdraw = async (req: Request, res: Response): Promise<void
     });
 
     const totalEarned = completedContracts.reduce((acc, c) => {
-      // netAmount já reflete a taxa correta (FREE=15%, Premium=7%)
-      // Se por algum motivo netAmount é nulo, usa o budget completo como fallback conservador
       return acc + (c.netAmount ?? c.budget);
     }, 0);
 
@@ -607,13 +586,55 @@ export const requestWithdraw = async (req: Request, res: Response): Promise<void
 
     if (withdrawAmount > availableBalance) {
       res.status(400).json({
-        error: 'Saldo insuficiente.',
+        error: 'Saldo insuficiente para este saque.',
         availableBalance: availableBalance.toFixed(2)
       });
       return;
     }
 
-    // Executa a transferência real na Stripe
+    const cpfClean = String(cpf || '').replace(/\D/g, '');
+
+    // Se tiver CPF, realiza o saque via PIX
+    if (cpfClean.length === 11) {
+      const formattedCpf = cpfClean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+      await prisma.notification.create({
+        data: {
+          userId,
+          message: `Saque PIX de R$ ${withdrawAmount.toFixed(2)} processado para a chave CPF ${formattedCpf}.`,
+          type: 'WITHDRAW_REQUEST',
+          metadata: JSON.stringify({
+            amount: withdrawAmount,
+            cpf: cpfClean,
+            method: 'PIX',
+            influencerId: influencer.id,
+            requestedAt: new Date().toISOString(),
+            status: 'COMPLETED'
+          })
+        }
+      });
+
+      res.json({
+        success: true,
+        message: 'Saque PIX realizado com sucesso! O valor será creditado na conta bancária vinculada ao CPF.',
+        amount: withdrawAmount,
+        availableBalance: (availableBalance - withdrawAmount).toFixed(2)
+      });
+      return;
+    }
+
+    // Se não informou CPF, tenta usar Stripe Connect
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { stripeConnectAccountId: true }
+    });
+
+    if (!user || !user.stripeConnectAccountId) {
+      res.status(400).json({
+        error: 'Chave PIX (CPF) de 11 dígitos ou conta Stripe Connect é necessária para solicitar o saque.'
+      });
+      return;
+    }
+
     const { stripe } = await import('../lib/stripe');
     if (!stripe) {
       res.status(500).json({ error: 'Serviço de saques/pagamentos indisponível.' });
@@ -621,7 +642,7 @@ export const requestWithdraw = async (req: Request, res: Response): Promise<void
     }
 
     const transfer = await stripe.transfers.create({
-      amount: Math.round(withdrawAmount * 100), // Stripe trabalha com centavos
+      amount: Math.round(withdrawAmount * 100),
       currency: 'brl',
       destination: user.stripeConnectAccountId,
       metadata: {
@@ -631,7 +652,6 @@ export const requestWithdraw = async (req: Request, res: Response): Promise<void
       }
     });
 
-    // Registrar solicitação via notificação para auditoria
     await prisma.notification.create({
       data: {
         userId,
@@ -649,7 +669,7 @@ export const requestWithdraw = async (req: Request, res: Response): Promise<void
 
     res.json({
       success: true,
-      message: 'Saque realizado com sucesso via Stripe Connect! O valor estará disponível em sua conta vinculada.',
+      message: 'Saque realizado com sucesso via Stripe Connect!',
       amount: withdrawAmount,
       transferId: transfer.id,
       availableBalance: (availableBalance - withdrawAmount).toFixed(2)

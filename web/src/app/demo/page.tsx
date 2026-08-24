@@ -24,6 +24,26 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+interface DemoContract {
+  escrowStatus: string;
+  netAmount?: number;
+  deliverables?: Array<{ proofUrl?: string }>;
+  [key: string]: unknown;
+}
+
+interface DemoDbData {
+  username: string;
+  followers: number;
+  engagementRate: number;
+  influScore: number;
+  scoreClass: string;
+  walletBalance: number;
+  activeContract: DemoContract | null;
+  latestDeliverable: { proofUrl?: string } | null;
+  aiAnalysis: { analysisText?: string } | null;
+  connected: boolean;
+}
+
 export default function DemoPage() {
   const { theme, setTheme } = useTheme();
 
@@ -34,7 +54,7 @@ export default function DemoPage() {
   const [token, setToken] = useState<string | null>(null);
 
   // Dados Sincronizados do Banco de Dados
-  const [dbData, setDbData] = useState<any>({
+  const [dbData, setDbData] = useState<DemoDbData>({
     username: 'demo.influencer',
     followers: 0,
     engagementRate: 0,
@@ -63,7 +83,7 @@ export default function DemoPage() {
   const autoLoginDemo = async () => {
     try {
       // Login automático do influenciador demo para obter token para chamadas autenticadas
-      const res = await api.post('/auth/login', {
+      const res = await api.post<{ token?: string }>('/auth/login', {
         email: 'influencer@demo.influnext.com.br',
         password: 'Demo@2026!'
       });
@@ -87,14 +107,14 @@ export default function DemoPage() {
       ]);
 
       const profile = profileRes.data.profile;
-      const contracts = contractsRes.data;
+      const contracts: DemoContract[] = contractsRes.data || [];
 
       // Calcular saldo líquido acumulado de contratos completados
-      const completedContracts = contracts.filter((c: any) => c.escrowStatus === 'COMPLETED');
-      const totalEarned = completedContracts.reduce((sum: number, c: any) => sum + (c.netAmount || 0), 0);
+      const completedContracts = contracts.filter((c: DemoContract) => c.escrowStatus === 'COMPLETED');
+      const totalEarned = completedContracts.reduce((sum: number, c: DemoContract) => sum + (c.netAmount || 0), 0);
 
       // Achar último contrato ativo ou em progresso
-      const active = contracts.find((c: any) => c.escrowStatus !== 'CANCELED');
+      const active = contracts.find((c: DemoContract) => c.escrowStatus !== 'CANCELED');
       const latestDeliv = active?.deliverables?.[0] || null;
 
       // Buscar última análise de IA
@@ -102,7 +122,9 @@ export default function DemoPage() {
       try {
         const aiRes = await api.get('/ai/latest');
         latestAI = aiRes.data;
-      } catch (_) {}
+      } catch {
+        // Ignora erro se não houver análise prévia
+      }
 
       setDbData({
         username: profile?.handle || 'demo.influencer',
@@ -155,16 +177,17 @@ export default function DemoPage() {
         setCurrentStep(stepNumber + 1);
 
         // Se gerou análise IA, alimenta o chat
-        if (stepNumber === 2 && res.data.data.analysisText) {
+        if (stepNumber === 2 && res.data.data?.analysisText) {
           setChatHistory(prev => [
             ...prev,
             { sender: 'ai', text: `Aqui está minha estratégia recomendada para você:\n\n${res.data.data.analysisText.substring(0, 300)}...\n\nPergunte-me qualquer detalhe sobre o nicho de Fashion & Lifestyle!` }
           ]);
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error(err.response?.data?.error || 'Erro ao executar etapa da simulação.');
+      const errorObj = err as { response?: { data?: { error?: string } } };
+      toast.error(errorObj.response?.data?.error || 'Erro ao executar etapa da simulação.');
     } finally {
       setIsExecuting(false);
     }
@@ -180,9 +203,9 @@ export default function DemoPage() {
     setIsChatLoading(true);
 
     try {
-      const res = await api.post('/ai/chat', { message: userMsg });
+      const res = await api.post<{ reply: string }>('/ai/chat', { message: userMsg });
       setChatHistory(prev => [...prev, { sender: 'ai', text: res.data.reply }]);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error('Erro ao conversar com a IA.');
     } finally {
       setIsChatLoading(false);

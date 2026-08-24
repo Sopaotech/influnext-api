@@ -26,9 +26,51 @@ import {
 import { toast } from 'sonner';
 import Cookies from 'js-cookie';
 
+interface PlatformItem {
+  platform?: string;
+  platformName?: string;
+  username?: string;
+  followersCount?: number;
+  [key: string]: unknown;
+}
+
+interface RateCardItem {
+  serviceName: string;
+  price: number;
+  description?: string;
+}
+
+interface MediaKitData {
+  profile?: {
+    handle?: string;
+    companyName?: string;
+    segment?: string;
+    employeeCount?: string;
+    campaignBudget?: string;
+    taxId?: string;
+    city?: string;
+    state?: string;
+    bio?: string;
+    logoUrl?: string;
+    profileImageUrl?: string;
+    niche?: string;
+    influScore?: number;
+    scoreClass?: string;
+  };
+  kpis?: {
+    latestFollowers?: number;
+    latestEngagement?: number;
+    latestReach?: number;
+    avgViews?: number;
+  };
+  platforms?: PlatformItem[];
+  rateCard?: RateCardItem[];
+  [key: string]: unknown;
+}
+
 export default function MediaKitPage() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<MediaKitData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -58,13 +100,13 @@ export default function MediaKitPage() {
     try {
       setIsLoading(true);
       if (isCompany) {
-        const res = await api.get('/dashboard/company');
+        const res = await api.get<MediaKitData>('/dashboard/company');
         setData(res.data);
       } else {
-        const res = await api.get('/dashboard/influencer');
+        const res = await api.get<MediaKitData>('/dashboard/influencer');
         setData(res.data);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Erro ao carregar Media Kit:', err);
     } finally {
       setIsLoading(false);
@@ -109,8 +151,8 @@ export default function MediaKitPage() {
   // Mapeamentos para influenciador
   const profile = data?.profile;
   const kpis = data?.kpis;
-  const instagramPlatform = data?.platforms?.find((p: any) => p.platformName === 'INSTAGRAM' || p.platform === 'INSTAGRAM');
-  const tiktokPlatform = data?.platforms?.find((p: any) => p.platformName === 'TIKTOK' || p.platform === 'TIKTOK');
+  const instagramPlatform = data?.platforms?.find((p) => p.platformName === 'INSTAGRAM' || p.platform === 'INSTAGRAM');
+  const tiktokPlatform = data?.platforms?.find((p) => p.platformName === 'TIKTOK' || p.platform === 'TIKTOK');
 
   // Mapeamentos simulados para Empresa (Caso logado como COMPANY)
   const companyProfile = isCompany ? {
@@ -448,7 +490,7 @@ export default function MediaKitPage() {
            </div>
          ) : (
            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 relative z-10">
-              {data?.rateCard?.length > 0 ? data.rateCard.map((rate: any, idx: number) => (
+              {data?.rateCard && data.rateCard.length > 0 ? data.rateCard.map((rate, idx: number) => (
                  <div key={idx} className={`p-6 md:p-8 rounded-[2rem] hover:scale-[1.02] transition-all duration-500 group shadow-sm hover:shadow-xl border ${
                    isDark ? 'bg-white/5 border-white/10' : 'bg-zinc-50 border-zinc-250 shadow-zinc-100/50'
                  }`}>
@@ -576,7 +618,7 @@ export default function MediaKitPage() {
                     {isCompany ? (
                       <span>@{companyProfile?.instagramUsername} • <span className="text-pink-500 font-black">85K</span></span>
                     ) : instagramPlatform ? (
-                      <span>@{instagramPlatform.username} • <span className="text-pink-400 font-black">{formatNumber(instagramPlatform.followersCount)}</span></span>
+                      <span>@{instagramPlatform.username} • <span className="text-pink-400 font-black">{formatNumber(instagramPlatform.followersCount || 0)}</span></span>
                     ) : 'Desconectado'}
                   </div>
                </div>
@@ -595,7 +637,7 @@ export default function MediaKitPage() {
                     {isCompany ? (
                       <span>@{companyProfile?.tiktokUsername} • <span className="text-orange-400 font-black">120K</span></span>
                     ) : tiktokPlatform ? (
-                      <span>@{tiktokPlatform.username} • <span className="text-orange-400 font-black">{formatNumber(tiktokPlatform.followersCount)}</span></span>
+                      <span>@{tiktokPlatform.username} • <span className="text-orange-400 font-black">{formatNumber(tiktokPlatform.followersCount || 0)}</span></span>
                     ) : 'Desconectado'}
                   </div>
                </div>

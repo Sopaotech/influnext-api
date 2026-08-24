@@ -121,7 +121,7 @@ export interface CompanyDashboardResponse {
     budget: number;
     escrowStatus: string;
     influencerId: string;
-    influencer: { handle: string; metricsHistory?: any[] };
+    influencer: { handle: string; metricsHistory?: MetricSnapshot[] };
   }>;
   recommendedTalents?: Array<{
     id: string;
@@ -151,6 +151,15 @@ export interface InfluencerSearchItem {
   influScore?: number;
 }
 
+export interface CreateContractData {
+  influencerId: string;
+  title: string;
+  budget: number;
+  deadlineDays?: number;
+  briefing: string;
+  [key: string]: unknown;
+}
+
 // ─── Métodos de API ───────────────────────────────────────────────────────────
 
 export const confirmContractPayment = (id: string) => api.post(`/contracts/${id}/pay`);
@@ -160,6 +169,6 @@ export const searchInfluencers = (q: string) => {
   const cleanQ = q.startsWith('@') ? q.slice(1) : q;
   return api.get(`/influencers/search?q=${cleanQ}`);
 };
-export const createContract = (data: any) => api.post('/contracts', data);
+export const createContract = (data: CreateContractData) => api.post('/contracts', data);
 export const getAdminStats = () => api.get<GlobalStats>('/admin/stats');
 export const updateContractScript = (id: string, aiScript: string) => api.patch(`/contracts/${id}/script`, { aiScript });

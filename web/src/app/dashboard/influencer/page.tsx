@@ -8,9 +8,16 @@ import { CareerDashboard } from '@/components/dashboard/CareerDashboard';
 import Link from 'next/link';
 import Cookies from 'js-cookie';
 
+interface InfluencerDashboardData {
+  userState?: { theme?: 'dark' | 'light' };
+  profile?: { id?: string; theme?: 'dark' | 'light'; careerObjective?: string };
+  kpis?: { escrowBalance?: number; totalEarned?: number; influScore?: number };
+  [key: string]: unknown;
+}
+
 export default function InfluencerDashboard() {
   const [theme, setTheme] = useState<'dark' | 'light'>('light');
-  const [data, setData] = useState<any | null>(null);
+  const [data, setData] = useState<InfluencerDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -27,9 +34,9 @@ export default function InfluencerDashboard() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const dashRes = await api.get<any>('/dashboard/influencer');
+        const dashRes = await api.get<InfluencerDashboardData>('/dashboard/influencer');
         setData(dashRes.data);
-      } catch (err: any) {
+      } catch (err: unknown) {
         toast.error('Falha ao conectar com o servidor.');
       } finally {
         setIsLoading(false);
@@ -127,7 +134,7 @@ export default function InfluencerDashboard() {
 
       {/* Integration of the New Career Dashboard Component */}
       <CareerDashboard influencer={{
-        id: data?.profile?.id,
+        id: data?.profile?.id || '',
         careerObjective: data?.profile?.careerObjective || 'GROWTH',
         influScore: data?.kpis?.influScore || 0,
         theme: theme

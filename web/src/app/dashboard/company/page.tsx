@@ -6,10 +6,36 @@ import { MetricCard } from '@/components/MetricCard';
 import { DollarSign, FileText, AlertCircle, CheckCircle, Sparkles, TrendingUp, UserCheck, ShieldCheck, X, Globe, Award, Users, BarChart3, Loader2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DeliverableReviewCard } from '@/components/deliverable-review-card';
-import { EscrowTimeline } from '@/components/EscrowTimeline';
+import { EscrowTimeline, EscrowStatus } from '@/components/EscrowTimeline';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
+
+interface CompanyTalent {
+  id: string;
+  handle: string;
+  niche: string;
+  influScore: number;
+  scoreClass: string;
+  growth?: string;
+  reputation?: string;
+  pitch?: string;
+  [key: string]: unknown;
+}
+
+interface TalentMediaKit {
+  handle: string;
+  niche: string;
+  influScore: number;
+  scoreClass: string;
+  bio: string;
+  followers: number;
+  engagement: number;
+  companyFeedback: number;
+  negotiationBehavior: string;
+  deliveryRate: number;
+  rateCard?: Array<{ serviceName: string; price: number; description?: string }>;
+}
 
 export default function CompanyDashboard() {
   const router = useRouter();
@@ -19,18 +45,18 @@ export default function CompanyDashboard() {
   const [isLoading, setIsLoading] = useState(true);
 
   // States para o modal de Media Kit
-  const [selectedTalent, setSelectedTalent] = useState<any | null>(null);
+  const [selectedTalent, setSelectedTalent] = useState<CompanyTalent | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
-  const [talentMediaKit, setTalentMediaKit] = useState<any | null>(null);
+  const [talentMediaKit, setTalentMediaKit] = useState<TalentMediaKit | null>(null);
   const [activeRadarTab, setActiveRadarTab] = useState<'nacional' | 'regional'>('nacional');
 
-  const handleOpenMediaKit = async (talent: any) => {
+  const handleOpenMediaKit = async (talent: CompanyTalent) => {
     setSelectedTalent(talent);
     setIsModalOpen(true);
     setModalLoading(true);
     try {
-      const res = await api.get(`/p/${talent.handle}`);
+      const res = await api.get<{ handle?: string; niche?: string; influScore?: number; scoreClass?: string; bio?: string; metricsHistory?: Array<{ followers?: number; engagementRate?: number }>; rateCards?: Array<{ serviceName: string; price: number; description?: string }> }>(`/p/${talent.handle}`);
       const profileData = res.data;
       
       const followers = profileData.metricsHistory?.[0]?.followers ?? (talent.handle === 'demo.influencer' ? 370000 : 95000);
@@ -53,7 +79,7 @@ export default function CompanyDashboard() {
         ]
       });
     } catch (err) {
-      console.error('Erro ao carregar profile real, gerando dados de fallback...');
+      console.error('Erro ao carregar profile real, gerando dados de fallback...', err);
       setTalentMediaKit({
         handle: talent.handle,
         niche: talent.niche,
@@ -108,18 +134,18 @@ export default function CompanyDashboard() {
       const res = await api.get<CompanyDashboardResponse>('/dashboard/company');
       setData(res.data);
 
-      const userState = (res.data as any).userState;
+      const userState = (res.data as unknown as { userState?: { onboardingCompleted?: boolean; subscriptionStatus?: string; trialEndsAt?: string } }).userState;
       if (userState) {
         if (!userState.onboardingCompleted) {
           window.location.href = '/auth/login';
           return;
         }
         if (userState.subscriptionStatus === 'INACTIVE' || 
-           (userState.subscriptionStatus === 'TRIAL' && new Date() > new Date(userState.trialEndsAt))) {
+           (userState.subscriptionStatus === 'TRIAL' && userState.trialEndsAt && new Date() > new Date(userState.trialEndsAt))) {
           console.warn('TRIAL EXPIRED');
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError('Falha ao carregar os dados do painel da empresa.');
     } finally {
       setIsLoading(false);
@@ -156,14 +182,30 @@ export default function CompanyDashboard() {
   const { stats, contracts } = data;
   
   // Extrair todos os deliverables em UNDER_REVIEW de todos os contratos para priorização na interface
-  const pendingReviews = contracts.flatMap((c: any) => 
-    c.deliverables
-      .filter((d: any) => d.status === 'UNDER_REVIEW')
-      .map((d: any) => ({ ...d, contractTitle: c.title, influencerHandle: c.influencer.handle }))
+  interface DeliverableItem {
+    id: string;
+    status: string;
+    proofUrl?: string;
+    [key: string]: unknown;
+  }
+
+  interface ContractItem {
+    id: string;
+    title: string;
+    budget: number;
+    escrowStatus: string;
+    influencer: { handle: string; metricsHistory?: Array<{ capturedAt?: string }> };
+    deliverables?: DeliverableItem[];
+  }
+
+  const pendingReviews = (contracts as unknown as ContractItem[]).flatMap((c) => 
+    (c.deliverables || [])
+      .filter((d) => d.status === 'UNDER_REVIEW')
+      .map((d) => ({ ...d, contractTitle: c.title, influencerHandle: c.influencer.handle }))
   );
 
   // Recomendações e Radar de Talentos Simulados de Alta Projeção
-  const recommendedTalents = data.recommendedTalents || [
+  const recommendedTalents: CompanyTalent[] = data.recommendedTalents || [
     {
       handle: 'demo.influencer',
       niche: 'Moda & Estilo',
@@ -198,7 +240,7 @@ export default function CompanyDashboard() {
 
   const filteredTalents = activeRadarTab === 'nacional'
     ? recommendedTalents
-    : recommendedTalents.filter((t: any) => t.handle === 'pedro_ph' || t.handle === 'demo.influencer');
+    : recommendedTalents.filter((t) => t.handle === 'pedro_ph' || t.handle === 'demo.influencer');
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500 pb-32 min-h-screen">
@@ -336,7 +378,7 @@ export default function CompanyDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {contracts.map((contract: any) => {
+                  {(contracts as unknown as ContractItem[]).map((contract) => {
                     const lastCapture = contract.influencer.metricsHistory?.[0]?.capturedAt;
                     const isOutdated = lastCapture ? (new Date().getTime() - new Date(lastCapture).getTime() > 24 * 60 * 60 * 1000) : true;
                     
@@ -371,7 +413,7 @@ export default function CompanyDashboard() {
                       <TableCell className="text-emerald-600 dark:text-emerald-400 font-black py-6 tracking-tighter text-lg">${Number(contract.budget).toLocaleString('pt-BR')}</TableCell>
                       <TableCell className="py-6">
                         <div className="flex items-center gap-3">
-                          <EscrowTimeline status={contract.escrowStatus} />
+                          <EscrowTimeline status={contract.escrowStatus as EscrowStatus} />
                           <span className="text-[9px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-tighter">
                             {statusMap[contract.escrowStatus] || contract.escrowStatus}
                           </span>
@@ -595,7 +637,7 @@ export default function CompanyDashboard() {
                     <div className="space-y-4">
                       <span className="text-[9px] font-black text-zinc-550 dark:text-zinc-500 uppercase tracking-wider block">Catálogo de Serviços</span>
                       <div className="space-y-3">
-                        {talentMediaKit.rateCard?.map((rate: any, idx: number) => (
+                        {talentMediaKit.rateCard?.map((rate, idx: number) => (
                           <div 
                             key={idx} 
                             className={`p-4 rounded-xl border flex items-center justify-between gap-4 ${

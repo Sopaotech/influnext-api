@@ -5,14 +5,15 @@ import { ShieldCheck, Coins, Sparkles, UserCheck } from 'lucide-react';
 import Cookies from 'js-cookie';
 
 export function EscrowExplanatoryCard() {
-  const [theme, setTheme] = React.useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = React.useState<'dark' | 'light'>(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;
+      if (savedTheme) return savedTheme;
+    }
+    return 'dark';
+  });
 
   React.useEffect(() => {
-    const savedTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-    
     // Polling interval to check theme updates
     const interval = setInterval(() => {
       const currentTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;

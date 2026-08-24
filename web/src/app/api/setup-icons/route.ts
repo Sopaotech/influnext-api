@@ -27,10 +27,11 @@ export async function GET() {
       message: 'PWA PNG icons generated and copied successfully!',
       copiedTo: [destIcon, destAppleIcon]
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorObj = err as { message?: string };
     return NextResponse.json({ 
       error: 'Failed to copy icon files.', 
-      details: err.message 
+      details: errorObj.message 
     }, { status: 500 });
   }
 }

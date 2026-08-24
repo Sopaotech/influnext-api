@@ -4,7 +4,6 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Search, MapPin, Sparkles, Shield, SlidersHorizontal, ArrowRight, Loader2, Users, Building, Send, X } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Cookies from 'js-cookie';
 
@@ -59,7 +58,6 @@ const formatNumber = (num: number) => {
 };
 
 export default function MarketplacePage() {
-  const router = useRouter();
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [searchType, setSearchType] = useState<'influencer' | 'company'>('influencer');
   const [influencers, setInfluencers] = useState<Influencer[]>([]);
@@ -122,7 +120,7 @@ export default function MarketplacePage() {
         const res = await api.get<Company[]>(`/influencers/companies/search?${params.toString()}`);
         setCompanies(res.data);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('[MARKETPLACE]', err);
       if (searchType === 'influencer') {
         setInfluencers([]);

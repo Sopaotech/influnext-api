@@ -10,9 +10,15 @@ interface SocialAccount {
   username?: string;
 }
 
+export interface ConnectedPlatform {
+  platformName: string;
+  username?: string;
+  [key: string]: unknown;
+}
+
 interface SocialConnectProps {
   isHorizontal?: boolean;
-  connectedPlatforms?: any[];
+  connectedPlatforms?: ConnectedPlatform[];
 }
 
 export function SocialConnect({ isHorizontal = false, connectedPlatforms = [] }: SocialConnectProps) {
