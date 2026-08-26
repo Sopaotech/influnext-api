@@ -93,34 +93,34 @@ export function InstantCheckoutModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg bg-[#181615] border border-emerald-500/30 rounded-3xl p-6 shadow-2xl space-y-5 text-[#f5ebe0] max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-lg bg-[#181615] border border-orange-500/30 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 sm:space-y-5 text-[#f5ebe0] max-h-[90vh] overflow-y-auto">
         
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-slate-500 hover:text-slate-900 bg-slate-100 rounded-full transition-all hover:rotate-90"
+          className="absolute top-4 right-4 p-2 text-zinc-400 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-all hover:rotate-90"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
 
         {/* Modal Header */}
-        <div className="flex items-center gap-4 border-b border-slate-200 pb-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center text-black shadow-lg shrink-0">
-            <Zap className="w-7 h-7 fill-white" />
+        <div className="flex items-center gap-3 sm:gap-4 border-b border-white/10 pb-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white shadow-lg shrink-0">
+            <Zap className="w-6 h-6 fill-white" />
           </div>
           <div>
-            <span className="text-[10px] font-black tracking-widest text-emerald-500 uppercase bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+            <span className="text-[9px] sm:text-[10px] font-black tracking-widest text-emerald-400 uppercase bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
               Contratação 1-Clique em Escrow
             </span>
-            <h2 className="text-lg font-black tracking-tight mt-1">Contratar @{handle}</h2>
-            <p className="text-xs text-slate-500">Garantia total de entrega Influnext Escrow 🛡️</p>
+            <h2 className="text-base sm:text-lg font-black tracking-tight mt-0.5 text-white">Contratar @{handle}</h2>
+            <p className="text-[11px] text-zinc-400">Garantia total de entrega Influnext Escrow 🛡️</p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
           {error && (
-            <div className="p-3 bg-red-950/40 border border-red-500/40 text-red-300 text-xs rounded-xl font-medium">
+            <div className="p-3 bg-red-950/50 border border-red-500/40 text-red-300 text-xs rounded-xl font-medium">
               ⚠️ {error}
             </div>
           )}
@@ -128,7 +128,7 @@ export function InstantCheckoutModal({
           {/* Service Selection */}
           {rateCards.length > 0 && (
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
                 Selecione o Entregável / Pacote
               </label>
               <div className="grid grid-cols-1 gap-2 max-h-36 overflow-y-auto pr-1">
@@ -140,17 +140,17 @@ export function InstantCheckoutModal({
                       onClick={() => setActiveRateCard(rate)}
                       className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
                         isSelected
-                          ? 'bg-emerald-500/10 border-emerald-500 text-slate-900 shadow-lg'
-                          : 'bg-slate-50/50 border-slate-200 hover:border-slate-300 text-slate-600'
+                          ? 'bg-orange-500/15 border-orange-500 text-white shadow-lg'
+                          : 'bg-white/5 border-white/10 hover:border-white/20 text-zinc-300'
                       }`}
                     >
-                      <div>
-                        <p className="text-xs font-black uppercase">{rate.serviceName}</p>
+                      <div className="pr-2">
+                        <p className="text-xs font-black uppercase text-white">{rate.serviceName}</p>
                         {rate.description && (
-                          <p className="text-[10px] text-slate-500 line-clamp-1">{rate.description}</p>
+                          <p className="text-[10px] text-zinc-400 line-clamp-1">{rate.description}</p>
                         )}
                       </div>
-                      <span className="text-sm font-black text-emerald-400">
+                      <span className="text-xs sm:text-sm font-black text-orange-400 shrink-0">
                         R$ {rate.price.toLocaleString('pt-BR')}
                       </span>
                     </div>
@@ -162,10 +162,10 @@ export function InstantCheckoutModal({
 
           {/* Form Fields */}
           <div className="space-y-3 pt-1">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1">
-                  <Mail className="w-3 h-3 text-emerald-500" /> E-mail da Marca *
+                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1">
+                  <Mail className="w-3 h-3 text-orange-400" /> E-mail da Marca *
                 </label>
                 <input
                   type="email"
@@ -173,27 +173,27 @@ export function InstantCheckoutModal({
                   placeholder="suaempresa@marca.com"
                   value={brandEmail}
                   onChange={(e) => setBrandEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-black/60 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500 transition-all"
+                  className="w-full px-3.5 py-2.5 bg-black/60 border border-white/10 rounded-xl text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-orange-500 transition-all"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1">
-                  <Building className="w-3 h-3 text-emerald-500" /> Nome da Empresa / Marca
+                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1">
+                  <Building className="w-3 h-3 text-orange-400" /> Nome da Empresa / Marca
                 </label>
                 <input
                   type="text"
                   placeholder="Ex: Nike, Startup X"
                   value={brandName}
                   onChange={(e) => setBrandName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-black/60 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500 transition-all"
+                  className="w-full px-3.5 py-2.5 bg-black/60 border border-white/10 rounded-xl text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-orange-500 transition-all"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-emerald-500" /> Título da Campanha *
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-orange-400" /> Título da Campanha *
               </label>
               <input
                 type="text"
@@ -201,12 +201,12 @@ export function InstantCheckoutModal({
                 placeholder="Ex: Lançamento Coleção Verão 2026"
                 value={campaignTitle}
                 onChange={(e) => setCampaignTitle(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-black/60 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500 transition-all"
+                className="w-full px-3.5 py-2.5 bg-black/60 border border-white/10 rounded-xl text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-orange-500 transition-all"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
                 Briefing Resumido (Objetivos & Links)
               </label>
               <textarea
@@ -214,30 +214,30 @@ export function InstantCheckoutModal({
                 placeholder="Descreva resumidamente a mensagem principal e objetivos da postagem..."
                 value={briefing}
                 onChange={(e) => setBriefing(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-black/60 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500 transition-all resize-none"
+                className="w-full px-3.5 py-2.5 bg-black/60 border border-white/10 rounded-xl text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-orange-500 transition-all resize-none"
               />
             </div>
           </div>
 
           {/* Pricing Breakdown & Escrow Guarantee */}
-          <div className="p-3.5 bg-slate-50/80 border border-slate-200 rounded-2xl space-y-2">
-            <div className="flex justify-between items-center text-xs font-bold text-slate-500">
+          <div className="p-3.5 bg-white/5 border border-white/10 rounded-2xl space-y-2">
+            <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
               <span>Cachê do Criador:</span>
-              <span className="text-zinc-200">R$ {currentPrice.toLocaleString('pt-BR')}</span>
+              <span className="text-white">R$ {currentPrice.toLocaleString('pt-BR')}</span>
             </div>
-            <div className="flex justify-between items-center text-xs font-bold text-slate-500">
+            <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
               <span className="flex items-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Proteção Escrow (7%):
               </span>
-              <span className="text-zinc-200">R$ {escrowFee.toLocaleString('pt-BR')}</span>
+              <span className="text-white">R$ {escrowFee.toLocaleString('pt-BR')}</span>
             </div>
-            <div className="pt-2 border-t border-slate-200 flex justify-between items-center">
-              <span className="text-xs font-black uppercase text-slate-600">Total Retido em Garantia:</span>
+            <div className="pt-2 border-t border-white/10 flex justify-between items-center">
+              <span className="text-xs font-black uppercase text-zinc-300">Total Retido em Garantia:</span>
               <span className="text-base font-black text-emerald-400">R$ {totalPrice.toLocaleString('pt-BR')}</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium px-1">
+          <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-medium px-1">
             <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
             <span>O dinheiro fica retido em custódia até você aprovar o conteúdo entregue.</span>
           </div>
@@ -246,17 +246,17 @@ export function InstantCheckoutModal({
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 bg-[#d96b27] hover:bg-orange-500 text-black font-black text-sm rounded-2xl shadow-[0_10px_30px_rgba(217,107,39,0.3)] transition-all active:scale-98 flex items-center justify-center gap-2 group disabled:opacity-50"
+            className="w-full py-3.5 sm:py-4 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs sm:text-sm rounded-2xl shadow-[0_10px_30px_rgba(249,115,22,0.3)] transition-all active:scale-98 flex items-center justify-center gap-2 group disabled:opacity-50"
           >
             {loading ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Gerando Checkout Stripe/Pix...
+                <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                <span>Gerando Checkout Stripe/Pix...</span>
               </>
             ) : (
               <>
-                <ShieldCheck className="w-5 h-5" />
-                Pagar com Garantia em Escrow 🛡️
+                <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span>Pagar com Garantia em Escrow 🛡️</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </>
             )}

@@ -55,9 +55,9 @@ export function PublicProfileView({ profile, checkoutStatus }: PublicProfileView
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] text-slate-900 selection:bg-slate-200 font-sans pb-32">
+    <div className="min-h-screen bg-[#FDFDFD] text-slate-900 selection:bg-slate-200 font-sans pb-40">
       
-      <div className="max-w-[450px] mx-auto px-6 py-12 space-y-8">
+      <div className="max-w-[450px] mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-6 sm:space-y-8">
         
         {/* Certificate Header */}
         <header className="flex flex-col items-center text-center space-y-6 animate-in fade-in slide-in-from-top-4 duration-1000">
