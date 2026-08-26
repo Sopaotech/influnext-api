@@ -4,13 +4,17 @@ import { ScoringService } from './scoring.service';
 
 export class AuditorService {
   /**
-   * Sincroniza métricas via Graph API e persiste no banco de dados.
-   * Garante a integridade dos dados via Hash e recalcula o InfluScore.
+   * Sincroniza métricas de qualquer plataforma social e persiste snapshot com hash SHA-256.
+   * Recalcula o InfluScore automaticamente.
    */
-  static async syncInstagramMetrics(influencerId: string, capturedData: { followers: number; engagementRate: number; reachLast30Days: number; avgViews: number }) {
+  static async syncMetrics(
+    influencerId: string, 
+    provider: 'INSTAGRAM' | 'TIKTOK' | 'META_GRAPH_API' | string,
+    capturedData: { followers: number; engagementRate: number; reachLast30Days: number; avgViews: number }
+  ) {
     const metrics = {
       influencerId,
-      provider: 'META_GRAPH_API',
+      provider,
       ...capturedData,
     };
 
@@ -21,10 +25,20 @@ export class AuditorService {
     });
 
     // Recalcula o InfluScore após cada sync (não bloqueia a resposta)
-    ScoringService.calculateAndPersist(influencerId).catch((err) =>
-      console.error('[AUDITOR] Erro ao recalcular InfluScore:', err)
+    Promise.resolve(ScoringService.calculateAndPersist(influencerId)).catch((err) =>
+      console.error(`[AUDITOR] Erro ao recalcular InfluScore para ${influencerId}:`, err)
     );
 
     return snapshot;
+  }
+
+  /**
+   * Alias de compatibilidade para Instagram
+   */
+  static async syncInstagramMetrics(
+    influencerId: string, 
+    capturedData: { followers: number; engagementRate: number; reachLast30Days: number; avgViews: number }
+  ) {
+    return this.syncMetrics(influencerId, 'META_GRAPH_API', capturedData);
   }
 }

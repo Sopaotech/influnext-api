@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import { UserRole } from '../types/roles';
 import { ScoringService } from '../services/scoring.service';
 import { InstagramService } from '../services/instagram.service';
+import { TikTokService } from '../services/tiktok.service';
 import { AIService } from '../services/ai.service';
 import { TrendScannerService } from '../services/trend-scanner.service';
 import axios from 'axios';
@@ -480,6 +481,11 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
       });
 
       await ScoringService.calculateAndPersist(influencer.id);
+
+      // Dispara a sincronização completa do TikTok em background
+      TikTokService.syncTikTokData(influencer.id, access_token, open_id).catch(err => {
+        console.error('[TIKTOK] Falha na sincronização de dados pós-callback:', err);
+      });
     }
     
     const redirectUrl = isFromOnboarding
@@ -523,22 +529,8 @@ export const syncPlatformMetrics = async (req: Request, res: Response): Promise<
           results['INSTAGRAM'] = 'synced';
         }
 
-        if (platform.platformName === 'TIKTOK' && platform.accessToken) {
-          const profileResponse = await axios.get('https://open.tiktokapis.com/v2/user/info/', {
-            params: { fields: 'display_name,avatar_url,follower_count' },
-            headers: { Authorization: `Bearer ${platform.accessToken}` }
-          });
-          const profileData = profileResponse.data?.data?.user;
-          if (profileData) {
-            await prisma.socialPlatform.update({
-              where: { id: platform.id },
-              data: {
-                followersCount: profileData.follower_count || platform.followersCount,
-                profilePicture: profileData.avatar_url || platform.profilePicture,
-                username: profileData.display_name || platform.username
-              }
-            });
-          }
+        if (platform.platformName === 'TIKTOK' && platform.accessToken && platform.platformId) {
+          await TikTokService.syncTikTokData(influencer.id, platform.accessToken, platform.platformId);
           results['TIKTOK'] = 'synced';
         }
       } catch (err) {

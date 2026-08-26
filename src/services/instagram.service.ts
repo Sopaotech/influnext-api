@@ -317,7 +317,7 @@ export class InstagramService {
       });
 
       // 6. Registrar snapshot de auditoria e recalcular InfluScore
-      await AuditorService.syncInstagramMetrics(influencerId, {
+      await AuditorService.syncMetrics(influencerId, 'INSTAGRAM', {
         followers,
         engagementRate,
         reachLast30Days,
@@ -327,9 +327,11 @@ export class InstagramService {
       // 7. Disparar geração de análise semanal pela IA (assíncrono — não bloqueia a resposta)
       try {
         const { AIService } = require('./ai.service');
-        AIService.generateWeeklyAnalysis(influencerId).catch((err: any) => {
-          console.error('[INSTAGRAM_SYNC] Erro ao disparar análise pós-sync:', err);
-        });
+        if (AIService?.generateWeeklyAnalysis) {
+          Promise.resolve(AIService.generateWeeklyAnalysis(influencerId)).catch((err: any) => {
+            console.error('[INSTAGRAM_SYNC] Erro ao disparar análise pós-sync:', err);
+          });
+        }
       } catch (requireErr) {
         console.error('[INSTAGRAM_SYNC] Erro ao carregar AIService dinamicamente:', requireErr);
       }

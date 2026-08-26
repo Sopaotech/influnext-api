@@ -164,13 +164,25 @@ export class TikTokService {
         }
       });
 
-      // 5. Registrar no auditor e atualizar InfluScore
-      await AuditorService.syncInstagramMetrics(influencerId, {
+      // 5. Registrar no auditor com provedor TIKTOK e atualizar InfluScore
+      await AuditorService.syncMetrics(influencerId, 'TIKTOK', {
         followers,
         engagementRate,
         reachLast30Days,
         avgViews
       });
+
+      // 6. Disparar geração de análise semanal pela IA (assíncrono — não bloqueia a resposta)
+      try {
+        const { AIService } = require('./ai.service');
+        if (AIService?.generateWeeklyAnalysis) {
+          Promise.resolve(AIService.generateWeeklyAnalysis(influencerId)).catch((err: any) => {
+            console.error('[TIKTOK_SYNC] Erro ao disparar análise pós-sync:', err);
+          });
+        }
+      } catch (requireErr) {
+        console.error('[TIKTOK_SYNC] Erro ao carregar AIService dinamicamente:', requireErr);
+      }
 
       console.log(`[TIKTOK_SYNC] ✅ Sincronização do TikTok concluída para @${username}! Seguidores: ${followers}, Engajamento: ${engagementRate}%, Views Média: ${avgViews}`);
 

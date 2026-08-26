@@ -44,6 +44,7 @@ export class SocialAuthController {
 
     const urls = {
       instagram: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=instagram_business_basic&response_type=code&state=${stateIg}`,
+      authUrl: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=instagram_business_basic&response_type=code&state=${stateIg}`,
       tiktok: `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${frontendUrl}/auth/callback/tiktok&state=${userId}`,
       youtube: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/youtube&response_type=code&scope=https://www.googleapis.com/auth/youtube.readonly&state=${userId}&access_type=offline&prompt=consent`
     };
@@ -57,6 +58,7 @@ export class SocialAuthController {
 
     const urls = {
       instagram: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=instagram_business_basic&response_type=code&state=register_instagram`,
+      authUrl: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=instagram_business_basic&response_type=code&state=register_instagram`,
       tiktok: `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${frontendUrl}/auth/callback/tiktok&state=register_tiktok`,
       google: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/google&response_type=code&scope=openid%20email%20profile&state=register_google`,
       youtube: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/youtube&response_type=code&scope=https://www.googleapis.com/auth/youtube.readonly&state=register_youtube&access_type=offline&prompt=consent`
@@ -95,6 +97,9 @@ export class SocialAuthController {
 
       const frontendUrl = getFrontendUrl(req);
 
+      let refreshToken: string | null = null;
+      let expiresAt: Date | null = null;
+
       if (platform === 'instagram') {
         // Instagram API with Instagram Login — fluxo unificado Creator/Business
         // Não usa mais Facebook Dialog OAuth nem /me/accounts
@@ -105,6 +110,8 @@ export class SocialAuthController {
 
         accessToken = tokenResult.accessToken;
         platformId = tokenResult.platformId;
+        const expiresIn = tokenResult.expiresIn || 5184000;
+        expiresAt = new Date(Date.now() + expiresIn * 1000);
 
         try {
           const profileData = await InstagramService.fetchProfileData(accessToken);
@@ -127,6 +134,9 @@ export class SocialAuthController {
         });
 
         accessToken = tokenResponse.data.access_token;
+        refreshToken = tokenResponse.data.refresh_token || null;
+        const expiresIn = tokenResponse.data.expires_in || 86400;
+        expiresAt = new Date(Date.now() + expiresIn * 1000);
         platformId = tokenResponse.data.open_id;
 
         try {
@@ -141,7 +151,7 @@ export class SocialAuthController {
           }
         } catch (err) {
           console.warn('[TIKTOK] Falha ao buscar detalhes do usuário do TikTok', err);
-          username = `tiktok_user`;
+          username = `tiktok_user_${platformId?.slice(-6) || ''}`;
         }
       } else if (platform === 'google' || platform === 'youtube') {
         const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', new URLSearchParams({
@@ -155,6 +165,9 @@ export class SocialAuthController {
         });
 
         accessToken = tokenResponse.data.access_token;
+        refreshToken = tokenResponse.data.refresh_token || null;
+        const expiresIn = tokenResponse.data.expires_in || 3600;
+        expiresAt = new Date(Date.now() + expiresIn * 1000);
 
         const channelResponse = await axios.get('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true', {
           headers: { 'Authorization': `Bearer ${accessToken}` }
@@ -201,7 +214,7 @@ export class SocialAuthController {
           userId = profile.userId;
         } else {
           // 2. Criar novo usuário e perfil
-          const tempEmail = `${username.toLowerCase()}_${Math.floor(1000 + Math.random() * 9000)}@influnext.temp`;
+          const tempEmail = `${username.toLowerCase().replace(/\s+/g, '_')}_${Math.floor(1000 + Math.random() * 9000)}@influnext.temp`;
           const tempPassword = crypto.randomUUID();
           const passwordHash = await bcrypt.hash(tempPassword, 12);
 
@@ -244,7 +257,12 @@ export class SocialAuthController {
       if (!profile.handle || profile.handle.startsWith('user_')) {
         await prisma.influencerProfile.update({
           where: { id: profile.id },
-          data: { handle: username }
+          data: { handle: username, verifiedMetrics: true }
+        });
+      } else {
+        await prisma.influencerProfile.update({
+          where: { id: profile.id },
+          data: { verifiedMetrics: true }
         });
       }
 
@@ -257,6 +275,8 @@ export class SocialAuthController {
         },
         update: {
           accessToken,
+          refreshToken,
+          expiresAt,
           username: username,
           platformId: platformId,
           followersCount,
@@ -271,6 +291,8 @@ export class SocialAuthController {
           followersCount,
           profilePicture,
           accessToken,
+          refreshToken,
+          expiresAt,
           isActive: true
         }
       });
