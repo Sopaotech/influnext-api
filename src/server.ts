@@ -5,12 +5,20 @@ import fs from 'fs';
 import path from 'path';
 import { routes } from './routes';
 import { trackPageView } from './middlewares/analytics.middleware';
+import { helmetSecurity, globalRateLimiter, responseHardening } from './middlewares/security-hardening.middleware';
 
 dotenv.config();
 
 const app = express();
 
-// Configuração de CORS Dinâmica para Multi-Domínio
+// 1. Hardening de Headers de Segurança (Helmet & Anti-Fingerprinting)
+app.use(helmetSecurity);
+app.use(responseHardening);
+
+// 2. Rate Limiting Global
+app.use(globalRateLimiter);
+
+// 3. Configuração de CORS Dinâmica para Multi-Domínio
 const allowedOriginsStr = process.env.ALLOWED_ORIGINS || 'http://localhost:3000,https://influnext.com.br,https://www.influnext.com.br,https://influnext.com,https://www.influnext.com';
 const ALLOWED_ORIGINS = allowedOriginsStr.split(',').map(origin => origin.trim());
 
@@ -30,7 +38,6 @@ app.use(cors({
 // Webhook da Stripe precisa do body cru (Buffer) ANTES do express.json() processar a requisição
 app.use('/v1/payments/webhook', express.raw({ type: 'application/json' }));
 app.use('/v1/webhooks/stripe', express.raw({ type: 'application/json' }));
-
 
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ limit: '2mb', extended: true }));

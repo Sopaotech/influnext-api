@@ -15,18 +15,19 @@ import supportRoutes from './support.routes';
 import socialAuthRoutes from './auth.social.routes';
 import recebidosRoutes from './recebidos.routes';
 import marketingIntelligenceRoutes from './marketing-intelligence.routes';
+import { authRateLimiter, publicRateLimiter } from '../middlewares/security-hardening.middleware';
 
 const routes = Router();
 routes.get('/health', (req, res) => res.json({ status: 'OK' }));
-routes.use('/auth/social', socialAuthRoutes);
-routes.use('/auth', authRoutes);
+routes.use('/auth/social', authRateLimiter, socialAuthRoutes);
+routes.use('/auth', authRateLimiter, authRoutes);
 routes.use('/integrations', integrationRoutes);
 routes.use('/tasks', taskRoutes);
 routes.use('/contracts', contractRoutes);
 routes.use('/deliverables', deliverableRoutes);
 routes.use('/dashboard', dashboardRoutes);
 routes.use('/admin', adminRoutes);
-routes.use('/p', publicRoutes);
+routes.use('/p', publicRateLimiter, publicRoutes);
 routes.use('/influencers', influencerRoutes);
 // REMOVIDO: routes.use('/influencer', influencerRoutes) — rota duplicada eliminada
 
