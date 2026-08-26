@@ -304,10 +304,10 @@ export function PublicProfileView({ profile, checkoutStatus }: PublicProfileView
             className="w-full h-16 bg-orange-500 hover:bg-orange-600 text-white font-black rounded-[2rem] shadow-[0_20px_40px_rgba(249,115,22,0.25)] transition-all active:scale-95 flex items-center justify-center gap-3 group"
           >
             <ShieldCheck className="w-5 h-5 text-white" />
-            Contratar (Garantia Escrow)
+            Contratar (InfluNext SafePay 🛡️)
           </button>
           <p className="text-center text-[9px] font-bold text-slate-400 mt-4 uppercase tracking-[0.2em]">
-             Powered by InfluNext
+             Tecnologia de Pagamento Protegido InfluNext
           </p>
         </div>
       </footer>
@@ -369,7 +369,7 @@ function BioLinkNotificationCard({ handle }: { handle: string }) {
       </div>
 
       <p className="text-[10px] text-zinc-400 font-medium leading-relaxed">
-        Adicione este link no perfil do Instagram/TikTok. Marcas interessadas poderão ver suas métricas auditadas e contratar seus pacotes diretamente por aqui com pagamento seguro via Escrow.
+        Adicione este link no perfil do Instagram/TikTok. Marcas interessadas poderão ver suas métricas auditadas e contratar seus pacotes diretamente por aqui com garantia total via InfluNext SafePay.
       </p>
 
       <div className="pt-1 flex items-center gap-2">

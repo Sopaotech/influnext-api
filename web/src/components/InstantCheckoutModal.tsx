@@ -111,10 +111,10 @@ export function InstantCheckoutModal({
           </div>
           <div>
             <span className="text-[9px] sm:text-[10px] font-black tracking-widest text-emerald-400 uppercase bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-              Contratação 1-Clique em Escrow
+              Contratação Segura SafePay
             </span>
             <h2 className="text-base sm:text-lg font-black tracking-tight mt-0.5 text-white">Contratar @{handle}</h2>
-            <p className="text-[11px] text-zinc-400">Garantia total de entrega Influnext Escrow 🛡️</p>
+            <p className="text-[11px] text-zinc-400">Proteção de Entrega InfluNext SafePay 🛡️</p>
           </div>
         </div>
 
@@ -219,7 +219,7 @@ export function InstantCheckoutModal({
             </div>
           </div>
 
-          {/* Pricing Breakdown & Escrow Guarantee */}
+          {/* Pricing Breakdown & SafePay Guarantee */}
           <div className="p-3.5 bg-white/5 border border-white/10 rounded-2xl space-y-2">
             <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
               <span>Cachê do Criador:</span>
@@ -227,19 +227,19 @@ export function InstantCheckoutModal({
             </div>
             <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
               <span className="flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Proteção Escrow (7%):
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Taxa de Proteção SafePay (7%):
               </span>
               <span className="text-white">R$ {escrowFee.toLocaleString('pt-BR')}</span>
             </div>
             <div className="pt-2 border-t border-white/10 flex justify-between items-center">
-              <span className="text-xs font-black uppercase text-zinc-300">Total Retido em Garantia:</span>
+              <span className="text-xs font-black uppercase text-zinc-300">Total com Pagamento Protegido:</span>
               <span className="text-base font-black text-emerald-400">R$ {totalPrice.toLocaleString('pt-BR')}</span>
             </div>
           </div>
 
           <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-medium px-1">
             <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span>O dinheiro fica retido em custódia até você aprovar o conteúdo entregue.</span>
+            <span>O valor fica seguro no InfluNext SafePay até você aprovar o conteúdo entregue.</span>
           </div>
 
           {/* Submit Action */}
@@ -251,12 +251,12 @@ export function InstantCheckoutModal({
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                <span>Gerando Checkout Stripe/Pix...</span>
+                <span>Gerando Checkout Seguro Pix/Cartão...</span>
               </>
             ) : (
               <>
                 <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span>Pagar com Garantia em Escrow 🛡️</span>
+                <span>Pagar com InfluNext SafePay 🛡️</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </>
             )}

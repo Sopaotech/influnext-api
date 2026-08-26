@@ -35,8 +35,8 @@ export function EscrowExplanatoryCard() {
     },
     {
       icon: <ShieldCheck className="w-5 h-5 text-amber-400" />,
-      title: '2. Saldo Retido',
-      description: 'O valor fica retido com total segurança em uma conta de garantia (Escrow) da InfluNext.',
+      title: '2. Proteção SafePay',
+      description: 'O valor fica 100% protegido na custódia segura do InfluNext SafePay.',
     },
     {
       icon: <Sparkles className="w-5 h-5 text-orange-400" />,

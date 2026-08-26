@@ -103,9 +103,9 @@ export default function CheckoutClient({ contractId }: { contractId: string }) {
       <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-5 mb-8 flex items-start gap-4 shadow-lg shadow-amber-500/5">
         <ShieldCheck className="text-amber-400 w-6 h-6 flex-shrink-0 mt-0.5" />
         <div>
-          <h4 className="font-bold text-amber-300 text-sm">Garantia Influnext (Escrow)</h4>
+          <h4 className="font-bold text-amber-300 text-sm">Garantia InfluNext SafePay</h4>
           <p className="text-xs text-zinc-350 leading-relaxed mt-1">
-            Seu pagamento ficará retido com segurança e só será liberado para o Creator após você validar e aprovar os entregáveis da campanha.
+            Seu pagamento ficará protegido no InfluNext SafePay e só será liberado para o Creator após você validar e aprovar os entregáveis da campanha.
           </p>
         </div>
       </div>
@@ -121,7 +121,7 @@ export default function CheckoutClient({ contractId }: { contractId: string }) {
 
         <div className="flex justify-between items-center text-xs">
           <div className="flex items-center gap-1.5 text-zinc-400 font-medium">
-            <span>Taxa Operacional Escrow</span>
+            <span>Taxa de Proteção SafePay</span>
             <span className="text-[10px] text-amber-400 font-bold">({feePercent}%)</span>
           </div>
           <span className="text-white font-bold">R$ {escrowFee.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
