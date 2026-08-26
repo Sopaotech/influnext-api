@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { stripe } from '../lib/stripe';
 import { calcContractFees } from '../lib/fees';
+import { QuickAlertService } from '../services/quick-alert.service';
 import crypto from 'crypto';
 
 const getFrontendUrl = () => {
@@ -211,13 +212,13 @@ export const createInstantCheckout = async (req: Request, res: Response): Promis
       }
     });
 
-    // Notificar o influenciador sobre a nova proposta recebida no mídia kit público
-    await prisma.notification.create({
-      data: {
-        userId: influencer.userId,
-        message: `🎯 Nova contratação direta pelo Mídia Kit Público: "${campaignTitle}" de ${brandName || brandEmail} (R$ ${budget.toFixed(2)}).`,
-        type: 'CONTRACT_OFFER'
-      }
+    // Notificar o influenciador sobre a nova proposta recebida no mídia kit público via QuickAlertService
+    await QuickAlertService.notifyNewOffer({
+      recipientUserId: influencer.userId,
+      campaignTitle: campaignTitle || `Contratação Direta: ${serviceName}`,
+      brandName: brandName || brandEmail,
+      budget,
+      contractId: contract.id
     });
 
     // Se o serviço da Stripe não estiver ativo, fallback gracioso

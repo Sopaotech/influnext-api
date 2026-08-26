@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { stripe } from '../lib/stripe';
+import { QuickAlertService } from '../services/quick-alert.service';
 import Stripe from 'stripe';
 
 const getFrontendUrl = () => {
@@ -283,20 +284,12 @@ export class PaymentController {
               });
 
               if (contract) {
-                await prisma.notification.create({
-                  data: {
-                    userId: contract.influencer.userId,
-                    message: `✅ Depósito em Escrow confirmado para o contrato: "${contract.title}". Pode iniciar a produção!`,
-                    type: 'ESCROW_CONFIRMED'
-                  }
+                await QuickAlertService.notifyEscrowConfirmed({
+                  recipientUserId: contract.influencer.userId,
+                  contractTitle: contract.title,
+                  netAmount: Number(contract.netAmount || contract.budget),
+                  contractId: contract.id
                 });
-
-                const { addNotificationJob } = await import('../queues/notification.queue');
-                await addNotificationJob(
-                  contract.influencer.userId,
-                  `💰 Seu pagamento foi confirmado! Pode iniciar a produção de: "${contract.title}". Valor líquido: R$ ${Number(contract.netAmount).toFixed(2)}`,
-                  'ESCROW_CONFIRMED'
-                );
               }
               console.log(`[STRIPE] ✅ Contrato ${contractId} pago via Checkout Session. Escrow IN_PROGRESS.`);
             }
@@ -320,20 +313,12 @@ export class PaymentController {
             });
 
             if (contract) {
-              await prisma.notification.create({
-                data: {
-                  userId: contract.influencer.userId,
-                  message: `✅ Depósito em Escrow confirmado para o contrato: "${contract.title}". Pode iniciar a produção!`,
-                  type: 'ESCROW_CONFIRMED'
-                }
+              await QuickAlertService.notifyEscrowConfirmed({
+                recipientUserId: contract.influencer.userId,
+                contractTitle: contract.title,
+                netAmount: Number(contract.netAmount || contract.budget),
+                contractId: contract.id
               });
-
-              const { addNotificationJob } = await import('../queues/notification.queue');
-              await addNotificationJob(
-                contract.influencer.userId,
-                `💰 Seu pagamento foi confirmado! Pode iniciar a produção de: "${contract.title}". Valor líquido: R$ ${Number(contract.netAmount).toFixed(2)}`,
-                'ESCROW_CONFIRMED'
-              );
             }
             console.log(`[STRIPE] ✅ Contrato ${contractId} pago. Escrow IN_PROGRESS.`);
           }
