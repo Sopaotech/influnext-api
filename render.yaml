@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: influnext-api
+    env: node
+    plan: starter
+    buildCommand: npm run build
+    startCommand: npm run start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: influnext-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+
+databases:
+  - name: influnext-db
+    databaseName: influnext
+    user: influnext_user
+    plan: starter
