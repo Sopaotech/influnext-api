@@ -1,4 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" rx="8" fill="#d96b27" />
-  <path d="M 9 11.5 L 9 25 M 15 25 L 15 11.5 L 23 22.5 L 23 11.5" stroke="#f5ebe0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+<svg width="512" height="512" viewBox="0 0 100 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="influnext_orange" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF7A00" />
+      <stop offset="100%" stop-color="#FF4900" />
+    </linearGradient>
+  </defs>
+  <path
+    d="M 32 12 C 18 12 8 20 8 30 C 8 40 18 48 32 48 C 44 48 52 40 60 30 L 68 20 C 74 12 82 12 90 16 C 96 20 96 28 92 34 L 84 42"
+    stroke="url(#influnext_orange)"
+    stroke-width="10"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M 22 46 L 22 20 C 22 14 30 14 36 20 L 64 42 C 70 48 78 46 78 38 L 78 14"
+    stroke="url(#influnext_orange)"
+    stroke-width="10"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
 </svg>

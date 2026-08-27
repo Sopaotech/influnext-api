@@ -39,3 +39,7 @@ yarn-error.log*
 # temporary files
 scratch/
 web/eslint-report.json
+*.db
+*.db-journal
+*.sqlite
+

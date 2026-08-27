@@ -412,4 +412,147 @@ export class PaymentController {
       return res.status(500).json({ error: error.message || 'Erro ao buscar status do Stripe Connect.' });
     }
   }
+
+  /**
+   * POST /v1/payments/mercadopago/pix
+   * Gera cobrança PIX instantânea no Mercado Pago para garantia SafePay
+   */
+  static async createMercadoPagoPix(req: Request, res: Response) {
+    try {
+      const { contractId, email } = req.body;
+      const userEmail = email || req.user?.email || '';
+
+      if (!contractId) {
+        return res.status(400).json({ error: 'contractId é obrigatório' });
+      }
+
+      const { MercadoPagoService } = await import('../services/mercadopago.service');
+      const pixData = await MercadoPagoService.createContractPix(contractId, userEmail);
+
+      return res.json(pixData);
+    } catch (error: any) {
+      console.error('[MERCADO PAGO] Erro ao gerar PIX:', error);
+      return res.status(500).json({ error: error.message || 'Erro ao gerar cobrança PIX no Mercado Pago' });
+    }
+  }
+
+  /**
+   * POST /v1/payments/mercadopago/preference
+   * Gera preferência de pagamento (Cartão de Crédito / Checkout Pro)
+   */
+  static async createMercadoPagoPreference(req: Request, res: Response) {
+    try {
+      const { contractId, email } = req.body;
+      const userEmail = email || req.user?.email || '';
+
+      if (!contractId) {
+        return res.status(400).json({ error: 'contractId é obrigatório' });
+      }
+
+      const { MercadoPagoService } = await import('../services/mercadopago.service');
+      const preferenceData = await MercadoPagoService.createContractPreference(contractId, userEmail);
+
+      return res.json(preferenceData);
+    } catch (error: any) {
+      console.error('[MERCADO PAGO] Erro ao gerar preferência de cartão:', error);
+      return res.status(500).json({ error: error.message || 'Erro ao gerar checkout no Mercado Pago' });
+    }
+  }
+
+  /**
+   * GET /v1/payments/mercadopago/status/:paymentId
+   * Consulta o status de um pagamento Pix/Cartão em tempo real
+   */
+  static async checkMercadoPagoStatus(req: Request, res: Response) {
+    try {
+      const { paymentId } = req.params;
+
+      if (!paymentId) {
+        return res.status(400).json({ error: 'paymentId é obrigatório' });
+      }
+
+      const { MercadoPagoService } = await import('../services/mercadopago.service');
+      const statusData = await MercadoPagoService.getPaymentStatus(paymentId);
+
+      // Se foi aprovado, processa a ativação do contrato se ainda não foi
+      if (statusData.isApproved) {
+        await MercadoPagoService.handlePaymentApproved(paymentId);
+      }
+
+      return res.json(statusData);
+    } catch (error: any) {
+      console.error('[MERCADO PAGO] Erro ao consultar status:', error);
+      return res.status(500).json({ error: error.message || 'Erro ao consultar status no Mercado Pago' });
+    }
+  }
+
+  /**
+   * POST /v1/payments/mercadopago/subscription
+   * Cria assinatura mensal recorrente via Mercado Pago
+   */
+  static async createMercadoPagoSubscription(req: Request, res: Response) {
+    try {
+      const userId = req.user!.id;
+      const userEmail = req.user!.email;
+      const { planId } = req.body;
+
+      if (!planId) {
+        return res.status(400).json({ error: 'planId é obrigatório' });
+      }
+
+      const { MercadoPagoService } = await import('../services/mercadopago.service');
+      const subscriptionData = await MercadoPagoService.createSubscription(userId, planId, userEmail);
+
+      return res.json(subscriptionData);
+    } catch (error: any) {
+      console.error('[MERCADO PAGO] Erro ao gerar assinatura:', error);
+      return res.status(500).json({ error: error.message || 'Erro ao criar assinatura no Mercado Pago' });
+    }
+  }
+
+  /**
+   * PATCH /v1/payments/pix-key
+   * Salva/atualiza a chave Pix do influenciador para recebimento de payouts
+   */
+  static async updatePixKey(req: Request, res: Response) {
+    try {
+      const userId = req.user!.id;
+      const { pixKey, pixKeyType } = req.body;
+
+      if (!pixKey || !pixKeyType) {
+        return res.status(400).json({ error: 'pixKey e pixKeyType são obrigatórios.' });
+      }
+
+      const validTypes = ['CPF', 'CNPJ', 'EMAIL', 'PHONE', 'RANDOM'];
+      if (!validTypes.includes(pixKeyType)) {
+        return res.status(400).json({ error: 'Tipo de chave Pix inválido. Use CPF, CNPJ, EMAIL, PHONE ou RANDOM.' });
+      }
+
+      const profile = await prisma.influencerProfile.findUnique({
+        where: { userId }
+      });
+
+      if (!profile) {
+        return res.status(404).json({ error: 'Perfil de influenciador não encontrado.' });
+      }
+
+      const updated = await prisma.influencerProfile.update({
+        where: { userId },
+        data: {
+          pixKey,
+          pixKeyType
+        }
+      });
+
+      return res.json({
+        message: 'Chave Pix atualizada com sucesso!',
+        pixKey: updated.pixKey,
+        pixKeyType: updated.pixKeyType
+      });
+    } catch (error: any) {
+      console.error('[PAYMENTS] Erro ao atualizar chave Pix:', error);
+      return res.status(500).json({ error: error.message || 'Erro ao atualizar chave Pix' });
+    }
+  }
 }
+

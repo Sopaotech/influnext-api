@@ -2,55 +2,43 @@ import React from 'react';
 import Link from 'next/link';
 
 interface LogoProps {
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
   href?: string | null;
   className?: string;
   variant?: 'auto' | 'light' | 'dark';
   textOnly?: boolean;
+  iconOnly?: boolean;
 }
 
-const fontSizeMap = {
-  sm: 'text-[13px]',
-  md: 'text-2xl',
-  lg: 'text-3xl',
-  xl: 'text-5xl',
-  xxl: 'text-7xl md:text-8xl'
+const heightMap = {
+  xs: 22,
+  sm: 28,
+  md: 38,
+  lg: 48,
+  xl: 64,
+  xxl: 88
 };
 
-const iconSizeMap = {
-  sm: 18,
-  md: 28,
-  lg: 36,
-  xl: 56,
-  xxl: 96
-};
-
-export function Logo({ size = 'md', href = '/', className = '', variant = 'auto', textOnly = false }: LogoProps) {
-  const fontSize = fontSizeMap[size];
-  const iconSize = iconSizeMap[size];
-
-  const textColor =
-    variant === 'light' ? 'text-white'
-    : variant === 'dark' ? 'text-slate-900'
-    : 'text-slate-900 dark:text-white';
+/**
+ * Logo Oficial Concept 2B da InfluNext
+ * Escala calibrada harmonicamente para cabeçalhos e painéis
+ */
+export function Logo({
+  size = 'md',
+  href = '/',
+  className = '',
+  variant = 'auto'
+}: LogoProps) {
+  const h = heightMap[size];
 
   const content = (
-    <span className={`inline-flex items-center gap-1.5 select-none ${className}`}>
-      {/* Horizontally aligned transparent icon */}
-      {!textOnly && (
-        <img
-          src="/icon.png?v=3"
-          alt="InfluNext"
-          style={{ width: `${iconSize}px`, height: `${iconSize}px` }}
-          className="object-contain flex-shrink-0"
-        />
-      )}
-      <span className={`font-black tracking-tighter leading-none ${fontSize} ${textColor}`}>
-        Influ
-        <span className="text-[#d96b27]">
-          Next
-        </span>
-      </span>
+    <span className={`inline-flex items-center select-none ${className}`}>
+      <img
+        src="/logo-concept2b.png?v=5"
+        alt="InfluNext"
+        style={{ height: `${h}px`, width: 'auto' }}
+        className="object-contain"
+      />
     </span>
   );
 
@@ -64,8 +52,4 @@ export function Logo({ size = 'md', href = '/', className = '', variant = 'auto'
   return <span className="inline-flex">{content}</span>;
 }
 
-
-
-
-
-
+export default Logo;

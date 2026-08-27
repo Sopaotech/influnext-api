@@ -4,17 +4,19 @@ import { authenticate } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-// Rota protegida para criar a sessão de checkout de contrato (Escrow)
+// ─── Mercado Pago (PIX Dinâmico, Cartão e Assinaturas) ───────────────────────
+router.post('/mercadopago/pix', authenticate, PaymentController.createMercadoPagoPix);
+router.post('/mercadopago/preference', authenticate, PaymentController.createMercadoPagoPreference);
+router.post('/mercadopago/subscription', authenticate, PaymentController.createMercadoPagoSubscription);
+router.get('/mercadopago/status/:paymentId', authenticate, PaymentController.checkMercadoPagoStatus);
+router.patch('/pix-key', authenticate, PaymentController.updatePixKey);
+
+// ─── Stripe (Legado / Backup) ───────────────────────────────────────────────
 router.post('/create-order', authenticate, PaymentController.createContractCheckoutSession);
-
-// Rota protegida para criar sessão de checkout de mensalidade (Assinaturas)
 router.post('/create-subscription', authenticate, PaymentController.createCheckoutSession);
-
-// Rotas protegidas para onboarding e status do Stripe Connect
 router.post('/connect/onboard', authenticate, PaymentController.onboardConnectAccount);
 router.get('/connect/status', authenticate, PaymentController.getConnectAccountStatus);
-
-// Rota pública para receber o webhook da Stripe
 router.post('/webhook', PaymentController.webhook);
 
 export default router;
+

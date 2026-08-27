@@ -104,6 +104,10 @@ model InfluencerProfile {
   shareAddress    Boolean           @default(false)
   recebidos       Recebido[]
   
+  // Dados Bancários e Chave Pix para Recebimento de Contratos
+  pixKey          String?
+  pixKeyType      String?   // "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "RANDOM"
+
   platforms       SocialPlatform[]
   tasks           Task[]
   metricsHistory  MetricSnapshot[]
@@ -233,6 +237,12 @@ model Contract {
   externalTxId    String?
   releaseTxId     String?        @unique
   idempotencyKey  String?        @unique
+
+  // Mercado Pago
+  mpPaymentId       String?
+  mpPreferenceId    String?
+  mpPixQrCode       String?
+  mpPixQrCodeBase64 String?
   
   // Auditoria e Assinatura Eletrônica (Consent Log)
   contractType     String        @default("SPOT") // "SPOT" | "RETAINER"

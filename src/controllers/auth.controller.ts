@@ -335,7 +335,7 @@ export const verify2FA = async (req: Request, res: Response): Promise<void> => {
 
 export const setup2FA = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    const userId = (req as any).user?.id;
     const user   = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       res.status(404).json({ error: 'Usuário não encontrado.' });
@@ -359,7 +359,7 @@ export const setup2FA = async (req: Request, res: Response): Promise<void> => {
 
 export const confirm2FASetup = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    const userId = (req as any).user?.id;
     const { code } = req.body;
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user || !user.twoFactorSecret) {

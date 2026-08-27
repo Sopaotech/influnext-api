@@ -38,10 +38,36 @@ export const handlePagarmeWebhook = async (req: Request, res: Response): Promise
       console.log(`[WEBHOOK] Assinatura de ${userEmail} ativada com sucesso!`);
     }
 
-    // Retorna 200 pro gateway entender que recebemos o postback e parar de reenviar
-    res.status(200).json({ message: 'Webhook recebido com sucesso' });
+    res.status(200).json({ received: true });
   } catch (error) {
-    console.error('[WEBHOOK] Erro crasso ao processar:', error);
+    console.error('[WEBHOOK] Erro ao processar webhook:', error);
     res.status(500).json({ error: 'Erro interno ao processar webhook' });
+  }
+};
+
+/**
+ * Endpoint para processar webhooks do Mercado Pago (PIX, Cartão, Assinaturas).
+ */
+export const handleMercadoPagoWebhook = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { topic, type } = req.query;
+    const body = req.body || {};
+
+    const eventType = (type || topic || body.type || body.action || '') as string;
+    const paymentId = (req.query.id || req.query['data.id'] || body.data?.id || body.id) as string;
+
+    console.log(`[MERCADO PAGO WEBHOOK] Evento recebido: ${eventType} (ID: ${paymentId})`);
+
+    if (paymentId && (eventType === 'payment' || eventType === 'payment.created' || eventType === 'payment.updated')) {
+      const { MercadoPagoService } = await import('../services/mercadopago.service');
+      await MercadoPagoService.handlePaymentApproved(paymentId);
+    }
+
+    // Retorna 200 pro Mercado Pago confirmar o recebimento
+    res.status(200).json({ received: true });
+  } catch (error: any) {
+    console.error('[MERCADO PAGO WEBHOOK] ❌ Erro ao processar webhook:', error);
+    // Respondemos 200 para evitar que o gateway fique re-tentando em caso de erro de parse
+    res.status(200).json({ received: true, error: error?.message });
   }
 };
