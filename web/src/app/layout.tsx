@@ -36,26 +36,27 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
   icons: {
     icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/favicon.ico', sizes: 'any' }
+      { url: '/favicon.svg?v=3', type: 'image/svg+xml' },
+      { url: '/icon.png?v=3', sizes: '512x512', type: 'image/png' },
+      { url: '/favicon.ico?v=3', sizes: 'any' }
     ],
-    shortcut: '/favicon.svg',
-    apple: '/apple-icon.png',
+    shortcut: '/favicon.svg?v=3',
+    apple: '/apple-icon.png?v=3',
   },
   openGraph: {
-    title: "InfluNext — A plataforma que une Influenciadores e Marcas com segurança real",
-    description: "Métricas auditadas, Escrow financeiro e IA para criadores e marcas que levam influência a sério.",
+    title: "InfluNext — Influência que Gera Resultado Real (SafePay Escrow)",
+    description: "A plataforma oficial que une criadores verificados e marcas com métricas auditadas (SHA-256) e pagamentos sob custódia segura.",
     url: 'https://influnext.com.br',
     siteName: 'InfluNext',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'InfluNext — Influência que Gera Resultado' }],
+    images: [{ url: '/logo-concept2b.png?v=3', width: 1200, height: 630, alt: 'InfluNext — SafePay Escrow & Influencer Marketing' }],
     locale: 'pt_BR',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title: "InfluNext — Influência que Gera Resultado Real",
-    description: "Métricas auditadas, Escrow e IA. A plataforma mais séria do Brasil para criadores e marcas.",
-    images: ['/og-image.png'],
+    description: "Métricas auditadas, SafePay Escrow e IA. A plataforma mais séria do Brasil para criadores e marcas.",
+    images: ['/logo-concept2b.png?v=3'],
     creator: '@influnext',
   },
   robots: {
@@ -82,6 +83,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* Google & Search Engine Favicons and Mobile Headers */}
+        <link rel="icon" href="/favicon.svg?v=3" type="image/svg+xml" />
+        <link rel="icon" href="/favicon.ico?v=3" sizes="any" />
+        <link rel="apple-touch-icon" href="/apple-icon.png?v=3" />
         {/* Performance Hints: Preconnect to critical domains */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -96,8 +101,9 @@ export default function RootLayout({
               "@type": "Organization",
               "name": "InfluNext",
               "url": "https://influnext.com.br",
-              "logo": "https://influnext.com.br/icon.png",
-              "description": "Plataforma de elite para gestão de carreira de influenciadores e marcas.",
+              "logo": "https://influnext.com.br/logo-concept2b.png",
+              "image": "https://influnext.com.br/logo-concept2b.png",
+              "description": "Plataforma de elite para gestão de carreira de influenciadores e marcas com pagamentos em custódia SafePay Escrow e métricas auditadas.",
               "sameAs": [
                 "https://instagram.com/influnext",
                 "https://twitter.com/influnext"

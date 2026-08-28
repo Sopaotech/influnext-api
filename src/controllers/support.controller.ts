@@ -5,7 +5,7 @@ import { z } from 'zod';
 const createTicketSchema = z.object({
   subject: z.string().min(3, 'O assunto é obrigatório.'),
   message: z.string().min(10, 'A mensagem deve ter pelo menos 10 caracteres.'),
-  category: z.enum(['BUG', 'SUPPORT', 'FEATURE']),
+  category: z.enum(['BUG', 'SUPPORT', 'FEATURE', 'DISPUTE', 'BILLING']),
 });
 
 export const createTicket = async (req: Request, res: Response) => {
