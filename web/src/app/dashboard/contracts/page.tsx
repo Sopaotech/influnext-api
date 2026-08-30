@@ -9,19 +9,11 @@ import Cookies from 'js-cookie';
 import Link from 'next/link';
 
 import { EscrowExplanatoryCard } from '@/components/EscrowExplanatoryCard';
+import { ContractLegalModal, ContractLegalData } from '@/components/ContractLegalModal';
 
-interface Contract {
-  id: string;
-  title: string;
-  budget: number;
-  netAmount: number;
-  escrowStatus: string;
-  createdAt: string;
-  briefing?: string;
-  aiScript?: string;
-  company?: { companyName: string };
-  influencer?: { handle: string };
-  deliverables?: { id: string; title: string; type: string; deadline: string; status: string; proofUrl?: string }[];
+interface Contract extends ContractLegalData {
+  company?: { companyName: string; taxId?: string; city?: string; state?: string; user?: { email?: string } };
+  influencer?: { handle: string; niche?: string; city?: string; state?: string; user?: { email?: string } };
 }
 
 const getStatusColor = (status: string) => {
@@ -72,6 +64,26 @@ export default function ContractsPage() {
     };
     fetchContracts();
   }, []);
+
+  const [legalModalContract, setLegalModalContract] = useState<ContractLegalData | null>(null);
+  const [isSigningLegal, setIsSigningLegal] = useState(false);
+
+  const handleSignContractFromModal = async () => {
+    if (!legalModalContract) return;
+    setIsSigningLegal(true);
+    try {
+      await api.post(`/contracts/${legalModalContract.id}/accept`);
+      toast.success('Contrato assinado eletronicamente com sucesso (Consent Log gerado)!');
+      const res = await api.get<Contract[]>('/contracts');
+      setContracts(res.data);
+      setLegalModalContract(null);
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { error?: string } } };
+      toast.error(errorObj.response?.data?.error || 'Erro ao assinar contrato.');
+    } finally {
+      setIsSigningLegal(false);
+    }
+  };
 
   const [editingScriptId, setEditingScriptId] = useState<string | null>(null);
   const [editedScriptText, setEditedScriptText] = useState('');
@@ -366,6 +378,22 @@ export default function ContractsPage() {
 
                               {/* Entregáveis e Submissão */}
                               <div className="lg:col-span-1 space-y-4">
+                                  {/* Header Ações Jurídicas */}
+                                  <div className="flex items-center justify-between gap-4 pb-2 border-b border-zinc-800/60">
+                                    <div className="flex items-center gap-2 text-[10px] font-black text-orange-400 uppercase tracking-widest">
+                                      <ShieldCheck className="w-3.5 h-3.5" /> Governança do Contrato
+                                    </div>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setLegalModalContract(contract);
+                                      }}
+                                      className="px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30 transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                                    >
+                                      <FileText className="w-3.5 h-3.5" /> Ver Minuta Jurídica Oficial
+                                    </button>
+                                  </div>
+
                                  {/* Ações de Assinatura e Escrow de acordo com a regra de negócios */}
                                  {userRole === 'INFLUENCER' && contract.escrowStatus === 'DRAFT' && (
                                    <div className={`p-6 border rounded-2xl space-y-3 shadow-md ${
@@ -373,26 +401,16 @@ export default function ContractsPage() {
                                    }`}>
                                      <h4 className={`text-xs font-black uppercase tracking-wider ${isDark ? 'text-orange-400' : 'text-orange-850'}`}>Proposta Pendente</h4>
                                      <p className="text-[10px] text-zinc-505 dark:text-zinc-400 font-medium leading-relaxed">
-                                       Você precisa revisar a proposta e assinar eletronicamente para habilitar o depósito do patrocinador.
+                                       Você precisa revisar as 7 cláusulas legais da minuta e assinar eletronicamente para habilitar o depósito do patrocinador.
                                      </p>
                                      <button 
-                                       onClick={async (e) => {
+                                       onClick={(e) => {
                                          e.stopPropagation();
-                                         if (confirm('Deseja assinar eletronicamente e aceitar esta proposta de contrato?')) {
-                                           try {
-                                             await api.post(`/contracts/${contract.id}/accept`);
-                                             toast.success('Contrato assinado eletronicamente com sucesso!');
-                                             const res = await api.get<Contract[]>('/contracts');
-                                             setContracts(res.data);
-                                           } catch (err: unknown) {
-                                             const errorObj = err as { response?: { data?: { error?: string } } };
-                                             toast.error(errorObj.response?.data?.error || 'Erro ao assinar contrato.');
-                                           }
-                                         }
+                                         setLegalModalContract(contract);
                                        }}
                                        className="w-full py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-orange-600 hover:bg-orange-500 text-white transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
                                      >
-                                       <ShieldCheck className="w-3.5 h-3.5" /> Assinar e Aceitar Contrato
+                                       <ShieldCheck className="w-3.5 h-3.5" /> Revisar e Assinar Minuta Jurídica
                                      </button>
                                    </div>
                                  )}
@@ -650,6 +668,18 @@ export default function ContractsPage() {
             <p className="text-[9px] text-zinc-550 dark:text-zinc-500 font-bold">Todos os pagamentos são retidos em Escrow e liberados apenas após a validação dos entregáveis.</p>
          </div>
       </footer>
+
+      {/* Modal da Minuta Jurídica Oficial & Assinatura */}
+      {legalModalContract && (
+        <ContractLegalModal
+          isOpen={!!legalModalContract}
+          onClose={() => setLegalModalContract(null)}
+          contract={legalModalContract}
+          canSign={userRole === 'INFLUENCER' && legalModalContract.escrowStatus === 'DRAFT'}
+          onSign={handleSignContractFromModal}
+          isSigning={isSigningLegal}
+        />
+      )}
 
     </div>
   );

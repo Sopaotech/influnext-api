@@ -24,6 +24,10 @@ const createContractSchema = z.object({
   budget: z.coerce.number().positive('O budget deve ser um número positivo.'),
   deliverables: z.array(deliverableSchema).min(1, 'Pelo menos um entregável é obrigatório.'),
   contractType: z.enum(['SPOT', 'RETAINER']).optional(),
+  exclusivityDays: z.coerce.number().int().min(0).optional(),
+  usageRightsDays: z.coerce.number().int().min(0).optional(),
+  allowPaidMedia: z.boolean().optional(),
+  legalTerms: z.any().optional(),
 });
 
 // ─── Controllers ──────────────────────────────────────────────────────────────
@@ -77,7 +81,18 @@ export const createContract = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const { influencerId, title, budget, deliverables, briefing, contractType } = parsed.data;
+    const { 
+      influencerId, 
+      title, 
+      budget, 
+      deliverables, 
+      briefing, 
+      contractType,
+      exclusivityDays,
+      usageRightsDays,
+      allowPaidMedia,
+      legalTerms
+    } = parsed.data;
 
     // ─── Geração de Roteiro IA (O Cérebro) ──────────────────────────────────
     let aiScript = null;
@@ -90,7 +105,7 @@ export const createContract = async (req: Request, res: Response): Promise<void>
     // FREE = 15% | PRO/MASTER/ENTERPRISE = 7% (modelo aprovado julho/2026)
     const influencerProfile = await prisma.influencerProfile.findUnique({
       where: { id: influencerId },
-      include: { user: { select: { subscriptionTier: true } } }
+      include: { user: { select: { subscriptionTier: true, email: true } } }
     });
 
     if (!influencerProfile) {
@@ -105,6 +120,13 @@ export const createContract = async (req: Request, res: Response): Promise<void>
     // ────────────────────────────────────────────────────────────────────────
 
     const clientIp = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || req.ip || '127.0.0.1';
+
+    // Geração de Hash Criptográfico SHA-256 da Minuta Oficial (MP 2.200-2/2001)
+    const deliverablesString = deliverables
+      .map((d) => `${d.title}:${d.type}:${d.dueDate || d.deadline}`)
+      .join(';');
+    const legalHashPayload = `${company.companyName}|${company.taxId}|${influencerProfile.handle}|${title}|${budget}|${briefing || ''}|${exclusivityDays || 0}|${usageRightsDays || 30}|${allowPaidMedia ? 'PAID_MEDIA' : 'ORGANIC'}|${deliverablesString}`;
+    const initialSignatureHash = crypto.createHash('sha256').update(legalHashPayload).digest('hex');
 
     const result = await prisma.$transaction(async (tx) => {
       const contract = await tx.contract.create({
@@ -122,6 +144,19 @@ export const createContract = async (req: Request, res: Response): Promise<void>
           contractType: contractType || 'SPOT',
           companySigned: true,
           companyIp: clientIp,
+          signatureHash: initialSignatureHash,
+          exclusivityDays: exclusivityDays ?? 0,
+          usageRightsDays: usageRightsDays ?? 30,
+          allowPaidMedia: allowPaidMedia ?? false,
+          legalTerms: legalTerms ?? {
+            conarCompliance: true,
+            autoReleaseDays: 5,
+            exclusivityDays: exclusivityDays ?? 0,
+            usageRightsDays: usageRightsDays ?? 30,
+            allowPaidMedia: allowPaidMedia ?? false,
+            contractType: contractType || 'SPOT',
+            createdAt: new Date().toISOString()
+          },
           deliverables: {
             create: deliverables.map((d) => ({
               type: d.type,
@@ -130,7 +165,7 @@ export const createContract = async (req: Request, res: Response): Promise<void>
             }))
           }
         },
-        include: { deliverables: true }
+        include: { deliverables: true, company: true, influencer: true }
       });
 
       const influencer = await tx.influencerProfile.findUnique({ where: { id: influencerId } });
@@ -138,7 +173,7 @@ export const createContract = async (req: Request, res: Response): Promise<void>
         await tx.notification.create({
           data: {
             userId: influencer.userId,
-            message: `Nova proposta de contrato: "${title}" (Valor Líquido: $${netAmount.toFixed(2)})`,
+            message: `Nova proposta de contrato: "${title}" (Valor Líquido: R$ ${netAmount.toFixed(2)})`,
             type: 'CONTRACT_OFFER'
           }
         });
@@ -150,7 +185,7 @@ export const createContract = async (req: Request, res: Response): Promise<void>
     if (result.influencerUserId) {
       await addNotificationJob(
         result.influencerUserId,
-        `Nova proposta de contrato: "${title}" (Valor líquido para você: $${netAmount.toFixed(2)})`,
+        `Nova proposta de contrato: "${title}" (Valor líquido para você: R$ ${netAmount.toFixed(2)})`,
         'CONTRACT_OFFER'
       );
     }
@@ -208,11 +243,11 @@ export const acceptContract = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Gerar hash de consentimento legal (SHA-256) com base no escopo e valores da minuta
+    // Gerar hash de consentimento legal (SHA-256) com base no escopo e valores da minuta (MP 2.200-2/2001)
     const deliverablesString = contract.deliverables
       .map((d) => `${d.type}:${d.deadline.toISOString()}`)
       .join(';');
-    const consentContent = `${contract.title}|${contract.budget}|${contract.briefing || ''}|${deliverablesString}`;
+    const consentContent = `${contract.company.companyName}|${contract.company.taxId}|${influencer.handle}|${contract.title}|${contract.budget}|${contract.briefing || ''}|${contract.exclusivityDays || 0}|${contract.usageRightsDays || 30}|${contract.allowPaidMedia ? 'PAID_MEDIA' : 'ORGANIC'}|${deliverablesString}`;
     const signatureHash = crypto.createHash('sha256').update(consentContent).digest('hex');
 
     const clientIp = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || req.ip || '127.0.0.1';
@@ -466,7 +501,11 @@ export const getMyContracts = async (req: Request, res: Response): Promise<void>
       }
       contracts = await prisma.contract.findMany({
         where: { influencerId: profile.id },
-        include: { company: true, deliverables: true },
+        include: { 
+          company: { include: { user: { select: { email: true } } } }, 
+          influencer: { include: { user: { select: { email: true } } } },
+          deliverables: true 
+        },
         orderBy: { createdAt: 'desc' }
       });
     } else if (userRole === UserRole.COMPANY) {
@@ -477,13 +516,21 @@ export const getMyContracts = async (req: Request, res: Response): Promise<void>
       }
       contracts = await prisma.contract.findMany({
         where: { companyId: profile.id },
-        include: { influencer: true, deliverables: true },
+        include: { 
+          influencer: { include: { user: { select: { email: true } } } }, 
+          company: { include: { user: { select: { email: true } } } },
+          deliverables: true 
+        },
         orderBy: { createdAt: 'desc' }
       });
     } else if (userRole === UserRole.ADMIN) {
       const skip = parseInt(req.query.skip as string || '0', 10);
       contracts = await prisma.contract.findMany({
-        include: { influencer: true, company: true, deliverables: true },
+        include: { 
+          influencer: { include: { user: { select: { email: true } } } }, 
+          company: { include: { user: { select: { email: true } } } }, 
+          deliverables: true 
+        },
         orderBy: { createdAt: 'desc' },
         take: 100,
         skip: isNaN(skip) ? 0 : skip,
@@ -506,8 +553,8 @@ export const getContractById = async (req: Request, res: Response): Promise<void
     const contract = await prisma.contract.findUnique({
       where: { id },
       include: {
-        influencer: true,
-        company: true,
+        influencer: { include: { user: { select: { email: true } } } },
+        company: { include: { user: { select: { email: true } } } },
         deliverables: true
       }
     });

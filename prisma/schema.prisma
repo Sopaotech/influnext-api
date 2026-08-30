@@ -252,6 +252,12 @@ model Contract {
   influencerIp     String?
   signatureHash    String?       // SHA-256 da minuta aceita
   signedAt         DateTime?
+
+  // Cláusulas e Blindagem Jurídica
+  exclusivityDays  Int?          @default(0)   // Dias de exclusividade setorial (0 = sem exclusividade)
+  usageRightsDays  Int?          @default(30)  // Prazo de cessão/uso de imagem em dias (ex: 30, 90, 180, 365)
+  allowPaidMedia   Boolean       @default(false) // Permissão para tráfego pago / Dark Post / Anúncios
+  legalTerms       Json?         // Detalhes extras, regras customizadas e resumo das 7 cláusulas legais
   
   company         CompanyProfile    @relation(fields: [companyId], references: [id])
   influencer      InfluencerProfile @relation(fields: [influencerId], references: [id])
