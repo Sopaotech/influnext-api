@@ -45,21 +45,24 @@ export function AppStandbyNotice() {
 
         {/* Conteúdo */}
         <div className="flex gap-4">
-          {/* Favicon / Logo da Plataforma */}
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-slate-900 shadow-md overflow-hidden">
+          {/* Favicon / Icon Oficial da Plataforma */}
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-orange-500/20 bg-gradient-to-br from-orange-500/10 to-amber-500/5 shadow-md overflow-hidden p-1.5">
             <img 
-              src="/icon.png" 
-              alt="InfluNext Logo" 
-              className="h-10 w-10 rounded-lg object-cover" 
+              src="/icon.png?v=6" 
+              alt="InfluNext Icon" 
+              className="h-full w-full object-contain" 
             />
           </div>
 
           <div className="flex-1 pr-6">
-            <h4 className="font-outfit text-sm font-semibold tracking-wide text-white">
-              Aplicativo InfluNext
-            </h4>
-            <p className="mt-2 text-xs text-slate-300 leading-relaxed font-semibold">
-              Nosso app está em fase de desenvolvimento pelos nossos desenvolvedores da InfluNext.
+            <div className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
+              <h4 className="font-outfit text-xs font-black uppercase tracking-wider text-orange-400">
+                InfluNext Mobile
+              </h4>
+            </div>
+            <p className="mt-1 text-xs text-zinc-300 leading-relaxed font-medium">
+              O app mobile nativo está em desenvolvimento. Aproveite a versão Web 100% otimizada para seu celular!
             </p>
           </div>
         </div>

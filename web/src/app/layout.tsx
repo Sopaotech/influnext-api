@@ -23,11 +23,11 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "InfluNext — Influência que Gera Resultado Real",
+    default: "InfluNext | Plataforma de Marketing de Influência & SafePay Escrow",
     template: "%s | InfluNext"
   },
-  description: "A plataforma que une criadores verificados e marcas sérias com métricas auditadas, contratos inteligentes e Escrow seguro. Chega de calote. Chega de permuta.",
-  keywords: ["marketing de influência", "influenciadores verificados", "escrow pagamento influencer", "plataforma influencer brasil", "gestão influenciador", "IA criadores conteúdo", "InfluNext"],
+  description: "Conecte sua marca a criadores de conteúdo verificados. Parcerias seguras com métricas auditadas, contratos inteligentes e custódia SafePay Escrow.",
+  keywords: ["marketing de influência", "influenciadores verificados", "escrow pagamento influencer", "plataforma influencer brasil", "gestão influenciador", "SafePay Escrow", "InfluNext"],
   authors: [{ name: "InfluNext Team" }],
   creator: "InfluNext",
   publisher: "InfluNext",
@@ -36,27 +36,31 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
   icons: {
     icon: [
-      { url: '/favicon.svg?v=3', type: 'image/svg+xml' },
-      { url: '/icon.png?v=3', sizes: '512x512', type: 'image/png' },
-      { url: '/favicon.ico?v=3', sizes: 'any' }
+      { url: '/favicon.ico?v=6', sizes: 'any' },
+      { url: '/icon-48.png?v=6', sizes: '48x48', type: 'image/png' },
+      { url: '/icon-192.png?v=6', sizes: '192x192', type: 'image/png' },
+      { url: '/icon.png?v=6', sizes: '512x512', type: 'image/png' },
+      { url: '/favicon.svg?v=6', type: 'image/svg+xml' }
     ],
-    shortcut: '/favicon.svg?v=3',
-    apple: '/apple-icon.png?v=3',
+    shortcut: '/favicon.ico?v=6',
+    apple: [
+      { url: '/apple-icon.png?v=6', sizes: '180x180', type: 'image/png' }
+    ]
   },
   openGraph: {
-    title: "InfluNext — Influência que Gera Resultado Real (SafePay Escrow)",
+    title: "InfluNext | Plataforma de Marketing de Influência & SafePay Escrow",
     description: "A plataforma oficial que une criadores verificados e marcas com métricas auditadas (SHA-256) e pagamentos sob custódia segura.",
     url: 'https://influnext.com.br',
     siteName: 'InfluNext',
-    images: [{ url: '/logo-concept2b.png?v=3', width: 1200, height: 630, alt: 'InfluNext — SafePay Escrow & Influencer Marketing' }],
+    images: [{ url: '/logo-concept2b.png?v=6', width: 1200, height: 630, alt: 'InfluNext — SafePay Escrow & Influencer Marketing' }],
     locale: 'pt_BR',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: "InfluNext — Influência que Gera Resultado Real",
+    title: "InfluNext | Plataforma de Marketing de Influência & SafePay Escrow",
     description: "Métricas auditadas, SafePay Escrow e IA. A plataforma mais séria do Brasil para criadores e marcas.",
-    images: ['/logo-concept2b.png?v=3'],
+    images: ['/logo-concept2b.png?v=6'],
     creator: '@influnext',
   },
   robots: {
@@ -64,7 +68,7 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true, 'max-video-preview': -1, 'max-image-preview': 'large', 'max-snippet': -1 },
   },
-  manifest: '/manifest.json'
+  manifest: '/manifest.json?v=6'
 };
 
 import { ThemeProvider } from "@/components/theme-provider";
@@ -84,9 +88,12 @@ export default function RootLayout({
     >
       <head>
         {/* Google & Search Engine Favicons and Mobile Headers */}
-        <link rel="icon" href="/favicon.svg?v=3" type="image/svg+xml" />
-        <link rel="icon" href="/favicon.ico?v=3" sizes="any" />
-        <link rel="apple-touch-icon" href="/apple-icon.png?v=3" />
+        <link rel="icon" href="/favicon.ico?v=6" sizes="any" />
+        <link rel="icon" href="/icon-48.png?v=6" type="image/png" sizes="48x48" />
+        <link rel="icon" href="/icon-192.png?v=6" type="image/png" sizes="192x192" />
+        <link rel="icon" href="/icon.png?v=6" type="image/png" sizes="512x512" />
+        <link rel="icon" href="/favicon.svg?v=6" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-icon.png?v=6" sizes="180x180" />
         {/* Performance Hints: Preconnect to critical domains */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -98,15 +105,32 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
-              "@type": "Organization",
-              "name": "InfluNext",
-              "url": "https://influnext.com.br",
-              "logo": "https://influnext.com.br/logo-concept2b.png",
-              "image": "https://influnext.com.br/logo-concept2b.png",
-              "description": "Plataforma de elite para gestão de carreira de influenciadores e marcas com pagamentos em custódia SafePay Escrow e métricas auditadas.",
-              "sameAs": [
-                "https://instagram.com/influnext",
-                "https://twitter.com/influnext"
+              "@graph": [
+                {
+                  "@type": "Organization",
+                  "@id": "https://influnext.com.br/#organization",
+                  "name": "InfluNext",
+                  "url": "https://influnext.com.br",
+                  "logo": {
+                    "@type": "ImageObject",
+                    "url": "https://influnext.com.br/logo-concept2b.png",
+                    "width": 1035,
+                    "height": 190
+                  },
+                  "image": "https://influnext.com.br/logo-concept2b.png",
+                  "description": "Plataforma líder para gestão de parcerias entre marcas e influenciadores com contratos inteligentes e custódia segura SafePay Escrow.",
+                  "sameAs": [
+                    "https://instagram.com/influnext",
+                    "https://twitter.com/influnext"
+                  ]
+                },
+                {
+                  "@type": "WebSite",
+                  "@id": "https://influnext.com.br/#website",
+                  "url": "https://influnext.com.br",
+                  "name": "InfluNext",
+                  "publisher": { "@id": "https://influnext.com.br/#organization" }
+                }
               ]
             })
           }}
