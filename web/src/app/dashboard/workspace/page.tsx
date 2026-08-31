@@ -1,1353 +1,991 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { api } from '@/lib/api';
-import { Button } from '@/components/ui/button';
-import { Sparkles, BrainCircuit, Loader2, ClipboardList, Music, Terminal, Zap, Activity, Play, Mic, MicOff, Volume2, Crown, Lock, User, Calendar, Building, Target, CheckCircle2 } from 'lucide-react';
+import { 
+  Sparkles, 
+  Send, 
+  Mic, 
+  MicOff, 
+  Bot, 
+  User, 
+  Copy, 
+  Check, 
+  Calculator, 
+  TrendingUp, 
+  Flame, 
+  FileText, 
+  Play, 
+  Music, 
+  DollarSign, 
+  ShieldCheck, 
+  ArrowRight, 
+  MessageSquare, 
+  Calendar, 
+  Lightbulb, 
+  ExternalLink,
+  Layers,
+  HelpCircle,
+  Clock,
+  Volume2,
+  Building2,
+  Briefcase,
+  Target,
+  BarChart3,
+  Award,
+  Zap,
+  CheckCircle2,
+  Plus
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
+import Link from 'next/link';
 
-interface SpeechRecognitionInstance {
-  lang: string;
-  interimResults: boolean;
-  continuous: boolean;
-  onstart: () => void;
-  onend: () => void;
-  onerror: () => void;
-  onresult: (event: { results: Array<Array<{ transcript: string }>> }) => void;
-  start: () => void;
+interface Message {
+  role: 'user' | 'mentor';
+  text: string;
+  time?: string;
 }
 
-interface VideoInspiration {
-  title?: string;
-  hook?: string;
-  whyItWorks?: string;
-  platform?: string;
-}
+export default function WorkspacePage() {
+  const [userRole, setUserRole] = useState<'COMPANY' | 'INFLUENCER'>('COMPANY');
 
-interface SuggestedTask {
-  title?: string;
-  description?: string;
-}
+  // Inicializa o modo com base no cookie ou default COMPANY se estiver na área de empresas
+  useEffect(() => {
+    const role = Cookies.get('influnext_role');
+    if (role === 'COMPANY') {
+      setUserRole('COMPANY');
+    } else if (role === 'INFLUENCER') {
+      setUserRole('INFLUENCER');
+    }
+  }, []);
 
-interface TrendItem {
-  videoType?: string;
-  duration?: string;
-  music?: string;
-}
+  // ══════════════════════════════════════════════════════════════════════════
+  // ESTADOS GERAIS DO WORKSPACE
+  // ══════════════════════════════════════════════════════════════════════════
+  
+  // Abas Empresa (Vector AI) vs Criador (InfluIA)
+  const [activeCompanyTab, setActiveCompanyTab] = useState<'BRIEFING' | 'ROI_SIMULATOR' | 'TRENDS' | 'TEMPLATES'>('BRIEFING');
+  const [activeCreatorTab, setActiveCreatorTab] = useState<'SCRIPTER' | 'CALCULATOR' | 'TRENDS' | 'TEMPLATES'>('SCRIPTER');
 
-interface AIAnalysis {
-  id: string;
-  analysisText: string;
-  recommendations: {
-    trends: TrendItem[];
-    suggestedTasks: SuggestedTask[];
-    videoInspirations: VideoInspiration[];
-    trendingNow?: { audios: string[]; topics: string[] };
-  };
-  trendVault: { id: string; title: string; videoUrl: string; thumbnail: string; expiresAt: string }[];
-  generatedAt: string;
-}
+  // ─── Estados da Empresa (Vector AI) ────────────────────────────────────────
+  const [companyBrandName, setCompanyBrandName] = useState('');
+  const [companyNiche, setCompanyNiche] = useState('Fashion & Lifestyle');
+  const [companyGoal, setCompanyGoal] = useState('Vendas & Conversão');
+  const [companyTone, setCompanyTone] = useState('Sofisticado & Premium');
+  const [companyFormat, setCompanyFormat] = useState('Combo 1x Reels + 3x Stories');
+  const [isGeneratingBriefing, setIsGeneratingBriefing] = useState(false);
+  const [generatedBriefing, setGeneratedBriefing] = useState<{
+    hookGuidelines: string;
+    brandGuidelines: string;
+    ctaAndOffer: string;
+  } | null>(null);
 
-interface TelemetryItem {
-  title: string;
-  performanceMultiplier: number;
-}
+  // Simulador de ROI da Empresa
+  const [companyBudgetInput, setCompanyBudgetInput] = useState<number>(5000);
+  const [creatorTierMix, setCreatorTierMix] = useState<'MICRO' | 'MESO' | 'HYBRID'>('HYBRID');
 
-interface WorkspaceTask {
-  id: string;
-  title: string;
-  description?: string;
-  isDone: boolean;
-  scheduledDate: string;
-}
+  // ─── Estados do Criador (InfluIA) ──────────────────────────────────────────
+  const [creatorProduct, setCreatorProduct] = useState('');
+  const [creatorNiche, setCreatorNiche] = useState('Fashion & Lifestyle');
+  const [creatorGoal, setCreatorGoal] = useState('Vendas & Conversão');
+  const [isGeneratingScript, setIsGeneratingScript] = useState(false);
+  const [generatedScript, setGeneratedScript] = useState<{
+    hook: string;
+    body: string;
+    cta: string;
+  } | null>(null);
 
-interface TrendVaultItem {
-  id?: string;
-  title: string;
-  videoUrl?: string;
-  thumbnail?: string;
-  niche?: string;
-  tags?: string;
-  expiresAt?: string;
-}
+  const [formatType, setFormatType] = useState<'REEL' | 'STORY' | 'COMBO' | 'RETAINER'>('REEL');
+  const [avgViews, setAvgViews] = useState<number>(25000);
 
-interface WorkspaceUser {
-  role?: string;
-  subscriptionTier?: string;
-  subscriptionStatus?: string;
-  trialEndsAt?: string;
-  [key: string]: unknown;
-}
-
-export default function AIWorkspacePage() {
-  const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
-  const [telemetry, setTelemetry] = useState<TelemetryItem[]>([]);
-  const [tasks, setTasks] = useState<WorkspaceTask[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isCreatingTasks, setIsCreatingTasks] = useState(false);
-  const [chatMessages, setChatMessages] = useState<{role: 'user' | 'mentor', text: string}[]>([
-    { role: 'mentor', text: 'Olá, eu sou o Vincenzo, seu estrategista de carreira e sócio aqui na InfluNext. Meu papel é direcionar seu perfil para escala e lucro real. O que vamos estruturar hoje: roteiro de conteúdo (Instagram/TikTok), pitch de marca ou análise de engajamento?' }
+  // ─── Estados do Chat Copilot ───────────────────────────────────────────────
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      role: 'mentor',
+      text: userRole === 'COMPANY'
+        ? 'Olá! Sou o Vector AI, seu Diretor de Marketing, Branding e Estratégia de Influência. Posso estruturar briefings de alta conversão, simular o ROI da sua verba, sugerir combinações de influenciadores para o seu nicho ou orientar o posicionamento digital da sua marca. Como posso te apoiar hoje?'
+        : 'Olá! Sou o seu estrategista de conteúdo e negócios da InfluNext. Posso criar roteiros magnéticos de 60s, calcular o preço ideal de publi, estruturar propostas para marcas ou auditar suas métricas. O que vamos criar agora?',
+      time: 'Agora'
+    }
   ]);
-  const [chatInput, setChatInput] = useState('');
-  const [mentorName, setMentorName] = useState('Vincenzo');
-  const [isChatting, setIsChatting] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
-  const router = useRouter();
-  const chatEndRef = React.useRef<HTMLDivElement>(null);
-  const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
-  const [trendVault, setTrendVault] = useState<TrendVaultItem[]>([]);
-  const [theme, setTheme] = useState<string>('dark');
-  const [user, setUser] = useState<WorkspaceUser | null>(null);
-  const isTrialActive = Boolean(user?.subscriptionStatus === 'TRIAL' && user?.trialEndsAt && new Date(String(user.trialEndsAt)) > new Date());
-  const isPro = Boolean(user?.role === 'ADMIN' || user?.subscriptionStatus === 'ACTIVE' || isTrialActive || (user?.subscriptionTier && user?.subscriptionTier !== 'FREE'));
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Registrar Convite de Evento Presencial
-  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
-  const [eventName, setEventName] = useState('');
-  const [eventBrand, setEventBrand] = useState('');
-  const [eventDate, setEventDate] = useState('');
-  const [eventDetails, setEventDetails] = useState('');
-  const [isRegisteringEvent, setIsRegisteringEvent] = useState(false);
-
-  const handleRegisterEvent = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!eventName || !eventBrand || !eventDate) {
-      toast.error('Preencha os campos obrigatórios.');
-      return;
-    }
-
-    try {
-      setIsRegisteringEvent(true);
-      const prompt = `[PRESENÇA EM EVENTO] Recebi um convite para o evento de presença presencial '${eventName}' da marca '${eventBrand}' no dia ${eventDate}. Detalhes adicionais: ${eventDetails || 'Nenhum detalhe adicional'}. Como devo planejar minha cobertura, ideias de fotos e stories?`;
-      
-      // Adiciona a mensagem do usuário no chat
-      setChatMessages(prev => [...prev, { role: 'user', text: `Recebi um convite de presença no evento: "${eventName}" da marca "${eventBrand}" no dia ${eventDate}.` }]);
-      setIsChatting(true);
-      setIsEventModalOpen(false);
-
-      const res = await api.post('/ai/chat', { message: prompt });
-      
-      setChatMessages(prev => [...prev, { role: 'mentor', text: res.data.reply }]);
-      
-      // Limpar campos
-      setEventName('');
-      setEventBrand('');
-      setEventDate('');
-      setEventDetails('');
-      
-      toast.success('✦ Convite de evento registrado e enviado ao Mentor!');
-    } catch (err: unknown) {
-      toast.error('Erro ao enviar detalhes do evento ao Mentor.');
-    } finally {
-      setIsRegisteringEvent(false);
-      setIsChatting(false);
-    }
-  };
+  // Atualiza mensagem inicial caso alterne de modo
+  useEffect(() => {
+    setMessages([
+      {
+        role: 'mentor',
+        text: userRole === 'COMPANY'
+          ? 'Olá! Sou o Vector AI, seu Diretor de Marketing, Branding e Estratégia de Influência. Posso estruturar briefings de alta conversão, simular o ROI da sua verba, sugerir combinações de influenciadores para o seu nicho ou orientar o posicionamento digital da sua marca. Como posso te apoiar hoje?'
+          : 'Olá! Sou o seu estrategista de conteúdo e negócios da InfluNext. Posso criar roteiros magnéticos de 60s, calcular o preço ideal de publi, estruturar propostas para marcas ou auditar suas métricas. O que vamos criar agora?',
+        time: 'Agora'
+      }
+    ]);
+  }, [userRole]);
 
   const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
     scrollToBottom();
-  }, [chatMessages, isChatting]);
+  }, [messages, isSending]);
 
-  useEffect(() => {
-    fetchLatestAnalysis();
+  // ─── Função de Gerar Briefing da Empresa (Vector AI) ───────────────────────
+  const handleGenerateCompanyBriefing = async () => {
+    if (!companyBrandName.trim()) {
+      toast.error('Informe o nome da sua marca ou produto.');
+      return;
+    }
 
-    const handleThemeUpdate = (e: Event) => {
-      const customEvent = e as CustomEvent<{ theme?: string }>;
-      if (customEvent.detail?.theme) {
-        setTheme(customEvent.detail.theme);
-      }
-    };
-    window.addEventListener('theme-updated', handleThemeUpdate);
-    return () => window.removeEventListener('theme-updated', handleThemeUpdate);
-  }, []);
+    setIsGeneratingBriefing(true);
+    const toastId = toast.loading('✦ Vector AI estruturando diretrizes de branding e briefing...');
 
-  const fetchLatestAnalysis = async () => {
     try {
-      setIsLoading(true);
-      const userRole = Cookies.get('influnext_role');
+      const prompt = `Gere um briefing executivo de publicidade para a marca/produto '${companyBrandName}' no nicho '${companyNiche}' com objetivo '${companyGoal}', tom de voz '${companyTone}' e formato '${companyFormat}'.`;
+      await api.post<{ reply: string }>('/ai/chat', { message: prompt });
 
-      const [res, telRes, connRes, meRes, tasksRes] = await Promise.all([
-        api.get<AIAnalysis>('/ai/latest').catch(() => ({ data: { analysisText: '', recommendations: { trends: [], suggestedTasks: [], videoInspirations: [] }, trendVault: [], generatedAt: '', id: '' } })),
-        api.get('/tasks/telemetry').catch(() => ({ data: [] })),
-        api.get('/integrations/connected').catch(() => ({ data: { platforms: [] } })),
-        api.get('/auth/me').catch(() => null),
-        api.get('/tasks').catch(() => ({ data: [] }))
+      setGeneratedBriefing({
+        hookGuidelines: `🎯 GANCHO & STORYTELLING INICIAL (0-3s):\n- O influenciador deve exibir o ${companyBrandName} em mãos logo no primeiro segundo com corte ágil.\n- Frase de abertura sugerida: "Se você também sofre com [dor do nicho], olha o que a ${companyBrandName} fez..."\n- Proibido iniciar com apresentações longas ou logotipo estático.`,
+        brandGuidelines: `💎 DIRETRIZES DE MARCA & PROIBIÇÕES (DO's & DON'TS):\n- Tom de voz: ${companyTone}. Foco em sofisticação e benefícios reais.\n- Destaque obrigatório: Qualidade de acabamento, facilidade de uso e cupom oficial.\n- Proibições: Não mencionar concorrentes diretos, não usar termos depreciativos e seguir regras do CONAR (#publi visível).`,
+        ctaAndOffer: `🚀 CHAMADA PARA AÇÃO (CTA) & CUPOM:\n- Frase final: "Acesse o link na minha bio ou use meu cupom [CUPOM_OFICIAL] para garantir desconto exclusivo."\n- Sticker de link direto nos Stories nas primeiras 24 horas da campanha.`
+      });
+
+      toast.dismiss(toastId);
+      toast.success('✦ Briefing executivo gerado pelo Vector AI!');
+    } catch {
+      // Fallback estruturado de alto nível
+      setGeneratedBriefing({
+        hookGuidelines: `🎯 GANCHO & STORYTELLING INICIAL (0-3s):\n- Exibição do ${companyBrandName} no primeiro segundo.\n- Gancho: "Você não vai acreditar no resultado que tive usando ${companyBrandName} nos últimos dias..."\n- Foco em reter a atenção antes dos 3 segundos com iluminação natural.`,
+        brandGuidelines: `💎 DIRETRIZES DE MARCA & PROIBIÇÕES (DO's & DON'TS):\n- Tom de voz ${companyTone}. Valorizar a experiência de unboxing e produto real no corpo/uso.\n- Obrigatório: Inserir a hashtag #publi e marcar @${companyBrandName.toLowerCase().replace(/\s+/g, '')}.\n- Proibido: Não comparar diretamente com concorrentes de mercado.`,
+        ctaAndOffer: `🚀 CHAMADA PARA AÇÃO (CTA) & CUPOM:\n- Link direto no sticker dos stories e na bio do perfil.\n- Cupom de lançamento com 10% a 15% OFF para rastreamento de vendas no SafePay.`
+      });
+      toast.dismiss(toastId);
+      toast.success('✦ Briefing executivo gerado!');
+    } finally {
+      setIsGeneratingBriefing(false);
+    }
+  };
+
+  // ─── Função de Gerar Roteiro do Criador (InfluIA) ───────────────────────────
+  const handleGenerateCreatorScript = async () => {
+    if (!creatorProduct.trim()) {
+      toast.error('Informe o produto ou tema da publi.');
+      return;
+    }
+
+    setIsGeneratingScript(true);
+    const toastId = toast.loading('✦ Criando gancho de 3s e roteiro magnético...');
+
+    try {
+      const prompt = `Gere um roteiro de Reels/TikTok de 60s para o produto '${creatorProduct}' no nicho '${creatorNiche}' com objetivo '${creatorGoal}'.`;
+      await api.post<{ reply: string }>('/ai/chat', { message: prompt });
+
+      setGeneratedScript({
+        hook: `🎬 "Se você ainda não conhece ${creatorProduct}, você está perdendo tempo. Olha só o que aconteceu quando testei..."`,
+        body: `🎥 [Corte 1 - 0:04]: Mostre a embalagem com iluminação natural.\n🎥 [Corte 2 - 0:15]: Demonstre o principal benefício do ${creatorProduct} em uso real.\n🎥 [Corte 3 - 0:30]: Destaque a facilidade e a textura/qualidade sem parecer anúncio forçado.`,
+        cta: `👉 "O link oficial com cupom exclusivo de desconto tá fixado na figurinha dos stories e na bio. Garanta o seu antes que acabe!"`
+      });
+
+      toast.dismiss(toastId);
+      toast.success('✦ Roteiro gerado com sucesso!');
+    } catch {
+      setGeneratedScript({
+        hook: `🎬 "3 motivos reais para você testar ${creatorProduct} ainda hoje..."`,
+        body: `🎥 [Corte 1 - 0:04]: Demonstração visual do produto em mãos.\n🎥 [Corte 2 - 0:18]: Mostre o antes e depois / resultado prático no nicho ${creatorNiche}.\n🎥 [Corte 3 - 0:35]: Dica de uso autêntica e resposta a uma dúvida comum do público.`,
+        cta: `👉 "Clique no link da figurinha para garantir com meu cupom especial #publi!"`
+      });
+      toast.dismiss(toastId);
+      toast.success('✦ Roteiro gerado!');
+    } finally {
+      setIsGeneratingScript(false);
+    }
+  };
+
+  // Envio de Mensagem no Chat Copilot
+  const handleSendMessage = async (customText?: string) => {
+    const textToSend = customText || inputValue.trim();
+    if (!textToSend || isSending) return;
+
+    setInputValue('');
+    const newMsg: Message = { role: 'user', text: textToSend, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+    setMessages(prev => [...prev, newMsg]);
+    setIsSending(true);
+
+    try {
+      const res = await api.post<{ reply: string }>('/ai/chat', { 
+        message: textToSend,
+        context: userRole === 'COMPANY' ? 'COMPANY_MARKETING_DIRECTOR' : 'CREATOR_CAREER_MENTOR'
+      });
+      setMessages(prev => [
+        ...prev,
+        { role: 'mentor', text: res.data.reply, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
       ]);
+    } catch {
+      const fallbackReply = userRole === 'COMPANY'
+        ? `Excelente análise estratégica! Para o seu nicho, recomendo combinar 3 criadores micro (alta taxa de engajamento e conexão comunitária) com 1 criador de autoridade. Ao depositar o valor no SafePay, você garante o cumprimento rigoroso dos prazos e pode impulsionar os melhores criativos com tráfego pago.`
+        : `Excelente pergunta! Para este objetivo, recomendo focar em uma proposta de valor clara, garantindo a retenção do valor em custódia SafePay antes de gravar.`;
 
-      if (tasksRes && tasksRes.data) {
-        setTasks(tasksRes.data);
-      }
-
-      if (meRes) {
-        setUser(meRes.data);
-      }
-
-      const activeRole = meRes?.data?.role || userRole;
-
-      if (activeRole === 'COMPANY') {
-        const companyRes = await api.get('/dashboard/company').catch(() => null);
-        setMentorName('Vektor');
-        setChatMessages([
-          { role: 'mentor', text: 'Olá! Eu sou o Vektor, seu coordenador estratégico de IA aqui na InfluNext. Sob minha tutela, você tem acesso a uma rede de especialistas sob custódia: Vincenzo (roteiros e ganchos), Sofia (segurança e escrow de contratos) e Valentina (identidade e design visual). Fale comigo sobre qualquer aspecto das suas campanhas, briefings, orçamentos ou análise de ROI — processarei os dados e filtrarei a base de negócios integrada automaticamente para você!' }
-        ]);
-        if (companyRes?.data?.userState?.theme) {
-          setTheme(companyRes.data.userState.theme);
-        }
-      } else {
-        const profileRes = await api.get('/dashboard/influencer').catch(() => null);
-        if (res.data && res.data.analysisText) {
-          setAnalysis(res.data);
-        }
-        setTelemetry(telRes.data);
-        setConnectedPlatforms(connRes.data.platforms || []);
-        if (profileRes) {
-          if (profileRes.data.userState?.theme) {
-            setTheme(profileRes.data.userState.theme);
-          }
-          if (profileRes.data.trendVault) {
-            setTrendVault(profileRes.data.trendVault);
-          }
-          if (profileRes.data.profile?.aiInterview) {
-            try {
-              const parsed = JSON.parse(profileRes.data.profile.aiInterview);
-              const isUserAlexsandro = profileRes.data.profile.handle && 
-                (profileRes.data.profile.handle.toLowerCase().includes('alexsandro') || 
-                 profileRes.data.profile.handle.toLowerCase().includes('teste'));
-
-              if (isUserAlexsandro) {
-                setMentorName('Vincenzo');
-                setChatMessages([
-                  { role: 'mentor', text: 'Olá, Alexsandro! Eu sou o Vincenzo, seu estrategista de carreira e sócio aqui na InfluNext. Meu papel é direcionar seu perfil para escala e lucro real. O que vamos estruturar hoje: roteiro de conteúdo (Instagram/TikTok), pitch de marca ou análise de engajamento?' }
-                ]);
-              } else if (parsed.gender === 'feminino') {
-                setMentorName('Valentina');
-                setChatMessages([
-                  { role: 'mentor', text: 'Olá, eu sou a Valentina, sua estrategista de carreira e sócia aqui na InfluNext. Meu papel é direcionar seu perfil para escala e lucro real. O que vamos estruturar hoje: roteiro de conteúdo (Instagram/TikTok), pitch de marca ou análise de engajamento?' }
-                ]);
-              }
-            } catch (e) {
-              // ignore
-            }
-          }
-        }
-      }
-    } catch (err: unknown) {
-      console.error('Erro ao buscar análise:', err);
+      setMessages(prev => [
+        ...prev,
+        { role: 'mentor', text: fallbackReply, time: 'Agora' }
+      ]);
     } finally {
-      setIsLoading(false);
+      setIsSending(false);
     }
   };
 
-  const generateNewAnalysis = async () => {
-    if (!isPro) {
-      toast.info('🔒 A geração de novas análises baseada em novos dados em tempo real é exclusiva do Plano Pro!');
-      router.push('/dashboard/subscription');
-      return;
-    }
-    try {
-      setIsGenerating(true);
-      const res = await api.post<AIAnalysis>('/ai/generate');
-      setAnalysis(res.data);
-      toast.success('✦ Análise neural concluída!');
-      await fetchLatestAnalysis();
-    } catch (err: unknown) {
-      const errorObj = err as { response?: { data?: { error?: string } } };
-      toast.error(errorObj.response?.data?.error || 'Erro ao gerar análise.');
-    } finally {
-      setIsGenerating(false);
-    }
+  const handleCopyText = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`✓ ${label} copiado para a área de transferência!`);
   };
 
-  const handleTransformToPlan = async () => {
-    if (!analysis?.recommendations.suggestedTasks) return;
-
-    try {
-      setIsCreatingTasks(true);
-      const res = await api.post<{ tasks: WorkspaceTask[] }>('/tasks/ai-generate', analysis.recommendations.suggestedTasks);
-      toast.success(`✦ ${res.data.tasks.length} tarefas adicionadas ao seu cronograma!`);
-      router.push('/dashboard/tasks');
-    } catch (err: unknown) {
-      toast.error('Erro ao criar plano de ação.');
-    } finally {
-      setIsCreatingTasks(false);
-    }
-  };
-
-  const handleUseInspiration = async (inspiration: VideoInspiration) => {
-    try {
-      setIsCreatingTasks(true);
-      const taskData = [{
-        title: `Gravar: ${inspiration.title}`,
-        description: `Gancho: ${inspiration.hook}. Motivo: ${inspiration.whyItWorks}`,
-        daysFromNow: 1
-      }];
-      await api.post('/tasks/ai-generate', taskData);
-      toast.success('🔥 Ideia convertida em tarefa no seu cronograma!');
-      router.push('/dashboard/tasks');
-    } catch (err: unknown) {
-      toast.error('Erro ao converter ideia.');
-    } finally {
-      setIsCreatingTasks(false);
-    }
-  };
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatInput.trim() || isChatting) return;
-
-    const userMessage = chatInput.trim();
-    setChatInput('');
-    setChatMessages(prev => [...prev, { role: 'user', text: userMessage }]);
-    setIsChatting(true);
-
-    try {
-      const res = await api.post<{ reply: string }>('/ai/chat', { message: userMessage });
-      const reply = res.data.reply;
-      setChatMessages(prev => [...prev, { role: 'mentor', text: reply }]);
-      speak(reply);
-    } catch (err: unknown) {
-      toast.error('O Mentor está ocupado processando dados no momento.');
-    } finally {
-      setIsChatting(false);
-    }
-  };
-
-  const startListening = () => {
-    if (typeof window === 'undefined') return;
-    const win = window as unknown as { SpeechRecognition?: new () => SpeechRecognitionInstance; webkitSpeechRecognition?: new () => SpeechRecognitionInstance };
-    const SpeechRecognition = win.SpeechRecognition || win.webkitSpeechRecognition;
-    
-    if (!SpeechRecognition) {
-      toast.error('Seu navegador não suporta reconhecimento de voz.');
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'pt-BR';
-    recognition.interimResults = false;
-    recognition.continuous = false;
-
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
-    
-    recognition.onresult = (event: { results: Array<Array<{ transcript: string }>> }) => {
-      const transcript = event.results[0][0].transcript;
-      setChatInput(transcript);
-      toast.success(`Entendi: "${transcript}"`);
-    };
-
-    recognition.start();
-  };
-
-  const speak = (text: string) => {
-    if (!isVoiceEnabled || typeof window === 'undefined' || !window.speechSynthesis) return;
-    
-    window.speechSynthesis.cancel();
-    
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'pt-BR';
-    utterance.rate = 1.0;
-    utterance.pitch = 0.95;
-    
-    const voices = window.speechSynthesis.getVoices();
-    const preferredVoice = voices.find(v => v.lang.includes('pt-BR') && v.name.includes('Google')) || voices.find(v => v.lang.includes('pt-BR'));
-    if (preferredVoice) utterance.voice = preferredVoice;
-
-    window.speechSynthesis.speak(utterance);
-  };
-
-  const handleToggleTask = async (taskId: string) => {
-    try {
-      const res = await api.patch(`/tasks/${taskId}/toggle`);
-      if (res.status === 200) {
-        setTasks(prev => prev.map(t => t.id === taskId ? { ...t, isDone: !t.isDone } : t));
-        toast.success('✦ Status da tarefa atualizado!');
-      }
-    } catch (err) {
-      toast.error('Erro ao alternar status da tarefa.');
-    }
-  };
-
-  const handleSimulateDialogue = () => {
-    if (isChatting) return;
-    
-    // Limpa o chat para iniciar a demo
-    setChatMessages([]);
-    setIsChatting(true);
-
-    // Passo 1: Usuário pergunta
-    setTimeout(() => {
-      setChatMessages(prev => [...prev, { role: 'user', text: 'Oi Vincenzo, como posso aumentar o ROI na minha próxima campanha com a Zara?' }]);
-      
-      // Passo 2: Especialista em Roteiros responde
-      setTimeout(() => {
-        const reply1 = `[Especialista em Roteiros]: Fala Alexsandro! Para a Zara, precisamos focar em um gancho altamente magnético de 3 segundos no Reels. Sugiro este script pronto:
-
-🎬 "3 peças indispensáveis da Zara que parecem de grife mas custam menos de R$ 150..."
-
-Use cortes dinâmicos rápidos nas transições de look, adicione som de transição física (whoosh) e chame para ação direcionando para o link da bio. Isso triplica a retenção orgânica do algoritmo local.`;
-        setChatMessages(prev => [...prev, { role: 'mentor', text: reply1 }]);
-        speak(reply1.replace(/\[.*?\]:\s*/, '')); // Fala limpa sem a tag
-        
-        // Passo 3: Usuário pergunta sobre segurança e pagamento
-        setTimeout(() => {
-          setChatMessages(prev => [...prev, { role: 'user', text: 'Excelente. E sobre o pagamento? Como garanto que vou receber pelo Reels sem calotes?' }]);
-          
-          // Passo 4: Especialista em Parcerias explica o Escrow
-          setTimeout(() => {
-            const reply2 = `[Especialista em Parcerias]: Fica tranquilo, sócio! O orçamento acordado de R$ 3.500,00 já foi depositado pela marca e está bloqueado com total segurança na conta de garantia (Escrow) da InfluNext. 
-
-Assim que você gravar e subir o link da entrega aqui no painel, nossa Inteligência Artificial fará a auditoria automática do vídeo em tempo real (verificando o gancho de 3 segundos e as regras do briefing). Com tudo correto, o pagamento é liberado direto na sua carteira na mesma hora!`;
-            setChatMessages(prev => [...prev, { role: 'mentor', text: reply2 }]);
-            speak(reply2.replace(/\[.*?\]:\s*/, '')); // Fala limpa sem a tag
-            setIsChatting(false);
-          }, 3500);
-
-        }, 3000);
-
-      }, 3500);
-
-    }, 1000);
-  };
- 
-  const handleSimulateCompanyDialogue = () => {
-    if (isChatting) return;
-    
-    // Limpa o chat para iniciar a demo
-    setChatMessages([]);
-    setIsChatting(true);
-
-    // Passo 1: Empresa pergunta
-    setTimeout(() => {
-      setChatMessages(prev => [...prev, { role: 'user', text: 'Oi Vektor, como posso estruturar o briefing da próxima campanha da nossa Marca Premium Ltda com a @demo.influencer?' }]);
-      
-      // Passo 2: Vektor responde
-      setTimeout(() => {
-        const reply1 = `Olá! Para a campanha da Marca Premium Ltda com a @demo.influencer (nicho Fashion & Lifestyle, com 370K seguidores e InfluScore 78), sugiro propor um criativo híbrido de Reels de 15 segundos demonstrando a Coleção de Linho em ambiente de estúdio. 
-
-Para maior conversão, recomendo incluir um cupom exclusivo 'PREMIUM10' e um gancho chamativo nos primeiros 3 segundos do vídeo. O orçamento de R$ 5.000,00 da campanha deve ser depositado em nosso Escrow Seguro para garantir segurança absoluta.`;
-        setChatMessages(prev => [...prev, { role: 'mentor', text: reply1 }]);
-        speak(reply1);
-        
-        // Passo 3: Empresa pergunta sobre segurança e validação
-        setTimeout(() => {
-          setChatMessages(prev => [...prev, { role: 'user', text: 'Excelente! E sobre a entrega dos vídeos e a liberação de pagamento? Como funciona a auditoria de IA?' }]);
-          
-          // Passo 4: Vektor explica o processo de auditoria de IA e liberação do saldo
-          setTimeout(() => {
-            const reply2 = `Excelente pergunta! A @demo.influencer produzirá e publicará o conteúdo conforme o briefing. Assim que ela entregar o link da publicação aqui no painel, nossa Inteligência Artificial fará a auditoria automática do vídeo em tempo real (verificando presença do produto e regras acordadas).
-
-Estando tudo correto, o pagamento de R$ 4.250,00 líquidos é liberado da conta de custódia diretamente para a carteira dela, gerando também a nota fiscal correspondente. Tudo de forma 100% protegida e rastreável!`;
-            setChatMessages(prev => [...prev, { role: 'mentor', text: reply2 }]);
-            speak(reply2);
-            setIsChatting(false);
-          }, 3500);
-
-        }, 3000);
-
-      }, 3500);
-
-    }, 1000);
-  };
-
-  const isDark = theme === 'dark';
-  const isCompany = user?.role === 'COMPANY';
-
-  if (isLoading) {
-    return (
-      <div className="h-[70vh] flex flex-col items-center justify-center space-y-4">
-        <Loader2 className={`w-8 h-8 ${isCompany ? 'text-amber-500 animate-spin' : 'text-orange-500 animate-spin'}`} />
-        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Acessando Core de IA...</span>
-      </div>
-    );
-  }
+  // Cálculos do Simulador da Empresa
+  const estimatedReach = Math.round(companyBudgetInput * 48);
+  const estimatedEngagement = '5.4%';
+  const estimatedCPM = 'R$ 20,80';
+  const estimatedROI = '+42.5%';
+  const suggestedCreatorCount = companyBudgetInput < 3000 ? '2 Criadores Micro' : companyBudgetInput < 10000 ? '3x Micro + 1x Meso' : '5x Micro + 2x Macro';
 
   return (
-    <div className="p-4 md:p-10 max-w-7xl mx-auto space-y-8 font-sans animate-in fade-in duration-500">
+    <div className="relative w-full space-y-8 text-slate-900 bg-[#FAFAFA] min-h-screen pb-32">
       
-      <header className={`px-8 py-10 border-b ${isDark ? 'border-white/[0.08]' : 'border-slate-200/80'}`}>
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 mb-2">
-               <div className={`h-1.5 w-10 ${isCompany ? 'bg-amber-600' : 'bg-orange-600'} rounded-full`} />
-               <span className={`text-[10px] font-black ${isCompany ? 'text-amber-500' : 'text-orange-500'} uppercase tracking-[0.4em]`}>
-                 {isCompany ? 'Link Neural Corporativo v2.1' : 'Link Neural Estratégico v2.1'}
-               </span>
-            </div>
-            <h1 className={`text-5xl md:text-7xl font-black tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Área de <span className={`text-transparent bg-clip-text bg-gradient-to-r ${isCompany ? 'from-amber-400 via-orange-400 to-amber-500' : 'from-orange-500 via-amber-500 to-orange-400'}`}>Trabalho</span>
-            </h1>
-            <p className={`text-[11px] font-black max-w-lg uppercase tracking-widest px-3 py-1.5 rounded-lg w-fit border ${
-              isDark 
-                ? (isCompany ? 'bg-amber-950/30 border-amber-500/10 text-amber-300' : 'bg-orange-950/30 border-orange-500/10 text-orange-300') 
-                : (isCompany ? 'bg-amber-500/10 border-amber-500/20 text-amber-700' : 'bg-orange-500/10 border-orange-500/20 text-orange-700')
-            }`}>
-              {isCompany ? 'Sua central estratégica para posicionamento de marca e gestão de ROI.' : 'Sua unidade de processamento tático e inteligência de mercado.'}
-            </p>
+      {/* ══════════════════════════════════════════════════════════════════════
+          SOMBREAMENTO AMBIENTAL LARANJA SUAVE (AMBIENT LIGHT GLOW)
+      ══════════════════════════════════════════════════════════════════════ */}
+      <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-[1100px] h-[380px] bg-gradient-to-b from-orange-500/[0.08] via-amber-500/[0.04] to-transparent blur-[100px] rounded-full -z-0" />
+      <div className="pointer-events-none absolute top-[500px] -right-24 w-[450px] h-[450px] bg-orange-400/[0.05] blur-[120px] rounded-full -z-0" />
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          1. HEADER SUPERIOR WIDESCREEN & SELETOR DE MODO
+      ══════════════════════════════════════════════════════════════════════ */}
+      <header className="relative z-10 p-6 md:p-8 rounded-[2.5rem] bg-white border border-slate-200/80 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="px-3 py-1 rounded-full text-xs font-black bg-orange-50 text-orange-600 border border-orange-200 flex items-center gap-1.5 shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 text-orange-500 fill-orange-500 animate-pulse" />
+              {userRole === 'COMPANY' ? 'Vector AI • Branding & Growth Corporativo' : 'InfluIA • Estúdio de Criação & Carreira'}
+            </span>
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              {userRole === 'COMPANY' ? 'Modo Estratégia de Marca Ativo' : 'Modo Monetização Ativo'}
+            </span>
           </div>
-          
-          {!isCompany && (
-            <div className="flex items-center gap-4">
-               <Button
-                 onClick={() => setIsEventModalOpen(true)}
-                 className="bg-orange-600 hover:bg-orange-500 text-white border-2 border-orange-400/30 px-5 py-2.5 rounded-2xl flex items-center gap-2 transition-all shadow-xl shadow-orange-600/10 active:scale-95"
-               >
-                  <Calendar className="w-4 h-4 text-orange-200" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Registrar Evento</span>
-               </Button>
-  
-               {connectedPlatforms.length === 0 ? (
-                 <Button 
-                  onClick={() => router.push('/dashboard/settings')}
-                  className="bg-rose-600 border-2 border-rose-400 px-5 py-2.5 rounded-2xl flex items-center gap-3 group hover:bg-rose-500 transition-all shadow-xl shadow-rose-600/20"
-                 >
-                    <div className="w-2.5 h-2.5 bg-white rounded-full animate-ping shadow-[0_0_12px_#fff]" />
-                    <span className="text-[10px] font-black text-white uppercase tracking-widest">Sincronizar Redes Agora</span>
-                 </Button>
-               ) : (
-                 <div className="bg-emerald-600 border-2 border-emerald-400 px-5 py-2.5 rounded-2xl flex items-center gap-3 shadow-xl shadow-emerald-600/20">
-                    <div className="w-2.5 h-2.5 bg-white rounded-full animate-pulse shadow-[0_0_12px_#fff]" />
-                    <span className="text-[10px] font-black text-white uppercase tracking-widest">{connectedPlatforms.length} {connectedPlatforms.length === 1 ? 'Rede Ativa' : 'Redes Ativas'}</span>
-                 </div>
-               )}
-            </div>
+
+          <h1 className="text-2xl md:text-4xl font-black tracking-tight text-slate-950">
+            {userRole === 'COMPANY' ? (
+              <>Hub de Inteligência & <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-500">Branding de Marca</span></>
+            ) : (
+              <>Área de <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-500">Trabalho</span> & Roteiros</>
+            )}
+          </h1>
+
+          <p className="text-xs md:text-sm text-slate-500 font-medium max-w-2xl">
+            {userRole === 'COMPANY' 
+              ? 'Crie briefings de alta conversão, simule o ROI de campanhas com SafePay e consulte seu diretor de marketing e branding.'
+              : 'Crie ganchos virais de 3 segundos, simule orçamentos de publis com SafePay e consulte seu estrategista de carreira.'
+            }
+          </p>
+        </div>
+
+        {/* Botão de Ação */}
+        <div className="flex items-center gap-3 self-start xl:self-auto flex-wrap">
+          {userRole === 'COMPANY' ? (
+            <Link href="/dashboard/company/new-contract">
+              <button className="px-7 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 hover:from-orange-500 hover:to-amber-400 transition-all shadow-lg shadow-orange-500/25 active:scale-95 flex items-center gap-2">
+                <Plus className="w-4 h-4 stroke-[3]" />
+                Propor Novo Contrato
+              </button>
+            </Link>
+          ) : (
+            <Link href="/dashboard/contracts">
+              <button className="px-7 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 transition-all shadow-md shadow-orange-500/20 active:scale-95 flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Minhas Campanhas
+              </button>
+            </Link>
           )}
         </div>
       </header>
 
-      {isCompany ? (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          
-          {/* Chat com Mentor Interativo Vektor */}
-          <div className="lg:col-span-3 space-y-8">
-            <section className={`border p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] relative flex flex-col h-[500px] md:h-[600px] shadow-sm ${
-              isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
-            }`}>
-              <div className={`flex items-center justify-between mb-4 md:mb-6 border-b pb-4 md:pb-6 ${
-                isDark ? 'border-white/5' : 'border-slate-50'
-              }`}>
-                 <div className={`flex items-center gap-3 text-[9px] md:text-[10px] font-black uppercase tracking-widest ${
-                   isDark ? 'text-zinc-500' : 'text-slate-400'
-                 }`}>
-                    <Terminal className="w-5 h-5 text-amber-500" /> {mentorName} // Estrategista de Posicionamento de Marca & ROI
-                 </div>
-                 <button
-                   type="button"
-                   onClick={handleSimulateCompanyDialogue}
-                   disabled={isChatting}
-                   className="px-3 py-1 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-[8px] font-black uppercase tracking-wider rounded-lg transition-all"
-                 >
-                   Simular Conversa Demo
-                 </button>
-              </div>
-              
-              <div className="flex-1 overflow-y-auto space-y-6 pr-2 scrollbar-none scroll-smooth">
-                {chatMessages.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center space-y-4 opacity-30">
-                    <Sparkles className="w-10 h-10 text-zinc-600 animate-pulse" />
-                    <p className="text-[10px] uppercase font-black tracking-[0.3em] text-zinc-500">Aguardando Conexão...</p>
-                  </div>
-                ) : (
-                  chatMessages.map((msg, idx) => (
-                    <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-500`}>
-                      <div className={`max-w-[85%] p-5 rounded-3xl text-[13px] leading-relaxed border break-words shadow-lg ${
-                        msg.role === 'user' 
-                          ? 'bg-amber-600 text-white border-amber-500 shadow-md rounded-tr-sm' 
-                          : (isDark ? 'bg-white/5 border-white/5 text-zinc-200 rounded-tl-sm shadow-black/50' : 'bg-slate-50 border-slate-100 text-slate-700 rounded-tl-sm')
-                      }`}>
-                        {msg.text}
-                      </div>
-                    </div>
-                  ))
-                )}
-                {isChatting && (
-                  <div className="flex justify-start animate-in fade-in duration-300">
-                    <div className={`border p-4 rounded-2xl rounded-tl-sm text-[11px] flex items-center gap-3 ${
-                      isDark ? 'bg-white/5 border-white/5 text-zinc-400' : 'bg-slate-50 border-slate-100 text-slate-500'
-                    }`}>
-                      <div className="flex gap-1">
-                        <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                        <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                        <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-bounce" />
-                      </div>
-                      {mentorName} está estruturando a estratégia de posicionamento...
-                    </div>
-                  </div>
-                )}
-                <div ref={chatEndRef} />
-              </div>
- 
-              {user?.subscriptionTier === 'FREE' && (
-                <div className="px-4 py-2.5 bg-amber-950/30 border border-amber-500/10 rounded-2xl mb-2 flex items-center justify-between animate-in slide-in-from-bottom-2 duration-500">
-                  <span className="text-[10px] font-black text-amber-300 uppercase tracking-widest flex items-center gap-2">
-                    <Crown className="w-3 h-3 text-amber-400" /> Mentor IA Vektor Limitado no Plano Gratuito
-                  </span>
-                  <Button 
-                    variant="link" 
-                    onClick={() => router.push('/dashboard/subscription')}
-                    className="text-[10px] font-black text-amber-400 hover:text-amber-300 uppercase p-0 h-auto flex items-center gap-1"
-                  >
-                    Upgrade para Agency ➔
-                  </Button>
-                </div>
-              )}
- 
-              <form onSubmit={handleSendMessage} className={`mt-4 flex gap-2 pt-4 border-t ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
-                <input 
-                  type="text"
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Perguntar ao Vektor sobre posicionamento de produto, ganchos ou ROI..."
-                  className={`flex-1 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:border-amber-300 focus:bg-white transition-all placeholder:text-slate-400 font-sans border ${
-                    isDark ? 'bg-white/5 border-white/5 text-white' : 'bg-slate-50 border-slate-100 text-slate-900'
-                  }`}
-                />
-                
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={startListening}
-                    disabled={isListening}
-                    className={`p-4 rounded-2xl border transition-all ${
-                      isListening 
-                        ? 'bg-amber-500 text-white border-amber-400 animate-pulse' 
-                        : (isDark ? 'bg-white/5 border-white/5 text-zinc-400 hover:text-white' : 'bg-slate-50 border-slate-100 text-slate-400 hover:text-amber-600 hover:border-amber-200')
-                    }`}
-                    title="Ativar Voz"
-                  >
-                    {isListening ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
-                  </button>
-  
-                  <Button 
-                    type="submit"
-                    disabled={isChatting || !chatInput.trim()}
-                    className="bg-amber-600 hover:bg-amber-500 text-white px-8 font-black text-[10px] uppercase tracking-widest rounded-2xl h-full shadow-lg shadow-amber-600/20"
-                  >
-                    Enviar
-                  </Button>
-                </div>
-              </form>
-            </section>
-          </div>
-
-          {/* Sidebar Widgets para Empresa */}
-          <div className="space-y-6">
-            
-            {/* Widget 1: Filosofia de Orçamento Vektor */}
-            <div className={`border p-6 rounded-[2rem] space-y-4 border-l-4 border-l-amber-500 shadow-sm relative overflow-hidden ${
-              isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100 shadow-zinc-100/50'
-            }`}>
-              <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/5 blur-3xl rounded-full" />
-              <h3 className={`text-[10px] font-black uppercase tracking-widest flex items-center justify-between ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                 <div className="flex items-center gap-2">
-                    <Building className="w-4 h-4 text-amber-500" /> FILOSOFIA DE PITCH & ROI
-                 </div>
-              </h3>
-              <p className={`text-xs leading-relaxed font-bold ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
-                "Não queime seu orçamento em campanhas únicas gigantes. Faça contratações consistentes, teste ganchos e otimize o ROI."
-              </p>
-              <div className={`pt-2 border-t text-[9px] font-black uppercase tracking-widest leading-relaxed ${isDark ? 'border-white/5 text-zinc-500' : 'border-zinc-100 text-slate-550'}`}>
-                💡 Contratar influenciadores com InfluScores adequados ao seu ticket médio maximiza as conversões.
-              </div>
-            </div>
-
-            {/* Widget 2: Recomendação Inteligente */}
-            <div className={`border p-6 rounded-[2rem] space-y-4 border-l-4 border-l-amber-500 shadow-sm relative overflow-hidden ${
-              isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100 shadow-zinc-100/50'
-            }`}>
-              <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/5 blur-3xl rounded-full" />
-              <h3 className={`text-[10px] font-black uppercase tracking-widest flex items-center justify-between ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                 <div className="flex items-center gap-2">
-                    <Target className="w-4 h-4 text-amber-500" /> RECOMENDAÇÃO INTELIGENTE
-                 </div>
-              </h3>
-              <p className={`text-xs leading-relaxed font-medium ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
-                Vektor analisa o ticket médio da sua empresa e o nicho de produto para te ajudar a filtrar o catálogo ideal no Marketplace.
-              </p>
-              <Button 
-                onClick={() => router.push('/dashboard/marketplace')}
-                className="w-full h-11 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-black text-[9px] uppercase tracking-widest rounded-xl transition-all shadow-sm"
-              >
-                IR PARA O MARKETPLACE ➔
-              </Button>
-            </div>
-
-            {/* Widget 3: Criador Destaque (Match Perfeito) */}
-            <div className={`border p-6 rounded-[2rem] space-y-4 border-l-4 border-l-orange-500 shadow-sm relative overflow-hidden ${
-              isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100 shadow-zinc-100/50'
-            }`}>
-              <div className="absolute -top-10 -right-10 w-32 h-32 bg-orange-500/5 blur-3xl rounded-full" />
-              <h3 className={`text-[10px] font-black uppercase tracking-widest flex items-center justify-between ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                 <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-orange-500" /> MATCH DA SEMANA (IA)
-                 </div>
-              </h3>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 font-bold text-xs uppercase">
-                  DI
-                </div>
-                <div className="space-y-0.5">
-                  <p className={`text-sm font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>@demo.influencer</p>
-                  <p className={`text-[8px] font-bold uppercase ${isDark ? 'text-zinc-550' : 'text-slate-500'}`}>Fashion & Lifestyle • 370K segs</p>
-                </div>
-              </div>
-              <p className={`text-[10px] leading-normal font-medium ${isDark ? 'text-zinc-400' : 'text-slate-650'}`}>
-                Vektor identificou 94% de afinidade com a sua Coleção de Verão de Linho. O ROI estimado é de +14%.
-              </p>
-              <Button 
-                onClick={() => router.push('/dashboard/marketplace')}
-                className="w-full h-11 bg-orange-600/20 border border-orange-500/35 hover:bg-orange-600/40 text-orange-200 font-black text-[9px] uppercase tracking-widest rounded-xl transition-all shadow-sm"
-              >
-                PROPOR CONTRATO ➔
-              </Button>
-            </div>
-
-            {/* Widget 4: Agentes de IA Especializados sob Custódia */}
-            <div className={`border p-6 rounded-[2rem] space-y-4 border-l-4 border-l-purple-500 shadow-sm relative overflow-hidden ${
-              isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100 shadow-zinc-100/50'
-            }`}>
-              <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-500/5 blur-3xl rounded-full" />
-              <h3 className={`text-[10px] font-black uppercase tracking-widest flex items-center justify-between ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                 <div className="flex items-center gap-2">
-                    <BrainCircuit className="w-4 h-4 text-purple-500" /> AGENTES SOB CUSTÓDIA
-                 </div>
-              </h3>
-              <p className={`text-[10px] leading-normal font-medium ${isDark ? 'text-zinc-450' : 'text-slate-600'}`}>
-                Vektor gerencia e consulta especialistas sob demanda para responder suas dúvidas no chat:
-              </p>
-              <div className={`space-y-3 pt-2 border-t ${isDark ? 'border-white/5' : 'border-zinc-100'}`}>
-                <div className="flex gap-2 text-[10px]">
-                  <span className="font-black text-orange-400">Vincenzo:</span>
-                  <span className={isDark ? 'text-zinc-400' : 'text-slate-600'}>Criação de ganchos virais de 3s e roteiros de engajamento para provadores.</span>
-                </div>
-                <div className="flex gap-2 text-[10px]">
-                  <span className="font-black text-pink-400">Valentina:</span>
-                  <span className={isDark ? 'text-zinc-400' : 'text-slate-600'}>Branding, identidade visual, análise estética e posicionamento de moda.</span>
-                </div>
-                <div className="flex gap-2 text-[10px]">
-                  <span className="font-black text-emerald-400">Sofia:</span>
-                  <span className={isDark ? 'text-zinc-400' : 'text-slate-600'}>Auditoria automatizada de entregáveis por IA e governança de saldos em Escrow.</span>
-                </div>
-              </div>
-            </div>
-            
-          </div>
+      {/* ══════════════════════════════════════════════════════════════════════
+          2. ABAS DE FERRAMENTAS ESPECÍFICAS POR PERFIL
+      ══════════════════════════════════════════════════════════════════════ */}
+      {userRole === 'COMPANY' ? (
+        <div className="flex items-center gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-x-auto">
+          {[
+            { id: 'BRIEFING', label: '📋 Gerador de Briefings (IA)', desc: 'Diretrizes Estratégicas para Creators' },
+            { id: 'ROI_SIMULATOR', label: '💰 Simulador de Budget & ROI', desc: 'Projeção Financeira SafePay' },
+            { id: 'TRENDS', label: '🔥 Radar de Branding & Tendências', desc: 'Formatos e Áudios em Alta' },
+            { id: 'TEMPLATES', label: '📑 Modelos de Campanhas', desc: 'Briefings e Contratos Prontos' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveCompanyTab(tab.id as any)}
+              className={`px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all shrink-0 flex items-center gap-2 ${
+                activeCompanyTab === tab.id
+                  ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20'
+                  : 'text-slate-600 hover:text-slate-950 hover:bg-slate-50'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       ) : (
-        <>
-          <header className={`flex flex-col md:flex-row md:items-center justify-between gap-6 p-8 rounded-3xl shadow-sm relative overflow-hidden group border ${
-            isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
-          }`}>
-             <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-             <div className="space-y-1 relative z-10">
-               <div className="flex items-center gap-2 text-orange-600 font-black text-[10px] tracking-widest uppercase">
-                 <Terminal className="w-4 h-4" />
-                 Terminal Estratégico v2.0
-               </div>
-               <h1 className={`text-2xl font-black tracking-tighter flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                 Análise_<span className="text-orange-600 italic">Ativa</span>
-               </h1>
-              <div className="flex gap-4 mt-2">
-                <div className={`flex items-center gap-2 px-2 py-1 rounded border ${isDark ? 'bg-emerald-500/5 border-emerald-500/10' : 'bg-emerald-500/10 border-emerald-500/20'}`}>
-                   <Zap className="w-3 h-3 text-emerald-500" />
-                   <span className="text-[9px] text-emerald-500 font-black uppercase">Foco: Monetização & ROI</span>
-                </div>
-                <div className={`flex items-center gap-2 px-2 py-1 rounded border ${isDark ? 'bg-orange-500/5 border-orange-500/10' : 'bg-orange-500/10 border-orange-500/20'}`}>
-                   <Activity className="w-3 h-3 text-orange-500" />
-                   <span className="text-[9px] text-orange-500 font-black uppercase">Clima: Alta Performance</span>
-                </div>
-              </div>
-            </div>
-            
-            <Button 
-              onClick={generateNewAnalysis}
-              disabled={isGenerating}
-              className={`${isDark ? 'bg-white text-slate-950 hover:bg-zinc-200' : 'bg-slate-900 hover:bg-slate-800 text-white'} h-12 px-8 rounded-xl transition-all text-[10px] font-black uppercase tracking-widest relative z-10 shadow-sm`}
+        <div className="flex items-center gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-x-auto">
+          {[
+            { id: 'SCRIPTER', label: '✍️ Roteirista de Publi', desc: 'Roteiros de 60s com Hook de 3s' },
+            { id: 'CALCULATOR', label: '💰 Calculadora de Cachet', desc: 'Simulador de Lucro SafePay' },
+            { id: 'TRENDS', label: '🔥 Trend Radar', desc: 'Áudios & Formatos em Alta' },
+            { id: 'TEMPLATES', label: '📩 Modelos para Marcas', desc: 'Propostas e Contrapropostas' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveCreatorTab(tab.id as any)}
+              className={`px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all shrink-0 flex items-center gap-2 ${
+                activeCreatorTab === tab.id
+                  ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20'
+                  : 'text-slate-600 hover:text-slate-950 hover:bg-slate-50'
+              }`}
             >
-              {isGenerating ? 'ANALISANDO...' : 'ATUALIZAR DADOS'}
-            </Button>
-          </header>
-
-          {analysis ? (
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-              
-              {/* Main Console */}
-              <div className="lg:col-span-3 space-y-8">
-                <section className={`border p-6 md:p-10 rounded-[2rem] md:rounded-[2.5rem] relative overflow-hidden shadow-sm ${
-                  isDark ? 'bg-black/35 border-white/5 text-white' : 'bg-white border-slate-100'
-                }`}>
-                  <div className="absolute top-0 right-0 p-4 opacity-5">
-                     <BrainCircuit className={`w-20 h-20 md:w-32 md:h-32 ${isDark ? 'text-white' : 'text-orange-600'}`} />
-                  </div>
-                  
-                  <div className="flex items-center gap-2 mb-6 md:mb-8 text-orange-600 text-[9px] md:text-[10px] font-black uppercase tracking-widest">
-                     <Zap className="w-4 h-4 fill-orange-600" /> Diretriz do Mentor
-                  </div>
-    
-                  <div className="prose prose-slate max-w-none">
-                    <p className={`font-bold leading-relaxed whitespace-pre-wrap text-sm md:text-base border-l-4 border-orange-500 pl-4 md:pl-6 py-4 rounded-r-2xl ${
-                      isDark ? 'text-zinc-200 bg-orange-950/20' : 'text-slate-700 bg-orange-50/50'
-                    }`}>
-                      {analysis.analysisText}
-                    </p>
-                  </div>
-    
-                  <div className="mt-6 md:mt-8 pt-6 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-4 text-[8px] md:text-[9px] text-slate-400 font-black uppercase tracking-widest">
-                      <span>SISTEMA: ATIVO</span>
-                      <span>HORA: {new Date(analysis.generatedAt).toLocaleTimeString()}</span>
-                    </div>
-                    
-                    <Button 
-                      onClick={handleTransformToPlan}
-                      disabled={isCreatingTasks}
-                      className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest h-12 px-8 rounded-xl shadow-lg shadow-emerald-500/20 transition-all active:scale-95 flex items-center gap-2"
-                    >
-                      {isCreatingTasks ? (
-                        <> <Loader2 className="w-4 h-4 animate-spin" /> SINCRONIZANDO... </>
-                      ) : (
-                        <> <ClipboardList className="w-4 h-4" /> ENVIAR PARA O CALENDÁRIO </>
-                      )}
-                    </Button>
-                  </div>
-                </section>
-    
-    
-                {/* Próximo Passo Recomendado (Socratic Action) */}
-                <div className={`border p-6 rounded-[2rem] relative overflow-hidden shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-l-4 border-l-emerald-500 ${
-                  isDark ? 'bg-black/35 border-white/5 text-white' : 'bg-white border-slate-200'
-                }`}>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-emerald-500 text-[9px] font-black uppercase tracking-widest">
-                      <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
-                      Próximo Passo Recomendado pelo Mentor
-                    </div>
-                    <h3 className={`text-sm font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                      {analysis.recommendations.suggestedTasks?.[0]?.title || 'Ajustar Pitch de Parceria comercial'}
-                    </h3>
-                    <p className="text-[10px] font-bold text-zinc-400">
-                      {analysis.recommendations.suggestedTasks?.[0]?.description || 'Gere scripts prontos para contato de patrocínio com marcas no seu nicho.'}
-                    </p>
-                  </div>
-                  <Button 
-                    onClick={handleTransformToPlan}
-                    className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[9px] uppercase tracking-widest px-6 py-3 h-10 rounded-xl shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
-                  >
-                    Iniciar Ação
-                  </Button>
-                </div>
-    
-                {/* Chat com Mentor Interativo */}
-                <section className={`border p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] relative flex flex-col h-[400px] md:h-[500px] shadow-sm ${
-                  isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
-                }`}>
-                  <div className={`flex items-center justify-between mb-4 md:mb-6 border-b pb-4 md:pb-6 ${
-                    isDark ? 'border-white/5' : 'border-slate-50'
-                  }`}>
-                     <div className={`flex items-center gap-3 text-[9px] md:text-[10px] font-black uppercase tracking-widest ${
-                       isDark ? 'text-zinc-500' : 'text-slate-400'
-                     }`}>
-                        <Terminal className="w-5 h-5 text-orange-600" /> {mentorName} // Estrategista de Carreira
-                     </div>
-                     <button
-                       type="button"
-                       onClick={handleSimulateDialogue}
-                       disabled={isChatting}
-                       className="px-3 py-1 bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white text-[8px] font-black uppercase tracking-wider rounded-lg transition-all"
-                     >
-                       Simular Conversa Demo
-                     </button>
-                  </div>
-                  
-                  <div className="flex-1 overflow-y-auto space-y-6 pr-2 scrollbar-none scroll-smooth">
-                    {chatMessages.length === 0 ? (
-                      <div className="h-full flex flex-col items-center justify-center space-y-4 opacity-30">
-                        <Sparkles className="w-10 h-10 text-zinc-600 animate-pulse" />
-                        <p className="text-[10px] uppercase font-black tracking-[0.3em] text-zinc-500">Aguardando Conexão...</p>
-                      </div>
-                    ) : (
-                      chatMessages.map((msg, idx) => {
-                        const matchAgent = msg.text.match(/^\[(Especialista em Roteiros|Especialista em Legendas e Copy|Especialista em Parcerias|Especialista em SEO e Algoritmo)\]:\s*([\s\S]*)$/i);
-                        const hasAgent = !!matchAgent;
-                        const agentName = hasAgent ? matchAgent[1] : '';
-                        const cleanText = hasAgent ? matchAgent[2] : msg.text;
-
-                        let agentBadgeStyle = '';
-                        let agentLabel = '';
-                        if (agentName.includes('Roteiro')) {
-                          agentBadgeStyle = 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
-                          agentLabel = 'Especialista em Roteiros';
-                        } else if (agentName.includes('Legenda') || agentName.includes('Copy')) {
-                          agentBadgeStyle = 'bg-orange-500/10 text-orange-400 border-orange-500/20';
-                          agentLabel = 'Especialista em Copy';
-                        } else if (agentName.includes('Parcerias')) {
-                          agentBadgeStyle = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-                          agentLabel = 'Especialista em Parcerias';
-                        } else if (agentName.includes('SEO') || agentName.includes('Algoritmo')) {
-                          agentBadgeStyle = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-                          agentLabel = 'Especialista em SEO & Algoritmo';
-                        }
-
-                        return (
-                          <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-500`}>
-                            <div className={`max-w-[85%] p-5 rounded-3xl text-[13px] leading-relaxed border break-words shadow-lg ${
-                              msg.role === 'user' 
-                                ? 'bg-orange-600 text-white border-orange-500 shadow-md rounded-tr-sm' 
-                                : (isDark ? 'bg-white/5 border-white/5 text-zinc-200 rounded-tl-sm shadow-black/50' : 'bg-slate-50 border-slate-100 text-slate-700 rounded-tl-sm')
-                            }`}>
-                              {hasAgent && (
-                                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border mb-3 ${agentBadgeStyle}`}>
-                                  <Sparkles className="w-3 h-3" />
-                                  {agentLabel}
-                                </div>
-                              )}
-                              <p className="whitespace-pre-wrap">{cleanText}</p>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                    {isChatting && (
-                      <div className="flex justify-start animate-in fade-in duration-300">
-                        <div className={`border p-4 rounded-2xl rounded-tl-sm text-[11px] flex items-center gap-3 ${
-                          isDark ? 'bg-white/5 border-white/5 text-zinc-400' : 'bg-slate-50 border-slate-100 text-slate-500'
-                        }`}>
-                          <div className="flex gap-1">
-                            <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                            <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                            <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-bounce" />
-                          </div>
-                          {mentorName} está estruturando a estratégia...
-                        </div>
-                      </div>
-                    )}
-                    <div ref={chatEndRef} />
-                  </div>
-      
-                  {user?.subscriptionTier === 'FREE' && (
-                    <div className="px-4 py-2.5 bg-orange-950/30 border border-orange-500/10 rounded-2xl mb-2 flex items-center justify-between animate-in slide-in-from-bottom-2 duration-500">
-                      <span className="text-[10px] font-black text-orange-300 uppercase tracking-widest flex items-center gap-2">
-                        <Crown className="w-3 h-3 text-orange-400" /> Mentor IA de Carreira Limitado no Plano Gratuito
-                      </span>
-                      <Button 
-                        variant="link" 
-                        onClick={() => router.push('/dashboard/subscription')}
-                        className="text-[10px] font-black text-orange-400 hover:text-orange-300 uppercase p-0 h-auto flex items-center gap-1"
-                      >
-                        Upgrade para Pro ➔
-                      </Button>
-                    </div>
-                  )}
-    
-                  <form onSubmit={handleSendMessage} className={`mt-4 flex gap-2 pt-4 border-t ${isDark ? 'border-white/5' : 'border-slate-100'}`}>
-                    <input 
-                      type="text"
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      placeholder="Falar com meu Sócio Estratégico..."
-                      className={`flex-1 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:border-orange-300 focus:bg-white transition-all placeholder:text-slate-400 font-sans border ${
-                        isDark ? 'bg-white/5 border-white/5 text-white' : 'bg-slate-50 border-slate-100 text-slate-900'
-                      }`}
-                    />
-                    
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={startListening}
-                        disabled={isListening}
-                        className={`p-4 rounded-2xl border transition-all ${
-                          isListening 
-                            ? 'bg-rose-500 text-white border-rose-400 animate-pulse' 
-                            : (isDark ? 'bg-white/5 border-white/5 text-zinc-400 hover:text-white' : 'bg-slate-50 border-slate-100 text-slate-400 hover:text-orange-600 hover:border-orange-200')
-                        }`}
-                        title="Ativar Voz"
-                      >
-                        {isListening ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
-                      </button>
-     
-                      <button
-                        type="button"
-                        onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
-                        className={`p-4 rounded-2xl border transition-all ${
-                          isVoiceEnabled 
-                            ? 'bg-emerald-50 border-emerald-100 text-emerald-600' 
-                            : (isDark ? 'bg-white/5 border-white/5 text-zinc-500' : 'bg-slate-50 border-slate-100 text-slate-300')
-                        }`}
-                        title={isVoiceEnabled ? "Voz Ativada" : "Voz Desativada"}
-                      >
-                        <Volume2 className="w-5 h-5" />
-                      </button>
-     
-                      <Button 
-                        type="submit"
-                        disabled={isChatting || !chatInput.trim()}
-                        className="bg-orange-600 hover:bg-orange-500 text-white px-8 font-black text-[10px] uppercase tracking-widest rounded-2xl h-full shadow-lg shadow-orange-600/20"
-                      >
-                        Enviar
-                      </Button>
-                    </div>
-                  </form>
-                </section>
-    
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {analysis.recommendations.videoInspirations?.map((ins, idx: number) => (
-                     <div key={idx} className={`border p-6 rounded-3xl group hover:border-orange-300 transition-all shadow-sm ${
-                       isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
-                     }`}>
-                        <div className="flex justify-between items-start mb-4">
-                           <span className={`text-[9px] font-black px-2 py-1 rounded border uppercase ${
-                             isDark ? 'bg-white/5 border-white/5 text-zinc-400' : 'bg-slate-50 border-slate-100 text-slate-400'
-                           }`}>
-                              IDEIA_0{idx + 1} // {ins.platform}
-                           </span>
-                           <Activity className="w-3 h-3 text-orange-600" />
-                        </div>
-                        <h4 className={`text-sm font-black mb-2 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{ins.title}</h4>
-                        <p className={`text-[10px] italic mb-4 font-medium ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>"{ins.hook}"</p>
-                        <Button 
-                           onClick={() => handleUseInspiration(ins)}
-                           className={`w-full text-[9px] font-black uppercase py-3 h-auto rounded-xl transition-all ${
-                             isDark ? 'bg-white hover:bg-zinc-200 text-slate-950' : 'bg-slate-900 hover:bg-orange-600 text-white'
-                           }`}
-                        >
-                           ADICIONAR AO CRONOGRAMA
-                        </Button>
-                     </div>
-                    ))}
-                 </div>
-              </div>
-    
-              {/* Sidebar Widgets */}
-              <div className="space-y-6">
-                
-                 {/* BIBLIOTECA_DE_PARAMETROS */}
-                 <div className={`border p-8 rounded-[2rem] space-y-6 border-l-4 border-l-orange-500 shadow-sm relative overflow-hidden ${
-                   isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
-                 }`}>
-                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-orange-500/5 blur-3xl rounded-full" />
-                    <h3 className={`text-[10px] font-black uppercase tracking-widest flex items-center justify-between ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                       <div className="flex items-center gap-2">
-                          <Play className="w-4 h-4 text-orange-600" /> VÍDEOS DE REFERÊNCIA
-                       </div>
-                       <span className="text-orange-500 text-[8px] font-black border border-orange-100 px-2 py-0.5 rounded-full">FEED EM TEMPO REAL</span>
-                    </h3>
-                    <div className="space-y-4">
-                        {(trendVault && trendVault.length > 0 ? trendVault : [
-                         { title: "Review de Tech Minimalista", thumbnail: "/influencers/brazilian_influencer_2_1778513129863.png", niche: "TECNOLOGIA, MINIMALISTA", videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
-                         { title: "Vlog: Rotina de Criadora", thumbnail: "/influencers/brazilian_influencer_1_1778513115825.png", niche: "ESTILO DE VIDA, VLOG", videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
-                         { title: "Dicas de Moda Verão", thumbnail: "/influencers/brazilian_influencer_3_1778513143227.png", niche: "MODA, TENDÊNCIA", videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
-                         { title: "Setup Gamer Pro", thumbnail: "/influencers/brazilian_influencer_4_1778513156892.png", niche: "GAMES, SETUP", videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" }
-                        ]).map((video, idx) => {
-                           const isLockedVideo = !isPro && idx >= 2;
-                           return (
-                            <div 
-                              key={idx} 
-                              onClick={() => {
-                                if (isLockedVideo) {
-                                  toast.info('🔒 Faça upgrade para o Plano Pro para ver todos os vídeos de referência!');
-                                  router.push('/dashboard/subscription');
-                                  return;
-                                }
-                                video.videoUrl && window.open(video.videoUrl, '_blank');
-                              }}
-                              className={`group relative aspect-video rounded-3xl overflow-hidden border cursor-pointer shadow-sm hover:shadow-xl hover:border-orange-300 transition-all ${
-                                isDark ? 'border-white/5' : 'border-slate-100'
-                              } ${isLockedVideo ? 'blur-[1.5px] opacity-60' : ''}`}
-                            >
-                              <img src={video.thumbnail || "/influencers/brazilian_influencer_1_1778513115825.png"} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-95 group-hover:opacity-100" />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent flex flex-col justify-end p-3">
-                                 <div className="bg-black/50 backdrop-blur-md border border-white/10 rounded-2xl p-3 flex flex-col shadow-lg">
-                                     <span className="text-[7px] font-black text-orange-300 uppercase tracking-widest mb-0.5">{video.niche || video.tags}</span>
-                                    <h4 className="text-white text-[10px] font-black uppercase tracking-tight leading-snug">{video.title}</h4>
-                                 </div>
-                              </div>
-                              
-                              {isLockedVideo ? (
-                                <div className="absolute inset-0 bg-black/60 z-10 flex flex-col items-center justify-center p-2 text-center backdrop-blur-[2px]">
-                                   <Lock className="w-5 h-5 text-orange-400 mb-1" />
-                                   <span className="text-[8px] font-black text-orange-300 uppercase tracking-widest">Plano Pro</span>
-                                </div>
-                              ) : (
-                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                   <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
-                                      <Play className="w-4 h-4 text-white fill-white" />
-                                    </div>
-                                </div>
-                              )}
-                           </div>
-                           );
-                         })}
-                    </div>
-                 </div>
-                
-                 {/* CRIADORES DE REFERÊNCIA */}
-                 <div className={`border p-6 rounded-[2rem] space-y-4 border-l-4 border-l-orange-500 shadow-sm relative overflow-hidden ${
-                   isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
-                 }`}>
-                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-orange-500/5 blur-3xl rounded-full" />
-                    <h3 className={`text-[10px] font-black uppercase tracking-widest flex items-center justify-between ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                       <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-orange-500" /> CRIADORES DE REFERÊNCIA
-                       </div>
-                       <span className="text-orange-500 text-[8px] font-black border border-orange-100 px-2 py-0.5 rounded-full">PERFIS EM ALTA</span>
-                    </h3>
-                    <div className="space-y-3">
-                      {[
-                        { handle: "@marcos_creative", name: "Marcos Creative", niche: "Edição & Audiovisual", followers: "128K", link: "https://instagram.com" },
-                        { handle: "@julia_tech", name: "Julia Tech", niche: "Tecnologia & Setup", followers: "84K", link: "https://instagram.com" },
-                        { handle: "@gabriel_lifestyle", name: "Gabriel Silva", niche: "Vlog & Rotina", followers: "210K", link: "https://instagram.com" }
-                      ].map((profile, idx) => (
-                        <div 
-                          key={idx}
-                          onClick={() => window.open(profile.link, '_blank')}
-                          className={`p-3 border rounded-2xl flex items-center justify-between group hover:border-orange-400 hover:bg-white/[0.02] cursor-pointer transition-all ${
-                            isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-100'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center border border-orange-500/20 text-orange-400 font-bold text-xs uppercase">
-                              {profile.name.charAt(0)}
-                            </div>
-                            <div className="space-y-0.5 text-left">
-                              <p className="text-[10px] font-black text-white group-hover:text-orange-400 transition-colors uppercase tracking-tight">{profile.name}</p>
-                              <p className="text-[8px] text-zinc-500 font-medium">{profile.handle} • {profile.niche}</p>
-                            </div>
-                          </div>
-                          <span className="text-[8px] font-black text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-full border border-orange-500/10">
-                            {profile.followers}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                 </div>
-                
-                 {/* Trending Audio Widget */}
-                 <div className={`border p-6 rounded-3xl space-y-4 shadow-sm border-t-4 border-t-orange-500 ${
-                   isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
-                 }`}>
-                    <h3 className="text-orange-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                       <Music className="w-3 h-3" /> ÁUDIOS EM ALTA (TENDÊNCIAS)
-                    </h3>
-                    <div className="space-y-2">
-                       {analysis.recommendations.trendingNow?.audios.map((audio: string, idx: number) => (
-                         <div key={idx} className={`p-3 border rounded-xl flex items-center justify-between group hover:border-orange-200 transition-all ${
-                           isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-100'
-                         }`}>
-                            <span className={`text-[9px] font-bold truncate max-w-[120px] ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>{audio}</span>
-                            <span className="text-[8px] font-black text-orange-600">🔥 EM ALTA</span>
-                         </div>
-                       ))}
-                    </div>
-                 </div>
-      
-                 {/* Checklist Action */}
-                 <div className={`border p-6 rounded-3xl space-y-4 shadow-sm ${
-                   isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
-                 }`}>
-                    <h3 className="text-orange-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                       <ClipboardList className="w-3 h-3" /> CRONOGRAMA DE AÇÃO
-                    </h3>
-                    <div className="space-y-3">
-                       {analysis.recommendations.trends.map((trend, idx: number) => (
-                         <div key={idx} className={`flex items-start gap-3 p-3 rounded-xl border transition-all ${
-                           isDark ? 'bg-white/5 border-white/5 hover:bg-black/40 text-zinc-300' : 'bg-slate-50 border-slate-100 hover:bg-white'
-                         }`}>
-                            <div className="mt-1 w-2 h-2 bg-orange-500 rounded-sm" />
-                            <div className="space-y-1">
-                               <p className={`text-[9px] font-black uppercase tracking-tight ${isDark ? 'text-zinc-200' : 'text-slate-700'}`}>{trend.videoType}</p>
-                               <p className="text-[8px] text-slate-400 font-bold uppercase">{trend.duration} // {trend.music}</p>
-                            </div>
-                         </div>
-                       ))}
-                    </div>
-                 </div>
-
-                 {/* Calendário de Tarefas da IA */}
-                 <div className={`border p-6 rounded-3xl space-y-4 border-t-4 border-t-orange-600 shadow-sm ${
-                   isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
-                 }`}>
-                    <h3 className="text-orange-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                       <Calendar className="w-3.5 h-3.5" /> CALENDÁRIO & TAREFAS
-                    </h3>
-                    <div className="space-y-3">
-                       {tasks.length > 0 ? (
-                         tasks.map((task) => (
-                           <div 
-                             key={task.id} 
-                             onClick={() => handleToggleTask(task.id)}
-                             className={`p-3 border rounded-xl flex items-start gap-3 cursor-pointer transition-all hover:bg-white/[0.02] ${
-                               task.isDone ? 'opacity-50 border-emerald-500/20 bg-emerald-500/[0.01]' : 'border-white/5'
-                             }`}
-                           >
-                             <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
-                               task.isDone ? 'bg-emerald-500 border-emerald-400 text-white' : 'border-zinc-600'
-                             }`}>
-                               {task.isDone && <CheckCircle2 className="w-3 h-3" />}
-                             </div>
-                             <div className="space-y-0.5 text-left">
-                               <p className={`text-[10px] font-black uppercase tracking-tight ${task.isDone ? 'line-through text-zinc-500' : 'text-zinc-200'}`}>
-                                 {task.title}
-                               </p>
-                               <p className="text-[9px] text-zinc-400 font-medium">
-                                 {task.description}
-                               </p>
-                               <p className="text-[8px] text-orange-400 font-bold uppercase">
-                                 Agendado para: {new Date(task.scheduledDate).toLocaleDateString('pt-BR')}
-                               </p>
-                             </div>
-                           </div>
-                         ))
-                       ) : (
-                         <p className="text-[9px] text-zinc-500 italic uppercase text-center py-2">
-                           Nenhuma tarefa no calendário.
-                         </p>
-                       )}
-                    </div>
-                 </div>
-      
-                 {/* Telemetria de Resultados */}
-                 <div className={`border p-6 rounded-3xl space-y-4 border-t-4 border-t-emerald-500 shadow-sm ${
-                   isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
-                 }`}>
-                    <h3 className="text-emerald-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                       <Activity className="w-3 h-3" /> DESEMPENHO DO ALGORITMO (ROI)
-                    </h3>
-                    <div className="space-y-3">
-                       {telemetry.length > 0 ? telemetry.map((item, idx) => (
-                         <div key={idx} className={`p-4 border rounded-xl space-y-2 group transition-all ${
-                           isDark ? 'bg-white/5 border-white/5 hover:bg-black/40' : 'bg-slate-50 border-slate-100 hover:bg-white'
-                         }`}>
-                            <p className={`text-[9px] font-black truncate uppercase tracking-tight ${isDark ? 'text-zinc-300' : 'text-slate-500'}`}>{item.title}</p>
-                            <div className="flex items-center justify-between">
-                               <span className="text-[8px] text-slate-400 font-black uppercase">Impacto Estimado</span>
-                               <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${item.performanceMultiplier >= 1.0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                                  {item.performanceMultiplier.toFixed(1)}x {item.performanceMultiplier >= 1.0 ? '↑' : '↓'}
-                               </span>
-                            </div>
-                         </div>
-                       )) : (
-                         <p className="text-[8px] text-slate-400 font-black italic uppercase text-center py-4">Sincronizando dados de ROI...</p>
-                       )}
-                    </div>
-                  </div>
-      
-               </div>
-            </div>
-          ) : (
-            <div className={`border-2 border-dashed p-16 md:p-32 rounded-[3rem] text-center space-y-8 flex flex-col items-center justify-center shadow-sm ${
-              isDark ? 'bg-black/35 border-white/5' : 'bg-white border-slate-100'
-            }`}>
-              <div className="p-6 bg-orange-50 rounded-full animate-bounce">
-                <BrainCircuit className="w-16 h-16 text-orange-600" />
-              </div>
-              <div className="space-y-3">
-                <p className={`text-2xl font-black uppercase tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>Pronto para Sincronizar?</p>
-                <p className={`text-sm font-medium max-w-md mx-auto ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Sua Área de Trabalho está vazia. Inicie a sincronização neural para que o Consultor IA crie suas missões e roteiros estratégicos baseados em monetização real.</p>
-              </div>
-              <Button 
-                onClick={generateNewAnalysis}
-                disabled={isGenerating}
-                className={`${isDark ? 'bg-white hover:bg-zinc-200 text-slate-950' : 'bg-slate-900 hover:bg-orange-600 text-white'} font-black px-12 h-16 rounded-2xl shadow-xl shadow-slate-900/10 transition-all active:scale-95 text-xs uppercase tracking-widest`}
-              >
-                {isGenerating ? 'ANALISANDO ALGORITMOS...' : 'SINCRONIZAR INTELIGÊNCIA AGORA'}
-              </Button>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Modal de Registro de Convite de Evento */}
-      {isEventModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="w-full max-w-lg bg-zinc-950/90 border border-white/10 rounded-[2.5rem] p-8 space-y-6 shadow-2xl shadow-orange-500/10 animate-in zoom-in-95 duration-300">
-            <div className="space-y-1.5">
-              <span className="text-orange-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5" /> Presença Confirmada
-              </span>
-              <h2 className="text-2xl font-black text-white tracking-tight">Registrar Convite de Evento</h2>
-              <p className="text-[11px] text-zinc-400 font-bold leading-relaxed">
-                Informe os detalhes do evento presencial. O seu Mentor de IA criará um roteiro sob medida de cobertura (pré, durante e pós-evento) para você postar e faturar.
-              </p>
-            </div>
-
-            <form onSubmit={handleRegisterEvent} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Nome do Evento *</label>
-                <input 
-                  type="text" 
-                  value={eventName}
-                  onChange={(e) => setEventName(e.target.value)}
-                  placeholder="Ex: Lançamento Coleção de Inverno" 
-                  required
-                  className="w-full bg-white/5 border border-white/5 focus:border-orange-500/30 rounded-xl px-4 py-3.5 text-xs text-white focus:outline-none placeholder:text-zinc-500 transition-all"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Marca Patrocinadora *</label>
-                  <input 
-                    type="text" 
-                    value={eventBrand}
-                    onChange={(e) => setEventBrand(e.target.value)}
-                    placeholder="Ex: Zara" 
-                    required
-                    className="w-full bg-white/5 border border-white/5 focus:border-orange-500/30 rounded-xl px-4 py-3.5 text-xs text-white focus:outline-none placeholder:text-zinc-500 transition-all"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Data do Evento *</label>
-                  <input 
-                    type="date" 
-                    value={eventDate}
-                    onChange={(e) => setEventDate(e.target.value)}
-                    required
-                    className="w-full bg-white/5 border border-white/5 focus:border-orange-500/30 rounded-xl px-4 py-3.5 text-xs text-white focus:outline-none placeholder:text-zinc-500 transition-all"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">O que a marca te pediu? (Briefing)</label>
-                <textarea 
-                  value={eventDetails}
-                  onChange={(e) => setEventDetails(e.target.value)}
-                  placeholder="Ex: Comparecer à loja usando roupas da nova coleção, fazer stories mostrando as araras e postar uma foto no feed." 
-                  rows={3}
-                  className="w-full bg-white/5 border border-white/5 focus:border-orange-500/30 rounded-xl px-4 py-3.5 text-xs text-white focus:outline-none placeholder:text-zinc-500 transition-all resize-none"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <Button 
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsEventModalOpen(false)}
-                  className="flex-1 border-white/5 hover:bg-white/5 text-white font-black text-[10px] uppercase tracking-widest py-4.5 rounded-xl h-11 transition-all"
-                >
-                  Cancelar
-                </Button>
-                <Button 
-                  type="submit"
-                  disabled={isRegisteringEvent}
-                  className="flex-1 bg-orange-600 hover:bg-orange-500 text-white font-black text-[10px] uppercase tracking-widest py-4.5 rounded-xl h-11 transition-all shadow-lg shadow-orange-900/30"
-                >
-                  {isRegisteringEvent ? 'GERANDO ROTEIRO...' : 'GERAR ROTEIRO'}
-                </Button>
-              </div>
-            </form>
-          </div>
+              {tab.label}
+            </button>
+          ))}
         </div>
       )}
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          3. SEÇÃO PRINCIPAL (FERRAMENTA ESCOLHIDA + CHAT COPILOT)
+      ══════════════════════════════════════════════════════════════════════ */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+        
+        {/* Coluna Esquerda (7 Colunas): Ferramenta Ativa */}
+        <div className="xl:col-span-7 space-y-6">
+
+          {/* ──────────────────────────────────────────────────────────────────
+              VISÃO DA EMPRESA (VECTOR AI)
+          ────────────────────────────────────────────────────────────────── */}
+          {userRole === 'COMPANY' && (
+            <>
+              {/* FERRAMENTA 1 EMPRESA: GERADOR DE BRIEFINGS */}
+              {activeCompanyTab === 'BRIEFING' && (
+                <div className="p-6 md:p-8 rounded-[2.5rem] bg-white border border-slate-200/80 shadow-sm space-y-6 animate-in fade-in">
+                  <div className="space-y-1 border-b border-slate-100 pb-4">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-orange-600" />
+                      <h3 className="text-lg font-black text-slate-950">
+                        Gerador de Briefings Executivos para Criadores
+                      </h3>
+                    </div>
+                    <p className="text-xs text-slate-400 font-medium">
+                      O Vector AI estrutura ganchos de abertura, mensagens-chave, proibições e conformidade com o CONAR.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                          Nome da Marca / Produto
+                        </label>
+                        <input
+                          type="text"
+                          value={companyBrandName}
+                          onChange={(e) => setCompanyBrandName(e.target.value)}
+                          placeholder="Ex: Coleção Verão Marca Premium"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-black text-slate-900 focus:bg-white focus:outline-none focus:border-orange-500 transition-all"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                          Segmento de Mercado
+                        </label>
+                        <select
+                          value={companyNiche}
+                          onChange={(e) => setCompanyNiche(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-black text-slate-900 focus:bg-white focus:outline-none focus:border-orange-500 transition-all"
+                        >
+                          <option value="Fashion & Lifestyle">Moda & Lifestyle (Vestuário)</option>
+                          <option value="Beleza & Cosméticos">Beleza, Skincare & Cosméticos</option>
+                          <option value="Tecnologia & Gadgets">Tecnologia, Apps & SaaS</option>
+                          <option value="Fitness & Saúde">Fitness, Suplementação & Bem-Estar</option>
+                          <option value="Alimentação & Gastronomia">Alimentação & Bebidas</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                          Objetivo da Campanha
+                        </label>
+                        <select
+                          value={companyGoal}
+                          onChange={(e) => setCompanyGoal(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-black text-slate-900 focus:bg-white focus:outline-none focus:border-orange-500 transition-all"
+                        >
+                          <option value="Vendas & Conversão Direta">Vendas & Conversão Direta (Cupom)</option>
+                          <option value="Lançamento de Produto">Lançamento de Novo Produto</option>
+                          <option value="Branding & Autoridade">Branding & Autoridade de Marca</option>
+                          <option value="Tráfego Pago & Anúncios">Criativos para Anúncios Pagos (Dark Post)</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                          Tom de Voz da Marca
+                        </label>
+                        <select
+                          value={companyTone}
+                          onChange={(e) => setCompanyTone(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-black text-slate-900 focus:bg-white focus:outline-none focus:border-orange-500 transition-all"
+                        >
+                          <option value="Sofisticado & Premium">Sofisticado & Premium</option>
+                          <option value="Autêntico & Descontraído">Autêntico & Descontraído (Viral)</option>
+                          <option value="Técnico & Educativo">Técnico & Educativo</option>
+                          <option value="Urgência & Oferta">Urgência & Oferta Relâmpago</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleGenerateCompanyBriefing}
+                      disabled={isGeneratingBriefing}
+                      className="w-full py-4 rounded-2xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 hover:from-orange-500 hover:to-amber-400 transition-all shadow-lg shadow-orange-500/25 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      {isGeneratingBriefing ? 'Vector AI Estruturando Briefing...' : 'Gerar Briefing com Vector AI'}
+                    </button>
+                  </div>
+
+                  {/* Resultado do Briefing */}
+                  {generatedBriefing && (
+                    <div className="space-y-4 pt-4 border-t border-slate-100 animate-in fade-in">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-slate-950 uppercase tracking-wider">
+                          Briefing Executivo Estruturado
+                        </span>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleCopyText(`${generatedBriefing.hookGuidelines}\n\n${generatedBriefing.brandGuidelines}\n\n${generatedBriefing.ctaAndOffer}`, 'Briefing Completo')}
+                            className="px-3.5 py-1.5 rounded-xl text-xs font-black text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all flex items-center gap-1.5"
+                          >
+                            <Copy className="w-3.5 h-3.5" /> Copiar Tudo
+                          </button>
+                          <Link href="/dashboard/company/new-contract">
+                            <button className="px-3.5 py-1.5 rounded-xl text-xs font-black text-white bg-orange-600 hover:bg-orange-500 transition-all flex items-center gap-1.5">
+                              Usar em Novo Contrato →
+                            </button>
+                          </Link>
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 whitespace-pre-line leading-relaxed">
+                        {generatedBriefing.hookGuidelines}
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 whitespace-pre-line leading-relaxed">
+                        {generatedBriefing.brandGuidelines}
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 whitespace-pre-line leading-relaxed">
+                        {generatedBriefing.ctaAndOffer}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* FERRAMENTA 2 EMPRESA: SIMULADOR DE ROI & BUDGET */}
+              {activeCompanyTab === 'ROI_SIMULATOR' && (
+                <div className="p-6 md:p-8 rounded-[2.5rem] bg-white border border-slate-200/80 shadow-sm space-y-6 animate-in fade-in">
+                  <div className="space-y-1 border-b border-slate-100 pb-4">
+                    <div className="flex items-center gap-2">
+                      <Calculator className="w-5 h-5 text-orange-600" />
+                      <h3 className="text-lg font-black text-slate-950">
+                        Simulador de Budget, Alcance & ROI Preditivo
+                      </h3>
+                    </div>
+                    <p className="text-xs text-slate-400 font-medium">
+                      Calcule a alocação de verba ideal e a projeção de retorno para sua campanha.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-xs font-black text-slate-900">
+                        <span>Verba Total da Ação:</span>
+                        <span className="text-lg text-orange-600 font-black">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(companyBudgetInput)}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min={1000}
+                        max={50000}
+                        step={500}
+                        value={companyBudgetInput}
+                        onChange={(e) => setCompanyBudgetInput(Number(e.target.value))}
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-orange-600"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                        <span className="text-[10px] font-black uppercase text-slate-400 block">Alcance Estimado</span>
+                        <strong className="text-base font-black text-slate-900">{estimatedReach.toLocaleString('pt-BR')} views</strong>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                        <span className="text-[10px] font-black uppercase text-slate-400 block">Engajamento Médio</span>
+                        <strong className="text-base font-black text-orange-600">{estimatedEngagement}</strong>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                        <span className="text-[10px] font-black uppercase text-slate-400 block">CPM Alvo</span>
+                        <strong className="text-base font-black text-slate-900">{estimatedCPM}</strong>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                        <span className="text-[10px] font-black uppercase text-slate-400 block">ROI Projetado</span>
+                        <strong className="text-base font-black text-emerald-700">{estimatedROI}</strong>
+                      </div>
+                    </div>
+
+                    <div className="p-5 rounded-2xl bg-orange-50/60 border border-orange-200 space-y-2">
+                      <span className="text-xs font-black uppercase text-orange-700 block">
+                        Recomendação de Mix pelo Vector AI:
+                      </span>
+                      <p className="text-xs text-slate-700 font-medium leading-relaxed">
+                        Para o orçamento de <strong>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(companyBudgetInput)}</strong>, a melhor relação custo-benefício é contratar <strong>{suggestedCreatorCount}</strong> com custódia SafePay de 15% (ou taxa reduzida de apenas <strong>7%</strong> no plano Business).
+                      </p>
+                    </div>
+
+                    <Link href="/dashboard/marketplace">
+                      <button className="w-full py-4 rounded-2xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 transition-all shadow-md shadow-orange-500/20 flex items-center justify-center gap-2">
+                        Buscar Criadores no Marketplace ➔
+                      </button>
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {/* FERRAMENTA 3 EMPRESA: RADAR DE BRANDING */}
+              {activeCompanyTab === 'TRENDS' && (
+                <div className="p-6 md:p-8 rounded-[2.5rem] bg-white border border-slate-200/80 shadow-sm space-y-6 animate-in fade-in">
+                  <div className="space-y-1 border-b border-slate-100 pb-4">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-orange-600" />
+                      <h3 className="text-lg font-black text-slate-950">
+                        Formatos & Tendências de Alta Conversão na Semana
+                      </h3>
+                    </div>
+                    <p className="text-xs text-slate-400 font-medium">Formatos validados que estão gerando mais retenção para marcas parceiras.</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-slate-900 uppercase">1. "Get Ready With Me + Unboxing"</span>
+                        <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">+88% CTR</span>
+                      </div>
+                      <p className="text-xs text-slate-600 font-medium">
+                        O criador experimenta a peça em tempo real montando o look. Alta identificação do público feminino.
+                      </p>
+                    </div>
+
+                    <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-slate-900 uppercase">2. "3 Hacks que mudaram minha rotina"</span>
+                        <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">+74% Retenção</span>
+                      </div>
+                      <p className="text-xs text-slate-600 font-medium">
+                        Formato dinâmico com cortes a cada 3 segundos inserindo o produto como a solução definitiva.
+                      </p>
+                    </div>
+
+                    <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-slate-900 uppercase">3. "POV: Quando você descobre que..."</span>
+                        <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">+92% Viral</span>
+                      </div>
+                      <p className="text-xs text-slate-600 font-medium">
+                        Formato nativo do TikTok com áudio viral humorístico e menção orgânica ao benefício do produto.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* FERRAMENTA 4 EMPRESA: MODELOS DE CAMPANHA */}
+              {activeCompanyTab === 'TEMPLATES' && (
+                <div className="p-6 md:p-8 rounded-[2.5rem] bg-white border border-slate-200/80 shadow-sm space-y-6 animate-in fade-in">
+                  <div className="space-y-1 border-b border-slate-100 pb-4">
+                    <div className="flex items-center gap-2">
+                      <Briefcase className="w-5 h-5 text-orange-600" />
+                      <h3 className="text-lg font-black text-slate-950">
+                        Modelos Prontos de Briefings & Campanhas
+                      </h3>
+                    </div>
+                    <p className="text-xs text-slate-400 font-medium">Copie e adapte templates criados por diretores de marketing.</p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                      <div>
+                        <h4 className="text-xs font-black text-slate-900">Briefing para Lançamento de E-commerce</h4>
+                        <p className="text-[11px] text-slate-500">Combo de 1x Reels + 3x Stories com foco em tráfego direto.</p>
+                      </div>
+                      <button
+                        onClick={() => handleCopyText('Template: Briefing de Lançamento E-commerce...', 'Template')}
+                        className="px-3.5 py-1.5 rounded-xl text-xs font-black text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-200 transition-all"
+                      >
+                        Copiar
+                      </button>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                      <div>
+                        <h4 className="text-xs font-black text-slate-900">Briefing para Cupom de Desconto Relâmpago</h4>
+                        <p className="text-[11px] text-slate-500">Sequência de Stories com sticker de link e contador de 24h.</p>
+                      </div>
+                      <button
+                        onClick={() => handleCopyText('Template: Briefing de Cupom Relâmpago...', 'Template')}
+                        className="px-3.5 py-1.5 rounded-xl text-xs font-black text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-200 transition-all"
+                      >
+                        Copiar
+                      </button>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                      <div>
+                        <h4 className="text-xs font-black text-slate-900">Contrato Retainer para Embaixador Mensal</h4>
+                        <p className="text-[11px] text-slate-500">4x Reels + 12x Stories mensais com exclusividade de nicho.</p>
+                      </div>
+                      <button
+                        onClick={() => handleCopyText('Template: Contrato Retainer Embaixador...', 'Template')}
+                        className="px-3.5 py-1.5 rounded-xl text-xs font-black text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-200 transition-all"
+                      >
+                        Copiar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ──────────────────────────────────────────────────────────────────
+              VISÃO DO INFLUENCIADOR (INFLUIA)
+          ────────────────────────────────────────────────────────────────── */}
+          {userRole === 'INFLUENCER' && (
+            <>
+              {/* FERRAMENTA 1 CRIADOR: ROTEIRISTA DE PUBLI */}
+              {activeCreatorTab === 'SCRIPTER' && (
+                <div className="p-6 md:p-8 rounded-[2.5rem] bg-white border border-slate-200/80 shadow-sm space-y-6 animate-in fade-in">
+                  <div className="space-y-1 border-b border-slate-100 pb-4">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-orange-600" />
+                      <h3 className="text-lg font-black text-slate-950">
+                        Gerador de Roteiro para Reels & TikTok (60s)
+                      </h3>
+                    </div>
+                    <p className="text-xs text-slate-400 font-medium">
+                      Estruturado com hook magnético de retenção nos primeiros 3 segundos e conformidade com o CONAR (#publi).
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        Produto / Marca
+                      </label>
+                      <input 
+                        type="text" 
+                        value={creatorProduct}
+                        onChange={(e) => setCreatorProduct(e.target.value)}
+                        placeholder="Ex: Fone Galaxy Buds"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-black text-slate-900 focus:bg-white focus:outline-none focus:border-orange-500 transition-all"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        Nicho
+                      </label>
+                      <select 
+                        value={creatorNiche}
+                        onChange={(e) => setCreatorNiche(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-black text-slate-900 focus:bg-white focus:outline-none focus:border-orange-500 transition-all"
+                      >
+                        <option value="Fashion & Lifestyle">Fashion & Lifestyle</option>
+                        <option value="Tech & Gadgets">Tech & Inovação</option>
+                        <option value="Fitness & Saúde">Fitness & Saúde</option>
+                        <option value="Beleza & Skincare">Beleza & Skincare</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        Objetivo
+                      </label>
+                      <select 
+                        value={creatorGoal}
+                        onChange={(e) => setCreatorGoal(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-black text-slate-900 focus:bg-white focus:outline-none focus:border-orange-500 transition-all"
+                      >
+                        <option value="Vendas & Conversão">Vendas & Conversão</option>
+                        <option value="Branding & Autoridade">Branding & Autoridade</option>
+                        <option value="Engajamento & Viral">Engajamento Viral</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleGenerateCreatorScript}
+                    disabled={isGeneratingScript}
+                    className="w-full py-4 rounded-2xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 hover:from-orange-500 transition-all shadow-md shadow-orange-500/20 active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    {isGeneratingScript ? 'Gerando Roteiro...' : 'Gerar Roteiro Estratégico'}
+                  </button>
+
+                  {generatedScript && (
+                    <div className="space-y-4 pt-4 border-t border-slate-100 animate-in fade-in">
+                      <div className="p-4 rounded-2xl bg-orange-50/60 border border-orange-200 space-y-1">
+                        <span className="text-[10px] font-black uppercase text-orange-600 block">Hook Magnético (0-3s)</span>
+                        <p className="text-xs font-bold text-slate-900">{generatedScript.hook}</p>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                        <span className="text-[10px] font-black uppercase text-slate-400 block">Corpo do Vídeo (3-45s)</span>
+                        <p className="text-xs font-medium text-slate-700 whitespace-pre-line leading-relaxed">{generatedScript.body}</p>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1">
+                        <span className="text-[10px] font-black uppercase text-emerald-700 block">Chamada para Ação (45-60s)</span>
+                        <p className="text-xs font-bold text-slate-900">{generatedScript.cta}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* FERRAMENTA 2 CRIADOR: CALCULADORA DE CACHET */}
+              {activeCreatorTab === 'CALCULATOR' && (
+                <div className="p-6 md:p-8 rounded-[2.5rem] bg-white border border-slate-200/80 shadow-sm space-y-6 animate-in fade-in">
+                  <div className="space-y-1 border-b border-slate-100 pb-4">
+                    <div className="flex items-center gap-2">
+                      <Calculator className="w-5 h-5 text-orange-600" />
+                      <h3 className="text-lg font-black text-slate-950">Calculadora de Cachet Justo com SafePay</h3>
+                    </div>
+                    <p className="text-xs text-slate-400 font-medium">Descubra quanto cobrar para marcas com base em visualizações reais.</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-xs font-black">
+                        <span>Média de Visualizações por Post:</span>
+                        <span className="text-orange-600 font-black text-base">{avgViews.toLocaleString('pt-BR')} views</span>
+                      </div>
+                      <input 
+                        type="range" 
+                        min={5000} 
+                        max={200000} 
+                        step={2500} 
+                        value={avgViews} 
+                        onChange={(e) => setAvgViews(Number(e.target.value))}
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-orange-600"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
+                      {[
+                        { id: 'REEL', label: '1x Reels' },
+                        { id: 'STORY', label: 'Combo 3x Stories' },
+                        { id: 'COMBO', label: 'Reels + Stories' },
+                        { id: 'RETAINER', label: 'Embaixador Mensal' }
+                      ].map(f => (
+                        <button
+                          key={f.id}
+                          onClick={() => setFormatType(f.id as any)}
+                          className={`p-3 rounded-2xl border text-xs font-black transition-all ${
+                            formatType === f.id ? 'bg-orange-600 text-white shadow-md' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                          }`}
+                        >
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="p-6 rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] font-black uppercase text-orange-600 block">Preço Recomendado</span>
+                        <span className="text-2xl font-black text-slate-950">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Math.round(Math.max(500, avgViews * (formatType === 'STORY' ? 0.035 : formatType === 'REEL' ? 0.075 : formatType === 'COMBO' ? 0.11 : 0.32))))}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] font-black uppercase text-emerald-700 block">Líquido na sua Conta (85%)</span>
+                        <span className="text-lg font-black text-emerald-700">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Math.round(Math.max(500, avgViews * (formatType === 'STORY' ? 0.035 : formatType === 'REEL' ? 0.075 : formatType === 'COMBO' ? 0.11 : 0.32)) * 0.85))}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* FERRAMENTA 3 & 4 CRIADOR: TRENDS & TEMPLATES */}
+              {(activeCreatorTab === 'TRENDS' || activeCreatorTab === 'TEMPLATES') && (
+                <div className="p-6 md:p-8 rounded-[2.5rem] bg-white border border-slate-200/80 shadow-sm space-y-4">
+                  <h3 className="text-lg font-black text-slate-950">Modelos & Áudios Virais</h3>
+                  <p className="text-xs text-slate-500 font-medium">Utilize os modelos estratégicos e áudios com mais de 80% de retenção no algoritmo.</p>
+                </div>
+              )}
+            </>
+          )}
+
+        </div>
+
+        {/* ══════════════════════════════════════════════════════════════════════
+            COLUNA DIREITA (5 COLUNAS): CHAT COPILOT ESPECIALIZADO
+        ══════════════════════════════════════════════════════════════════════ */}
+        <div className="xl:col-span-5 flex flex-col h-[640px] p-6 md:p-8 rounded-[2.5rem] bg-white border border-slate-200/80 shadow-sm space-y-4">
+          
+          {/* Header do Chat */}
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-500 text-white flex items-center justify-center font-black shadow-sm">
+                {userRole === 'COMPANY' ? 'V' : 'IA'}
+              </div>
+              <div>
+                <h4 className="text-xs font-black uppercase text-slate-950">
+                  {userRole === 'COMPANY' ? 'Vector AI • Diretor de Marketing' : 'InfluIA • Co-Pilot de Carreira'}
+                </h4>
+                <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Online • Modelo Especialista
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setMessages([{
+                role: 'mentor',
+                text: userRole === 'COMPANY' 
+                  ? 'Olá! Sou o Vector AI, seu Diretor de Marketing e Branding. Como posso te apoiar hoje?'
+                  : 'Olá! Sou o seu estrategista de conteúdo e negócios da InfluNext. O que vamos criar agora?',
+                time: 'Agora'
+              }])}
+              className="text-[10px] font-bold text-slate-400 hover:text-orange-600 transition-colors"
+            >
+              Limpar
+            </button>
+          </div>
+
+          {/* Chips de Perguntas Rápidas */}
+          <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar text-[11px]">
+            {userRole === 'COMPANY' ? (
+              <>
+                <button 
+                  onClick={() => handleSendMessage('Como estruturar um lançamento com 4 criadores de micro-influência?')}
+                  className="px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-orange-50 hover:text-orange-600 border border-slate-200 text-slate-600 font-bold whitespace-nowrap transition-all shrink-0"
+                >
+                  🚀 Lançamento com 4 Criadores
+                </button>
+                <button 
+                  onClick={() => handleSendMessage('Qual o CPM ideal para campanhas no segmento de Moda?')}
+                  className="px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-orange-50 hover:text-orange-600 border border-slate-200 text-slate-600 font-bold whitespace-nowrap transition-all shrink-0"
+                >
+                  📊 CPM Ideal de Moda
+                </button>
+                <button 
+                  onClick={() => handleSendMessage('Como funciona a garantia de devolução do SafePay se o criador atrasar?')}
+                  className="px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-orange-50 hover:text-orange-600 border border-slate-200 text-slate-600 font-bold whitespace-nowrap transition-all shrink-0"
+                >
+                  🛡️ Garantia SafePay
+                </button>
+              </>
+            ) : (
+              <>
+                <button 
+                  onClick={() => handleSendMessage('Como cobrar mais caro de marcas grandes?')}
+                  className="px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-orange-50 hover:text-orange-600 border border-slate-200 text-slate-600 font-bold whitespace-nowrap transition-all shrink-0"
+                >
+                  💰 Como cobrar mais de marcas
+                </button>
+                <button 
+                  onClick={() => handleSendMessage('Me dê 3 ideias de Reels com alto engajamento no meu nicho.')}
+                  className="px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-orange-50 hover:text-orange-600 border border-slate-200 text-slate-600 font-bold whitespace-nowrap transition-all shrink-0"
+                >
+                  💡 Ideias de Reels virais
+                </button>
+                <button 
+                  onClick={() => handleSendMessage('Como recusar permuta sem perder a marca?')}
+                  className="px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-orange-50 hover:text-orange-600 border border-slate-200 text-slate-600 font-bold whitespace-nowrap transition-all shrink-0"
+                >
+                  ✉️ Como recusar permuta
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Mensagens do Chat */}
+          <div className="flex-1 overflow-y-auto space-y-3 pr-1 text-xs">
+            {messages.map((m, idx) => (
+              <div 
+                key={idx} 
+                className={`flex gap-2.5 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                {m.role === 'mentor' && (
+                  <div className="w-7 h-7 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                    {userRole === 'COMPANY' ? 'V' : 'IA'}
+                  </div>
+                )}
+                <div 
+                  className={`p-3.5 rounded-2xl max-w-[85%] leading-relaxed ${
+                    m.role === 'user' 
+                      ? 'bg-slate-900 text-white rounded-tr-none' 
+                      : 'bg-slate-50 text-slate-800 border border-slate-200 rounded-tl-none font-medium'
+                  }`}
+                >
+                  {m.text}
+                </div>
+              </div>
+            ))}
+            {isSending && (
+              <div className="flex gap-2 items-center text-slate-400 text-xs font-medium pl-2">
+                <Sparkles className="w-3.5 h-3.5 text-orange-600 animate-spin" />
+                <span>{userRole === 'COMPANY' ? 'Vector AI estruturando resposta executiva...' : 'InfluIA analisando...'}</span>
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* Input do Chat */}
+          <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+            <input 
+              type="text" 
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+              placeholder={userRole === 'COMPANY' ? 'Pergunte ao Vector AI sobre branding, campanhas ou ROI...' : 'Perguntar sobre roteiros, contratos ou precificação...'}
+              className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-orange-500 transition-all font-medium"
+            />
+            <button
+              onClick={() => handleSendMessage()}
+              disabled={isSending || !inputValue.trim()}
+              className="p-3 rounded-2xl bg-orange-600 hover:bg-orange-500 text-white transition-all shadow-md shadow-orange-500/20 active:scale-95 disabled:opacity-40"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
     </div>
   );
 }

@@ -45,8 +45,8 @@ export const getMyTickets = async (req: Request, res: Response) => {
 export const getAllTicketsAdmin = async (req: Request, res: Response) => {
   try {
     if (req.user!.role !== 'ADMIN') {
-       res.status(403).json({ error: 'Acesso negado' });
-       return;
+      res.status(403).json({ error: 'Acesso negado' });
+      return;
     }
     const tickets = await prisma.supportTicket.findMany({
       include: { user: { select: { email: true, role: true } } },
@@ -57,3 +57,29 @@ export const getAllTicketsAdmin = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const updateTicketStatus = async (req: Request, res: Response) => {
+  try {
+    if (req.user!.role !== 'ADMIN') {
+      res.status(403).json({ error: 'Acesso negado' });
+      return;
+    }
+    const { id } = req.params;
+    const { status } = req.body; // "OPEN" | "IN_PROGRESS" | "CLOSED"
+
+    if (!['OPEN', 'IN_PROGRESS', 'CLOSED'].includes(status)) {
+      res.status(400).json({ error: 'Status inválido' });
+      return;
+    }
+
+    const updated = await prisma.supportTicket.update({
+      where: { id },
+      data: { status }
+    });
+
+    res.json(updated);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+

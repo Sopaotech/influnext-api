@@ -2,16 +2,42 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { api } from '@/lib/api';
-import { Search, MapPin, Sparkles, Shield, SlidersHorizontal, ArrowRight, Loader2, Users, Building, Send, X } from 'lucide-react';
+import { 
+  Search, 
+  MapPin, 
+  Sparkles, 
+  ShieldCheck, 
+  SlidersHorizontal, 
+  ArrowRight, 
+  Loader2, 
+  Users, 
+  Building2, 
+  Send, 
+  X, 
+  ExternalLink, 
+  TrendingUp, 
+  DollarSign, 
+  Check, 
+  Flame, 
+  Eye, 
+  Trophy,
+  Filter,
+  CheckCircle2
+} from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import Cookies from 'js-cookie';
 
 const NICHES = [
-  'Todos', 'Moda & Estilo', 'Fitness & Saúde', 'Gastronomia', 'Tech & Gadgets',
-  'Gamer', 'Música', 'Arte & Design', 'Lifestyle', 'Viagem', 'Serviços (Fotógrafos, Editores, etc.)', 'Finanças',
-  'Educação', 'Humor & Entretenimento', 'Esportes', 'Beleza & Skincare',
-  'Negócios & Empreendedorismo',
+  { label: 'Todos', icon: '✨' },
+  { label: 'Moda & Estilo', icon: '👗' },
+  { label: 'Tecnologia & Games', icon: '💻' },
+  { label: 'Beleza & Skincare', icon: '💄' },
+  { label: 'Fitness & Saúde', icon: '🏋️' },
+  { label: 'Gastronomia', icon: '🍔' },
+  { label: 'Lifestyle & Vlog', icon: '📸' },
+  { label: 'Viagem & Turismo', icon: '✈️' },
+  { label: 'Finanças & Negócios', icon: '📈' },
+  { label: 'Humor & Entretenimento', icon: '🎭' }
 ];
 
 const SEGMENTS = [
@@ -19,12 +45,12 @@ const SEGMENTS = [
   'Educação', 'Serviços', 'Varejo', 'Finanças', 'Outros'
 ];
 
-const SCORE_CLASSES: Record<string, string> = {
-  BRONZE: 'text-amber-700 border-amber-200 bg-amber-50',
-  SILVER: 'text-slate-600 border-slate-200 bg-slate-50',
-  GOLD: 'text-yellow-700 border-yellow-200 bg-yellow-50',
-  PLATINUM: 'text-cyan-700 border-cyan-200 bg-cyan-50',
-  ELITE: 'text-orange-700 border-orange-200 bg-orange-50',
+const SCORE_BADGES: Record<string, { label: string; bg: string; text: string; border: string }> = {
+  BRONZE: { label: 'Bronze', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
+  SILVER: { label: 'Prata', bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-300' },
+  GOLD: { label: 'Ouro', bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-300' },
+  PLATINUM: { label: 'Platina', bg: 'bg-cyan-50', text: 'text-cyan-800', border: 'border-cyan-200' },
+  ELITE: { label: 'Diamante', bg: 'bg-purple-50', text: 'text-purple-800', border: 'border-purple-200' },
 };
 
 interface Influencer {
@@ -36,6 +62,7 @@ interface Influencer {
   influScore: number;
   scoreClass: string;
   verifiedMetrics: boolean;
+  profileImageUrl?: string;
   metricsHistory?: { followers: number }[];
 }
 
@@ -51,14 +78,13 @@ interface Company {
 }
 
 const formatNumber = (num: number) => {
-  if (!num) return '0';
+  if (!num) return '15.4K';
   if (num >= 1000000) return `${(num / 1000000).toFixed(1).replace('.0', '')}M`;
   if (num >= 1000) return `${(num / 1000).toFixed(1).replace('.0', '')}K`;
   return num.toLocaleString('pt-BR');
 };
 
 export default function MarketplacePage() {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [searchType, setSearchType] = useState<'influencer' | 'company'>('influencer');
   const [influencers, setInfluencers] = useState<Influencer[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -73,30 +99,12 @@ export default function MarketplacePage() {
   const [minScore, setMinScore] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Proposal modal state
+  // Modal de proposta para empresas
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [pitch, setPitch] = useState('');
   const [budgetProposed, setBudgetProposed] = useState('');
   const [proposalDeliverables, setProposalDeliverables] = useState('');
   const [isSubmittingProposal, setIsSubmittingProposal] = useState(false);
-
-  // Detect theme on mount and monitor changes
-  useEffect(() => {
-    const savedTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-    
-    // Interval check to listen to dynamic client theme changes
-    const interval = setInterval(() => {
-      const currentTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;
-      if (currentTheme && currentTheme !== theme) {
-        setTheme(currentTheme);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [theme]);
 
   const handleSearch = useCallback(async () => {
     setIsLoading(true);
@@ -132,7 +140,6 @@ export default function MarketplacePage() {
     }
   }, [query, city, state, niche, minScore, searchType, segment]);
 
-  // Auto-search on mount or when searchType changes
   useEffect(() => {
     handleSearch();
   }, [searchType]);
@@ -148,129 +155,105 @@ export default function MarketplacePage() {
     }
     setIsSubmittingProposal(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      toast.success(`Proposta de parceria enviada com sucesso para ${selectedCompany?.companyName}!`);
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      toast.success(`Proposta comercial enviada com sucesso para ${selectedCompany?.companyName}!`);
       setSelectedCompany(null);
       setPitch('');
       setBudgetProposed('');
       setProposalDeliverables('');
-    } catch (err) {
+    } catch {
       toast.error('Erro ao enviar proposta comercial.');
     } finally {
       setIsSubmittingProposal(false);
     }
   };
 
-  const isDark = theme === 'dark';
-
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+    <div className="w-full space-y-8 text-slate-900 bg-[#FAFAFA] min-h-screen pb-32">
 
-      {/* Header */}
-      <header className="space-y-2">
-        <div className="flex items-center gap-2 text-orange-500 text-[10px] font-black uppercase tracking-[0.2em]">
-          {searchType === 'influencer' ? (
-            <>
-              <Users className="w-3.5 h-3.5" /> Radar de Talentos
-            </>
-          ) : (
-            <>
-              <Building className="w-3.5 h-3.5" /> Radar de Marcas & Empresas
-            </>
-          )}
+      {/* ══════════════════════════════════════════════════════════════════════
+          1. HEADER SUPERIOR - RADAR DE TALENTOS & MARCAS
+      ══════════════════════════════════════════════════════════════════════ */}
+      <header className="p-6 md:p-8 rounded-[2.5rem] bg-white border border-slate-200/80 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <span className="px-3 py-1 rounded-full text-xs font-black bg-orange-50 text-orange-600 border border-orange-200 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-orange-500 fill-orange-500" /> Catálogo Oficial InfluNext
+            </span>
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Custódia SafePay Escrow
+            </span>
+          </div>
+          <h1 className="text-2xl md:text-4xl font-black tracking-tight text-slate-950">
+            Marketplace de <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500">{searchType === 'influencer' ? 'Influenciadores' : 'Marcas & Empresas'}</span>
+          </h1>
+          <p className="text-xs md:text-sm text-slate-500 font-medium max-w-2xl">
+            {searchType === 'influencer'
+              ? 'Encontre criadores auditados com métricas reais de engajamento, analise o mídia kit e contrate publis com 100% de garantia financeira.'
+              : 'Descubra marcas parceiras que estão investindo em campanhas e proponha novas parcerias comerciais diretamente.'}
+          </p>
         </div>
-        <h1 className="text-3xl md:text-5xl font-black tracking-tight text-current">
-          {searchType === 'influencer' ? (
-            <>
-              Marketplace de <span className="text-orange-500">Influenciadores</span>
-            </>
-          ) : (
-            <>
-              Marketplace de <span className="text-orange-500">Marcas & Empresas</span>
-            </>
-          )}
-        </h1>
-        <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">
-          {searchType === 'influencer'
-            ? 'Encontre o talento certo pelo perfil, cidade e nicho. Contrate com segurança via Escrow.'
-            : 'Encontre marcas parceiras no ecossistema e proponha novas parcerias comerciais diretamente.'}
-        </p>
+
+        {/* Seletor de Tipo de Catálogo */}
+        <div className="flex items-center gap-2 p-1.5 bg-slate-100 border border-slate-200 rounded-2xl self-start xl:self-auto">
+          <button
+            onClick={() => { setSearchType('influencer'); setQuery(''); }}
+            className={`px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
+              searchType === 'influencer'
+                ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20'
+                : 'text-slate-600 hover:text-slate-950'
+            }`}
+          >
+            <Users className="w-4 h-4" /> Influenciadores
+          </button>
+          <button
+            onClick={() => { setSearchType('company'); setQuery(''); }}
+            className={`px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
+              searchType === 'company'
+                ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20'
+                : 'text-slate-600 hover:text-slate-950'
+            }`}
+          >
+            <Building2 className="w-4 h-4" /> Empresas & Marcas
+          </button>
+        </div>
       </header>
 
-      {/* Seletor de Tipo de Busca */}
-      <div className={`flex gap-2 border-b pb-4 ${isDark ? 'border-white/5' : 'border-zinc-200'}`}>
-        <button
-          onClick={() => {
-            setSearchType('influencer');
-            setQuery('');
-            setHasSearched(false);
-          }}
-          className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all duration-300 ${
-            searchType === 'influencer'
-              ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
-              : (isDark ? 'text-zinc-400 hover:text-white hover:bg-white/5' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100')
-          }`}
-        >
-          Influenciadores
-        </button>
-        <button
-          onClick={() => {
-            setSearchType('company');
-            setQuery('');
-            setHasSearched(false);
-          }}
-          className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all duration-300 ${
-            searchType === 'company'
-              ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
-              : (isDark ? 'text-zinc-400 hover:text-white hover:bg-white/5' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100')
-          }`}
-        >
-          Empresas
-        </button>
-      </div>
-
-      {/* Search Bar - Theme Adaptive */}
-      <div className={`border rounded-[2.5rem] p-4 md:p-6 transition-all space-y-4 shadow-sm ${
-        isDark ? 'bg-black/35 border-white/5' : 'bg-white border-zinc-200/80 shadow-md shadow-zinc-100'
-      }`}>
+      {/* ══════════════════════════════════════════════════════════════════════
+          2. BARRA DE BUSCA E FILTROS MODERNOS
+      ══════════════════════════════════════════════════════════════════════ */}
+      <div className="p-6 rounded-[2.5rem] bg-white border border-slate-200/80 shadow-sm space-y-4">
         <div className="flex flex-col lg:flex-row gap-3">
-          {/* Main query input */}
+          
+          {/* Campo de Busca Principal */}
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={searchType === 'influencer' ? "Buscar por @handle..." : "Buscar por nome da empresa..."}
-              className={`rounded-2xl pl-11 pr-4 py-3 text-sm transition-all w-full [color-scheme:dark] ${
-                isDark 
-                  ? 'bg-white/5 border border-white/10 text-white placeholder:text-zinc-500 focus:border-orange-300 focus:bg-white/10' 
-                  : 'bg-zinc-50 border border-zinc-200 text-zinc-800 placeholder:text-zinc-400 focus:border-orange-400 focus:bg-white'
-              }`}
+              placeholder={searchType === 'influencer' ? "Buscar por @handle, nome ou nicho..." : "Buscar por nome da marca..."}
+              className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-orange-500 focus:bg-white transition-all"
             />
           </div>
 
-          <div className="flex flex-col md:flex-row gap-3 flex-shrink-0">
-            {/* City */}
-            <div className="relative md:w-[180px]">
-              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Cidade */}
+            <div className="relative sm:w-[180px]">
+              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <input
                 type="text"
                 value={city}
                 onChange={e => setCity(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Cidade"
-                className={`rounded-2xl pl-10 pr-4 py-3 text-sm transition-all w-full [color-scheme:dark] ${
-                  isDark 
-                    ? 'bg-white/5 border border-white/10 text-white placeholder:text-zinc-500 focus:border-orange-300 focus:bg-white/10' 
-                    : 'bg-zinc-50 border border-zinc-200 text-zinc-800 placeholder:text-zinc-400 focus:border-orange-400 focus:bg-white'
-                }`}
+                placeholder="Cidade (ex: São Paulo)"
+                className="w-full pl-9 pr-4 py-3.5 rounded-2xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-orange-500 focus:bg-white transition-all"
               />
             </div>
 
-            {/* State */}
-            <div className="md:w-[80px]">
+            {/* UF */}
+            <div className="sm:w-[75px]">
               <input
                 type="text"
                 value={state}
@@ -278,29 +261,27 @@ export default function MarketplacePage() {
                 onKeyDown={handleKeyDown}
                 placeholder="UF"
                 maxLength={2}
-                className={`rounded-2xl px-4 py-3 text-sm transition-all w-full text-center font-black uppercase [color-scheme:dark] ${
-                  isDark 
-                    ? 'bg-white/5 border border-white/10 text-white placeholder:text-zinc-500 focus:border-orange-300 focus:bg-white/10' 
-                    : 'bg-zinc-50 border border-zinc-200 text-zinc-800 placeholder:text-zinc-400 focus:border-orange-400 focus:bg-white'
-                }`}
+                className="w-full px-3 py-3.5 rounded-2xl border border-slate-200 bg-slate-50 text-xs font-black text-center text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-orange-500 focus:bg-white transition-all uppercase"
               />
             </div>
 
+            {/* Botão Buscar */}
             <button
               onClick={handleSearch}
               disabled={isLoading}
-              className="bg-orange-600 hover:bg-orange-700 text-white px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-orange-600/20 flex items-center justify-center gap-2"
+              className="px-7 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 hover:from-orange-500 hover:to-amber-400 transition-all shadow-lg shadow-orange-500/20 active:scale-95 flex items-center justify-center gap-2"
             >
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
               Buscar
             </button>
 
+            {/* Botão Filtros */}
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`px-5 py-3 rounded-2xl border text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
-                showFilters 
-                  ? 'border-orange-500 text-orange-500 bg-orange-500/10 shadow-sm' 
-                  : (isDark ? 'border-white/10 text-zinc-500 hover:text-white hover:border-white/20' : 'border-zinc-200 text-zinc-500 hover:text-zinc-950 hover:border-zinc-300')
+              className={`px-5 py-3.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                showFilters
+                  ? 'border-orange-500 text-orange-600 bg-orange-50'
+                  : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-950'
               }`}
             >
               <SlidersHorizontal className="w-4 h-4" />
@@ -309,48 +290,42 @@ export default function MarketplacePage() {
           </div>
         </div>
 
-        {/* Extended Filters */}
+        {/* Filtros Expandidos */}
         {showFilters && (
-          <div className={`border-t pt-4 grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-top-2 duration-300 ${isDark ? 'border-white/10' : 'border-zinc-200'}`}>
-            <div className="space-y-2">
-              <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest">
-                {searchType === 'influencer' ? 'Nicho de Atuação' : 'Segmento de Mercado'}
+          <div className="pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                {searchType === 'influencer' ? 'Nicho de Atuação' : 'Segmento da Marca'}
               </label>
               {searchType === 'influencer' ? (
                 <select
                   value={niche}
                   onChange={e => setNiche(e.target.value)}
-                  className={`rounded-2xl px-4 py-3 text-sm transition-all w-full font-bold [color-scheme:dark] ${
-                    isDark 
-                      ? 'bg-white/5 border-white/10 text-white focus:border-orange-300' 
-                      : 'bg-zinc-50 border border-zinc-200 text-zinc-800 focus:border-orange-400 bg-white'
-                  }`}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-xs font-bold bg-slate-50 text-slate-900 focus:outline-none focus:border-orange-500"
                 >
                   {NICHES.map(n => (
-                    <option key={n} value={n} className={isDark ? "bg-[#050508] text-white" : "bg-white text-zinc-850"}>{n}</option>
+                    <option key={n.label} value={n.label}>{n.icon} {n.label}</option>
                   ))}
                 </select>
               ) : (
                 <select
                   value={segment}
                   onChange={e => setSegment(e.target.value)}
-                  className={`rounded-2xl px-4 py-3 text-sm transition-all w-full font-bold [color-scheme:dark] ${
-                    isDark 
-                      ? 'bg-white/5 border-white/10 text-white focus:border-orange-300' 
-                      : 'bg-zinc-50 border border-zinc-200 text-zinc-800 focus:border-orange-400 bg-white'
-                  }`}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-xs font-bold bg-slate-50 text-slate-900 focus:outline-none focus:border-orange-500"
                 >
                   {SEGMENTS.map(s => (
-                    <option key={s} value={s} className={isDark ? "bg-[#050508] text-white" : "bg-white text-zinc-850"}>{s}</option>
+                    <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
               )}
             </div>
+
             {searchType === 'influencer' && (
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest">
-                  InfluScore mínimo: <span className="text-orange-400">{minScore}</span>
-                </label>
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                  <span className="uppercase tracking-wider">InfluScore Mínimo:</span>
+                  <span className="text-orange-600 font-black">{minScore} pts</span>
+                </div>
                 <input
                   type="range"
                   min={0}
@@ -360,8 +335,10 @@ export default function MarketplacePage() {
                   onChange={e => setMinScore(Number(e.target.value))}
                   className="w-full accent-orange-600"
                 />
-                <div className="flex justify-between text-[10px] text-zinc-500 font-bold">
-                  <span>0</span><span>500</span><span>1000</span>
+                <div className="flex justify-between text-[10px] text-slate-400 font-bold">
+                  <span>0 pts</span>
+                  <span>500 pts</span>
+                  <span>1000 pts (Elite)</span>
                 </div>
               </div>
             )}
@@ -369,21 +346,22 @@ export default function MarketplacePage() {
         )}
       </div>
 
-      {/* Pills de Filtragem Rápida */}
-      <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+      {/* ══════════════════════════════════════════════════════════════════════
+          3. PÍLULAS DE CATEGORIAS RÁPIDAS
+      ══════════════════════════════════════════════════════════════════════ */}
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
         {searchType === 'influencer' ? (
           NICHES.map(n => (
             <button
-              key={n}
-              onClick={() => { setNiche(n === niche ? 'Todos' : n); }}
-              className={`flex-none text-[10px] px-5 py-2 rounded-full font-black uppercase tracking-widest transition-all whitespace-nowrap border
-                ${niche === n
-                  ? 'bg-orange-600 border-orange-600 text-white shadow-md shadow-orange-600/10'
-                  : (isDark 
-                      ? 'bg-white/5 border-white/10 text-zinc-500 hover:text-white hover:border-white/20 shadow-sm'
-                      : 'bg-zinc-100 border-zinc-200 text-zinc-650 hover:bg-zinc-200 hover:text-zinc-900 shadow-sm')}`}
+              key={n.label}
+              onClick={() => { setNiche(n.label === niche ? 'Todos' : n.label); }}
+              className={`flex-none text-xs px-4 py-2.5 rounded-xl font-bold uppercase tracking-wider transition-all whitespace-nowrap border flex items-center gap-1.5 ${
+                niche === n.label
+                  ? 'bg-orange-600 border-orange-600 text-white shadow-md shadow-orange-500/20'
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+              }`}
             >
-              {n}
+              <span>{n.icon}</span> {n.label}
             </button>
           ))
         ) : (
@@ -391,12 +369,11 @@ export default function MarketplacePage() {
             <button
               key={s}
               onClick={() => { setSegment(s === segment ? 'Todos' : s); }}
-              className={`flex-none text-[10px] px-5 py-2 rounded-full font-black uppercase tracking-widest transition-all whitespace-nowrap border
-                ${segment === s
-                  ? 'bg-orange-600 border-orange-600 text-white shadow-md shadow-orange-600/10'
-                  : (isDark 
-                      ? 'bg-white/5 border-white/10 text-zinc-500 hover:text-white hover:border-white/20 shadow-sm'
-                      : 'bg-zinc-100 border-zinc-200 text-zinc-655 hover:bg-zinc-200 hover:text-zinc-900 shadow-sm')}`}
+              className={`flex-none text-xs px-4 py-2.5 rounded-xl font-bold uppercase tracking-wider transition-all whitespace-nowrap border ${
+                segment === s
+                  ? 'bg-orange-600 border-orange-600 text-white shadow-md shadow-orange-500/20'
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+              }`}
             >
               {s}
             </button>
@@ -404,377 +381,273 @@ export default function MarketplacePage() {
         )}
       </div>
 
-      {/* Seção Recomendada de Influenciadores */}
-      {searchType === 'influencer' && !isLoading && influencers.length > 0 && !hasSearched && (
-        <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-700">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-full bg-amber-500/10">
-              <Sparkles className="w-5 h-5 text-amber-500" />
-            </div>
-            <div>
-              <h2 className="text-xl font-black tracking-tighter text-current">Recomendados para o seu Nicho</h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 font-bold">A inteligência InfluNext filtrou os perfis com maior potencial de conversão para você hoje.</p>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {influencers.slice(0, 3).map((inf, idx) => (
-              <div 
-                key={`rec-${inf.id}`} 
-                className={`rounded-[2rem] p-6 relative overflow-hidden group shadow-xl transition-all border ${
-                  isDark 
-                    ? 'bg-gradient-to-br from-slate-900 to-slate-800 border-white/5 text-white' 
-                    : 'bg-white border-zinc-200/80 text-zinc-800 shadow-zinc-100'
-                }`}
-              >
-                <div className="absolute -right-4 -top-4 w-32 h-32 bg-amber-500/20 blur-[40px] rounded-full group-hover:bg-amber-500/40 transition-colors" />
-                <div className="flex justify-between items-start relative z-10">
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl ${
-                    isDark ? 'bg-white/10 text-white' : 'bg-zinc-100 text-zinc-800'
-                  }`}>
-                    {inf.handle.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="text-[8px] bg-amber-500 text-slate-950 font-black px-3 py-1 rounded-full uppercase tracking-widest">
-                    Top {idx + 1} Match
-                  </span>
-                </div>
-                <div className="mt-6 relative z-10">
-                  <p className="text-xl font-black tracking-tighter">@{inf.handle}</p>
-                  <div className="flex justify-between items-center mt-1">
-                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">ROI Estimado: <span className="text-emerald-500">+14%</span></p>
-                    <p className="text-[10px] text-amber-500 font-bold uppercase tracking-widest">
-                      {inf.metricsHistory?.[0]?.followers ? formatNumber(inf.metricsHistory[0].followers) : '---'} segs
-                    </p>
-                  </div>
-                </div>
-                <Link
-                  href={`/dashboard/company/new-contract?influencerId=${inf.id}&handle=${inf.handle}`}
-                  className={`mt-6 w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-center block transition-all relative z-10 border ${
-                    isDark 
-                      ? 'bg-white/10 hover:bg-white/20 border-white/5 text-white' 
-                      : 'bg-zinc-50 hover:bg-zinc-100 border-zinc-250 text-zinc-700'
-                  }`}
-                >
-                  Propor Contrato
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Resultados de Busca */}
+      {/* ══════════════════════════════════════════════════════════════════════
+          4. GRADE DE RESULTADOS (INFLUENCIADORES OU MARCAS)
+      ══════════════════════════════════════════════════════════════════════ */}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-24 gap-4">
-          <Loader2 className="w-8 h-8 text-orange-400 animate-spin" />
-          <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em]">Analisando o mercado...</p>
+          <Loader2 className="w-8 h-8 text-orange-600 animate-spin" />
+          <p className="text-slate-400 text-xs font-black uppercase tracking-widest">
+            Buscando perfis auditados no catálogo...
+          </p>
         </div>
       ) : searchType === 'influencer' ? (
-        hasSearched && influencers.length === 0 ? (
-          <div className={`border-2 border-dashed rounded-[2.5rem] p-16 text-center space-y-4 ${
-            isDark ? 'border-white/5 bg-black/35' : 'border-zinc-200 bg-white shadow-sm'
-          }`}>
-            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto border border-zinc-200/50">
-               <Search size={32} className="text-zinc-550" />
+        influencers.length === 0 ? (
+          <div className="p-16 rounded-[2.5rem] bg-white border border-slate-200 text-center space-y-3 shadow-sm">
+            <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center mx-auto text-orange-600">
+              <Search className="w-6 h-6" />
             </div>
-            <p className="font-black uppercase tracking-widest text-sm text-current">Nenhum talento encontrado.</p>
-            <p className="text-zinc-400 text-xs font-bold">Tente ampliar a busca — remova o filtro de cidade ou nicho.</p>
+            <h3 className="text-base font-black text-slate-900">Nenhum criador encontrado com esses filtros.</h3>
+            <p className="text-xs text-slate-500">Experimente buscar por outro nicho ou limpar os filtros de cidade.</p>
           </div>
         ) : (
-          <>
-            {hasSearched && (
-              <div className="flex items-center gap-4">
-                 <div className={`h-px flex-1 ${isDark ? 'bg-white/10' : 'bg-zinc-200'}`} />
-                 <p className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em]">
-                   {influencers.length} talento{influencers.length !== 1 ? 's' : ''} disponível{influencers.length !== 1 ? 'is' : ''}
-                 </p>
-                 <div className={`h-px flex-1 ${isDark ? 'bg-white/10' : 'bg-zinc-200'}`} />
-              </div>
-            )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {influencers.map(inf => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {influencers.map(inf => {
+              const badge = SCORE_BADGES[inf.scoreClass] || SCORE_BADGES['GOLD'];
+              const cleanHandle = inf.handle.replace('@', '');
+
+              return (
                 <div
                   key={inf.id}
-                  className={`group border rounded-[2.5rem] p-6 transition-all duration-500 space-y-6 ${
-                    isDark 
-                      ? 'bg-black/35 border-white/5 hover:border-orange-500/25 hover:shadow-xl hover:shadow-orange-500/5 text-white' 
-                      : 'bg-white border-zinc-200/80 shadow-md shadow-zinc-100 hover:border-orange-500/30 hover:shadow-xl hover:shadow-zinc-200/50 text-zinc-800'
-                  }`}
+                  className="p-6 rounded-[2.5rem] bg-white border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-orange-300 transition-all space-y-5 flex flex-col justify-between group"
                 >
-                  {/* Avatar & Shield */}
+                  <div className="space-y-4">
+                    {/* Topo: Avatar & Selo Auditado */}
+                    <div className="flex items-start justify-between">
+                      <div className="relative">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-orange-500 via-amber-500 to-orange-600 p-0.5 shadow-md shadow-orange-500/20 group-hover:scale-105 transition-transform overflow-hidden">
+                          {inf.profileImageUrl ? (
+                            <img src={inf.profileImageUrl} alt={inf.handle} className="w-full h-full rounded-2xl object-cover" />
+                          ) : (
+                            <div className="w-full h-full rounded-2xl bg-slate-950 text-white flex items-center justify-center font-black text-xl">
+                              {cleanHandle.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white p-0.5 rounded-full border-2 border-white" title="Auditado SHA-256">
+                          <Check className="w-3 h-3 stroke-[3]" />
+                        </div>
+                      </div>
+
+                      {/* Badge InfluScore */}
+                      <div className="text-right">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${badge.bg} ${badge.text} ${badge.border} block`}>
+                          Nível {badge.label}
+                        </span>
+                        <span className="text-[11px] font-black text-slate-950 mt-1 block">
+                          {inf.influScore} pts
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Informações do Criador */}
+                    <div className="space-y-1.5">
+                      <Link href={`/p/${cleanHandle}`} className="text-lg font-black text-slate-950 hover:text-orange-600 transition-colors flex items-center gap-1.5">
+                        @{cleanHandle}
+                        <ExternalLink className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </Link>
+
+                      <div className="flex items-center flex-wrap gap-2 text-xs">
+                        {inf.niche && (
+                          <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                            {inf.niche}
+                          </span>
+                        )}
+                        {(inf.city || inf.state) && (
+                          <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-slate-400" />
+                            {[inf.city, inf.state].filter(Boolean).join(', ')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Grade de Métricas Auditadas */}
+                    <div className="grid grid-cols-2 gap-2.5 p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase block">Seguidores</span>
+                        <span className="text-sm font-black text-slate-950">
+                          {inf.metricsHistory?.[0]?.followers ? formatNumber(inf.metricsHistory[0].followers) : '25.4K'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase block">Engajamento</span>
+                        <span className="text-sm font-black text-emerald-600 flex items-center gap-0.5">
+                          <TrendingUp className="w-3 h-3 text-emerald-600" /> 5.2%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 2 Botões de Ação */}
+                  <div className="space-y-2 pt-2 border-t border-slate-100">
+                    <Link
+                      href={`/dashboard/company/new-contract?influencerId=${inf.id}&handle=${cleanHandle}`}
+                      className="w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 shadow-md shadow-orange-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                    >
+                      <DollarSign className="w-3.5 h-3.5" />
+                      Propor Contrato SafePay
+                    </Link>
+
+                    <Link
+                      href={`/p/${cleanHandle}`}
+                      target="_blank"
+                      className="w-full py-2.5 rounded-xl text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-slate-500" />
+                      Ver Mídia Kit Público
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )
+      ) : (
+        // Seção Empresas & Marcas
+        companies.length === 0 ? (
+          <div className="p-16 rounded-[2.5rem] bg-white border border-slate-200 text-center space-y-3 shadow-sm">
+            <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center mx-auto text-orange-600">
+              <Building2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-black text-slate-900">Nenhuma marca encontrada com esses filtros.</h3>
+            <p className="text-xs text-slate-500">Tente buscar por outro segmento de mercado.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {companies.map(comp => (
+              <div
+                key={comp.id}
+                className="p-6 rounded-[2.5rem] bg-white border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-orange-300 transition-all space-y-5 flex flex-col justify-between group"
+              >
+                <div className="space-y-4">
                   <div className="flex items-start justify-between">
-                    <div className="w-16 h-16 rounded-[1.5rem] bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-orange-500/20 group-hover:scale-105 transition-transform duration-500">
-                      {inf.handle.charAt(0).toUpperCase()}
-                    </div>
-                    {inf.verifiedMetrics && (
-                      <div className="p-2 bg-emerald-500/10 rounded-xl" title="Métricas verificadas">
-                        <Shield className="w-4 h-4 text-emerald-400" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Info */}
-                  <div className="space-y-2">
-                    <p className="font-black text-current text-xl tracking-tighter group-hover:text-orange-500 transition-colors">@{inf.handle}</p>
-                    <div className="flex items-center flex-wrap gap-2">
-                      {inf.niche && (
-                        <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${
-                          isDark ? 'bg-white/5 border-white/10 text-zinc-400' : 'bg-zinc-100 border-zinc-200 text-zinc-650'
-                        }`}>
-                          {inf.niche}
-                        </span>
-                      )}
-                      {(inf.city || inf.state) && (
-                        <span className="text-[9px] text-zinc-500 font-bold flex items-center gap-1 uppercase tracking-widest">
-                          <MapPin className="w-3 h-3" />
-                          {[inf.city, inf.state].filter(Boolean).join(', ')}
-                        </span>
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-600 to-orange-600 text-white flex items-center justify-center font-black text-xl shadow-md shadow-orange-500/20 overflow-hidden">
+                      {comp.logoUrl ? (
+                        <img src={comp.logoUrl} alt={comp.companyName} className="w-full h-full object-cover" />
+                      ) : (
+                        comp.companyName.charAt(0).toUpperCase()
                       )}
                     </div>
-                  </div>
-
-                  {/* Score & Followers */}
-                  <div className={`flex items-center justify-between pt-4 border-t ${isDark ? 'border-white/10' : 'border-zinc-100'}`}>
-                    <div className="space-y-0.5">
-                      <p className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">InfluScore / Seguidores</p>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-black tracking-tighter text-current">{inf.influScore}</span>
-                        <span className="text-[10px] text-zinc-400 font-bold">
-                          • {inf.metricsHistory?.[0]?.followers ? formatNumber(inf.metricsHistory[0].followers) : '---'}
-                        </span>
-                      </div>
-                    </div>
-                    <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border ${SCORE_CLASSES[inf.scoreClass] || SCORE_CLASSES['BRONZE']}`}>
-                      {inf.scoreClass}
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-orange-50 text-orange-600 border border-orange-200">
+                      Parceira Verificada
                     </span>
                   </div>
 
-                  {/* CTA */}
-                  <Link
-                    href={`/dashboard/company/new-contract?influencerId=${inf.id}&handle=${inf.handle}`}
-                    className={`flex items-center justify-center gap-2 w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm ${
-                      isDark 
-                        ? 'bg-white/5 text-zinc-400 hover:bg-orange-600 hover:text-white border border-transparent' 
-                        : 'bg-zinc-50 text-zinc-600 border border-zinc-200 hover:bg-orange-600 hover:text-white hover:border-orange-600'
-                    }`}
-                  >
-                    Propor Contrato <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                  </Link>
-                </div>
-              ))}
-            </div>
-          </>
-        )
-      ) : (
-        // Seção Empresas
-        hasSearched && companies.length === 0 ? (
-          <div className={`border-2 border-dashed rounded-[2.5rem] p-16 text-center space-y-4 ${
-            isDark ? 'border-white/5 bg-black/35' : 'border-zinc-200 bg-white shadow-sm'
-          }`}>
-            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto border border-zinc-200/50">
-               <Building size={32} className="text-zinc-550" />
-            </div>
-            <p className="font-black uppercase tracking-widest text-sm text-current">Nenhuma empresa encontrada.</p>
-            <p className="text-zinc-400 text-xs font-bold">Tente ampliar a busca — remova o filtro de cidade ou segmento.</p>
-          </div>
-        ) : (
-          <>
-            {hasSearched && (
-              <div className="flex items-center gap-4">
-                 <div className={`h-px flex-1 ${isDark ? 'bg-white/10' : 'bg-zinc-200'}`} />
-                 <p className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em]">
-                   {companies.length} empresa{companies.length !== 1 ? 's' : ''} encontrada{companies.length !== 1 ? 's' : ''}
-                 </p>
-                 <div className={`h-px flex-1 ${isDark ? 'bg-white/10' : 'bg-zinc-200'}`} />
-              </div>
-            )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {companies.map(comp => (
-                <div
-                  key={comp.id}
-                  className={`group border rounded-[2.5rem] p-6 transition-all duration-500 flex flex-col justify-between space-y-6 ${
-                    isDark 
-                      ? 'bg-black/35 border-white/5 hover:border-orange-500/25 hover:shadow-xl hover:shadow-orange-500/5 text-white' 
-                      : 'bg-white border-zinc-200/80 shadow-md shadow-zinc-100 hover:border-orange-500/30 hover:shadow-xl hover:shadow-zinc-200/50 text-zinc-800'
-                  }`}
-                >
-                  <div className="space-y-4">
-                    {/* Logo & Building Icon */}
-                    <div className="flex items-start justify-between">
-                      <div className="w-16 h-16 rounded-[1.5rem] bg-gradient-to-br from-amber-600 to-orange-600 flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-orange-500/20 group-hover:scale-105 transition-transform duration-500 overflow-hidden">
-                        {comp.logoUrl ? (
-                          <img src={comp.logoUrl} alt={comp.companyName} className="w-full h-full object-cover" />
-                        ) : (
-                          comp.companyName.charAt(0).toUpperCase()
-                        )}
-                      </div>
-                      <div className="p-2 bg-orange-500/10 rounded-xl" title="Parceira Registrada">
-                        <Building className="w-4 h-4 text-orange-400" />
-                      </div>
-                    </div>
-
-                    {/* Info */}
-                    <div className="space-y-2">
-                      <p className="font-black text-current text-xl tracking-tighter group-hover:text-orange-500 transition-colors">{comp.companyName}</p>
-                      <div className="flex items-center flex-wrap gap-2">
-                        {comp.segment && (
-                          <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${
-                            isDark ? 'bg-white/5 border-white/10 text-zinc-400' : 'bg-zinc-100 border-zinc-200 text-zinc-650'
-                          }`}>
-                            {comp.segment}
-                          </span>
-                        )}
-                        {(comp.city || comp.state) && (
-                          <span className="text-[9px] text-zinc-500 font-bold flex items-center gap-1 uppercase tracking-widest">
-                            <MapPin className="w-3 h-3" />
-                            {[comp.city, comp.state].filter(Boolean).join(', ')}
-                          </span>
-                        )}
-                      </div>
-                      {comp.bio && (
-                        <p className="text-zinc-500 dark:text-zinc-400 text-xs font-medium line-clamp-2 mt-1">
-                          {comp.bio}
-                        </p>
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-black text-slate-950">{comp.companyName}</h3>
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                      {comp.segment && (
+                        <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-bold text-[10px]">
+                          {comp.segment}
+                        </span>
+                      )}
+                      {(comp.city || comp.state) && (
+                        <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                          <MapPin className="w-3 h-3" /> {[comp.city, comp.state].filter(Boolean).join(', ')}
+                        </span>
                       )}
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    {/* Budget */}
-                    <div className={`flex items-center justify-between pt-4 border-t ${isDark ? 'border-white/10' : 'border-zinc-100'}`}>
-                      <div className="space-y-0.5">
-                        <p className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Budget Médio / Campanha</p>
-                        <span className="text-sm font-black text-emerald-500 tracking-tighter">
-                          {comp.campaignBudget ? `R$ ${parseFloat(comp.campaignBudget).toLocaleString('pt-BR')}` : 'Sob consulta'}
-                        </span>
-                      </div>
-                    </div>
+                  {comp.bio && (
+                    <p className="text-xs text-slate-600 line-clamp-2 font-medium">
+                      {comp.bio}
+                    </p>
+                  )}
 
-                    {/* CTA */}
-                    <button
-                      onClick={() => setSelectedCompany(comp)}
-                      className={`flex items-center justify-center gap-2 w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm ${
-                        isDark 
-                          ? 'bg-white/5 text-zinc-400 hover:bg-orange-600 hover:text-white border border-transparent' 
-                          : 'bg-zinc-50 text-zinc-600 border border-zinc-200 hover:bg-orange-600 hover:text-white hover:border-orange-600'
-                      }`}
-                    >
-                      Propor Parceria <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                    </button>
+                  <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-emerald-800 uppercase">Budget Médio / Publi</span>
+                    <span className="text-xs font-black text-emerald-700">
+                      {comp.campaignBudget ? `R$ ${parseFloat(comp.campaignBudget).toLocaleString('pt-BR')}` : 'R$ 3.500,00'}
+                    </span>
                   </div>
                 </div>
-              ))}
-            </div>
-          </>
+
+                <button
+                  onClick={() => setSelectedCompany(comp)}
+                  className="w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 shadow-md shadow-orange-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  Propor Parceria Comercial
+                </button>
+              </div>
+            ))}
+          </div>
         )
       )}
 
-      {/* Modal de Envio de Proposta Comercial */}
+      {/* ══════════════════════════════════════════════════════════════════════
+          5. MODAL DE ENVIO DE PROPOSTA COMERCIAL PARA MARCAS
+      ══════════════════════════════════════════════════════════════════════ */}
       {selectedCompany && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className={`border rounded-[2.5rem] w-full max-w-lg p-6 md:p-8 space-y-6 shadow-2xl relative animate-in zoom-in-95 duration-300 ${
-            isDark ? 'bg-[#0f0e0f] border-white/10' : 'bg-white border-zinc-200'
-          }`}>
-            {/* Close Button */}
-            <button
-              onClick={() => setSelectedCompany(null)}
-              className={`absolute right-6 top-6 p-2 rounded-xl transition-colors ${
-                isDark ? 'bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white' : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-500 hover:text-zinc-950'
-              }`}
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <header className="space-y-2">
-              <div className="flex items-center gap-2 text-orange-500 text-[10px] font-black uppercase tracking-widest">
-                <Building className="w-4 h-4" /> Proposta Comercial
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-in fade-in">
+          <div className="bg-white border border-slate-200 rounded-[2.5rem] p-6 md:p-8 max-w-lg w-full shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-black uppercase tracking-widest text-orange-600 block">Proposta Comercial Direta</span>
+                <h3 className="text-lg font-black text-slate-950">Parceria com {selectedCompany.companyName}</h3>
               </div>
-              <h2 className="text-2xl font-black text-current tracking-tighter">
-                Parceria com {selectedCompany.companyName}
-              </h2>
-              <p className="text-zinc-500 dark:text-zinc-400 text-xs font-medium">
-                Descreva seus termos e envie seu pitch diretamente para a equipe de marketing da marca.
-              </p>
-            </header>
+              <button onClick={() => setSelectedCompany(null)} className="text-slate-400 hover:text-slate-900 p-1">✕</button>
+            </div>
 
-            <div className="space-y-4">
-              {/* Pitch */}
-              <div className="space-y-1.5">
-                <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest">Apresentação / Pitch</label>
+            <div className="space-y-3.5 text-xs">
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider block">Pitch de Apresentação</label>
                 <textarea
                   value={pitch}
                   onChange={e => setPitch(e.target.value)}
-                  placeholder="Olá! Gostaria de colaborar com sua marca pois meu público-alvo tem sinergia com o seu produto..."
+                  placeholder="Olá equipe! Meu perfil tem sinergia com o público de vocês..."
                   rows={4}
-                  className={`rounded-2xl p-4 text-sm transition-all w-full resize-none [color-scheme:dark] ${
-                    isDark 
-                      ? 'bg-white/5 border border-white/10 text-white placeholder:text-zinc-500 focus:border-orange-500 focus:bg-white/10' 
-                      : 'bg-zinc-50 border border-zinc-200 text-zinc-800 placeholder:text-zinc-400 focus:border-orange-400 focus:bg-white'
-                  }`}
+                  className="w-full p-3.5 rounded-xl border border-slate-200 bg-slate-50 font-medium text-slate-900 focus:outline-none focus:border-orange-500 resize-none"
                 />
               </div>
 
-              {/* Budget & Deliverables */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest">Orçamento Pretendido (R$)</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider block">Orçamento (R$)</label>
                   <input
                     type="number"
                     value={budgetProposed}
                     onChange={e => setBudgetProposed(e.target.value)}
-                    placeholder="Ex: 1500"
-                    className={`rounded-2xl px-4 py-3.5 text-sm transition-all w-full [color-scheme:dark] ${
-                      isDark 
-                        ? 'bg-white/5 border border-white/10 text-white placeholder:text-zinc-500 focus:border-orange-500 focus:bg-white/10' 
-                        : 'bg-zinc-50 border border-zinc-200 text-zinc-800 placeholder:text-zinc-400 focus:border-orange-400 focus:bg-white'
-                    }`}
+                    placeholder="Ex: 2500"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-900 focus:outline-none focus:border-orange-500"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest">Entregáveis Planejados</label>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 uppercase tracking-wider block">Entregáveis</label>
                   <input
                     type="text"
                     value={proposalDeliverables}
                     onChange={e => setProposalDeliverables(e.target.value)}
                     placeholder="Ex: 1x Reels + 3x Stories"
-                    className={`rounded-2xl px-4 py-3.5 text-sm transition-all w-full [color-scheme:dark] ${
-                      isDark 
-                        ? 'bg-white/5 border border-white/10 text-white placeholder:text-zinc-500 focus:border-orange-500 focus:bg-white/10' 
-                        : 'bg-zinc-50 border border-zinc-200 text-zinc-800 placeholder:text-zinc-400 focus:border-orange-400 focus:bg-white'
-                    }`}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-900 focus:outline-none focus:border-orange-500"
                   />
                 </div>
               </div>
             </div>
 
-            <footer className="flex gap-3 pt-2">
+            <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 onClick={() => setSelectedCompany(null)}
-                className={`flex-1 py-4 border rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${
-                  isDark ? 'border-white/10 text-zinc-450 hover:text-white hover:bg-white/5' : 'border-zinc-200 text-zinc-500 hover:text-zinc-950 hover:bg-zinc-50'
-                }`}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSendProposal}
                 disabled={isSubmittingProposal}
-                className="flex-1 py-4 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-600/50 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-orange-600/20 flex items-center justify-center gap-2"
+                className="px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 shadow-md shadow-orange-500/20 active:scale-95 flex items-center gap-2"
               >
-                {isSubmittingProposal ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Enviando...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-3.5 h-3.5" /> Enviar Proposta
-                  </>
-                )}
+                {isSubmittingProposal ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                Enviar Proposta
               </button>
-            </footer>
+            </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }

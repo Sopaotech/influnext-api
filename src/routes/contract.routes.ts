@@ -8,7 +8,8 @@ import {
   cancelAndRefundContract, 
   releasePayment,
   acceptContract,
-  generateROIReport
+  generateROIReport,
+  submitContractReview
 } from '../controllers/contract.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import { authorize } from '../middlewares/role.middleware';
@@ -22,6 +23,9 @@ router.post('/', authenticate, contractBudgetGuard, sanitizeContactData, createC
 router.get('/', authenticate, getMyContracts);
 router.get('/:id', authenticate, getContractById);
 router.patch('/:id/script', authenticate, updateContractScript);
+
+// Avaliação oficial da entrega da campanha
+router.post('/:id/review', authenticate, submitContractReview);
 
 // Geração de Relatório de ROI por IA
 router.post('/:id/roi-report', authenticate, generateROIReport);

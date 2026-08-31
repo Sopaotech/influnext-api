@@ -8,105 +8,61 @@ import {
   Link as LinkIcon, 
   CheckCircle2, 
   ExternalLink,
-  Building
+  Building2,
+  Sparkles,
+  ShieldCheck,
+  Flame,
+  DollarSign,
+  Copy,
+  Check,
+  Eye,
+  Clock,
+  ArrowRight,
+  Layers
 } from 'lucide-react';
 import Link from 'next/link';
 import Cookies from 'js-cookie';
 import { toast } from 'sonner';
 
 export default function CampaignsPage() {
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    if (typeof window !== 'undefined') {
-      const savedTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;
-      if (savedTheme) return savedTheme;
-    }
-    return 'dark';
-  });
   const [isLoading, setIsLoading] = useState(true);
+  const [copiedCoupon, setCopiedCoupon] = useState<string | null>(null);
   const userRole = Cookies.get('influnext_role');
   const isCompany = userRole === 'COMPANY';
 
-  // Monitor theme updates
   useEffect(() => {
-    const interval = setInterval(() => {
-      const currentTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;
-      if (currentTheme && currentTheme !== theme) {
-        setTheme(currentTheme);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [theme]);
-
-  useEffect(() => {
-    // Simulate initial load
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 600);
+    }, 400);
     return () => clearTimeout(timer);
   }, []);
 
-  const isDark = theme === 'dark';
+  const handleCopyCoupon = (coupon: string) => {
+    navigator.clipboard.writeText(coupon);
+    setCopiedCoupon(coupon);
+    toast.success(`✓ Cupom "${coupon}" copiado!`);
+    setTimeout(() => setCopiedCoupon(null), 2500);
+  };
+
+  const handleCopyTrackLink = (campaignTitle: string) => {
+    const link = `https://influnext.com.br/l/summer2026`;
+    navigator.clipboard.writeText(link);
+    toast.success('🔗 Link rastreável de Stories copiado!', {
+      description: 'Cole na figurinha de link do Instagram para rastrear cliques e vendas.'
+    });
+  };
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-4">
-        <div className="w-12 h-12 border-4 border-orange-500/20 border-t-orange-600 rounded-full animate-spin" />
-        <p className="text-zinc-550 text-[10px] uppercase font-black tracking-widest">Carregando Esteira de Campanhas...</p>
+      <div className="p-6 md:p-12 space-y-8 bg-[#FAFAFA] min-h-screen animate-pulse">
+        <div className="h-24 bg-white rounded-3xl border border-slate-200" />
+        <div className="h-64 bg-white rounded-3xl border border-slate-200" />
+        <div className="h-64 bg-white rounded-3xl border border-slate-200" />
       </div>
     );
   }
 
-  // MOCK CORPORATE CAMPAIGN DATA
-  const companyCampaigns = [
-    {
-      id: 'c1',
-      influencer: 'demo.influencer',
-      influencerName: 'Alice Souza',
-      niche: 'Fashion & Lifestyle',
-      campaignTitle: 'Campanha Summer Collection 2026',
-      status: 'POSTED', // POSTED, SCHEDULED
-      escrowStatus: 'COMPLETED',
-      deliverableType: '1x Reels + 3x Stories',
-      instagramLink: 'https://instagram.com',
-      metrics: {
-        views: 18500,
-        likes: 1240,
-        comments: 85,
-        engagementRate: '4.8%',
-        linkClicks: 8540,
-        salesCount: 124,
-        revenue: 12450.00
-      },
-      couponCode: 'SUMMER10',
-      commissionRate: '10%',
-      payoutStatus: 'Pago (Escrow Liberado)'
-    },
-    {
-      id: 'c2',
-      influencer: 'pedro_ph',
-      influencerName: 'Pedro Santos',
-      niche: 'Fotografia & Estética',
-      campaignTitle: 'Branding Audiovisual outono 2026',
-      status: 'SCHEDULED',
-      escrowStatus: 'IN_PROGRESS',
-      deliverableType: '1x Reels Conceitual',
-      instagramLink: '',
-      metrics: {
-        views: 0,
-        likes: 0,
-        comments: 0,
-        engagementRate: '0.0%',
-        linkClicks: 142,
-        salesCount: 0,
-        revenue: 0.00
-      },
-      couponCode: 'PEDRO15',
-      commissionRate: '12%',
-      payoutStatus: 'Em Garantia (Escrow Retido)'
-    }
-  ];
-
-  // MOCK CREATOR CAMPAIGN DATA
+  // Dados de campanhas de influenciador
   const influencerCampaigns = [
     {
       id: 'c1',
@@ -132,12 +88,12 @@ export default function CampaignsPage() {
     },
     {
       id: 'c2',
-      brandName: 'Marca Premium Ltda',
-      segment: 'Moda & E-commerce',
-      campaignTitle: 'Branding Audiovisual outono 2026',
-      status: 'APPROVED', // APPROVED AND WAITING POST
+      brandName: 'Samsung Brasil',
+      segment: 'Tecnologia & Inovação',
+      campaignTitle: 'Lançamento Fone Galaxy Buds Pro',
+      status: 'IN_PRODUCTION',
       escrowStatus: 'IN_PROGRESS',
-      deliverableType: '1x Reels Conceitual',
+      deliverableType: '1x Reels Demonstrativo (60s)',
       instagramLink: '',
       metrics: {
         views: 0,
@@ -147,360 +103,310 @@ export default function CampaignsPage() {
         linkClicks: 142,
         salesCount: 0,
         revenue: 0.00,
-        myEarnings: 0.00
+        myEarnings: 2975.00
       },
-      couponCode: 'PEDRO15',
-      commissionRate: '12%'
+      couponCode: 'GALAXY15',
+      commissionRate: '15%'
+    }
+  ];
+
+  // Dados de campanhas corporativas (Empresas)
+  const companyCampaigns = [
+    {
+      id: 'c1',
+      influencer: 'demo.influencer',
+      influencerName: 'Alice Souza',
+      niche: 'Fashion & Lifestyle',
+      campaignTitle: 'Campanha Summer Collection 2026',
+      status: 'POSTED',
+      escrowStatus: 'COMPLETED',
+      deliverableType: '1x Reels + 3x Stories',
+      instagramLink: 'https://instagram.com',
+      metrics: {
+        views: 18500,
+        likes: 1240,
+        comments: 85,
+        engagementRate: '4.8%',
+        linkClicks: 8540,
+        salesCount: 124,
+        revenue: 12450.00
+      },
+      couponCode: 'SUMMER10',
+      commissionRate: '10%',
+      payoutStatus: 'Liberado na Carteira'
     }
   ];
 
   return (
-    <div className="p-4 md:p-10 max-w-7xl mx-auto space-y-10 animate-in fade-in duration-500 pb-32">
-      
-      {/* Header */}
-      <header className={`flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b ${
-        isDark ? 'border-zinc-800/50' : 'border-zinc-200'
-      }`}>
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-             <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_10px_2px_rgba(217,107,39,0.5)]" />
-             <span className="text-[10px] font-black text-orange-400 uppercase tracking-[0.3em]">Live_Campaign_Auditor</span>
+    <div className="w-full space-y-8 text-slate-900 bg-[#FAFAFA] min-h-screen pb-32">
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          1. HEADER SUPERIOR - CAMPANHAS & CONVERSÃO EM TEMPO REAL
+      ══════════════════════════════════════════════════════════════════════ */}
+      <header className="p-6 md:p-8 rounded-[2.5rem] bg-white border border-slate-200/80 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <span className="px-3 py-1 rounded-full text-xs font-black bg-orange-50 text-orange-600 border border-orange-200 flex items-center gap-1.5">
+              <Radio className="w-3.5 h-3.5 text-orange-500 animate-pulse" /> Live Campaign Auditor
+            </span>
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> SafePay Escrow Protegido
+            </span>
           </div>
-          <h1 className="text-3xl md:text-5xl font-black text-current tracking-tight">
-            Campanhas <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-500">Ativas</span>
+          <h1 className="text-2xl md:text-4xl font-black tracking-tight text-slate-950">
+            Campanhas <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500">Ativas & Conversão</span>
           </h1>
-          <p className="text-zinc-550 dark:text-zinc-400 font-medium text-sm mt-2">
+          <p className="text-xs md:text-sm text-slate-500 font-medium max-w-2xl">
             {isCompany 
-              ? 'Rastreamento em tempo real de cliques, conversões de vendas, cupons ativos e engajamento orgânico de criadores.'
-              : 'Acompanhe suas parcerias ativas, cliques no seu link personalizado, vendas com seu cupom e comissões ganhas.'}
+              ? 'Rastreamento em tempo real de cliques, conversões de vendas por cupom, ROI e esteira de entregáveis dos influenciadores.'
+              : 'Acompanhe suas parcerias ativas, cliques em links de stories, vendas com seu cupom exclusivo e comissões liberadas no SafePay.'}
           </p>
         </div>
-        
-        {isCompany && (
-          <Link 
-            href="/dashboard/company/new-contract" 
-            className="flex items-center gap-2 bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-md transition-all active:scale-95"
-          >
-            Lançar Nova Campanha
-          </Link>
-        )}
+
+        <div className="flex items-center gap-3 self-start xl:self-auto flex-wrap">
+          {isCompany ? (
+            <Link 
+              href="/dashboard/company/new-contract" 
+              className="px-7 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 hover:from-orange-500 hover:to-amber-400 transition-all shadow-lg shadow-orange-500/25 active:scale-95 flex items-center gap-2"
+            >
+              <DollarSign className="w-4 h-4" /> Lançar Nova Campanha
+            </Link>
+          ) : (
+            <button
+              onClick={() => handleCopyTrackLink('Campanha')}
+              className="px-6 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm hover:shadow transition-all flex items-center gap-2 active:scale-95"
+            >
+              <LinkIcon className="w-4 h-4 text-orange-600" />
+              Copiar Link Rastreável
+            </button>
+          )}
+        </div>
       </header>
 
-      {isCompany ? (
-        // COMPANY CAMPAIGNS VIEW
-        <div className="space-y-10">
-          {companyCampaigns.map((campaign) => (
+      {/* ══════════════════════════════════════════════════════════════════════
+          2. FEED DE CAMPANHAS ATIVAS (CARDS RICOS EM DADOS)
+      ══════════════════════════════════════════════════════════════════════ */}
+      <div className="space-y-6">
+        {(isCompany ? companyCampaigns : influencerCampaigns).map((campaign) => {
+          const isPosted = campaign.status === 'POSTED';
+
+          return (
             <div 
               key={campaign.id}
-              className={`p-6 md:p-8 rounded-[2.5rem] border shadow-lg space-y-8 ${
-                isDark ? 'bg-black/35 border-white/5' : 'bg-white border-zinc-200 shadow-zinc-100/50'
-              }`}
+              className="p-6 md:p-8 rounded-[2.5rem] bg-white border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-orange-300 transition-all space-y-6"
             >
-              {/* Campaign Header */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-6">
-                <div>
-                  <div className="flex items-center gap-2 text-[10px] font-black text-orange-500 uppercase tracking-wider mb-1">
-                    <Radio className="w-4 h-4 animate-pulse" /> Campanha em Andamento
-                  </div>
-                  <h3 className="text-2xl font-black text-current">{campaign.campaignTitle}</h3>
-                  <p className="text-xs text-zinc-455 dark:text-zinc-400 font-semibold mt-1">
-                    Influenciador contratado: <span className="text-current">@{campaign.influencer}</span> ({campaign.influencerName} • {campaign.niche})
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                    campaign.status === 'POSTED'
-                      ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                      : 'bg-amber-500/10 text-amber-500 border border-amber-500/20 animate-pulse'
-                  }`}>
-                    {campaign.status === 'POSTED' ? 'CONTEÚDO PUBLICADO' : 'AGUARDANDO POSTAGEM'}
-                  </span>
-                  <span className="text-[10px] font-black text-zinc-550 dark:text-zinc-550 uppercase tracking-widest">
-                    {campaign.payoutStatus}
-                  </span>
-                </div>
-              </div>
-
-              {/* Live Tracking Performance Metrics */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-zinc-950/60 border-zinc-900' : 'bg-zinc-50 border-zinc-200'}`}>
-                  <span className="text-[9px] font-black text-zinc-550 dark:text-zinc-500 uppercase tracking-wider block mb-1">Cliques no Link</span>
-                  <div className="text-3xl font-black text-current tracking-tighter flex items-center gap-2">
-                    <LinkIcon className="w-5 h-5 text-orange-500" /> {campaign.metrics.linkClicks.toLocaleString('pt-BR')}
-                  </div>
-                  <span className="text-[8px] text-zinc-400 mt-1 block">Cliques orgânicos rastreados</span>
-                </div>
-
-                <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-zinc-950/60 border-zinc-900' : 'bg-zinc-50 border-zinc-200'}`}>
-                  <span className="text-[9px] font-black text-zinc-555 dark:text-zinc-500 uppercase tracking-wider block mb-1">Vendas pelo Cupom</span>
-                  <div className="text-3xl font-black text-emerald-500 tracking-tighter flex items-center gap-2">
-                    <ShoppingBag className="w-5 h-5" /> {campaign.metrics.salesCount}
-                  </div>
-                  <span className="text-[8px] text-zinc-400 mt-1 block">Código cupom: <strong className="text-orange-500">{campaign.couponCode}</strong></span>
-                </div>
-
-                <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-zinc-950/60 border-zinc-900' : 'bg-zinc-50 border-zinc-200'}`}>
-                  <span className="text-[9px] font-black text-zinc-555 dark:text-zinc-500 uppercase tracking-wider block mb-1">Faturamento Gerado</span>
-                  <div className="text-3xl font-black text-emerald-500 tracking-tighter flex items-center gap-1">
-                    R$ {campaign.metrics.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </div>
-                  <span className="text-[8px] text-zinc-400 mt-1 block">Comissão influencer: {campaign.commissionRate}</span>
-                </div>
-
-                <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-zinc-950/60 border-zinc-900' : 'bg-zinc-50 border-zinc-200'}`}>
-                  <span className="text-[9px] font-black text-zinc-555 dark:text-zinc-500 uppercase tracking-wider block mb-1">Engajamento Social</span>
-                  <div className="text-3xl font-black text-current tracking-tighter flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-orange-500" /> {campaign.metrics.engagementRate}
-                  </div>
-                  <span className="text-[8px] text-zinc-400 mt-1 block">{campaign.metrics.likes} likes • {campaign.metrics.comments} coms</span>
-                </div>
-              </div>
-
-              {/* Status Timeline */}
-              <div className={`p-5 rounded-2xl flex flex-wrap items-center justify-between gap-4 text-xs font-semibold ${
-                isDark ? 'bg-zinc-950/40 border border-zinc-900' : 'bg-zinc-50/50 border border-zinc-200'
-              }`}>
-                <div className="flex items-center gap-6 flex-wrap">
-                  <span className="text-[9px] font-black uppercase text-zinc-500 tracking-widest">Esteira do Escrow:</span>
-                  <span className="flex items-center gap-1 text-emerald-500"><CheckCircle2 className="w-4 h-4" /> Contrato Assinado</span>
-                  <span className="flex items-center gap-1 text-emerald-500"><CheckCircle2 className="w-4 h-4" /> Saldo em Garantia</span>
-                  <span className={`flex items-center gap-1 ${campaign.status === 'POSTED' ? 'text-emerald-500' : 'text-zinc-500'}`}>
-                    <CheckCircle2 className="w-4 h-4" /> Conteúdo Validado
-                  </span>
-                  <span className={`flex items-center gap-1 ${campaign.status === 'POSTED' && campaign.escrowStatus === 'COMPLETED' ? 'text-emerald-500' : 'text-zinc-500'}`}>
-                    <CheckCircle2 className="w-4 h-4" /> Pagamento Pago
-                  </span>
-                </div>
-
-                {campaign.status === 'POSTED' && (
-                  <a 
-                    href={campaign.instagramLink} 
-                    target="_blank" 
-                    rel="noreferrer"
-                    className="text-[10px] font-black uppercase tracking-wider text-orange-500 hover:text-orange-600 flex items-center gap-1"
-                  >
-                    Ver Postagem no Instagram <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        // INFLUENCER CAMPAIGNS VIEW
-        <div className="space-y-10">
-          {influencerCampaigns.map((campaign) => (
-            <div 
-              key={campaign.id}
-              className={`p-6 md:p-8 rounded-[2.5rem] border shadow-lg space-y-8 ${
-                isDark ? 'bg-black/35 border-white/5' : 'bg-white border-zinc-200 shadow-zinc-100/50'
-              }`}
-            >
-              {/* Campaign Header */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-6">
-                <div>
-                  <div className="flex items-center gap-2 text-[10px] font-black text-orange-500 uppercase tracking-wider mb-1">
+              {/* Topo do Card: Informações da Campanha e Status */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-orange-600">
                     <Radio className="w-4 h-4 animate-pulse" /> Campanha Ativa
                   </div>
-                  <h3 className="text-2xl font-black text-current">{campaign.campaignTitle}</h3>
-                  <p className="text-xs text-zinc-455 dark:text-zinc-400 font-semibold mt-1">
-                    Marca parceira: <span className="text-current">{campaign.brandName}</span> ({campaign.segment})
+                  <h3 className="text-xl md:text-2xl font-black text-slate-950 tracking-tight">
+                    {campaign.campaignTitle}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                    {isCompany ? (
+                      <>Criador: <strong className="text-slate-900">@{(campaign as any).influencer}</strong> ({(campaign as any).influencerName})</>
+                    ) : (
+                      <>Marca parceira: <strong className="text-slate-900">{(campaign as any).brandName}</strong> ({(campaign as any).segment})</>
+                    )}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                    campaign.status === 'POSTED'
-                      ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                      : 'bg-amber-500/10 text-amber-500 border border-amber-500/20 animate-pulse'
+                <div className="flex items-center gap-3 self-start lg:self-auto flex-wrap">
+                  <span className={`px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-wider border ${
+                    isPosted
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse'
                   }`}>
-                    {campaign.status === 'POSTED' ? 'PUBLICADO' : 'ROTEIRO APROVADO • WAITING POST'}
+                    {isPosted ? '✓ Publicado & Auditado' : '⚡ Roteiro em Produção'}
                   </span>
-                  <span className="text-[10px] font-black text-zinc-550 dark:text-zinc-400 uppercase tracking-widest">
+
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
                     {campaign.deliverableType}
                   </span>
                 </div>
               </div>
 
-              {/* Performance / Commission Metrics */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-zinc-950/60 border-zinc-900' : 'bg-zinc-50 border-zinc-200'}`}>
-                  <span className="text-[9px] font-black text-zinc-550 dark:text-zinc-500 uppercase tracking-wider block mb-1">Cliques no seu Link</span>
-                  <div className="text-3xl font-black text-current tracking-tighter flex items-center gap-2">
-                    <LinkIcon className="w-5 h-5 text-orange-500" /> {campaign.metrics.linkClicks.toLocaleString('pt-BR')}
+              {/* Grade de 4 Métricas de Conversão em Tempo Real */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                
+                {/* 1. Cliques no Link */}
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Cliques no seu Link</span>
+                    <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold">
+                      <LinkIcon className="w-4 h-4" />
+                    </div>
                   </div>
-                  <span className="text-[8px] text-zinc-400 mt-1 block">Rastreado de sua bio/stories</span>
+                  <div className="text-2xl font-black text-slate-950">
+                    {campaign.metrics.linkClicks.toLocaleString('pt-BR')}
+                  </div>
+                  <span className="text-[10px] text-slate-500 font-medium block">Rastreado de Stories e Bio</span>
                 </div>
 
-                <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-zinc-950/60 border-zinc-900' : 'bg-zinc-50 border-zinc-200'}`}>
-                  <span className="text-[9px] font-black text-zinc-555 dark:text-zinc-500 uppercase tracking-wider block mb-1">Vendas com seu Cupom</span>
-                  <div className="text-3xl font-black text-emerald-500 tracking-tighter flex items-center gap-2">
-                    <ShoppingBag className="w-5 h-5" /> {campaign.metrics.salesCount}
+                {/* 2. Vendas com Cupom */}
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Vendas com seu Cupom</span>
+                    <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold">
+                      <ShoppingBag className="w-4 h-4" />
+                    </div>
                   </div>
-                  <span className="text-[8px] text-zinc-400 mt-1 block">Cupom ativo: <strong className="text-orange-500">{campaign.couponCode}</strong></span>
+                  <div className="text-2xl font-black text-emerald-600">
+                    {campaign.metrics.salesCount} <span className="text-xs font-bold text-slate-400">pedidos</span>
+                  </div>
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[10px] text-slate-500 font-medium">Cupom: <strong className="text-orange-600 font-mono">{campaign.couponCode}</strong></span>
+                    <button 
+                      onClick={() => handleCopyCoupon(campaign.couponCode)}
+                      className="text-[10px] font-black text-orange-600 hover:underline flex items-center gap-0.5"
+                    >
+                      {copiedCoupon === campaign.couponCode ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                    </button>
+                  </div>
                 </div>
 
-                <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-zinc-950/60 border-zinc-900' : 'bg-zinc-50 border-zinc-200'}`}>
-                  <span className="text-[9px] font-black text-zinc-555 dark:text-zinc-500 uppercase tracking-wider block mb-1">Sua Comissão (Ganha)</span>
-                  <div className="text-3xl font-black text-emerald-500 tracking-tighter flex items-center gap-1">
-                    R$ {campaign.metrics.myEarnings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                {/* 3. Sua Comissão Ganha (SafePay) */}
+                <div className="p-5 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800">Sua Remuneração SafePay</span>
+                    <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-sm">
+                      <DollarSign className="w-4 h-4" />
+                    </div>
                   </div>
-                  <span className="text-[8px] text-zinc-400 mt-1 block">Alíquota de Comissão: {campaign.commissionRate}</span>
+                  <div className="text-2xl font-black text-emerald-700">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((campaign.metrics as any).myEarnings || campaign.metrics.revenue)}
+                  </div>
+                  <span className="text-[10px] text-emerald-700 font-bold block">
+                    {isPosted ? '✓ Saldo Liberado na Carteira' : '🔒 Retido em Garantia Escrow'}
+                  </span>
                 </div>
 
-                <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-zinc-950/60 border-zinc-900' : 'bg-zinc-50 border-zinc-200'}`}>
-                  <span className="text-[9px] font-black text-zinc-555 dark:text-zinc-500 uppercase tracking-wider block mb-1">Visualizações Estimadas</span>
-                  <div className="text-3xl font-black text-current tracking-tighter flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-orange-500" /> {campaign.metrics.views >= 1000 ? `${(campaign.metrics.views / 1000).toFixed(1)}k` : campaign.metrics.views}
+                {/* 4. Visualizações Estimadas */}
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Visualizações & Engajamento</span>
+                    <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                      <TrendingUp className="w-4 h-4" />
+                    </div>
                   </div>
-                  <span className="text-[8px] text-zinc-400 mt-1 block">Engajamento: {campaign.metrics.engagementRate}</span>
+                  <div className="text-2xl font-black text-slate-950">
+                    {campaign.metrics.views > 0 ? `${(campaign.metrics.views / 1000).toFixed(1)}k views` : 'Em processamento'}
+                  </div>
+                  <span className="text-[10px] text-slate-500 font-medium block">
+                    Taxa de Engajamento: <strong className="text-slate-800">{campaign.metrics.engagementRate}</strong>
+                  </span>
                 </div>
+
               </div>
 
-              {/* Status Timeline */}
-              <div className={`p-5 rounded-2xl flex flex-wrap items-center justify-between gap-4 text-xs font-semibold ${
-                isDark ? 'bg-zinc-950/40 border border-zinc-900' : 'bg-zinc-50/50 border border-zinc-200'
-              }`}>
-                <div className="flex items-center gap-6 flex-wrap">
-                  <span className="text-[9px] font-black uppercase text-zinc-500 tracking-widest">Esteira do Escrow:</span>
-                  <span className="flex items-center gap-1 text-emerald-500"><CheckCircle2 className="w-4 h-4" /> Proposta Aceita</span>
-                  <span className="flex items-center gap-1 text-emerald-500"><CheckCircle2 className="w-4 h-4" /> Saldo Bloqueado em Escrow</span>
-                  <span className={`flex items-center gap-1 ${campaign.status === 'POSTED' ? 'text-emerald-500' : 'text-zinc-500'}`}>
-                    <CheckCircle2 className="w-4 h-4" /> Reels/Stories Postados
+              {/* Esteira do Escrow (Stepper Visual de Alta Performance) */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex items-center gap-4 flex-wrap text-xs">
+                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Esteira do Escrow:</span>
+                  <span className="flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Proposta Aceita
                   </span>
-                  <span className={`flex items-center gap-1 ${campaign.status === 'POSTED' && campaign.escrowStatus === 'COMPLETED' ? 'text-emerald-500' : 'text-zinc-500'}`}>
-                    <CheckCircle2 className="w-4 h-4" /> Saldo Liberado na Carteira
+                  <span className="flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Saldo Bloqueado
+                  </span>
+                  <span className={`flex items-center gap-1 font-bold px-2 py-0.5 rounded border ${
+                    isPosted ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-amber-700 bg-amber-50 border-amber-200'
+                  }`}>
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Reels/Stories Postados
+                  </span>
+                  <span className={`flex items-center gap-1 font-bold px-2 py-0.5 rounded border ${
+                    isPosted ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-slate-400 bg-slate-100 border-slate-200'
+                  }`}>
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Saldo Liberado
                   </span>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  {campaign.status === 'POSTED' && (
+                <div className="flex items-center gap-3 self-end md:self-auto">
+                  {isPosted && campaign.instagramLink && (
                     <a 
                       href={campaign.instagramLink} 
                       target="_blank" 
                       rel="noreferrer"
-                      className="text-[10px] font-black uppercase tracking-wider text-orange-500 hover:text-orange-600 flex items-center gap-1"
+                      className="px-4 py-2 bg-white hover:bg-slate-100 border border-slate-200 text-orange-600 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm"
                     >
-                      Ver Post <ExternalLink className="w-3 h-3" />
+                      Ver Post <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                   )}
-                  {campaign.status === 'APPROVED' && (
+
+                  {!isPosted && (
                     <button 
-                      onClick={() => toast.info('Link do seu cupom de vendas e tracking copiados para Stories!')}
-                      className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-[9px] font-black uppercase tracking-wider"
+                      onClick={() => handleCopyTrackLink(campaign.campaignTitle)}
+                      className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-orange-500/20 active:scale-95 transition-all"
                     >
                       Obter Link de Stories
                     </button>
                   )}
                 </div>
               </div>
+
             </div>
-          ))}
+          );
+        })}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          3. SEÇÃO DE AGÊNCIAS & REPRESENTAÇÃO COMERCIAL
+      ══════════════════════════════════════════════════════════════════════ */}
+      <section className="p-6 md:p-8 rounded-[2.5rem] bg-white border border-slate-200/80 shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-orange-600" />
+              <h3 className="text-lg font-black text-slate-950">
+                {isCompany ? 'Agenciamento & Representação Corporativa' : 'Minha Agência de Representação'}
+              </h3>
+            </div>
+            <p className="text-xs text-slate-400 font-medium">
+              Gestão de contratos, repasse de faturamento e mediação de marcas.
+            </p>
+          </div>
+
+          <span className="px-3.5 py-1.5 rounded-xl text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Vínculo Ativo & Regularizado
+          </span>
         </div>
-      )}
 
-      {/* Agency Management Section */}
-      <section className={`border rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-10 shadow-sm relative overflow-hidden ${
-        isDark ? 'bg-black/35 border-white/5' : 'bg-white border-zinc-200 shadow-zinc-100/50'
-      }`}>
-         <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12">
-            <Building className="w-64 h-64 text-zinc-700" />
-         </div>
-         
-         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 md:mb-12 gap-4">
-            <div className="space-y-1">
-               <div className="flex items-center gap-2 text-orange-500 font-black text-[10px] md:text-[11px] tracking-[0.4em] uppercase">
-                 <Building className="w-4 h-4" /> Agency_Group_2026
-               </div>
-               <h2 className="text-2xl md:text-3xl font-black text-current tracking-tighter">
-                 {isCompany ? 'Agenciamento & Representação' : 'Minhas Agências Vinculadas'}
-               </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-orange-600 text-white flex items-center justify-center font-black text-sm shadow-md shadow-orange-500/20">
+                NA
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-slate-900">NextAgency Talentos Ltda</h4>
+                <p className="text-xs text-slate-400 font-medium">Agente Comercial: Marcus Silva</p>
+              </div>
             </div>
-            <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-full border ${
-              isDark ? 'bg-white/5 border-white/10 text-zinc-400' : 'bg-zinc-100 border-zinc-250 text-zinc-550'
-            }`}>
-               Mapeado via Contrato
-            </span>
-         </div>
+            <p className="text-xs text-slate-600 leading-relaxed font-medium">
+              Sua agência gerencia negociações de cachet, aprovações de briefing e cobrança automática das marcas.
+            </p>
+          </div>
 
-         {isCompany ? (
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-             <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-zinc-950/40 border-zinc-900' : 'bg-zinc-50 border-zinc-250 shadow-sm'}`}>
-               <h4 className="text-base font-black text-current mb-4 uppercase">Agência Representante</h4>
-               <div className="space-y-3">
-                 <div className="flex items-center gap-3">
-                   <div className="w-10 h-10 rounded-xl bg-orange-600/10 border border-orange-500/20 flex items-center justify-center text-orange-500 font-black text-sm">
-                     NA
-                   </div>
-                   <div>
-                     <p className="text-xs font-black text-current">NextAgency Talentos Ltda</p>
-                     <p className="text-[9px] text-zinc-500 font-bold uppercase">5 influenciadores vinculados à sua marca</p>
-                   </div>
-                 </div>
-                 <p className="text-xs text-zinc-555 dark:text-zinc-400 font-medium leading-relaxed">
-                   A agência gerencia o roteiro, entregáveis e faturamento consolidado das criadoras vinculadas sob sua esteira.
-                 </p>
-               </div>
-             </div>
-
-             <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-zinc-950/40 border-zinc-900' : 'bg-zinc-50 border-zinc-250 shadow-sm'}`}>
-               <h4 className="text-base font-black text-current mb-4 uppercase">Visão Consolidada de Agência</h4>
-               <div className="space-y-2 text-xs text-zinc-555 dark:text-zinc-400 font-medium">
-                 <div className="flex justify-between items-center pb-2 border-b border-white/5">
-                   <span>Influenciadores Ativos</span>
-                   <span className="font-black text-current">5 Criadores</span>
-                 </div>
-                 <div className="flex justify-between items-center pb-2 border-b border-white/5">
-                   <span>Faturamento Total Gerado</span>
-                   <span className="font-black text-emerald-500">R$ 45.240,00</span>
-                 </div>
-                 <div className="flex justify-between items-center">
-                   <span>Taxa Média de Engajamento</span>
-                   <span className="font-black text-orange-500">5.2%</span>
-                 </div>
-               </div>
-             </div>
-           </div>
-         ) : (
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-             <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-zinc-950/40 border-zinc-900' : 'bg-zinc-50 border-zinc-250 shadow-sm'}`}>
-               <h4 className="text-base font-black text-current mb-4 uppercase">Minha Agência Representante</h4>
-               <div className="space-y-3">
-                 <div className="flex items-center gap-3">
-                   <div className="w-10 h-10 rounded-xl bg-orange-600/10 border border-orange-500/20 flex items-center justify-center text-orange-500 font-black text-sm">
-                     NA
-                   </div>
-                   <div>
-                     <p className="text-xs font-black text-current">NextAgency Talentos Ltda</p>
-                     <p className="text-[9px] text-zinc-500 font-bold uppercase">Agente Principal: Marcus Silva</p>
-                   </div>
-                 </div>
-                 <p className="text-xs text-zinc-555 dark:text-zinc-400 font-medium leading-relaxed">
-                   Sua agência cuida do recebimento de faturamento, negociações com marcas e mediação de disputas para que você foque apenas na criação de conteúdo.
-                 </p>
-               </div>
-             </div>
-
-             <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-zinc-950/40 border-zinc-900' : 'bg-zinc-50 border-zinc-250 shadow-sm'}`}>
-               <h4 className="text-base font-black text-current mb-4 uppercase">Repasse de Comissões (Agência)</h4>
-               <div className="space-y-2 text-xs text-zinc-555 dark:text-zinc-400 font-medium">
-                 <div className="flex justify-between items-center pb-2 border-b border-white/5">
-                   <span>Taxa de Agenciamento</span>
-                   <span className="font-black text-current">20% sobre faturamento líquido</span>
-                 </div>
-                 <div className="flex justify-between items-center pb-2 border-b border-white/5">
-                   <span>Repasses Recebidos</span>
-                   <span className="font-black text-emerald-500">R$ 15.420,00</span>
-                 </div>
-                 <div className="flex justify-between items-center">
-                   <span>Status de Repasse</span>
-                   <span className="font-black text-emerald-500">Regularizado</span>
-                 </div>
-               </div>
-             </div>
-           </div>
-         )}
+          <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-200 text-xs">
+              <span className="text-slate-500 font-medium">Taxa de Agenciamento:</span>
+              <span className="font-black text-slate-900">20% sobre o líquido</span>
+            </div>
+            <div className="flex justify-between items-center pb-2 border-b border-slate-200 text-xs">
+              <span className="text-slate-500 font-medium">Repasses Recebidos Este Ano:</span>
+              <span className="font-black text-emerald-600">R$ 15.420,00</span>
+            </div>
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-slate-500 font-medium">Status de Pagamento:</span>
+              <span className="font-black text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-200">
+                100% em dia
+              </span>
+            </div>
+          </div>
+        </div>
       </section>
 
     </div>

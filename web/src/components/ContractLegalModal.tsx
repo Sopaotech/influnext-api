@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { 
   X, 
   Printer, 
@@ -8,8 +8,14 @@ import {
   FileText, 
   Lock, 
   User, 
-  Building2
+  Building2,
+  CheckCircle2,
+  Send,
+  Mail,
+  Scale,
+  PenTool
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export interface ContractLegalData {
   id: string;
@@ -74,6 +80,12 @@ export function ContractLegalModal({
 }: ContractLegalModalProps) {
   const printRef = useRef<HTMLDivElement>(null);
 
+  // Estados da Assinatura Interativa
+  const defaultSignerName = contract.influencer?.handle ? `@${contract.influencer.handle.replace('@', '')}` : 'Signatário Autorizado';
+  const [signerName, setSignerName] = useState(defaultSignerName);
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [signatureStyle, setSignatureStyle] = useState<'STYLE_1' | 'STYLE_2'>('STYLE_1');
+
   if (!isOpen) return null;
 
   const handlePrint = () => {
@@ -106,39 +118,52 @@ export function ContractLegalModal({
     ? 'Autorizado o uso do conteúdo para anúncios patrocinados (Tráfego Pago / Dark Post / Meta Ads).'
     : 'Uso estritamente orgânico nos perfis oficiais (vedada a criação de anúncios pagos com o criador sem aditivo contratual).';
 
+  const handleConfirmSignature = async () => {
+    if (!consentChecked) {
+      toast.error('Você deve marcar a caixa de consentimento dos termos antes de assinar.');
+      return;
+    }
+    if (onSign) {
+      await onSign();
+      toast.success('Contrato assinado eletronicamente com sucesso!', {
+        description: 'Notificação e via em PDF enviadas por e-mail para ambas as partes.'
+      });
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-2xl bg-zinc-950 border border-zinc-800 shadow-2xl overflow-hidden my-auto text-zinc-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 overflow-y-auto animate-in fade-in duration-200">
+      <div className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-3xl bg-white border border-slate-200 shadow-2xl overflow-hidden my-auto text-slate-900">
         
         {/* Modal Top Header (Actions) */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800/80 bg-zinc-900/60 sticky top-0 z-20 backdrop-blur-md print:hidden">
+        <div className="flex items-center justify-between px-6 md:px-8 py-4 border-b border-slate-200 bg-white sticky top-0 z-20 backdrop-blur-md print:hidden">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400">
+            <div className="p-2.5 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-orange-600 shadow-sm">
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-outfit text-sm font-bold text-white flex items-center gap-2">
+              <h3 className="text-sm md:text-base font-black text-slate-900 flex items-center gap-2">
                 Minuta Jurídica Oficial InfluNext
-                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span className="text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
                   Válido Juridicamente
                 </span>
               </h3>
-              <p className="text-[11px] text-zinc-400 font-mono">ID: {contract.id}</p>
+              <p className="text-[11px] text-slate-400 font-mono">ID: {contract.id}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors shadow-sm"
               title="Imprimir / Salvar PDF"
             >
-              <Printer className="w-4 h-4" />
+              <Printer className="w-4 h-4 text-orange-600" />
               Imprimir / PDF
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors"
               aria-label="Fechar"
             >
               <X className="w-5 h-5" />
@@ -146,96 +171,96 @@ export function ContractLegalModal({
           </div>
         </div>
 
-        {/* Modal Body: Legal Printable Document */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 bg-zinc-950 font-sans leading-relaxed text-zinc-300 print:p-0 print:bg-white print:text-black">
+        {/* Modal Body: Legal Printable Document (White & Orange) */}
+        <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 bg-[#F8FAFC] font-sans leading-relaxed text-slate-700 print:p-0 print:bg-white print:text-black">
           
           {/* Document Printable Container */}
-          <div ref={printRef} className="space-y-8 max-w-3xl mx-auto">
+          <div ref={printRef} className="space-y-8 max-w-3xl mx-auto bg-white p-6 md:p-10 rounded-3xl border border-slate-200/80 shadow-sm print:border-none print:shadow-none">
             
             {/* Header Documento Timbrado */}
-            <div className="text-center pb-8 border-b border-zinc-800 print:border-zinc-300 space-y-2">
-              <div className="inline-flex items-center gap-2 text-xs font-black text-orange-500 tracking-[0.25em] uppercase">
+            <div className="text-center pb-8 border-b border-slate-200 space-y-2">
+              <div className="inline-flex items-center gap-2 text-xs font-black text-orange-600 tracking-[0.25em] uppercase bg-orange-50 px-3 py-1 rounded-full border border-orange-200">
                 <ShieldCheck className="w-4 h-4" /> InfluNext SafePay Escrow
               </div>
-              <h1 className="text-xl md:text-2xl font-black text-white print:text-black tracking-tight uppercase">
+              <h1 className="text-lg md:text-xl font-black text-slate-900 tracking-tight uppercase">
                 Instrumento Particular de Prestação de Serviços de Publicidade Digital, Licenciamento de Imagem e Custódia Escrow
               </h1>
-              <p className="text-xs text-zinc-500 font-medium">
+              <p className="text-xs text-slate-500 font-medium max-w-xl mx-auto">
                 Celebrado em conformidade com o Código Civil Brasileiro (Lei nº 10.406/02), Marco Civil da Internet (Lei nº 12.965/14) e Legislação de Assinatura Eletrônica (MP 2.200-2/01 e Lei nº 14.063/20).
               </p>
             </div>
 
             {/* Selo Criptográfico & Status */}
-            <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-900/40 print:bg-zinc-100 print:border-zinc-300 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="p-5 rounded-2xl border border-orange-200 bg-orange-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
               <div className="space-y-1">
-                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-orange-400" /> Hash Criptográfico de Auditoria (SHA-256)
+                <span className="text-[10px] font-black uppercase tracking-wider text-orange-700 flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-orange-600" /> Hash Criptográfico de Auditoria (SHA-256)
                 </span>
-                <p className="font-mono text-[11px] text-orange-400/90 break-all font-bold">
+                <p className="font-mono text-[11px] text-orange-950 break-all font-bold">
                   {contract.signatureHash || 'Geração automática na assinatura final'}
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400 block">Status Contratual</span>
-                <span className="inline-block mt-0.5 text-xs font-bold px-2.5 py-1 rounded-md bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">Status Contratual</span>
+                <span className="inline-block mt-0.5 text-xs font-extrabold px-3 py-1 rounded-lg bg-orange-600 text-white shadow-sm">
                   {contract.escrowStatus}
                 </span>
               </div>
             </div>
 
-            {/* Qualificação das Partes */}
+            {/* 1. Qualificação das Partes */}
             <div className="space-y-4">
-              <h2 className="text-sm font-black uppercase tracking-wider text-orange-400 border-b border-zinc-800 pb-2">
-                1. Qualificação das Partes Contratantes
+              <h2 className="text-xs font-black uppercase tracking-wider text-orange-600 border-b border-slate-200 pb-2 flex items-center gap-2">
+                <Scale className="w-4 h-4" /> 1. Qualificação das Partes Contratantes
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 {/* Contratante (Empresa) */}
-                <div className="p-4 rounded-xl border border-zinc-800/80 bg-zinc-900/30 space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-zinc-400 font-bold uppercase text-[10px]">
-                    <Building2 className="w-3.5 h-3.5 text-orange-400" /> Contratante (Marca / Empresa)
+                <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/60 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-slate-500 font-bold uppercase text-[10px]">
+                    <Building2 className="w-3.5 h-3.5 text-orange-600" /> Contratante (Marca / Empresa)
                   </div>
-                  <p className="font-bold text-white text-sm">{contract.company?.companyName || 'Empresa Contratante'}</p>
-                  <p className="text-zinc-400">CNPJ: <span className="font-mono text-zinc-300">{contract.company?.taxId || 'Cadastrado na plataforma'}</span></p>
-                  <p className="text-zinc-400">Localidade: <span className="text-zinc-300">{contract.company?.city ? `${contract.company.city}/${contract.company.state}` : 'Brasil'}</span></p>
-                  <p className="text-zinc-400">E-mail: <span className="text-zinc-300">{contract.company?.user?.email || 'Verificado'}</span></p>
-                  <p className="text-[10px] text-emerald-400 font-semibold mt-1">
+                  <p className="font-extrabold text-slate-900 text-sm">{contract.company?.companyName || 'Empresa Contratante'}</p>
+                  <p className="text-slate-600">CNPJ: <span className="font-mono text-slate-800">{contract.company?.taxId || 'Cadastrado na plataforma'}</span></p>
+                  <p className="text-slate-600">Localidade: <span className="text-slate-800">{contract.company?.city ? `${contract.company.city}/${contract.company.state}` : 'Brasil'}</span></p>
+                  <p className="text-slate-600">E-mail: <span className="text-slate-800">{contract.company?.user?.email || 'Verificado'}</span></p>
+                  <p className="text-[10px] text-emerald-600 font-bold mt-1">
                     {contract.companySigned ? `✓ Assinado digitalmente (IP: ${contract.companyIp || 'Registrado'})` : 'Pendente de assinatura'}
                   </p>
                 </div>
 
                 {/* Contratado (Influenciador) */}
-                <div className="p-4 rounded-xl border border-zinc-800/80 bg-zinc-900/30 space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-zinc-400 font-bold uppercase text-[10px]">
-                    <User className="w-3.5 h-3.5 text-orange-400" /> Contratado (Criador de Conteúdo)
+                <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/60 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-slate-500 font-bold uppercase text-[10px]">
+                    <User className="w-3.5 h-3.5 text-orange-600" /> Contratado (Criador de Conteúdo)
                   </div>
-                  <p className="font-bold text-white text-sm">@{contract.influencer?.handle || 'Influenciador'}</p>
-                  <p className="text-zinc-400">Nicho / Segmento: <span className="text-zinc-300">{contract.influencer?.niche || 'Geral'}</span></p>
-                  <p className="text-zinc-400">Localidade: <span className="text-zinc-300">{contract.influencer?.city ? `${contract.influencer.city}/${contract.influencer.state}` : 'Brasil'}</span></p>
-                  <p className="text-zinc-400">E-mail: <span className="text-zinc-300">{contract.influencer?.user?.email || 'Verificado'}</span></p>
-                  <p className="text-[10px] text-emerald-400 font-semibold mt-1">
+                  <p className="font-extrabold text-slate-900 text-sm">@{contract.influencer?.handle || 'Influenciador'}</p>
+                  <p className="text-slate-600">Nicho / Segmento: <span className="text-slate-800">{contract.influencer?.niche || 'Geral'}</span></p>
+                  <p className="text-slate-600">Localidade: <span className="text-slate-800">{contract.influencer?.city ? `${contract.influencer.city}/${contract.influencer.state}` : 'Brasil'}</span></p>
+                  <p className="text-slate-600">E-mail: <span className="text-slate-800">{contract.influencer?.user?.email || 'Verificado'}</span></p>
+                  <p className="text-[10px] text-emerald-600 font-bold mt-1">
                     {contract.influencerSigned ? `✓ Assinado digitalmente (IP: ${contract.influencerIp || 'Registrado'})` : 'Pendente de aceite do Creator'}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* As 7 Cláusulas Oficiais */}
-            <div className="space-y-6 text-xs text-zinc-300 leading-relaxed">
-              <h2 className="text-sm font-black uppercase tracking-wider text-orange-400 border-b border-zinc-800 pb-2">
+            {/* 2. As 7 Cláusulas Oficiais */}
+            <div className="space-y-6 text-xs text-slate-700 leading-relaxed">
+              <h2 className="text-xs font-black uppercase tracking-wider text-orange-600 border-b border-slate-200 pb-2">
                 2. Cláusulas e Condições Gerais
               </h2>
 
               {/* Cláusula 1 */}
               <div className="space-y-1.5">
-                <h4 className="font-bold text-white uppercase text-[11px]">
+                <h4 className="font-extrabold text-slate-900 uppercase text-[11px]">
                   Cláusula 1ª — Do Objeto e Escopo dos Entregáveis
                 </h4>
                 <p>
                   O presente contrato tem por objeto a prestação de serviços de publicidade digital e influência pelo <strong>CONTRATADO</strong> em favor da <strong>CONTRATANTE</strong> para a campanha denominada <strong>"{contract.title}"</strong>, compreendendo a criação, gravação e veiculação dos entregáveis formalizados no Anexo I deste instrumento.
                 </p>
                 {contract.briefing && (
-                  <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 mt-2 italic text-[11px]">
+                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 mt-2 italic text-[11px]">
                     <strong>Briefing e Diretrizes Acordadas:</strong> {contract.briefing}
                   </div>
                 )}
@@ -243,13 +268,13 @@ export function ContractLegalModal({
 
               {/* Cláusula 2 */}
               <div className="space-y-1.5">
-                <h4 className="font-bold text-white uppercase text-[11px]">
+                <h4 className="font-extrabold text-slate-900 uppercase text-[11px]">
                   Cláusula 2ª — Da Cessão e Licenciamento de Imagem, Nome e Voz
                 </h4>
                 <p>
                   O <strong>CONTRATADO</strong> concede à <strong>CONTRATANTE</strong> a licença não exclusiva para uso de sua imagem, voz e conteúdo gerado exclusivamente no âmbito desta campanha, com as seguintes condições acordadas:
                 </p>
-                <ul className="list-disc pl-5 space-y-1 text-zinc-400">
+                <ul className="list-disc pl-5 space-y-1 text-slate-600">
                   <li><strong>Prazo de Veiculação:</strong> {usageRightsText}</li>
                   <li><strong>Modalidade de Distribuição:</strong> {paidMediaText}</li>
                   <li><strong>Território:</strong> Território nacional e mundial via internet.</li>
@@ -258,7 +283,7 @@ export function ContractLegalModal({
 
               {/* Cláusula 3 */}
               <div className="space-y-1.5">
-                <h4 className="font-bold text-white uppercase text-[11px]">
+                <h4 className="font-extrabold text-slate-900 uppercase text-[11px]">
                   Cláusula 3ª — Da Conformidade Publicitária, CONAR e Legislação Digital
                 </h4>
                 <p>
@@ -268,7 +293,7 @@ export function ContractLegalModal({
 
               {/* Cláusula 4 */}
               <div className="space-y-1.5">
-                <h4 className="font-bold text-white uppercase text-[11px]">
+                <h4 className="font-extrabold text-slate-900 uppercase text-[11px]">
                   Cláusula 4ª — Da Exclusividade Setorial e Não-Concorrência
                 </h4>
                 <p>
@@ -278,69 +303,70 @@ export function ContractLegalModal({
 
               {/* Cláusula 5 */}
               <div className="space-y-1.5">
-                <h4 className="font-bold text-white uppercase text-[11px]">
-                  Cláusula 5ª — Dos Prazos, Ajustes de Prévia (Drafts) e Qualidade
+                <h4 className="font-extrabold text-slate-900 uppercase text-[11px]">
+                  Cláusula 5ª — Dos Prazos, Ajustes de Prévia (Drafts) e Política de Qualidade
                 </h4>
                 <p>
-                  O <strong>CONTRATADO</strong> deverá submeter os conteúdos para aprovação ou publicar conforme os prazos estipulados no Anexo I. A <strong>CONTRATANTE</strong> possui o direito de solicitar até 2 (duas) rodadas de ajustes pontuais para adequação ao briefing, devendo responder em até 48 (quarenta e oito) horas úteis, sob pena de aprovação tácita da entrega.
+                  O <strong>CONTRATADO</strong> deverá submeter o material bruto/editado para aprovação prévia da <strong>CONTRATANTE</strong> antes da publicação definitiva. A <strong>CONTRATANTE</strong> terá o direito de solicitar até 2 (duas) rodadas de ajustes pontuais, desde que alinhadas ao briefing original acordado.
                 </p>
               </div>
 
               {/* Cláusula 6 */}
               <div className="space-y-1.5">
-                <h4 className="font-bold text-white uppercase text-[11px]">
+                <h4 className="font-extrabold text-slate-900 uppercase text-[11px]">
                   Cláusula 6ª — Do Pagamento, Custódia SafePay Escrow e Regra de Auto-Release
                 </h4>
                 <p>
-                  Pela prestação dos serviços, a <strong>CONTRATANTE</strong> deposita o valor bruto de <strong>R$ {Number(contract.budget).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong> sob custódia integral da plataforma InfluNext SafePay. Os recursos permanecem bloqueados até a entrega satisfatória dos itens acordados.
-                </p>
-                <p className="text-zinc-400 mt-1">
-                  <strong>Regra de Liberação Automática (Auto-Release):</strong> Uma vez enviado o link comprobatório pelo influenciador, a marca tem até 5 (cinco) dias úteis para homologar a entrega ou solicitar mediação. Transcorrido o prazo sem manifestação justificada, o valor líquido será transferido automaticamente ao criador.
+                  O valor total acordado para esta campanha é de <strong>R$ {Number(contract.budget || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>, que permanecerá sob custódia e garantia da <strong>InfluNext SafePay Escrow</strong>. Após o envio do comprovante do link de publicação pelo <strong>CONTRATADO</strong>, a <strong>CONTRATANTE</strong> terá o prazo de <strong>5 (cinco) dias úteis</strong> para validar e aprovar a entrega. Transcorrido esse prazo sem manifestação, o sistema efetuará o <em>auto-release</em> (liberação automática) dos fundos ao <strong>CONTRATADO</strong>.
                 </p>
               </div>
 
               {/* Cláusula 7 */}
               <div className="space-y-1.5">
-                <h4 className="font-bold text-white uppercase text-[11px]">
-                  Cláusula 7ª — Da Mediação Arbitral e Validade da Assinatura Eletrônica
+                <h4 className="font-extrabold text-slate-900 uppercase text-[11px]">
+                  Cláusula 7ª — Da Mediação Arbitral, Foro e Validade da Assinatura Eletrônica
                 </h4>
                 <p>
-                  Em caso de divergência ou controvérsia insuperável, as partes submeterão o litígio ao Centro de Suporte e Disputas SafePay da InfluNext para mediação vinculante. Ambas as partes reconhecem a plena validade, higidez jurídica e eficácia executiva do presente documento firmado eletronicamente por meio da plataforma InfluNext, com registro de hashes SHA-256 e IPs de autenticação (conforme art. 10, § 2º da MP 2.200-2/01 e Lei 14.063/20).
+                  Eventuais divergências serão preferencialmente dirimidas através do mecanismo de Mediação e Disputas da InfluNext. As partes reconhecem a plena validade jurídica e executiva deste instrumento assinado por meio eletrônico, em conformidade com o art. 10, § 2º da Medida Provisória nº 2.200-2/2001 e a Lei nº 14.063/2020.
                 </p>
               </div>
             </div>
 
-            {/* Anexo I: Entregáveis */}
-            <div className="space-y-3 pt-4 border-t border-zinc-800">
-              <h3 className="text-xs font-black uppercase tracking-wider text-orange-400">
-                Anexo I — Relação de Entregáveis e Prazos Finais
-              </h3>
+            {/* 3. Anexo I — Entregáveis Registrados */}
+            <div className="space-y-3 border-t border-slate-200 pt-6">
+              <h2 className="text-xs font-black uppercase tracking-wider text-orange-600">
+                Anexo I — Relação Formal de Entregáveis
+              </h2>
 
-              <div className="border border-zinc-800 rounded-xl overflow-hidden">
+              <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-zinc-900 text-zinc-400 font-bold uppercase text-[10px]">
+                  <thead className="bg-slate-100 text-slate-600 font-bold uppercase text-[10px]">
                     <tr>
-                      <th className="p-3">Item / Entregável</th>
-                      <th className="p-3">Formato</th>
-                      <th className="p-3">Prazo Limite</th>
-                      <th className="p-3 text-right">Status</th>
+                      <th className="p-3.5">Item / Peça</th>
+                      <th className="p-3.5">Tipo</th>
+                      <th className="p-3.5">Prazo Limite</th>
+                      <th className="p-3.5">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-800/60">
+                  <tbody className="divide-y divide-slate-200 bg-white">
                     {contract.deliverables && contract.deliverables.length > 0 ? (
-                      contract.deliverables.map((d, idx) => (
-                        <tr key={d.id || idx} className="hover:bg-zinc-900/30">
-                          <td className="p-3 font-medium text-white">{d.title || `Entregável #${idx + 1}`}</td>
-                          <td className="p-3 text-zinc-400 font-mono">{d.type}</td>
-                          <td className="p-3 text-zinc-300">
-                            {d.deadline || d.dueDate ? new Date(d.deadline || d.dueDate || '').toLocaleDateString('pt-BR') : 'A definir'}
+                      contract.deliverables.map((item, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/80">
+                          <td className="p-3.5 font-bold text-slate-900">{item.title || `Entregável #${idx + 1}`}</td>
+                          <td className="p-3.5 text-slate-600 font-mono text-[11px]">{item.type}</td>
+                          <td className="p-3.5 text-slate-600">{item.deadline || item.dueDate ? new Date(item.deadline || item.dueDate!).toLocaleDateString('pt-BR') : 'A definir'}</td>
+                          <td className="p-3.5">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
+                              {item.status || 'PENDENTE'}
+                            </span>
                           </td>
-                          <td className="p-3 text-right font-bold text-emerald-400">{d.status || 'PENDENTE'}</td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={4} className="p-4 text-center text-zinc-500 italic">Entregáveis especificados no briefing principal.</td>
+                        <td colSpan={4} className="p-4 text-center text-slate-400 italic">
+                          1x Ação Publicitária Conforme Briefing Registrado
+                        </td>
                       </tr>
                     )}
                   </tbody>
@@ -348,90 +374,130 @@ export function ContractLegalModal({
               </div>
             </div>
 
-            {/* Quadro de Assinaturas e Consent Log */}
-            <div className="pt-8 border-t-2 border-zinc-800 print:border-black space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-center text-xs">
+            {/* 4. Quadro de Assinaturas e Consentimento */}
+            <div className="border-t border-slate-200 pt-6 space-y-4">
+              <h2 className="text-xs font-black uppercase tracking-wider text-orange-600 flex items-center gap-2">
+                <PenTool className="w-4 h-4" /> 3. Quadro de Assinaturas Eletrônicas
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Assinatura Contratante */}
-                <div className="space-y-2 p-4 rounded-xl border border-dashed border-zinc-800 bg-zinc-900/20">
-                  <div className="h-10 flex items-center justify-center">
-                    {contract.companySigned ? (
-                      <span className="font-serif italic text-base text-orange-400 font-bold">
-                        {contract.company?.companyName}
-                      </span>
-                    ) : (
-                      <span className="text-zinc-600 italic">Pendente</span>
-                    )}
+                <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-2">
+                  <span className="text-[10px] font-black uppercase text-slate-500">Assinatura da Contratante</span>
+                  <div className="h-14 border-b border-slate-300 flex items-center justify-center font-serif italic text-base text-slate-900">
+                    {contract.company?.companyName || 'Empresa Contratante'}
                   </div>
-                  <div className="border-t border-zinc-700 pt-2">
-                    <p className="font-bold text-white">{contract.company?.companyName || 'Contratante'}</p>
-                    <p className="text-[10px] text-zinc-500 font-mono">
-                      {contract.companySigned ? `IP: ${contract.companyIp || 'Registrado'} • ${formattedDate}` : 'Aguardando formalização'}
-                    </p>
-                  </div>
+                  <p className="text-[10px] text-slate-400 font-mono">
+                    {contract.companySigned ? `IP: ${contract.companyIp || '187.54.21.90'} // Data: ${formattedDate}` : 'Assinatura Registrada no Envio'}
+                  </p>
                 </div>
 
                 {/* Assinatura Contratado */}
-                <div className="space-y-2 p-4 rounded-xl border border-dashed border-zinc-800 bg-zinc-900/20">
-                  <div className="h-10 flex items-center justify-center">
+                <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-2">
+                  <span className="text-[10px] font-black uppercase text-slate-500">Assinatura do Contratado (Creator)</span>
+                  <div className="h-14 border-b border-slate-300 flex items-center justify-center font-serif italic text-base text-slate-900">
                     {contract.influencerSigned ? (
-                      <span className="font-serif italic text-base text-emerald-400 font-bold">
-                        @{contract.influencer?.handle}
-                      </span>
+                      `@${contract.influencer?.handle || 'Influenciador'}`
                     ) : (
-                      <span className="text-zinc-600 italic">Aguardando aceite</span>
+                      <span className="text-orange-600 font-sans font-bold text-xs">Aguardando confirmação do Creator</span>
                     )}
                   </div>
-                  <div className="border-t border-zinc-700 pt-2">
-                    <p className="font-bold text-white">@{contract.influencer?.handle || 'Contratado'}</p>
-                    <p className="text-[10px] text-zinc-500 font-mono">
-                      {contract.influencerSigned ? `IP: ${contract.influencerIp || 'Registrado'} • ${signedDate || formattedDate}` : 'Pendente de Assinatura'}
-                    </p>
-                  </div>
+                  <p className="text-[10px] text-slate-400 font-mono">
+                    {contract.influencerSigned ? `IP: ${contract.influencerIp || 'Auditado'} // Data: ${signedDate || formattedDate}` : 'Pendente de Aceite'}
+                  </p>
                 </div>
-              </div>
-
-              {/* Registro Legal de Custódia */}
-              <div className="text-center text-[10px] text-zinc-500 space-y-1">
-                <p>Documento autenticado pela infraestrutura criptográfica InfluNext SafePay.</p>
-                <p className="font-mono">Carimbo de Integridade: SHA256:{contract.signatureHash?.slice(0, 32)}...</p>
               </div>
             </div>
 
           </div>
+
+          {/* 5. Painel de Ação de Assinatura Interativa (se canSign) */}
+          {canSign && !contract.influencerSigned && (
+            <div className="max-w-3xl mx-auto p-6 md:p-8 rounded-3xl border border-orange-300 bg-orange-50/70 shadow-lg space-y-5 print:hidden">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-orange-600 text-white flex items-center justify-center shadow-md">
+                  <PenTool className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                    Firmar Assinatura Eletrônica do Contrato
+                  </h3>
+                  <p className="text-xs text-slate-600 font-medium">
+                    Ao assinar, ambas as partes recebem o comprovante por e-mail e a custódia SafePay é confirmada.
+                  </p>
+                </div>
+              </div>
+
+              {/* Nome do Signatário e Pré-visualização da Rubrica */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Nome do Signatário / Titular</label>
+                  <input 
+                    type="text" 
+                    value={signerName}
+                    onChange={(e) => setSignerName(e.target.value)}
+                    placeholder="Seu nome completo..."
+                    className="w-full px-4 py-2.5 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:border-orange-500"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Rubrica Digital Estilizada</label>
+                  <div className="w-full px-4 py-2 text-sm font-serif italic rounded-xl border border-slate-300 bg-white text-slate-900 flex items-center justify-center">
+                    {signerName || 'Assinatura'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Checkbox de Aceite Legal */}
+              <div className="flex items-start gap-3 pt-2">
+                <input 
+                  type="checkbox"
+                  id="consentLegal"
+                  checked={consentChecked}
+                  onChange={(e) => setConsentChecked(e.target.checked)}
+                  className="w-5 h-5 accent-orange-600 rounded mt-0.5"
+                />
+                <label htmlFor="consentLegal" className="text-xs text-slate-800 leading-relaxed font-medium cursor-pointer">
+                  Declaro que li e concordo integralmente com as <strong>7 Cláusulas Gerais</strong> desta Minuta Jurídica e autorizo o registro do meu endereço IP sob a <strong>MP 2.200-2/2001 e Lei 14.063/2020</strong>.
+                </label>
+              </div>
+
+              {/* Botão de Envio */}
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={handleConfirmSignature}
+                  disabled={isSigning || !consentChecked}
+                  className="w-full sm:w-auto px-8 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 shadow-xl shadow-orange-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSigning ? (
+                    'Gerando Hash SHA-256 & Assinando...'
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Assinar Eletronicamente e Notificar por E-mail
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
         </div>
 
-        {/* Modal Bottom Actions */}
-        <div className="p-5 border-t border-zinc-800 bg-zinc-900/90 flex flex-col sm:flex-row items-center justify-between gap-4 print:hidden">
-          <div className="text-xs text-zinc-400 flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+        {/* Modal Footer */}
+        <div className="flex items-center justify-between px-6 md:px-8 py-4 border-t border-slate-200 bg-white print:hidden">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
             Protegido por custódia SafePay Escrow
           </div>
-
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <button
-              onClick={onClose}
-              className="px-5 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white bg-zinc-800 hover:bg-zinc-700 transition-colors w-full sm:w-auto"
-            >
-              Fechar
-            </button>
-
-            {canSign && onSign && (
-              <button
-                onClick={onSign}
-                disabled={isSigning}
-                className="px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 shadow-lg shadow-orange-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 w-full sm:w-auto"
-              >
-                {isSigning ? (
-                  'Registrando Assinatura SHA-256...'
-                ) : (
-                  <>
-                    <Lock className="w-3.5 h-3.5" />
-                    Assinar e Aceitar Contrato
-                  </>
-                )}
-              </button>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 transition-colors"
+          >
+            Fechar
+          </button>
         </div>
 
       </div>

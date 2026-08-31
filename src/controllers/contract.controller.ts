@@ -774,3 +774,82 @@ export const generateROIReport = async (req: Request, res: Response): Promise<vo
   }
 };
 
+/**
+ * POST /v1/contracts/:id/review
+ * Registra avaliação mútua/oficial da campanha e recalcula o InfluScore real
+ */
+export const submitContractReview = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const { id: contractId } = req.params;
+    const { rating, comment } = req.body;
+
+    if (!rating || rating < 1 || rating > 5) {
+      res.status(400).json({ error: "A nota de avaliação deve ser entre 1 e 5 estrelas." });
+      return;
+    }
+
+    const contract = await prisma.contract.findUnique({
+      where: { id: contractId },
+      include: {
+        company: { select: { id: true, userId: true, companyName: true } },
+        influencer: { select: { id: true, userId: true, handle: true } },
+        review: true
+      }
+    });
+
+    if (!contract) {
+      res.status(404).json({ error: "Contrato não encontrado." });
+      return;
+    }
+
+    // Apenas a empresa contratante ou Admin pode avaliar a entrega da campanha
+    if (contract.company.userId !== userId && req.user!.role !== 'ADMIN') {
+      res.status(403).json({ error: "Apenas a empresa contratante pode avaliar a campanha." });
+      return;
+    }
+
+    // Cria ou atualiza a review
+    let review;
+    if (contract.review) {
+      review = await prisma.review.update({
+        where: { id: contract.review.id },
+        data: {
+          rating: Math.round(rating),
+          comment: comment || null
+        }
+      });
+    } else {
+      review = await prisma.review.create({
+        data: {
+          contractId: contract.id,
+          companyId: contract.company.id,
+          influencerId: contract.influencer.id,
+          rating: Math.round(rating),
+          comment: comment || null
+        }
+      });
+    }
+
+    // Recalcula o InfluScore do criador com base em entregas reais e avaliações recebidas
+    const { ScoringService } = await import('../services/scoring.service');
+    await ScoringService.calculateAndPersist(contract.influencer.id);
+
+    // Notifica o criador
+    await addNotificationJob(
+      contract.influencer.userId,
+      `⭐ A marca ${contract.company.companyName} avaliou sua entrega com ${rating} estrelas no contrato "${contract.title}"!`,
+      'CONTRACT_REVIEWED'
+    );
+
+    res.json({
+      message: "Avaliação registrada com sucesso e InfluScore recalculado com base no desempenho!",
+      review
+    });
+  } catch (error: any) {
+    console.error('[CONTRACT REVIEW ERROR]:', error);
+    res.status(500).json({ error: "Erro ao registrar avaliação da campanha." });
+  }
+};
+
+

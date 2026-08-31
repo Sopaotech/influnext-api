@@ -11,8 +11,9 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
         user: { select: { email: true, role: true, onboardingCompleted: true, subscriptionStatus: true, trialEndsAt: true, theme: true, accentColor: true } },
         platforms: true,
         contracts: {
-          where: { escrowStatus: { in: ['IN_PROGRESS', 'PENDING_PAYMENT', 'UNDER_REVIEW'] } },
-          select: { id: true, title: true, budget: true, escrowStatus: true, createdAt: true }
+          where: { escrowStatus: { in: ['DRAFT', 'IN_PROGRESS', 'PENDING_PAYMENT', 'UNDER_REVIEW'] } },
+          select: { id: true, title: true, budget: true, netAmount: true, escrowStatus: true, createdAt: true, company: { select: { companyName: true } } },
+          orderBy: { createdAt: 'desc' }
         },
         metricsHistory: { take: 30, orderBy: { capturedAt: 'desc' } },
         tasks: { where: { isDone: false }, orderBy: { scheduledDate: 'asc' } },

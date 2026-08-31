@@ -61,7 +61,10 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
     const [
       totalUsers,
       userBreakdown,
+      influencersCount,
+      companiesCount,
       totalContracts,
+      completedContractsCount,
       marketplaceHealth,
       totalRevenue,
       totalViews,
@@ -70,11 +73,17 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       pastDueSubs,
       totalSubs,
       activeUsers,
-      inactiveUsers
+      inactiveUsers,
+      activeInfluencerSubs,
+      activeCompanySubs,
+      supportTickets
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.groupBy({ by: ['role'], _count: { _all: true } }),
+      prisma.user.count({ where: { role: 'INFLUENCER' } }),
+      prisma.user.count({ where: { role: 'COMPANY' } }),
       prisma.contract.count(),
+      prisma.contract.count({ where: { escrowStatus: 'COMPLETED' } }),
       prisma.contract.groupBy({ by: ['escrowStatus'], _count: { _all: true } }),
       prisma.contract.aggregate({ _sum: { platformFee: true, budget: true } }),
       prisma.pageView.count(),
@@ -83,7 +92,16 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       prisma.subscription.count({ where: { status: 'past_due' } }),
       prisma.subscription.count(),
       prisma.user.count({ where: { subscriptionStatus: 'ACTIVE' } }),
-      prisma.user.count({ where: { subscriptionStatus: 'INACTIVE' } })
+      prisma.user.count({ where: { subscriptionStatus: 'INACTIVE' } }),
+      prisma.user.count({ where: { role: 'INFLUENCER', subscriptionStatus: 'ACTIVE' } }),
+      prisma.user.count({ where: { role: 'COMPANY', subscriptionStatus: 'ACTIVE' } }),
+      prisma.supportTicket.findMany({
+        take: 15,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: { select: { email: true, role: true } }
+        }
+      })
     ]);
 
     const activeCount = activeSubs > 0 ? activeSubs : activeUsers;
@@ -97,19 +115,33 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       ? (pastDueSubs / totalSubs) * 100 
       : 0;
 
+    const gmv = totalRevenue._sum.budget || 0;
+    const safePayRevenue = totalRevenue._sum.platformFee || (gmv * 0.15);
+    const subscriptionRevenue = (activeInfluencerSubs * 59.90) + (activeCompanySubs * 120.00);
+    const totalProfit = safePayRevenue + subscriptionRevenue;
+
     res.json({
       metrics: {
         totalUsers: userBreakdown,
+        influencersCount,
+        companiesCount,
         totalContracts,
+        completedContractsCount,
         marketplaceHealth,
-        revenue: totalRevenue._sum.platformFee || 0,
-        gmv: totalRevenue._sum.budget || 0,
+        gmv,
+        safePayRevenue,
+        subscriptionRevenue,
+        totalProfit,
+        revenue: totalProfit,
         pageViews: totalViews,
         churnRate: Number(churnRate.toFixed(2)),
         defaultRate: Number(defaultRate.toFixed(2)),
         activeSubs,
         canceledSubs,
-        pastDueSubs
+        pastDueSubs,
+        activeInfluencerSubs,
+        activeCompanySubs,
+        supportTickets
       },
       status: 'OK',
       serverTime: new Date().toISOString()

@@ -2,14 +2,40 @@
 
 import React, { useEffect, useState } from 'react';
 import { api, CompanyDashboardResponse } from '@/lib/api';
-import { MetricCard } from '@/components/MetricCard';
-import { DollarSign, FileText, AlertCircle, CheckCircle, Sparkles, TrendingUp, UserCheck, ShieldCheck, X, Globe, Award, Users, BarChart3, Loader2 } from 'lucide-react';
+import { 
+  Building2, 
+  DollarSign, 
+  FileText, 
+  CheckCircle2, 
+  Sparkles, 
+  TrendingUp, 
+  ShieldCheck, 
+  X, 
+  Users, 
+  BarChart3, 
+  Loader2, 
+  ArrowUpRight, 
+  Radio, 
+  Lock, 
+  Clock, 
+  Flame, 
+  Eye, 
+  Share2, 
+  Check, 
+  AlertCircle, 
+  Plus, 
+  ExternalLink,
+  ChevronRight,
+  Briefcase,
+  Layers,
+  Award
+} from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DeliverableReviewCard } from '@/components/deliverable-review-card';
-import { EscrowTimeline, EscrowStatus } from '@/components/EscrowTimeline';
+import { ContractLegalModal, ContractLegalData } from '@/components/ContractLegalModal';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Cookies from 'js-cookie';
+import { toast } from 'sonner';
 
 interface CompanyTalent {
   id: string;
@@ -37,96 +63,39 @@ interface TalentMediaKit {
   rateCard?: Array<{ serviceName: string; price: number; description?: string }>;
 }
 
+interface DeliverableItem {
+  id: string;
+  status: string;
+  proofUrl?: string;
+  [key: string]: unknown;
+}
+
+interface ContractItem extends ContractLegalData {
+  id: string;
+  title: string;
+  budget: number;
+  netAmount?: number;
+  escrowStatus: string;
+  createdAt?: string;
+  influencer: { handle: string; metricsHistory?: Array<{ capturedAt?: string }> };
+  deliverables?: DeliverableItem[];
+}
+
 export default function CompanyDashboard() {
   const router = useRouter();
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [data, setData] = useState<CompanyDashboardResponse | null>(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
-  // States para o modal de Media Kit
+  // States para o modal de Media Kit do Influenciador
   const [selectedTalent, setSelectedTalent] = useState<CompanyTalent | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
   const [talentMediaKit, setTalentMediaKit] = useState<TalentMediaKit | null>(null);
-  const [activeRadarTab, setActiveRadarTab] = useState<'nacional' | 'regional'>('nacional');
+  const [activeRadarTab, setActiveRadarTab] = useState<'nacional' | 'regional' | 'high_roi'>('nacional');
 
-  const handleOpenMediaKit = async (talent: CompanyTalent) => {
-    setSelectedTalent(talent);
-    setIsModalOpen(true);
-    setModalLoading(true);
-    try {
-      const res = await api.get<{ handle?: string; niche?: string; influScore?: number; scoreClass?: string; bio?: string; metricsHistory?: Array<{ followers?: number; engagementRate?: number }>; rateCards?: Array<{ serviceName: string; price: number; description?: string }> }>(`/p/${talent.handle}`);
-      const profileData = res.data;
-      
-      const followers = profileData.metricsHistory?.[0]?.followers ?? (talent.handle === 'demo.influencer' ? 370000 : 95000);
-      const engagement = profileData.metricsHistory?.[0]?.engagementRate ?? (talent.handle === 'demo.influencer' ? 4.8 : 5.2);
-      
-      setTalentMediaKit({
-        handle: profileData.handle || talent.handle,
-        niche: profileData.niche || talent.niche,
-        influScore: profileData.influScore ?? talent.influScore,
-        scoreClass: profileData.scoreClass || talent.scoreClass,
-        bio: profileData.bio || talent.pitch || 'Criador de conteúdo de alto valor focado em conversão e branding.',
-        followers: followers,
-        engagement: engagement,
-        companyFeedback: talent.handle === 'demo.influencer' ? 98 : (talent.handle === 'pedro_ph' ? 95 : 92),
-        negotiationBehavior: talent.handle === 'demo.influencer' ? 'Super Educado' : (talent.handle === 'pedro_ph' ? 'Colaborativo' : 'Neutro'),
-        deliveryRate: 100,
-        rateCard: (profileData.rateCards && profileData.rateCards.length > 0) ? profileData.rateCards : [
-          { serviceName: 'Combo Reels + Stories', price: talent.handle === 'demo.influencer' ? 1500 : 900, description: '1x Reels no feed e 3x Stories para engajamento.' },
-          { serviceName: '1x Reels de Provador', price: talent.handle === 'demo.influencer' ? 900 : 500, description: 'Reels dinâmico mostrando a coleção.' }
-        ]
-      });
-    } catch (err) {
-      console.error('Erro ao carregar profile real, gerando dados de fallback...', err);
-      setTalentMediaKit({
-        handle: talent.handle,
-        niche: talent.niche,
-        influScore: talent.influScore,
-        scoreClass: talent.scoreClass,
-        bio: talent.pitch || 'Criador de conteúdo estratégico focado em gerar conversões reais para marcas.',
-        followers: talent.handle === 'demo.influencer' ? 370000 : (talent.handle === 'pedro_ph' ? 95000 : 120000),
-        engagement: talent.handle === 'demo.influencer' ? 4.8 : 5.2,
-        companyFeedback: talent.handle === 'demo.influencer' ? 98 : (talent.handle === 'pedro_ph' ? 95 : 92),
-        negotiationBehavior: talent.handle === 'demo.influencer' ? 'Super Educado' : (talent.handle === 'pedro_ph' ? 'Colaborativo' : 'Neutro'),
-        deliveryRate: 100,
-        rateCard: talent.handle === 'demo.influencer' ? [
-          { serviceName: 'Combo Reels + Stories', price: 1500, description: '1x Reels no feed e 3x Stories para engajamento e chamada de ação.' },
-          { serviceName: '1x Reels de Provador', price: 900, description: 'Reels dinâmico mostrando roupas da coleção.' }
-        ] : [
-          { serviceName: 'Produção de Vídeo Curto', price: 1200, description: 'Roteirização, gravação e edição premium.' },
-          { serviceName: 'Sequência de Stories (3 telas)', price: 400, description: 'Divulgação com cupom exclusivo de desconto.' }
-        ]
-      });
-    } finally {
-      setModalLoading(false);
-    }
-  };
-
-  const statusMap: Record<string, string> = {
-    IN_PROGRESS: 'Em Andamento',
-    PENDING_PAYMENT: 'Aguardando Pagamento',
-    UNDER_REVIEW: 'Em Análise',
-    COMPLETED: 'Concluído',
-    DISPUTE: 'Em Disputa',
-    DRAFT: 'Rascunho'
-  };
-
-  // Monitor theme updates
-  useEffect(() => {
-    const savedTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-    const interval = setInterval(() => {
-      const currentTheme = Cookies.get('influnext_theme') as 'dark' | 'light' | undefined;
-      if (currentTheme && currentTheme !== theme) {
-        setTheme(currentTheme);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [theme]);
+  // State para o modal de Minuta Jurídica Oficial
+  const [selectedLegalContract, setSelectedLegalContract] = useState<ContractItem | null>(null);
 
   const fetchDashboard = async () => {
     try {
@@ -135,17 +104,11 @@ export default function CompanyDashboard() {
       setData(res.data);
 
       const userState = (res.data as unknown as { userState?: { onboardingCompleted?: boolean; subscriptionStatus?: string; trialEndsAt?: string } }).userState;
-      if (userState) {
-        if (!userState.onboardingCompleted) {
-          window.location.href = '/auth/login';
-          return;
-        }
-        if (userState.subscriptionStatus === 'INACTIVE' || 
-           (userState.subscriptionStatus === 'TRIAL' && userState.trialEndsAt && new Date() > new Date(userState.trialEndsAt))) {
-          console.warn('TRIAL EXPIRED');
-        }
+      if (userState && !userState.onboardingCompleted) {
+        window.location.href = '/auth/login';
+        return;
       }
-    } catch (err: unknown) {
+    } catch {
       setError('Falha ao carregar os dados do painel da empresa.');
     } finally {
       setIsLoading(false);
@@ -156,13 +119,97 @@ export default function CompanyDashboard() {
     fetchDashboard();
   }, []);
 
-  const isDark = theme === 'dark';
+  const handleOpenMediaKit = async (talent: CompanyTalent) => {
+    setSelectedTalent(talent);
+    setIsModalOpen(true);
+    setModalLoading(true);
+    try {
+      const cleanHandle = talent.handle.replace('@', '');
+      const res = await api.get<{ 
+        handle?: string; 
+        niche?: string; 
+        influScore?: number; 
+        scoreClass?: string; 
+        bio?: string; 
+        metricsHistory?: Array<{ followers?: number; engagementRate?: number }>; 
+        rateCards?: Array<{ serviceName: string; price: number; description?: string }> 
+      }>(`/p/${cleanHandle}`);
+      
+      const profileData = res.data;
+      const followers = profileData.metricsHistory?.[0]?.followers ?? (talent.handle.includes('demo') ? 370000 : 95000);
+      const engagement = profileData.metricsHistory?.[0]?.engagementRate ?? (talent.handle.includes('demo') ? 4.8 : 5.2);
+      
+      setTalentMediaKit({
+        handle: profileData.handle || talent.handle,
+        niche: profileData.niche || talent.niche,
+        influScore: profileData.influScore ?? talent.influScore,
+        scoreClass: profileData.scoreClass || talent.scoreClass,
+        bio: profileData.bio || talent.pitch || 'Criador de conteúdo de alto valor focado em conversão e branding.',
+        followers: followers,
+        engagement: engagement,
+        companyFeedback: talent.handle.includes('demo') ? 98 : 95,
+        negotiationBehavior: talent.handle.includes('demo') ? 'Super Educado' : 'Colaborativo',
+        deliveryRate: 100,
+        rateCard: (profileData.rateCards && profileData.rateCards.length > 0) ? profileData.rateCards : [
+          { serviceName: 'Combo Reels + Stories', price: 1500, description: '1x Reels no feed e 3x Stories para engajamento e chamada de ação.' },
+          { serviceName: '1x Reels de Provador', price: 900, description: 'Reels dinâmico mostrando roupas da coleção com gancho viral.' }
+        ]
+      });
+    } catch {
+      // Fallback em caso de erro de rede
+      setTalentMediaKit({
+        handle: talent.handle,
+        niche: talent.niche,
+        influScore: talent.influScore,
+        scoreClass: talent.scoreClass,
+        bio: talent.pitch || 'Criador de conteúdo estratégico focado em gerar conversões reais para marcas.',
+        followers: talent.handle.includes('demo') ? 370000 : 95000,
+        engagement: 4.8,
+        companyFeedback: 98,
+        negotiationBehavior: 'Super Educado',
+        deliveryRate: 100,
+        rateCard: [
+          { serviceName: 'Combo Reels + Stories', price: 1500, description: '1x Reels no feed e 3x Stories com CTA de vendas.' },
+          { serviceName: '1x Reels Patrocinado', price: 900, description: 'Reels dinâmico com demonstrativo do produto.' }
+        ]
+      });
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'COMPLETED': 
+        return { label: 'Concluído & Pago', style: 'text-emerald-700 bg-emerald-50 border-emerald-200' };
+      case 'DISPUTED': 
+        return { label: 'Em Mediação', style: 'text-rose-700 bg-rose-50 border-rose-200' };
+      case 'ACTIVE': 
+      case 'IN_PROGRESS':
+        return { label: 'SafePay Ativo', style: 'text-orange-700 bg-orange-50 border-orange-200' };
+      case 'PENDING_PAYMENT':
+        return { label: 'Aguardando Depósito', style: 'text-blue-700 bg-blue-50 border-blue-200' };
+      case 'UNDER_REVIEW':
+        return { label: 'Em Análise', style: 'text-amber-700 bg-amber-50 border-amber-200' };
+      case 'DRAFT':
+      default: 
+        return { label: 'Pendente de Assinatura', style: 'text-slate-600 bg-slate-100 border-slate-200' };
+    }
+  };
 
   if (isLoading && !data) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-4">
-        <div className="w-12 h-12 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin" />
-        <p className="text-zinc-550 font-medium animate-pulse">Preparando seu painel corporativo...</p>
+      <div className="p-6 md:p-12 space-y-8 bg-white min-h-screen animate-pulse">
+        <div className="h-24 bg-slate-100 rounded-3xl border border-slate-200" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="h-40 bg-slate-100 rounded-3xl border border-slate-200" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="lg:col-span-8 h-96 bg-slate-100 rounded-3xl border border-slate-200" />
+          <div className="lg:col-span-4 h-96 bg-slate-100 rounded-3xl border border-slate-200" />
+        </div>
       </div>
     );
   }
@@ -170,566 +217,685 @@ export default function CompanyDashboard() {
   if (error || !data) {
     return (
       <div className="p-8 max-w-2xl mx-auto mt-10">
-        <div className="bg-red-500/10 border border-red-500/30 p-6 rounded-2xl flex flex-col items-center text-center">
-          <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
-          <h2 className="text-lg font-bold text-red-400 mb-2">Erro de Acesso</h2>
-          <p className="text-red-400/80">{error}</p>
+        <div className="bg-red-50 border border-red-200 p-8 rounded-3xl flex flex-col items-center text-center space-y-3">
+          <AlertCircle className="w-12 h-12 text-red-600" />
+          <h2 className="text-lg font-black text-red-950">Falha ao Carregar Painel</h2>
+          <p className="text-sm text-red-700 font-medium">{error}</p>
+          <button 
+            onClick={fetchDashboard}
+            className="px-6 py-2.5 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition-all shadow-sm"
+          >
+            Tentar Novamente
+          </button>
         </div>
       </div>
     );
   }
 
   const { stats, contracts } = data;
-  
-  // Extrair todos os deliverables em UNDER_REVIEW de todos os contratos para priorização na interface
-  interface DeliverableItem {
-    id: string;
-    status: string;
-    proofUrl?: string;
-    [key: string]: unknown;
-  }
+  const rawContracts = contracts as unknown as ContractItem[];
 
-  interface ContractItem {
-    id: string;
-    title: string;
-    budget: number;
-    escrowStatus: string;
-    influencer: { handle: string; metricsHistory?: Array<{ capturedAt?: string }> };
-    deliverables?: DeliverableItem[];
-  }
-
-  const pendingReviews = (contracts as unknown as ContractItem[]).flatMap((c) => 
+  // Extrair todos os deliverables em UNDER_REVIEW para priorização na fila
+  const pendingReviews = rawContracts.flatMap((c) => 
     (c.deliverables || [])
       .filter((d) => d.status === 'UNDER_REVIEW')
       .map((d) => ({ ...d, contractTitle: c.title, influencerHandle: c.influencer.handle }))
   );
 
-  // Recomendações e Radar de Talentos Simulados de Alta Projeção
+  // Recomendações e Radar de Talentos
   const recommendedTalents: CompanyTalent[] = data.recommendedTalents || [
     {
+      id: 'demo-influencer-id',
       handle: 'demo.influencer',
-      niche: 'Moda & Estilo',
+      niche: 'Fashion & Lifestyle',
       influScore: 78,
       scoreClass: 'GOLD',
       growth: '+12.4%',
       reputation: 'Extremamente profissional, cumpre prazos rigorosamente e entrega alto engajamento em provadores.',
-      pitch: 'Produzo reels dinâmicos focados em conversão direta de vendas para marcas de vestuário premium.',
-      id: 'demo-influencer-id'
+      pitch: 'Produzo reels dinâmicos focados em conversão direta de vendas para marcas de vestuário premium.'
     },
     {
+      id: 'pedro-ph-id',
       handle: 'pedro_ph',
       niche: 'Fotografia & Direção',
       influScore: 82,
       scoreClass: 'GOLD',
       growth: '+5.2%',
       reputation: 'Criativo e proativo, ótima direção artística e alinhamento ágil de briefing.',
-      pitch: 'Combino fotografias artísticas e mini-documentários de marca com alta estética visual.',
-      id: 'pedro-ph-id'
+      pitch: 'Combino fotografias artísticas e mini-documentários de marca com alta estética visual.'
     },
     {
+      id: 'lucas-filmes-id',
       handle: 'lucas_filmes',
-      niche: 'Produção Audiovisual',
+      niche: 'Audiovisual & Tech',
       influScore: 90,
       scoreClass: 'PLATINUM',
       growth: '+8.5%',
-      reputation: 'Edição cinematográfica premium, vídeos curtos virais com alta retenção de retenção nos primeiros 3s.',
-      pitch: 'Roteirizo e edito vídeos dinâmicos de alta conversão para marcas de tecnologia e e-commerce.',
-      id: 'lucas-filmes-id'
+      reputation: 'Edição cinematográfica premium, vídeos curtos virais com alta retenção nos primeiros 3s.',
+      pitch: 'Roteirizo e edito vídeos dinâmicos de alta conversão para marcas de tecnologia e e-commerce.'
     }
   ];
 
   const filteredTalents = activeRadarTab === 'nacional'
     ? recommendedTalents
-    : recommendedTalents.filter((t) => t.handle === 'pedro_ph' || t.handle === 'demo.influencer');
+    : activeRadarTab === 'regional'
+    ? recommendedTalents.filter((t) => t.handle === 'demo.influencer' || t.handle === 'pedro_ph')
+    : recommendedTalents.filter((t) => t.influScore >= 80);
+
+  const totalSafePayHeld = (stats as unknown as { escrowHeld?: number }).escrowHeld ?? 9500;
+  const totalInvested = stats.totalInvested > 0 ? stats.totalInvested : 14500;
+  const activeContractsCount = stats.activeContracts > 0 ? stats.activeContracts : rawContracts.length;
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-500 pb-32 min-h-screen">
+    <div className="relative w-full space-y-8 text-slate-900 bg-[#FAFAFA] min-h-screen pb-32">
       
-      <header className={`flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b ${
-        isDark ? 'border-zinc-800/50' : 'border-zinc-200'
-      }`}>
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-             <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_10px_2px_rgba(217,107,39,0.5)]" />
-             <span className="text-[10px] font-black text-orange-400 uppercase tracking-[0.3em]">Corporate_Intelligence_2026</span>
-          </div>
-          <h1 className="text-3xl md:text-5xl font-black text-current tracking-tight">
-            Gestão de <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-500">Investimentos</span>
-          </h1>
-          <p className="text-zinc-550 dark:text-zinc-400 font-medium text-sm mt-2">Monitore suas campanhas de influência e libere pagamentos em Escrow com segurança militar.</p>
-        </div>
-        <div className="flex">
-          <Link 
-            href="/dashboard/company/new-contract" 
-            className="flex items-center gap-2 bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-[0_0_20px_-5px_rgba(217,107,39,0.5)] hover:shadow-[0_0_25px_-5px_rgba(217,107,39,0.7)] transition-all"
-          >
-            Propor Novo Contrato
-          </Link>
-        </div>
-      </header>
+      {/* ══════════════════════════════════════════════════════════════════════
+          SOMBREAMENTO LARANJA SUAVE DE FUNDO (AMBIENT LIGHT GLOW)
+      ══════════════════════════════════════════════════════════════════════ */}
+      <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-[1100px] h-[380px] bg-gradient-to-b from-orange-500/[0.08] via-amber-500/[0.04] to-transparent blur-[100px] rounded-full -z-0" />
+      <div className="pointer-events-none absolute top-[500px] -right-24 w-[450px] h-[450px] bg-orange-400/[0.05] blur-[120px] rounded-full -z-0" />
 
-      {/* Vincenzo AI Business Insights (Foco no Faturamento) */}
-      <div className={`p-8 rounded-[2rem] border relative overflow-hidden shadow-xl ${
-        isDark 
-          ? 'bg-gradient-to-r from-zinc-950 to-zinc-900 border-white/5 text-white' 
-          : 'bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200 text-zinc-850 shadow-orange-100/10'
-      }`}>
-        <div className="absolute right-0 top-0 w-64 h-64 bg-orange-500/10 blur-[60px] rounded-full" />
-        <div className="relative z-10 flex items-start gap-4">
-          <div className="p-3 bg-white/10 rounded-2xl flex-shrink-0">
-            <Sparkles className="w-6 h-6 text-orange-500" />
+      {/* ══════════════════════════════════════════════════════════════════════
+          1. HEADER CORPORATIVO WIDESCREEN - MARCA, STATUS & AÇÕES
+      ══════════════════════════════════════════════════════════════════════ */}
+      <header className="relative z-10 p-6 md:p-8 rounded-[2.5rem] bg-white border border-slate-200/80 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+        
+        {/* Identificação da Empresa */}
+        <div className="flex items-center gap-4 md:gap-6">
+          <div className="relative shrink-0">
+            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-tr from-orange-500 via-amber-500 to-orange-600 p-0.5 shadow-lg shadow-orange-500/20">
+              <div className="w-full h-full rounded-full bg-slate-950 text-white flex items-center justify-center font-black text-2xl">
+                M
+              </div>
+            </div>
+            <div className="absolute -bottom-1 -right-1 bg-emerald-600 text-white p-1 rounded-full border-2 border-white shadow-sm" title="Empresa Verificada SafePay">
+              <ShieldCheck className="w-3.5 h-3.5 stroke-[3]" />
+            </div>
           </div>
-          <div className="space-y-2">
-            <h3 className="text-xs font-black text-orange-500 uppercase tracking-widest">Painel Inteligente Vincenzo Analisa:</h3>
-            <p className="text-base md:text-lg font-medium leading-relaxed">
-              "Vincenzo aqui. Foco em campanhas de alta conversão. Sua taxa de ROI para a parceria ativa com a <span className="font-bold text-orange-500">@demo.influencer</span> está projetada em <span className="font-extrabold text-orange-500">38.5%</span>. Recomendo revisar os entregáveis pendentes na fila assim que postados para otimizar a distribuição do anúncio. Utilize o Radar de Talentos abaixo para escalar novos criadores com pontuação auditada."
+
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-2xl md:text-4xl font-black tracking-tight text-slate-950 flex items-center gap-2">
+                Marca Premium Ltda
+              </h1>
+              <span className="px-3 py-1 rounded-full text-xs font-black bg-orange-50 text-orange-600 border border-orange-200 shadow-sm flex items-center gap-1.5">
+                <Briefcase className="w-3.5 h-3.5 text-orange-500" /> Contratante Oficial
+              </span>
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> SafePay Ativo
+              </span>
+            </div>
+            <p className="text-xs md:text-sm text-slate-500 font-medium">
+              Painel Executivo de Governança de Parcerias, Inteligência de Conversão e Custódia SafePay.
             </p>
           </div>
         </div>
-      </div>
 
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-        <MetricCard title="Investimento Escrow" value={`$${stats.totalInvested.toLocaleString('pt-BR')}`} icon={DollarSign} isDark={isDark} />
-        <MetricCard title="Contratos Ativos" value={stats.activeContracts} icon={FileText} isDark={isDark} />
-        <MetricCard title="Entregas na Fila" value={stats.pendingReviews} icon={AlertCircle} isDark={isDark} />
-      </section>
+        {/* Ações Rápidas Corporativas */}
+        <div className="flex items-center gap-3.5 self-start xl:self-auto flex-wrap">
+          <Link href="/dashboard/marketplace">
+            <button className="px-6 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm hover:shadow transition-all flex items-center gap-2 active:scale-95">
+              <Users className="w-4 h-4 text-orange-600" />
+              Explorar Marketplace
+            </button>
+          </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        
-        {/* Painel de Qualidade (Aprovações Prioritárias) */}
-        <div className="col-span-1 lg:col-span-1 space-y-6">
-          <div className="flex items-center justify-between px-2">
-             <h2 className="text-xl font-black text-current flex items-center gap-2 uppercase tracking-tighter">
-               Ação Necessária 
-             </h2>
-             <span className="bg-pink-500/20 text-pink-500 dark:text-pink-450 border border-pink-500/30 text-[10px] font-black px-3 py-1 rounded-full">
-               {pendingReviews.length}
-             </span>
-          </div>
-          
-          {pendingReviews.length === 0 ? (
-            <div className={`border rounded-[2.5rem] p-12 text-center text-xs font-bold text-zinc-550 shadow-md ${
-              isDark ? 'bg-zinc-900/40 border-zinc-800/60' : 'bg-white border-zinc-200'
-            }`}>
-              <div className="flex justify-center mb-4"><CheckCircle className="w-10 h-10 text-emerald-500/70" /></div>
-              Sua fila de revisão está vazia.<br/>Nenhuma pendência no momento.
-            </div>
-          ) : (
-            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 pb-4 no-scrollbar">
-              {pendingReviews.map(delivery => (
-                <DeliverableReviewCard 
-                  key={delivery.id}
-                  deliverableId={delivery.id}
-                  contractTitle={delivery.contractTitle}
-                  influencerHandle={delivery.influencerHandle}
-                  proofUrl={delivery.proofUrl || ''}
-                  onSuccess={() => fetchDashboard()}
-                />
-              ))}
-            </div>
-          )}
+          <Link href="/dashboard/company/new-contract">
+            <button className="px-7 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 hover:from-orange-500 hover:to-amber-400 transition-all shadow-lg shadow-orange-500/25 active:scale-95 flex items-center gap-2">
+              <Plus className="w-4 h-4 stroke-[3]" />
+              Propor Novo Contrato
+            </button>
+          </Link>
         </div>
 
-        {/* Lista de Contratos Ativos */}
-        <div className={`border rounded-[2.5rem] p-8 shadow-xl flex flex-col lg:col-span-3 ${
-          isDark ? 'bg-zinc-900/40 border-zinc-800/60' : 'bg-white border-zinc-200'
-        }`}>
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-xl font-black text-current flex items-center gap-2 uppercase tracking-tighter">
-              <FileText className="w-5 h-5 text-orange-400" /> Histórico de Contratos
-            </h2>
-            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Clique na linha para detalhes</span>
+      </header>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          2. OS 4 CARDS DE KPIS CORPORATIVOS COM BOTÕES CTA
+      ══════════════════════════════════════════════════════════════════════ */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+        
+        {/* Card 1: Total em Custódia SafePay */}
+        <div className="p-6 rounded-[2rem] border border-slate-200/90 bg-white shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden group space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="w-12 h-12 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Lock className="w-6 h-6" />
+            </div>
+            <div className="flex items-center gap-1 text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> 100% Protegido
+            </div>
           </div>
           
-          {contracts.length === 0 ? (
-            <div className={`flex flex-col items-center justify-center py-16 text-center border border-dashed rounded-[2rem] ${
-              isDark ? 'bg-zinc-950/50 border-zinc-800/50' : 'bg-zinc-50 border-zinc-200/80'
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">
+              Saldo sob Custódia SafePay
+            </span>
+            <div className="text-3xl font-black text-slate-950 tracking-tight">
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalSafePayHeld)}
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span className="text-slate-500 font-medium flex items-center gap-1">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" /> 0% Risco de Golpe
+            </span>
+            <Link 
+              href="/dashboard/contracts" 
+              className="px-3.5 py-1.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 shadow-sm shadow-orange-500/20 active:scale-95 transition-all flex items-center gap-1 hover:shadow-orange-500/30"
+            >
+              Gerenciar SafePay <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Card 2: Campanhas & Contratos Ativos */}
+        <div className="p-6 rounded-[2rem] border border-slate-200/90 bg-white shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden group space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="w-12 h-12 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Radio className="w-6 h-6 animate-pulse" />
+            </div>
+            <div className="flex items-center gap-1 text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> {activeContractsCount} Em Execução
+            </div>
+          </div>
+
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">
+              Campanhas em Andamento
+            </span>
+            <div className="text-3xl font-black text-slate-950 tracking-tight">
+              {activeContractsCount} <span className="text-sm font-bold text-slate-400">Contratos</span>
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span className="text-slate-500 font-medium flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-slate-400" /> Cronogramas em dia
+            </span>
+            <Link 
+              href="/dashboard/contracts" 
+              className="px-3.5 py-1.5 rounded-xl text-xs font-black text-orange-600 bg-orange-50 hover:bg-orange-600 hover:text-white border border-orange-200 shadow-sm active:scale-95 transition-all flex items-center gap-1"
+            >
+              Ver Contratos <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Card 3: Entregáveis Aguardando Aprovação */}
+        <div className="p-6 rounded-[2rem] border border-slate-200/90 bg-white shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden group space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Clock className="w-6 h-6" />
+            </div>
+            <div className={`flex items-center gap-1 text-xs font-black px-2.5 py-1 rounded-full border ${
+              pendingReviews.length > 0 ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200'
             }`}>
-              <div className={`w-20 h-20 rounded-[1.5rem] flex items-center justify-center mb-6 shadow-sm border ${
-                isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'
-              }`}>
-                <FileText className="w-10 h-10 text-zinc-400" />
+              <Flame className="w-3.5 h-3.5 text-amber-600" /> {pendingReviews.length} Pendentes
+            </div>
+          </div>
+
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">
+              Aprovação de Entregas
+            </span>
+            <div className="text-3xl font-black text-slate-950 tracking-tight">
+              {pendingReviews.length} <span className="text-sm font-bold text-slate-400">na fila</span>
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span className="text-slate-500 font-medium">Liberação com 1 clique</span>
+            <a 
+              href="#fila-revisao" 
+              className="px-3.5 py-1.5 rounded-xl text-xs font-black text-amber-700 bg-amber-50 hover:bg-amber-600 hover:text-white border border-amber-200 shadow-sm active:scale-95 transition-all flex items-center gap-1"
+            >
+              Revisar Fila ⚡
+            </a>
+          </div>
+        </div>
+
+        {/* Card 4: ROI Projetado & Alcance Auditado */}
+        <div className="p-6 rounded-[2rem] border border-slate-200/90 bg-white shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden group space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Award className="w-6 h-6" />
+            </div>
+            <div className="flex items-center gap-1 text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-600" /> 38.5% ROI Médio
+            </div>
+          </div>
+
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">
+              Investimento Consolidado
+            </span>
+            <div className="text-3xl font-black text-slate-950 tracking-tight">
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalInvested)}
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span className="text-slate-500 font-medium">1.4M impressões</span>
+            <Link 
+              href="/dashboard/reports" 
+              className="px-3.5 py-1.5 rounded-xl text-xs font-black text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white border border-blue-200 shadow-sm active:scale-95 transition-all flex items-center gap-1.5"
+            >
+              Relatórios <BarChart3 className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          3. VINCENZO AI - BUSINESS ADVISOR & PREDIÇÃO DE ROI
+      ══════════════════════════════════════════════════════════════════════ */}
+      <section className="p-6 md:p-8 rounded-[2.5rem] bg-white border border-slate-200/80 shadow-sm relative overflow-hidden space-y-4">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-orange-600 flex items-center justify-center shrink-0">
+            <Sparkles className="w-6 h-6" />
+          </div>
+          <div className="space-y-1.5 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-orange-600 bg-orange-50 px-2.5 py-0.5 rounded border border-orange-200">
+                Vincenzo AI • Business Advisor
+              </span>
+              <span className="text-xs font-bold text-slate-400">Inteligência Preditiva em Tempo Real</span>
+            </div>
+            <p className="text-sm md:text-base font-medium text-slate-700 leading-relaxed">
+              "Foco em escala e eficiência orçamentária. As métricas auditadas da sua campanha ativa com a <strong className="text-slate-950 font-black">@demo.influencer</strong> indicam projeção de <strong className="text-emerald-600 font-black">+38.5% de ROI</strong>. Recomendo aprovar as entregas pendentes na fila assim que postadas para liberar o SafePay e acelerar a tração dos novos criadores do Radar abaixo."
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          4. SEÇÃO PRINCIPAL: FILA DE APROVAÇÃO & TABELA DE CONTRATOS
+      ══════════════════════════════════════════════════════════════════════ */}
+      <section className="grid grid-cols-1 xl:grid-cols-12 gap-8" id="fila-revisao">
+        
+        {/* Coluna Esquerda (4 cols): Fila de Aprovação de Entregáveis */}
+        <div className="xl:col-span-4 p-6 md:p-8 rounded-[2.5rem] bg-white border border-slate-200/80 shadow-sm space-y-6 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="space-y-0.5">
+                <h3 className="text-lg font-black text-slate-950 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-orange-600" />
+                  Fila de Validação
+                </h3>
+                <p className="text-xs text-slate-400 font-medium">Entregas de criadores aguardando liberação do SafePay.</p>
               </div>
-              <h3 className="text-current text-lg font-black uppercase tracking-tight mb-2">Sua esteira está vazia</h3>
-              <p className="text-zinc-550 dark:text-zinc-400 text-sm font-medium max-w-md mb-8">
-                Descubra influenciadores de alta conversão validados por dados reais. Negocie e escale os seus resultados com proteção total.
+              <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-700 border border-amber-200">
+                {pendingReviews.length} Pendentes
+              </span>
+            </div>
+
+            {pendingReviews.length === 0 ? (
+              <div className="py-12 px-4 rounded-2xl bg-slate-50/70 border border-dashed border-slate-200 text-center space-y-3">
+                <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 mx-auto flex items-center justify-center border border-emerald-100">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-sm font-black text-slate-900">Fila 100% em dia!</h4>
+                  <p className="text-xs text-slate-400 font-medium max-w-xs mx-auto">
+                    Nenhum entregável pendente de revisão no momento. Novos posts aparecerão aqui automaticamente.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1">
+                {pendingReviews.map((delivery) => (
+                  <DeliverableReviewCard 
+                    key={delivery.id}
+                    deliverableId={delivery.id}
+                    contractTitle={delivery.contractTitle}
+                    influencerHandle={delivery.influencerHandle}
+                    proofUrl={delivery.proofUrl || ''}
+                    onSuccess={() => fetchDashboard()}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <span className="flex items-center gap-1 font-medium">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" /> SafePay Auto-Release: 48h
+            </span>
+            <Link href="/dashboard/support" className="text-orange-600 font-bold hover:underline">
+              Precisa de Ajuda?
+            </Link>
+          </div>
+        </div>
+
+        {/* Coluna Direita (8 cols): Esteira de Contratos & Campanhas Ativas */}
+        <div className="xl:col-span-8 p-6 md:p-8 rounded-[2.5rem] bg-white border border-slate-200/80 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div className="space-y-0.5">
+              <h3 className="text-lg font-black text-slate-950 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-orange-600" />
+                Esteira de Contratos & Campanhas
+              </h3>
+              <p className="text-xs text-slate-400 font-medium">
+                Acompanhe o status jurídico, depósito em custódia e entregas em tempo real.
               </p>
-              <Link 
-                href="/dashboard/marketplace"
-                className={`px-8 py-4 font-black uppercase text-[10px] tracking-[0.2em] rounded-2xl transition-all border ${
-                  isDark ? 'bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-700' : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border-zinc-250'
-                }`}
-              >
-                Procurar Influenciadores Agora
+            </div>
+
+            <Link href="/dashboard/contracts">
+              <button className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-200 transition-all">
+                Ver Todos →
+              </button>
+            </Link>
+          </div>
+
+          {rawContracts.length === 0 ? (
+            <div className="py-16 text-center rounded-2xl bg-slate-50/70 border border-dashed border-slate-200 space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-600 mx-auto flex items-center justify-center border border-orange-100">
+                <FileText className="w-8 h-8" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-base font-black text-slate-900">Nenhum contrato ativo</h4>
+                <p className="text-xs text-slate-500 font-medium max-w-md mx-auto">
+                  Inicie sua primeira campanha com influenciadores auditados e proteção SafePay completa.
+                </p>
+              </div>
+              <Link href="/dashboard/company/new-contract">
+                <button className="px-6 py-3 bg-gradient-to-r from-orange-600 to-amber-500 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md hover:shadow-lg transition-all active:scale-95">
+                  Propor Primeiro Contrato
+                </button>
               </Link>
             </div>
           ) : (
-            <div className={`rounded-[1.5rem] border overflow-hidden flex-1 ${
-              isDark ? 'border-zinc-800/60 bg-zinc-950/50' : 'border-zinc-200 bg-zinc-50/50'
-            }`}>
+            <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50/30">
               <Table>
-                <TableHeader className={isDark ? 'bg-zinc-900' : 'bg-zinc-100'}>
-                  <TableRow className={`border-b hover:bg-transparent ${isDark ? 'border-b-zinc-800' : 'border-b-zinc-200'}`}>
-                    <TableHead className="text-zinc-500 font-black uppercase text-[10px] tracking-widest h-14 pl-6">Influenciador</TableHead>
-                    <TableHead className="text-zinc-500 font-black uppercase text-[10px] tracking-widest h-14">Campanha</TableHead>
-                    <TableHead className="text-zinc-500 font-black uppercase text-[10px] tracking-widest h-14">Orçamento</TableHead>
-                    <TableHead className="text-zinc-500 font-black uppercase text-[10px] tracking-widest h-14">Escrow</TableHead>
-                    <TableHead className="text-right text-zinc-500 font-black uppercase text-[10px] tracking-widest h-14 pr-6">Ação</TableHead>
+                <TableHeader className="bg-slate-100/70">
+                  <TableRow className="border-b border-slate-200 hover:bg-transparent">
+                    <TableHead className="text-slate-500 font-black uppercase text-[10px] tracking-wider pl-6">Influenciador</TableHead>
+                    <TableHead className="text-slate-500 font-black uppercase text-[10px] tracking-wider">Campanha</TableHead>
+                    <TableHead className="text-slate-500 font-black uppercase text-[10px] tracking-wider">Valor</TableHead>
+                    <TableHead className="text-slate-500 font-black uppercase text-[10px] tracking-wider">Status SafePay</TableHead>
+                    <TableHead className="text-right text-slate-500 font-black uppercase text-[10px] tracking-wider pr-6">Ação</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(contracts as unknown as ContractItem[]).map((contract) => {
-                    const lastCapture = contract.influencer.metricsHistory?.[0]?.capturedAt;
-                    const isOutdated = lastCapture ? (new Date().getTime() - new Date(lastCapture).getTime() > 24 * 60 * 60 * 1000) : true;
-                    
-                    // Row click handler (clicks go to report if completed, else go to general contracts page)
-                    const handleRowClick = () => {
-                      if (contract.escrowStatus === 'COMPLETED') {
-                        router.push(`/dashboard/company/reports/${contract.id}`);
-                      } else {
-                        router.push('/dashboard/contracts');
-                      }
-                    };
-
+                  {rawContracts.map((contract) => {
+                    const badge = getStatusBadge(contract.escrowStatus);
                     return (
                       <TableRow 
-                        key={contract.id} 
-                        onClick={handleRowClick}
-                        className={`border-b cursor-pointer transition-colors group ${
-                          isDark ? 'border-b-zinc-800/50 hover:bg-zinc-800/30' : 'border-b-zinc-200 hover:bg-zinc-100/50'
-                        }`}
+                        key={contract.id}
+                        className="border-b border-slate-100 hover:bg-white transition-colors group cursor-pointer"
+                        onClick={() => setSelectedLegalContract(contract)}
                       >
-                        <TableCell className="font-black text-current py-6 pl-6">
-                          <div className="flex flex-col gap-1">
-                            <span className="group-hover:text-orange-500 transition-colors">@{contract.influencer.handle}</span>
-                            {isOutdated && (
-                              <span className="inline-flex w-max items-center gap-1 text-[8px] font-black uppercase bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full border border-red-500/20">
-                                <AlertCircle className="w-2.5 h-2.5" /> Desatualizado
+                        <TableCell className="py-4 pl-6">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs">
+                              {contract.influencer.handle.replace('@', '').charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <span className="text-xs font-black text-slate-900 group-hover:text-orange-600 transition-colors block">
+                                @{contract.influencer.handle}
                               </span>
-                            )}
+                              <span className="text-[10px] text-slate-400 font-medium">Auditado SHA-256</span>
+                            </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-zinc-550 dark:text-zinc-300 py-6 font-bold text-sm">{contract.title}</TableCell>
-                      <TableCell className="text-emerald-600 dark:text-emerald-400 font-black py-6 tracking-tighter text-lg">${Number(contract.budget).toLocaleString('pt-BR')}</TableCell>
-                      <TableCell className="py-6">
-                        <div className="flex items-center gap-3">
-                          <EscrowTimeline status={contract.escrowStatus as EscrowStatus} />
-                          <span className="text-[9px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-tighter">
-                            {statusMap[contract.escrowStatus] || contract.escrowStatus}
+
+                        <TableCell className="py-4">
+                          <span className="text-xs font-bold text-slate-800 block truncate max-w-[200px]">
+                            {contract.title}
                           </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right py-6 pr-6" onClick={(e) => e.stopPropagation()}>
-                        {contract.escrowStatus === 'PENDING_PAYMENT' && (
-                          <button 
-                            onClick={async () => {
-                              if (confirm('Confirmar depósito Escrow para iniciar a campanha?')) {
-                                try {
-                                  await api.post(`/contracts/${contract.id}/pay`);
-                                  fetchDashboard();
-                                } catch (err) {
-                                  alert('Erro ao confirmar depósito.');
-                                }
-                              }
-                            }}
-                            className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-md active:scale-95"
+                        </TableCell>
+
+                        <TableCell className="py-4">
+                          <span className="text-xs font-black text-slate-950">
+                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(contract.budget)}
+                          </span>
+                        </TableCell>
+
+                        <TableCell className="py-4">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black border ${badge.style}`}>
+                            {badge.label}
+                          </span>
+                        </TableCell>
+
+                        <TableCell className="py-4 pr-6 text-right" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() => setSelectedLegalContract(contract)}
+                            className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider text-orange-600 bg-orange-50 hover:bg-orange-600 hover:text-white border border-orange-200 transition-all"
                           >
-                            Depositar
+                            Ver Minuta
                           </button>
-                        )}
-                        {contract.escrowStatus === 'DRAFT' && (
-                          <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest bg-zinc-800/10 dark:bg-zinc-800/30 px-3 py-1.5 rounded-lg border border-zinc-700/20">
-                            Aguardando Creator
-                          </span>
-                        )}
-                        {contract.escrowStatus === 'COMPLETED' && (
-                          <Link
-                            href={`/dashboard/company/reports/${contract.id}`}
-                            className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${
-                              isDark ? 'border-zinc-800 text-zinc-400 hover:bg-white/5' : 'border-zinc-250 text-zinc-650 hover:bg-zinc-100'
-                            }`}
-                          >
-                            Ver Relatório
-                          </Link>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
           )}
         </div>
 
-      </div>
+      </section>
 
-      {/* Radar de Talentos & Recomendação da IA (Spotlight de Influenciadores) */}
-      <section className={`border rounded-[2.5rem] p-8 shadow-xl space-y-8 ${
-        isDark ? 'bg-zinc-900/40 border-zinc-800/60' : 'bg-white border-zinc-200 shadow-zinc-100/50'
-      }`}>
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-black text-current tracking-tight flex items-center gap-2 uppercase">
-              <UserCheck className="w-6 h-6 text-orange-500" /> Radar de Talentos
-            </h2>
-            <p className="text-sm text-zinc-550 dark:text-zinc-400 font-medium">Recomendações baseadas em crescimento de audiência, dedicação em prazos e pitches validados.</p>
+      {/* ══════════════════════════════════════════════════════════════════════
+          5. RADAR DE TALENTOS & RECOMENDAÇÃO POR IA (SPOTLIGHT)
+      ══════════════════════════════════════════════════════════════════════ */}
+      <section className="p-6 md:p-8 rounded-[2.5rem] bg-white border border-slate-200/80 shadow-sm space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-200">
+                Alta Performance Auditada
+              </span>
+              <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                <TrendingUp className="w-3.5 h-3.5" /> +94.8% Retenção Média
+              </span>
+            </div>
+            <h3 className="text-xl font-black text-slate-950 flex items-center gap-2">
+              <Users className="w-5 h-5 text-orange-600" />
+              Radar de Criadores com Alta Taxa de Audiência & Engajamento por IA
+            </h3>
+            <p className="text-xs text-slate-400 font-medium">
+              Influenciadores auditados com alta taxa de conversão, visualizações e audiência qualificada recomendados para sua marca.
+            </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Tabs de Filtro */}
-            <div className={`flex items-center p-1 rounded-xl border ${
-              isDark ? 'bg-black/40 border-zinc-800' : 'bg-zinc-100 border-zinc-200'
-            }`}>
-              <button 
-                onClick={() => setActiveRadarTab('nacional')}
-                className={`px-4 py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
-                  activeRadarTab === 'nacional'
-                    ? 'bg-orange-600 text-white shadow-md'
-                    : 'text-zinc-550 dark:text-zinc-400 hover:text-current'
-                }`}
-              >
-                Nacional
-              </button>
-              <button 
-                onClick={() => setActiveRadarTab('regional')}
-                className={`px-4 py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
-                  activeRadarTab === 'regional'
-                    ? 'bg-orange-600 text-white shadow-md'
-                    : 'text-zinc-550 dark:text-zinc-400 hover:text-current'
-                }`}
-              >
-                Regional (SP)
-              </button>
-            </div>
-
-            <span className="bg-orange-500/10 text-orange-500 border border-orange-500/20 text-[10px] font-black px-4.5 py-2.5 rounded-xl uppercase tracking-wider">
-              Métricas Auditadas
-            </span>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setActiveRadarTab('nacional')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all ${
+                activeRadarTab === 'nacional' ? 'bg-orange-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              Nacional
+            </button>
+            <button 
+              onClick={() => setActiveRadarTab('regional')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all ${
+                activeRadarTab === 'regional' ? 'bg-orange-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              Regional (SP)
+            </button>
+            <button 
+              onClick={() => setActiveRadarTab('high_roi')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all ${
+                activeRadarTab === 'high_roi' ? 'bg-orange-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              Alta Conversão
+            </button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {filteredTalents.map((talent, index) => (
-            <div 
-              key={index}
-              onClick={() => handleOpenMediaKit(talent)}
-              className={`p-6 rounded-[2rem] border transition-all duration-300 flex flex-col justify-between cursor-pointer hover:scale-[1.01] hover:shadow-xl ${
-                isDark 
-                  ? 'bg-zinc-950/60 border-zinc-800 hover:border-orange-500/30' 
-                  : 'bg-zinc-50/50 border-zinc-250 hover:border-orange-500/30 shadow-sm shadow-zinc-100/30'
-              }`}
-            >
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-lg font-black text-current">@{talent.handle}</h4>
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{talent.niche}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-xs font-black text-emerald-500 flex items-center gap-1">
-                      <TrendingUp className="w-3.5 h-3.5" /> {talent.growth}
+          {filteredTalents.map((talent) => {
+            const avatarUrl = talent.handle.includes('pedro')
+              ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop'
+              : talent.handle.includes('lucas')
+              ? 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop'
+              : talent.handle.includes('sandbox')
+              ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop'
+              : talent.handle.includes('teste')
+              ? 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&auto=format&fit=crop'
+              : 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&auto=format&fit=crop';
+
+            return (
+              <div 
+                key={talent.id}
+                className="p-6 rounded-[2rem] border border-slate-200 bg-slate-50/50 hover:border-orange-300 hover:bg-white hover:shadow-lg transition-all space-y-4 flex flex-col justify-between group"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="relative shrink-0">
+                        <img 
+                          src={avatarUrl} 
+                          alt={talent.handle}
+                          className="w-12 h-12 rounded-full object-cover border-2 border-orange-500/20 shadow-sm"
+                        />
+                        <div className="absolute -bottom-0.5 -right-0.5 bg-blue-600 text-white p-0.5 rounded-full border border-white" title="Criador Auditado SHA-256">
+                          <Check className="w-2.5 h-2.5 stroke-[3]" />
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="text-base font-black text-slate-950 group-hover:text-orange-600 transition-colors">
+                          @{talent.handle}
+                        </h4>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+                          {talent.niche}
+                        </span>
+                      </div>
+                    </div>
+
+                    <span className="text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 flex items-center gap-1 shrink-0">
+                      <TrendingUp className="w-3.5 h-3.5" /> {talent.growth || '+12.4%'}
                     </span>
-                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wider">MoM</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded text-[10px] font-black bg-orange-50 text-orange-600 border border-orange-200">
+                      InfluScore: {talent.influScore}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3 text-emerald-600" /> Classe {talent.scoreClass}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5 pt-2 border-t border-slate-200 text-xs">
+                    <span className="text-[10px] font-black uppercase text-slate-400 block">Pitch do Criador</span>
+                    <p className="text-slate-600 italic leading-relaxed text-xs line-clamp-2">
+                      "{talent.pitch}"
+                    </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="bg-orange-500/10 text-orange-500 text-[10px] font-black px-3 py-1 rounded-full">
-                    InfluScore: {talent.influScore}
-                  </span>
-                  <span className="bg-zinc-500/15 text-zinc-400 text-[9px] font-black px-3 py-1 rounded-full flex items-center gap-1 uppercase">
-                    <ShieldCheck className="w-3 h-3 text-emerald-400" /> {talent.scoreClass}
-                  </span>
-                </div>
-
-                <div className="space-y-2 pt-2 border-t border-zinc-850">
-                  <div>
-                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wider block">Pitch do Criador</span>
-                    <p className="text-xs text-zinc-550 dark:text-zinc-300 italic font-medium">"{talent.pitch}"</p>
-                  </div>
-                  <div>
-                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wider block">Reputação e Dedicação</span>
-                    <p className="text-xs text-zinc-550 dark:text-zinc-300 font-medium">{talent.reputation}</p>
-                  </div>
+                <div className="pt-4 border-t border-slate-200 flex gap-2">
+                  <button
+                    onClick={() => handleOpenMediaKit(talent)}
+                    className="flex-1 py-2.5 rounded-xl text-xs font-black text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 transition-all text-center"
+                  >
+                    Mídia Kit
+                  </button>
+                  <Link
+                    href={`/dashboard/company/new-contract?influencerId=${talent.id}&handle=${talent.handle}`}
+                    className="flex-1 py-2.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 shadow-md shadow-orange-500/20 transition-all text-center flex items-center justify-center gap-1"
+                  >
+                    Contratar
+                  </Link>
                 </div>
               </div>
-
-              <div className="pt-6 mt-4 border-t border-zinc-850">
-                <Link
-                  href={`/dashboard/company/new-contract?influencerId=${talent.id}&handle=${talent.handle}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="w-full h-11 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-[10px] font-black uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shadow-md active:scale-95"
-                >
-                  Propor Contrato
-                </Link>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
-      {/* Modal de Media Kit do Influenciador Selecionado */}
+      {/* ══════════════════════════════════════════════════════════════════════
+          6. MODAL DO MÍDIA KIT DO INFLUENCIADOR SELECIONADO
+      ══════════════════════════════════════════════════════════════════════ */}
       {isModalOpen && selectedTalent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in duration-300">
-          <div 
-            className={`relative w-full max-w-4xl max-h-[85vh] overflow-y-auto rounded-[2.5rem] border p-6 md:p-10 animate-in zoom-in-95 duration-300 ${
-              isDark ? 'bg-[#0b0a09] border-zinc-800 text-white' : 'bg-white border-zinc-250 text-zinc-900 shadow-2xl shadow-zinc-200/50'
-            }`}
-          >
-            {/* Botão de Fechar */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="relative w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-[2.5rem] bg-white border border-slate-200 p-6 md:p-8 shadow-2xl space-y-6">
             <button 
               onClick={() => setIsModalOpen(false)}
-              className={`absolute top-6 right-6 p-2.5 rounded-full border transition-all ${
-                isDark ? 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white' : 'bg-zinc-50 border-zinc-200 text-zinc-500 hover:text-zinc-800'
-              }`}
+              className="absolute top-6 right-6 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all"
             >
               <X className="w-4 h-4" />
             </button>
 
             {modalLoading ? (
-              <div className="py-24 flex flex-col items-center justify-center space-y-4">
-                <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sincronizando Ativos do Criador...</span>
+              <div className="py-20 flex flex-col items-center justify-center space-y-3">
+                <Loader2 className="w-8 h-8 text-orange-600 animate-spin" />
+                <span className="text-xs font-bold text-slate-400">Carregando métricas auditadas...</span>
               </div>
             ) : talentMediaKit ? (
-              <div className="space-y-8">
-                {/* Cabeçalho */}
-                <div className="flex items-center gap-4 border-b border-zinc-850 pb-6 pr-12">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-500 p-0.5 shadow-md animate-pulse">
-                    <div className={`w-full h-full rounded-[0.9rem] flex items-center justify-center font-black text-xl overflow-hidden ${
-                      isDark ? 'bg-zinc-950 text-white' : 'bg-zinc-50 text-zinc-850'
-                    }`}>
-                      {selectedTalent.handle[0].toUpperCase()}
-                    </div>
+              <div className="space-y-6">
+                {/* Header do Modal */}
+                <div className="flex items-center gap-4 border-b border-slate-100 pb-4">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white flex items-center justify-center font-black text-xl shadow-md">
+                    {talentMediaKit.handle.replace('@', '').charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black flex items-center gap-1.5">
+                    <h3 className="text-xl font-black text-slate-950 flex items-center gap-1.5">
                       @{talentMediaKit.handle}
-                      <ShieldCheck className="w-5 h-5 text-emerald-500" />
+                      <ShieldCheck className="w-4 h-4 text-emerald-600" />
                     </h3>
-                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                      <span className="text-[10px] bg-orange-500/10 text-orange-500 border border-orange-500/10 px-2 py-0.5 rounded font-black uppercase tracking-wider">
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs font-black text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-200">
                         {talentMediaKit.niche}
                       </span>
-                      <span className="text-[10px] bg-amber-500/10 text-amber-500 border border-amber-500/10 px-2 py-0.5 rounded font-black uppercase tracking-wider">
-                        InfluScore: {talentMediaKit.influScore}
-                      </span>
-                      <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-                        Classe {talentMediaKit.scoreClass}
+                      <span className="text-xs font-bold text-slate-500">
+                        InfluScore: <strong>{talentMediaKit.influScore}</strong> ({talentMediaKit.scoreClass})
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Conteúdo Principal em Duas Colunas */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Coluna da Esquerda: Bio, IA e Preços */}
-                  <div className="space-y-6">
-                    <div className="space-y-2">
-                      <span className="text-[9px] font-black text-zinc-500 uppercase tracking-wider block">Posicionamento & Bio</span>
-                      <p className={`text-xs leading-relaxed font-medium ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>
-                        {talentMediaKit.bio}
-                      </p>
-                    </div>
-
-                    {/* Catálogo de Serviços */}
-                    <div className="space-y-4">
-                      <span className="text-[9px] font-black text-zinc-550 dark:text-zinc-500 uppercase tracking-wider block">Catálogo de Serviços</span>
-                      <div className="space-y-3">
-                        {talentMediaKit.rateCard?.map((rate, idx: number) => (
-                          <div 
-                            key={idx} 
-                            className={`p-4 rounded-xl border flex items-center justify-between gap-4 ${
-                              isDark ? 'bg-zinc-900/40 border-zinc-800' : 'bg-zinc-50 border-zinc-200'
-                            }`}
-                          >
-                            <div className="space-y-0.5">
-                              <h5 className="text-[11px] font-black uppercase tracking-wide">{rate.serviceName}</h5>
-                              <p className="text-[10px] text-zinc-455 dark:text-zinc-450">{rate.description}</p>
-                            </div>
-                            <span className="text-xs font-black text-emerald-500 whitespace-nowrap">
-                              R$ {rate.price.toLocaleString('pt-BR')}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                {/* KPIs & Rate Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                    <span className="text-[10px] font-black uppercase text-slate-400 block">Seguidores</span>
+                    <span className="text-lg font-black text-slate-900">{talentMediaKit.followers.toLocaleString('pt-BR')}</span>
                   </div>
-
-                  {/* Coluna da Direita: KPIs e Avaliação Corporativa */}
-                  <div className="space-y-6">
-                    {/* KPIs de Audiência */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className={`p-4 rounded-2xl border ${isDark ? 'bg-zinc-900/40 border-zinc-800' : 'bg-zinc-50 border-zinc-200'}`}>
-                        <span className="text-[9px] font-black text-zinc-500 uppercase tracking-wider block mb-0.5">Seguidores</span>
-                        <span className="text-xl font-black text-current">{talentMediaKit.followers?.toLocaleString()}</span>
-                      </div>
-                      <div className={`p-4 rounded-2xl border ${isDark ? 'bg-zinc-900/40 border-zinc-800' : 'bg-zinc-50 border-zinc-200'}`}>
-                        <span className="text-[9px] font-black text-zinc-500 uppercase tracking-wider block mb-0.5">Engajamento</span>
-                        <span className="text-xl font-black text-orange-500">{talentMediaKit.engagement}%</span>
-                      </div>
-                    </div>
-
-                    {/* Avaliação e Comportamento Corporativo (NOVO) */}
-                    <div className={`p-5 rounded-2xl border space-y-4 ${isDark ? 'bg-zinc-900/40 border-zinc-800' : 'bg-zinc-50 border-zinc-200'}`}>
-                      <span className="text-[9px] font-black text-zinc-550 dark:text-zinc-500 uppercase tracking-widest block">Trabalhar com Ele (Feedback das Marcas)</span>
-                      
-                      <div className="grid grid-cols-2 gap-4 pt-1">
-                        <div>
-                          <span className="text-[9px] font-bold text-zinc-400 block uppercase">Recomendação</span>
-                          <span className="text-lg font-black text-emerald-500">{talentMediaKit.companyFeedback}% das marcas</span>
-                        </div>
-                        <div>
-                          <span className="text-[9px] font-bold text-zinc-400 block uppercase">Negociação</span>
-                          <span className="text-xs font-black text-orange-500 border border-orange-500/20 bg-orange-500/5 px-2 py-0.5 rounded inline-block mt-0.5">{talentMediaKit.negotiationBehavior}</span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1 pt-2 border-t border-dashed border-zinc-800/40 text-[10px] font-bold text-zinc-550 dark:text-zinc-400 leading-relaxed">
-                        <div>⏱ **Pontualidade:** {talentMediaKit.deliveryRate}% de entregas no prazo acordado</div>
-                        <div>💬 **Facilidade de Contato:** Resposta rápida e alinhamento ágil de briefing.</div>
-                      </div>
-                    </div>
-
-                    {/* Cidades de Público */}
-                    <div className={`p-5 rounded-2xl border space-y-4 ${isDark ? 'bg-zinc-900/40 border-zinc-800' : 'bg-zinc-50 border-zinc-200'}`}>
-                      <span className="text-[9px] font-black text-zinc-550 dark:text-zinc-500 uppercase tracking-widest block">Demografia de Audiência (São Paulo / Rio)</span>
-                      <div className="space-y-3">
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-[10px] font-bold text-zinc-550 dark:text-zinc-400">
-                            <span>São Paulo</span>
-                            <span>52%</span>
-                          </div>
-                          <div className="h-1.5 w-full bg-white/10 dark:bg-white/10 rounded-full overflow-hidden">
-                            <div className="h-full bg-orange-500 rounded-full" style={{ width: '52%' }} />
-                          </div>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-[10px] font-bold text-zinc-550 dark:text-zinc-400">
-                            <span>Rio de Janeiro</span>
-                            <span>20%</span>
-                          </div>
-                          <div className="h-1.5 w-full bg-white/10 dark:bg-white/10 rounded-full overflow-hidden">
-                            <div className="h-full bg-amber-500 rounded-full" style={{ width: '20%' }} />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                    <span className="text-[10px] font-black uppercase text-slate-400 block">Engajamento</span>
+                    <span className="text-lg font-black text-orange-600">{talentMediaKit.engagement}%</span>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 col-span-2 sm:col-span-1">
+                    <span className="text-[10px] font-black uppercase text-slate-400 block">Feedback Marcas</span>
+                    <span className="text-lg font-black text-emerald-700">{talentMediaKit.companyFeedback}% Aprov.</span>
                   </div>
                 </div>
 
-                {/* Footer do Modal com botão Propor Contrato */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-zinc-850">
-                  <div className="text-xs font-semibold text-zinc-500 flex items-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-emerald-500" /> Transação coberta por Escrow Seguro
+                {/* Catálogo de Pacotes */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider">Tabela de Pacotes & Preços (Rate Card)</h4>
+                  <div className="space-y-2">
+                    {talentMediaKit.rateCard?.map((rate, idx) => (
+                      <div key={idx} className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <h5 className="text-xs font-black text-slate-900">{rate.serviceName}</h5>
+                          <p className="text-[11px] text-slate-500">{rate.description}</p>
+                        </div>
+                        <span className="text-sm font-black text-slate-950 ml-4 whitespace-nowrap">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rate.price)}
+                        </span>
+                      </div>
+                    ))}
                   </div>
+                </div>
+
+                {/* Ação */}
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-xs text-slate-400 font-medium flex items-center gap-1">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" /> Pagamento com Proteção SafePay
+                  </span>
                   <Link
                     href={`/dashboard/company/new-contract?influencerId=${selectedTalent.id}&handle=${selectedTalent.handle}`}
                     onClick={() => setIsModalOpen(false)}
-                    className="w-full sm:w-auto px-8 py-4 bg-orange-600 hover:bg-orange-500 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-lg transition-all active:scale-95 text-center flex items-center justify-center gap-2"
+                    className="px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-orange-600 to-amber-500 shadow-md hover:shadow-lg transition-all"
                   >
-                    Propor Contrato com {selectedTalent.handle} ➔
+                    Propor Contrato com {selectedTalent.handle} →
                   </Link>
                 </div>
               </div>
@@ -737,6 +903,19 @@ export default function CompanyDashboard() {
           </div>
         </div>
       )}
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          7. MODAL DA MINUTA JURÍDICA OFICIAL & ASSINATURA ELETRÔNICA
+      ══════════════════════════════════════════════════════════════════════ */}
+      {selectedLegalContract && (
+        <ContractLegalModal
+          isOpen={!!selectedLegalContract}
+          onClose={() => setSelectedLegalContract(null)}
+          contract={selectedLegalContract}
+          canSign={false}
+        />
+      )}
+
     </div>
   );
 }
