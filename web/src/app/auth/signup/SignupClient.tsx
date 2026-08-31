@@ -120,6 +120,45 @@ export default function SignupClient() {
   const [isLoading, setIsLoading] = useState(false);
   const isInfluencer = userType === 'influencer';
 
+  // Social Modal states
+  const [socialModalOpen, setSocialModalOpen] = useState(false);
+  const [socialPlatform, setSocialPlatform] = useState<'INSTAGRAM' | 'TIKTOK'>('INSTAGRAM');
+  const [socialHandle, setSocialHandle] = useState('');
+  const [socialGender, setSocialGender] = useState<'masculino' | 'feminino'>('feminino');
+  const [socialNiche, setSocialNiche] = useState('Lifestyle');
+
+  const openSocialModal = (platform: 'INSTAGRAM' | 'TIKTOK') => {
+    setSocialPlatform(platform);
+    setSocialHandle('');
+    setSocialModalOpen(true);
+  };
+
+  const handleSocialSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!socialHandle) return;
+    setError('');
+    setIsLoading(true);
+    try {
+      const res = await api.post<{ token: string; user: { role: string; onboardingCompleted: boolean } }>('/auth/social-login', {
+        platform: socialPlatform,
+        username: socialHandle,
+        gender: socialGender,
+        niche: socialNiche
+      });
+      setSocialModalOpen(false);
+      Cookies.set('influnext_token', res.data.token, cookieOptions);
+      Cookies.set('influnext_role', res.data.user.role, cookieOptions);
+      Cookies.set('influnext_onboarding', 'false', cookieOptions);
+      toast.success(`✦ Perfil ${socialPlatform} conectado com sucesso!`);
+      router.push('/onboarding');
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { error?: string } } };
+      setError(errorObj.response?.data?.error || 'Erro ao conectar via rede social.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Step 1: Credentials
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -356,9 +395,7 @@ export default function SignupClient() {
 
                     <button
                       type="button"
-                      onClick={() => {
-                        if (socialUrls?.instagram) window.location.href = socialUrls.instagram;
-                      }}
+                      onClick={() => openSocialModal('INSTAGRAM')}
                       className="p-4 bg-zinc-50/50 border border-zinc-200/80 rounded-2xl flex items-center justify-center gap-2 font-black text-[9px] uppercase tracking-wider hover:bg-zinc-100/50 hover:border-orange-500/30 transition-all text-zinc-500 hover:text-zinc-800 shadow-sm group"
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-pink-500 group-hover:scale-110 transition-transform">
@@ -371,9 +408,7 @@ export default function SignupClient() {
                     
                     <button
                       type="button"
-                      onClick={() => {
-                        if (socialUrls?.tiktok) window.location.href = socialUrls.tiktok;
-                      }}
+                      onClick={() => openSocialModal('TIKTOK')}
                       className="p-4 bg-zinc-50/50 border border-zinc-200/80 rounded-2xl flex items-center justify-center gap-2 font-black text-[9px] uppercase tracking-wider hover:bg-zinc-100/50 hover:border-orange-500/30 transition-all text-zinc-500 hover:text-zinc-800 shadow-sm group"
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-800 group-hover:scale-110 transition-transform">
@@ -683,6 +718,105 @@ export default function SignupClient() {
           </div>
         </div>
       </div>
+
+      {socialModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="relative w-full max-w-sm bg-white border border-zinc-200/80 rounded-[2rem] p-6 space-y-5 shadow-2xl overflow-hidden">
+            <div className="absolute top-[-20%] left-[-20%] w-[50%] h-[50%] rounded-full bg-orange-500/5 blur-[45px] pointer-events-none" />
+            <div className="absolute bottom-[-20%] right-[-20%] w-[50%] h-[50%] rounded-full bg-amber-600/3 blur-[45px] pointer-events-none" />
+            <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
+            
+            <div className="relative z-10 space-y-5">
+              <div className="space-y-1 text-center">
+                <h2 className="text-lg font-black text-zinc-900 uppercase tracking-tight flex items-center justify-center gap-2">
+                  Cadastrar com {socialPlatform === 'INSTAGRAM' ? 'Instagram' : 'TikTok'}
+                </h2>
+                <p className="text-zinc-400 text-[8px] font-black uppercase tracking-widest">
+                  Acesso Instantâneo & Perfil Inteligente
+                </p>
+              </div>
+
+              <form onSubmit={handleSocialSignup} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="block text-[8px] font-black text-zinc-500 uppercase tracking-[0.25em] ml-1">
+                    @ Nome de Usuário ({socialPlatform === 'INSTAGRAM' ? 'Instagram' : 'TikTok'})
+                  </label>
+                  <input
+                    type="text"
+                    value={socialHandle}
+                    onChange={(e) => setSocialHandle(e.target.value)}
+                    required
+                    placeholder={socialPlatform === 'INSTAGRAM' ? '@seu_perfil' : '@seu_tiktok'}
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-medium text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-orange-500/50 focus:bg-white focus:ring-1 focus:ring-orange-500/20 transition-all"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[8px] font-black text-zinc-500 uppercase tracking-[0.25em] ml-1">
+                    Nicho de Atuação
+                  </label>
+                  <select
+                    value={socialNiche}
+                    onChange={(e) => setSocialNiche(e.target.value)}
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-medium text-zinc-900 focus:outline-none focus:border-orange-500/50 transition-all"
+                  >
+                    {INFLUENCER_NICHES.map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[8px] font-black text-zinc-500 uppercase tracking-[0.25em] ml-1">
+                    Gênero (Para Estrategista de IA)
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSocialGender('feminino')}
+                      className={`py-2.5 rounded-xl border text-[9px] font-black uppercase tracking-wider transition-all ${
+                        socialGender === 'feminino'
+                          ? 'border-orange-500 bg-orange-50/50 text-[#d96b27]'
+                          : 'border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-100'
+                      }`}
+                    >
+                      Feminino (Valentina)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSocialGender('masculino')}
+                      className={`py-2.5 rounded-xl border text-[9px] font-black uppercase tracking-wider transition-all ${
+                        socialGender === 'masculino'
+                          ? 'border-orange-500 bg-orange-50/50 text-[#d96b27]'
+                          : 'border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-100'
+                      }`}
+                    >
+                      Masculino (Vincenzo)
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setSocialModalOpen(false)}
+                    className="flex-1 h-11 bg-zinc-50 border border-zinc-200 hover:bg-zinc-100 text-[8px] font-black uppercase tracking-widest text-zinc-500 rounded-xl transition-all"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isLoading || !socialHandle}
+                    className="flex-1 h-11 bg-[#d96b27] hover:bg-[#c65e21] disabled:opacity-50 text-[8px] font-black uppercase tracking-widest text-white rounded-xl shadow-lg shadow-orange-500/10 transition-all flex items-center justify-center gap-2"
+                  >
+                    {isLoading ? 'Conectando...' : 'Cadastrar & Entrar'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -55,12 +55,19 @@ export const getAuthUrls = async (req: Request, res: Response): Promise<void> =>
 
     const tiktokUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list,video.stats&response_type=code&redirect_uri=${getFrontendUrl(req)}/auth/callback/tiktok&state=${stateTiktok}`;
 
+    const isInstagramConfigured = Boolean(process.env.INSTAGRAM_CLIENT_ID && process.env.INSTAGRAM_CLIENT_ID !== 'seu_instagram_app_client_id');
+    const isTikTokConfigured = Boolean(process.env.TIKTOK_CLIENT_KEY && process.env.TIKTOK_CLIENT_KEY !== 'seu_tiktok_client_key');
+
     res.json({
       instagram: instagramUrl,
       // authUrl: alias para o modal de onboarding do frontend
       authUrl: instagramUrl,
       tiktok: tiktokUrl,
-      youtube: '#'
+      youtube: '#',
+      configured: {
+        instagram: isInstagramConfigured,
+        tiktok: isTikTokConfigured
+      }
     });
   } catch (error) {
     res.status(500).json({ error: 'Erro ao gerar URLs de conexão' });

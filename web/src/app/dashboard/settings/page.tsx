@@ -61,6 +61,11 @@ const InstagramOnboardingModal = dynamic<InstagramOnboardingModalProps>(
   { ssr: false }
 );
 
+const TikTokOnboardingModal = dynamic<any>(
+  () => import('@/components/TikTokOnboardingModal').then(mod => mod.TikTokOnboardingModal),
+  { ssr: false }
+);
+
 // Helper function to compress images before upload
 const compressImage = (file: File, maxWidth = 1200, quality = 0.8): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -105,6 +110,7 @@ export default function SettingsPage() {
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
   const [authUrls, setAuthUrls] = useState<{ instagram?: string; tiktok?: string; youtube?: string } | null>(null);
   const [isIgModalOpen, setIsIgModalOpen] = useState(false);
+  const [isTtModalOpen, setIsTtModalOpen] = useState(false);
   
   const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null);
 
@@ -574,7 +580,7 @@ export default function SettingsPage() {
                   {/* TikTok */}
                   <button 
                     type="button"
-                    onClick={() => !connectedPlatforms.includes('TIKTOK') && handleConnect(authUrls?.tiktok)}
+                    onClick={() => !connectedPlatforms.includes('TIKTOK') && setIsTtModalOpen(true)}
                     disabled={connectedPlatforms.includes('TIKTOK')}
                     className={`w-full p-6 rounded-[2rem] border transition-all flex items-center justify-between group text-left ${
                       connectedPlatforms.includes('TIKTOK') 
@@ -597,7 +603,7 @@ export default function SettingsPage() {
                             <p className={`text-[8px] font-bold uppercase tracking-widest ${
                               connectedPlatforms.includes('TIKTOK') ? 'text-green-600' : 'text-slate-400'
                             }`}>
-                              {connectedPlatforms.includes('TIKTOK') ? '✦ Sincronizado' : 'Entrar com TikTok'}
+                              {connectedPlatforms.includes('TIKTOK') ? '✦ Sincronizado' : 'Conectar TikTok'}
                             </p>
                          </div>
                       </div>
@@ -684,6 +690,17 @@ export default function SettingsPage() {
             await handleSimulateSync('INSTAGRAM', username, followersRange);
           }
           setIsIgModalOpen(false);
+        }}
+      />
+
+      <TikTokOnboardingModal 
+        isOpen={isTtModalOpen}
+        onClose={() => setIsTtModalOpen(false)}
+        onConfirm={async (mode: 'oauth' | 'simulate', username?: string, followersRange?: string) => {
+          if (mode === 'simulate' && username) {
+            await handleSimulateSync('TIKTOK', username, followersRange);
+          }
+          setIsTtModalOpen(false);
         }}
       />
     </div>

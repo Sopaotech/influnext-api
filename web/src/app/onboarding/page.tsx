@@ -31,10 +31,16 @@ const InstagramOnboardingModal = dynamic(
   { ssr: false }
 );
 
+const TikTokOnboardingModal = dynamic(
+  () => import('@/components/TikTokOnboardingModal').then(mod => mod.TikTokOnboardingModal),
+  { ssr: false }
+);
+
 export default function OnboardingPage() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [isIgModalOpen, setIsIgModalOpen] = useState(false);
+  const [isTtModalOpen, setIsTtModalOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   
@@ -199,12 +205,12 @@ export default function OnboardingPage() {
     openPopup(url);
   };
 
-  const handleConnectSimulate = async (username?: string, followersRange?: string) => {
+  const handleConnectSimulate = async (platform: string = 'INSTAGRAM', username?: string, followersRange?: string) => {
     try {
       setIsSaving(true);
-      await api.post('/integrations/simulate', { username, followersRange });
+      await api.post('/integrations/simulate', { platform, username, followersRange });
       Cookies.set('influnext_onboarding', 'true', { expires: 7 });
-      toast.success('✦ Instagram conectado com sucesso (Simulado)!');
+      toast.success(`✦ ${platform === 'INSTAGRAM' ? 'Instagram' : 'TikTok'} conectado com sucesso (Simulado)!`);
       
       const derivedObj = getDerivedObjective();
       const interviewPayload = JSON.stringify({
@@ -219,8 +225,8 @@ export default function OnboardingPage() {
         gender
       });
       await api.patch('/influencers/profile', {
-        handle,
-        niche,
+        handle: handle || username,
+        niche: niche || 'Lifestyle',
         careerObjective: derivedObj,
         aiInterview: interviewPayload,
         theme,
@@ -235,6 +241,7 @@ export default function OnboardingPage() {
     } finally {
       setIsSaving(false);
       setIsIgModalOpen(false);
+      setIsTtModalOpen(false);
     }
   };
 
@@ -767,7 +774,7 @@ export default function OnboardingPage() {
 
                {/* TikTok Button */}
                <button 
-                 onClick={() => handleConnect(authUrls?.tiktok)}
+                 onClick={() => setIsTtModalOpen(true)}
                  className={`w-full p-6 rounded-[2rem] border-2 flex items-center justify-between transition-all group ${connectedPlatforms.includes('TIKTOK') ? 'border-emerald-500 bg-emerald-500/5' : theme === 'light' ? 'border-slate-200 bg-white hover:border-slate-400' : 'border-white/10 bg-white/5 hover:border-white/20'}`}
                >
                   <div className="flex items-center gap-6">
@@ -819,9 +826,19 @@ export default function OnboardingPage() {
         onClose={() => setIsIgModalOpen(false)}
         onConfirm={(mode: 'oauth' | 'simulate', username?: string, followersRange?: string) => {
           if (mode === 'simulate') {
-            handleConnectSimulate(username, followersRange);
+            handleConnectSimulate('INSTAGRAM', username, followersRange);
           }
           setIsIgModalOpen(false);
+        }}
+      />
+      <TikTokOnboardingModal 
+        isOpen={isTtModalOpen}
+        onClose={() => setIsTtModalOpen(false)}
+        onConfirm={(mode: 'oauth' | 'simulate', username?: string, followersRange?: string) => {
+          if (mode === 'simulate') {
+            handleConnectSimulate('TIKTOK', username, followersRange);
+          }
+          setIsTtModalOpen(false);
         }}
       />
 

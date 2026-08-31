@@ -18,52 +18,48 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 
-interface InstagramOnboardingModalProps {
+interface TikTokOnboardingModalProps {
   isOpen: boolean;
   onClose: () => void;
   /** Chamado após a conexão bem-sucedida ou início de fluxo. */
   onConfirm: (mode: 'oauth' | 'simulate', username?: string, followersRange?: string) => void;
 }
 
-// ── Tutorial: 3 passos para converter conta pessoal em Creator ────────────────
+// ── Tutorial: 3 passos para conectar conta TikTok Creator ────────────────────
 
 const TUTORIAL_STEPS = [
   {
     icon: Smartphone,
-    title: 'Abra o app do Instagram',
+    title: 'Abra o aplicativo TikTok',
     description:
-      'No seu celular, abra o aplicativo do Instagram e vá até o seu perfil tocando no ícone de foto no canto inferior direito.',
-    tip: 'Certifique-se de estar logado na conta que deseja conectar à InfluNext.',
+      'No seu celular, abra o aplicativo do TikTok e verifique se você está conectado na conta que deseja vincular.',
+    tip: 'Certifique-se de que a conta é pública para leitura de visualizações e engajamento.',
   },
   {
     icon: UserCircle,
-    title: 'Acesse Configurações da Conta',
+    title: 'Ferramentas do Criador',
     description:
-      'Toque no menu (☰) no canto superior direito → "Configurações e Privacidade" → "Tipo de Conta e Ferramentas" → "Mudar para conta profissional".',
-    tip: 'Escolha "Criador de Conteúdo" — é gratuito e leva menos de 1 minuto.',
+      'Acesse seu Perfil → Menu (☰) → "Ferramentas do Criador" ou "Configurações de Conta" para garantir que a conta possui acesso às métricas analíticas.',
+    tip: 'Contas Criador ou Corporativas possuem métricas de visualização auditáveis em tempo real.',
   },
   {
     icon: Zap,
-    title: 'Conecte aqui na InfluNext',
+    title: 'Autorize a InfluNext',
     description:
-      'Com a conta convertida para Criador de Conteúdo (ou Comercial), clique em "Conectar com Instagram" abaixo e faça login diretamente com suas credenciais do Instagram.',
-    tip: 'Não pediremos sua senha. O acesso é somente leitura de métricas públicas.',
+      'Clique em "Conectar com TikTok" para conceder permissão de leitura de métricas públicas e visualizações recentes.',
+    tip: 'Nunca solicitamos sua senha. A autorização é intermediada pela API oficial do TikTok.',
   },
 ];
 
-// ── Passos de loading durante a sincronização ─────────────────────────────────
-
 const SYNC_STEPS = [
-  'Autenticando com Meta API...',
-  'Buscando dados do perfil Creator...',
-  'Avaliando taxa de engajamento médio...',
+  'Autenticando com TikTok API...',
+  'Buscando métricas de vídeos e visualizações...',
+  'Calculando taxa de retenção média...',
   'Consolidando InfluScore e histórico...',
-  'Perfil verificado com sucesso!',
+  'Conta TikTok vinculada com sucesso!',
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
-
-export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: InstagramOnboardingModalProps) {
+export function TikTokOnboardingModal({ isOpen, onClose, onConfirm }: TikTokOnboardingModalProps) {
   const [activeTab, setActiveTab] = useState<'api' | 'sandbox'>('api');
   const [screen, setScreen] = useState<'tutorial' | 'connecting' | 'success'>('tutorial');
   const [tutorialStep, setTutorialStep] = useState(0);
@@ -77,36 +73,32 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
 
   if (!isOpen) return null;
 
-  // ── Inicia o fluxo OAuth real do Instagram ────────────────────────────────
+  // ── Inicia o fluxo OAuth real do TikTok ───────────────────────────────────
 
-  const handleConnectWithInstagram = async () => {
+  const handleConnectWithTikTok = async () => {
     setError(null);
     setScreen('connecting');
     setSyncStep(0);
 
     try {
-      // Busca a URL de autorização no backend
-      const { data } = await api.get<{ authUrl?: string; instagram?: string; configured?: { instagram?: boolean } }>('/integrations/instagram/auth-url');
-      const authUrl: string = data.authUrl || data.instagram || '';
+      const { data } = await api.get<{ tiktok?: string; configured?: { tiktok?: boolean } }>('/integrations/urls');
+      const authUrl: string = data.tiktok || '';
 
-      if (!authUrl || authUrl === '#' || authUrl.includes('seu_instagram_app_client_id') || (data.configured && data.configured.instagram === false)) {
-        setError('As credenciais do App da Meta/Instagram ainda não foram configuradas em produção. Você pode usar a aba "Modo Sandbox" para conectar seu perfil e testar todas as funcionalidades imediatamente!');
+      if (!authUrl || authUrl === '#' || authUrl.includes('mock_tt_client_key') || (data.configured && data.configured.tiktok === false)) {
+        setError('As credenciais da API do TikTok ainda não estão configuradas em produção. Você pode usar a aba "Modo Sandbox" para vincular sua conta e testar todas as funcionalidades imediatamente!');
         setActiveTab('sandbox');
         setScreen('tutorial');
         return;
       }
 
-      // Notifica o componente pai que o fluxo OAuth foi iniciado
       onConfirm('oauth');
-
-      // Redireciona imediatamente para o Instagram OAuth
       window.location.href = authUrl;
     } catch (err: unknown) {
       const errorObj = err as { response?: { data?: { error?: string } }; message?: string };
       const message =
         errorObj?.response?.data?.error ||
         errorObj?.message ||
-        'Erro ao iniciar autenticação com o Instagram. Tente pelo Modo Sandbox.';
+        'Erro ao iniciar autenticação com o TikTok. Tente pelo Modo Sandbox.';
       setError(message);
       setScreen('tutorial');
     }
@@ -122,18 +114,15 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
     setError(null);
 
     try {
-      // Pequeno delay para gerar sensação premium de processamento
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 800));
       onConfirm('simulate', sandboxUsername, sandboxRange);
       onClose();
     } catch (err: unknown) {
-      setError('Erro ao iniciar simulação.');
+      setError('Erro ao iniciar simulação do TikTok.');
     } finally {
       setIsSimulating(false);
     }
   };
-
-  // ── Renders ───────────────────────────────────────────────────────────────
 
   const currentTutorialStep = TUTORIAL_STEPS[tutorialStep];
   const StepIcon = currentTutorialStep.icon;
@@ -155,29 +144,29 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
             <Sparkles className="w-24 h-24 text-amber-500" />
           </div>
           <div className="relative z-10 flex items-center gap-3 mb-2">
-            <div className="px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full flex items-center gap-2">
-              <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
-              <span className="text-[9px] font-black uppercase tracking-widest text-amber-500">
-                Instagram API — Creator Login
+            <div className="px-3 py-1 bg-cyan-500/10 border border-cyan-500/20 rounded-full flex items-center gap-2">
+              <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-[9px] font-black uppercase tracking-widest text-cyan-400">
+                TikTok Open API — Creator Engine
               </span>
             </div>
           </div>
           <h2 className="text-2xl font-serif text-[#f5ebe0] tracking-tight leading-tight">
-            Vincular <span className="text-[#d96b27]">Instagram</span>
+            Vincular <span className="text-cyan-400">TikTok</span>
           </h2>
           <p className="text-[10px] text-zinc-400 font-medium mt-1">
-            Sem senha — apenas leitura de métricas. Conta Creator ou Comercial necessária.
+            Conexão segura para auditoria de visualizações, engajamento e métricas de Reels/Vídeos.
           </p>
         </div>
 
-        {/* Tabs de Seleção (Apenas se não estiver no processo de conexão ativo) */}
+        {/* Tabs de Seleção */}
         {screen === 'tutorial' && (
           <div className="flex border-b border-[#2e2724] bg-[#131110]">
             <button
               onClick={() => setActiveTab('api')}
               className={`flex-1 py-3 text-[10px] font-black uppercase tracking-wider text-center border-b-2 transition-all ${
                 activeTab === 'api'
-                  ? 'border-[#d96b27] text-[#f5ebe0] bg-white/[0.02]'
+                  ? 'border-cyan-500 text-[#f5ebe0] bg-white/[0.02]'
                   : 'border-transparent text-zinc-500 hover:text-zinc-300'
               }`}
             >
@@ -187,7 +176,7 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
               onClick={() => setActiveTab('sandbox')}
               className={`flex-1 py-3 text-[10px] font-black uppercase tracking-wider text-center border-b-2 transition-all flex items-center justify-center gap-1.5 ${
                 activeTab === 'sandbox'
-                  ? 'border-[#d96b27] text-[#f5ebe0] bg-white/[0.02]'
+                  ? 'border-cyan-500 text-[#f5ebe0] bg-white/[0.02]'
                   : 'border-transparent text-zinc-500 hover:text-zinc-300'
               }`}
             >
@@ -202,15 +191,11 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
           {screen === 'tutorial' && activeTab === 'api' && (
             <div className="space-y-6 animate-in fade-in duration-300">
 
-              {/* Alerta: por que precisa de conta Creator */}
               {tutorialStep === 0 && (
-                <div className="flex items-start gap-3 bg-amber-500/5 border border-amber-500/20 rounded-[2px] p-4">
-                  <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-[10px] text-amber-200 font-medium leading-relaxed">
-                    A Meta exige que sua conta seja do tipo{' '}
-                    <strong className="text-amber-400">Criador de Conteúdo</strong> ou{' '}
-                    <strong className="text-amber-400">Comercial</strong> para conectar à API.
-                    Contas pessoais não são suportadas. Siga os 3 passos abaixo:
+                <div className="flex items-start gap-3 bg-cyan-500/5 border border-cyan-500/20 rounded-[2px] p-4">
+                  <AlertTriangle className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-[10px] text-cyan-200 font-medium leading-relaxed">
+                    A sincronização do TikTok audita dados de reprodução e seguidores em tempo real através da API oficial. Siga os 3 passos:
                   </p>
                 </div>
               )}
@@ -222,9 +207,9 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
                     <div
                       className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-black transition-all duration-300 ${
                         idx < tutorialStep
-                          ? 'bg-[#d96b27] text-[#131110]'
+                          ? 'bg-cyan-500 text-[#131110]'
                           : idx === tutorialStep
-                          ? 'bg-[#d96b27]/20 border border-[#d96b27] text-[#d96b27]'
+                          ? 'bg-cyan-500/20 border border-cyan-500 text-cyan-400'
                           : 'bg-white/5 border border-white/10 text-zinc-500'
                       }`}
                     >
@@ -233,7 +218,7 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
                     {idx < TUTORIAL_STEPS.length - 1 && (
                       <div
                         className={`h-px flex-1 w-8 transition-all duration-300 ${
-                          idx < tutorialStep ? 'bg-[#d96b27]' : 'bg-white/10'
+                          idx < tutorialStep ? 'bg-cyan-500' : 'bg-white/10'
                         }`}
                       />
                     )}
@@ -244,8 +229,8 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
               {/* Conteúdo do passo atual */}
               <div className="bg-[#131110] border border-[#2e2724] rounded-[2px] p-5 space-y-3 min-h-[140px]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#d96b27]/10 border border-[#d96b27]/20 flex items-center justify-center flex-shrink-0">
-                    <StepIcon className="w-5 h-5 text-[#d96b27]" />
+                  <div className="w-10 h-10 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                    <StepIcon className="w-5 h-5 text-cyan-400" />
                   </div>
                   <h3 className="text-[#f5ebe0] font-black text-sm tracking-tight">
                     {tutorialStep + 1}. {currentTutorialStep.title}
@@ -255,12 +240,11 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
                   {currentTutorialStep.description}
                 </p>
                 <div className="flex items-start gap-2 pt-1">
-                  <Lock className="w-3 h-3 text-[#d96b27] flex-shrink-0 mt-0.5" />
+                  <Lock className="w-3 h-3 text-cyan-400 flex-shrink-0 mt-0.5" />
                   <p className="text-zinc-500 text-[9px] italic">{currentTutorialStep.tip}</p>
                 </div>
               </div>
 
-              {/* Erro (se houver) */}
               {error && (
                 <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/20 rounded-[2px] p-3">
                   <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5" />
@@ -299,11 +283,11 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
                 ) : (
                   <button
                     type="button"
-                    onClick={handleConnectWithInstagram}
-                    className="flex-1 h-11 bg-[#d96b27] hover:bg-[#c25a1e] text-[#131110] font-black text-[10px] uppercase tracking-widest rounded-[2px] transition-all flex items-center justify-center gap-2 group shadow-lg shadow-amber-950/20"
+                    onClick={handleConnectWithTikTok}
+                    className="flex-1 h-11 bg-cyan-500 hover:bg-cyan-400 text-[#131110] font-black text-[10px] uppercase tracking-widest rounded-[2px] transition-all flex items-center justify-center gap-2 group shadow-lg"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    Conectar com Instagram
+                    Conectar com TikTok
                   </button>
                 )}
               </div>
@@ -314,23 +298,23 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
           {screen === 'tutorial' && activeTab === 'sandbox' && (
             <form onSubmit={handleConnectSimulated} className="space-y-5 animate-in fade-in duration-300">
               <div className="flex items-start gap-3 bg-zinc-800/20 border border-zinc-800 rounded-[2px] p-4">
-                <Code className="w-4 h-4 text-zinc-400 flex-shrink-0 mt-0.5" />
+                <Code className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
                 <p className="text-[10px] text-zinc-400 font-medium leading-relaxed">
-                  Ambiente de testes (Sandbox). Insira um nome de usuário fictício e selecione a faixa de seguidores para simular a sincronização de métricas de IA.
+                  Ambiente Sandbox. Insira seu @handle do TikTok e a faixa de público para sincronizar dados e recalcular seu InfluScore instantaneamente.
                 </p>
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-zinc-500 font-black text-[9px] uppercase tracking-wider block">
-                  @ Nome de Usuário do Instagram
+                  @ Nome de Usuário do TikTok
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="ex: seu_username"
+                  placeholder="ex: seu_tiktok"
                   value={sandboxUsername}
                   onChange={(e) => setSandboxUsername(e.target.value)}
-                  className="w-full h-11 bg-[#131110] border border-[#2e2724] px-4 text-[#f5ebe0] text-xs font-semibold focus:outline-none focus:border-[#d96b27] transition-colors rounded-[2px]"
+                  className="w-full h-11 bg-[#131110] border border-[#2e2724] px-4 text-[#f5ebe0] text-xs font-semibold focus:outline-none focus:border-cyan-500 transition-colors rounded-[2px]"
                 />
               </div>
 
@@ -341,7 +325,7 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
                 <select
                   value={sandboxRange}
                   onChange={(e) => setSandboxRange(e.target.value)}
-                  className="w-full h-11 bg-[#131110] border border-[#2e2724] px-4 text-[#f5ebe0] text-xs font-semibold focus:outline-none focus:border-[#d96b27] transition-colors rounded-[2px]"
+                  className="w-full h-11 bg-[#131110] border border-[#2e2724] px-4 text-[#f5ebe0] text-xs font-semibold focus:outline-none focus:border-cyan-500 transition-colors rounded-[2px]"
                 >
                   <option value="10k-50k">Micro: 10k a 50k seguidores</option>
                   <option value="50k-100k">Médio: 50k a 100k seguidores</option>
@@ -361,7 +345,7 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
                 <button
                   type="submit"
                   disabled={isSimulating || !sandboxUsername}
-                  className="flex-1 h-11 bg-[#d96b27] hover:bg-[#c25a1e] text-[#131110] font-black text-[10px] uppercase tracking-widest rounded-[2px] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="flex-1 h-11 bg-cyan-500 hover:bg-cyan-400 text-[#131110] font-black text-[10px] uppercase tracking-widest rounded-[2px] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isSimulating ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -378,35 +362,34 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
             <div className="py-6 flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in duration-500">
               <div className="relative">
                 {syncStep < SYNC_STEPS.length - 1 ? (
-                  <Loader2 className="w-12 h-12 text-[#d96b27] animate-spin" />
+                  <Loader2 className="w-12 h-12 text-cyan-400 animate-spin" />
                 ) : (
-                  <CheckCircle2 className="w-12 h-12 text-amber-500 animate-bounce" />
+                  <CheckCircle2 className="w-12 h-12 text-cyan-400 animate-bounce" />
                 )}
               </div>
 
               <div className="space-y-2">
                 <h4 className="text-[#f5ebe0] font-black text-sm uppercase tracking-wider">
-                  {syncStep < SYNC_STEPS.length - 1 ? 'Conectando...' : 'Redirecionando!'}
+                  {syncStep < SYNC_STEPS.length - 1 ? 'Conectando ao TikTok...' : 'Redirecionando!'}
                 </h4>
                 <p className="text-zinc-400 text-[11px] font-semibold min-h-[16px]">
                   {SYNC_STEPS[Math.min(syncStep, SYNC_STEPS.length - 1)]}
                 </p>
               </div>
 
-              {/* Barra de progresso */}
               <div className="flex gap-1.5 w-32">
                 {SYNC_STEPS.map((_, idx) => (
                   <div
                     key={idx}
                     className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                      idx < syncStep ? 'bg-[#d96b27]' : 'bg-[#131110]'
+                      idx < syncStep ? 'bg-cyan-500' : 'bg-[#131110]'
                     }`}
                   />
                 ))}
               </div>
 
               <p className="text-zinc-600 text-[9px]">
-                Você será redirecionado ao Instagram para autorizar o acesso.
+                Você será redirecionado ao TikTok para autorizar o acesso.
               </p>
             </div>
           )}
