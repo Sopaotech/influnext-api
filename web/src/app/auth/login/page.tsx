@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, LoginResponse } from '@/lib/api';
+import { getSocialAuthUrl, type SocialAuthProvider } from '@/lib/social-auth';
 import Cookies from 'js-cookie';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
@@ -18,59 +19,13 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const [socialModalOpen, setSocialModalOpen] = useState(false);
-  const [socialPlatform, setSocialPlatform] = useState<'INSTAGRAM' | 'TIKTOK'>('INSTAGRAM');
-  const [socialHandle, setSocialHandle] = useState('');
-  const [socialGender, setSocialGender] = useState<'masculino' | 'feminino'>('feminino');
-  const [socialNiche, setSocialNiche] = useState('Lifestyle');
-  const [socialTab, setSocialTab] = useState<'direct' | 'oauth'>('direct');
-
-  const handleSocialRedirect = async (platform: 'INSTAGRAM' | 'TIKTOK' | 'GOOGLE') => {
+  const handleSocialRedirect = async (platform: SocialAuthProvider) => {
     try {
       setIsLoading(true);
       setError('');
-      const res = await api.get<{ instagram: string; tiktok: string; google: string }>('/auth/social/public-urls');
-      let url = '';
-      if (platform === 'INSTAGRAM') url = res.data.instagram;
-      else if (platform === 'TIKTOK') url = res.data.tiktok;
-      else if (platform === 'GOOGLE') url = res.data.google;
-
-      if (!url) {
-        throw new Error('URL de autenticação não encontrada.');
-      }
-
-      window.location.href = url;
+      window.location.href = await getSocialAuthUrl(platform);
     } catch (err: unknown) {
-      console.error('[SOCIAL AUTH REDIRECT] Erro:', err);
-      setError('Erro ao redirecionar para login social. Tente novamente.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const openSocialModal = (platform: 'INSTAGRAM' | 'TIKTOK') => {
-    setSocialPlatform(platform);
-    setSocialHandle('');
-    setSocialModalOpen(true);
-  };
-
-  const handleSocialLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!socialHandle) return;
-    setError('');
-    setIsLoading(true);
-    try {
-      const res = await api.post<LoginResponse>('/auth/social-login', {
-        platform: socialPlatform,
-        username: socialHandle,
-        gender: socialGender,
-        niche: socialNiche
-      });
-      setSocialModalOpen(false);
-      completeLogin(res.data);
-    } catch (err: unknown) {
-      const errorObj = err as { response?: { data?: { error?: string } } };
-      setError(errorObj.response?.data?.error || 'Erro ao conectar via rede social.');
+      setError(err instanceof Error ? err.message : 'Login social indisponível. Use e-mail e senha.');
     } finally {
       setIsLoading(false);
     }
@@ -237,14 +192,15 @@ export default function LoginPage() {
                   <div className="w-full border-t border-zinc-100"></div>
                 </div>
                 <span className="relative px-3 bg-white text-[8px] font-black text-zinc-400 uppercase tracking-widest">
-                  ou acesse instantaneamente via
+                  ou autorize no provedor
                 </span>
               </div>
 
               <div className="grid grid-cols-3 gap-2.5">
                 <button
                   type="button"
-                  onClick={() => handleSocialRedirect('GOOGLE')}
+                  onClick={() => handleSocialRedirect('google')}
+                  disabled={isLoading}
                   className="h-12 bg-zinc-50/50 border border-zinc-200/80 hover:bg-zinc-100/50 hover:border-orange-500/30 transition-all rounded-2xl flex items-center justify-center gap-1.5 group"
                 >
                   <svg className="w-4 h-4 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
@@ -258,7 +214,8 @@ export default function LoginPage() {
 
                 <button
                   type="button"
-                  onClick={() => openSocialModal('INSTAGRAM')}
+                  onClick={() => handleSocialRedirect('instagram')}
+                  disabled={isLoading}
                   className="h-12 bg-zinc-50/50 border border-zinc-200/80 hover:bg-zinc-100/50 hover:border-orange-500/30 transition-all rounded-2xl flex items-center justify-center gap-1.5 group"
                 >
                   <svg className="w-4 h-4 text-pink-500 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -271,7 +228,8 @@ export default function LoginPage() {
 
                 <button
                   type="button"
-                  onClick={() => openSocialModal('TIKTOK')}
+                  onClick={() => handleSocialRedirect('tiktok')}
+                  disabled={isLoading}
                   className="h-12 bg-zinc-50/50 border border-zinc-200/80 hover:bg-zinc-100/50 hover:border-orange-500/30 transition-all rounded-2xl flex items-center justify-center gap-1.5 group"
                 >
                   <svg className="w-4 h-4 text-zinc-800 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -338,164 +296,6 @@ export default function LoginPage() {
         </Link>
       </div>
 
-      {socialModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="relative w-full max-w-sm bg-white border border-zinc-200/80 rounded-[2rem] p-6 space-y-5 shadow-2xl overflow-hidden">
-            {/* Modal inner glows */}
-            <div className="absolute top-[-20%] left-[-20%] w-[50%] h-[50%] rounded-full bg-orange-500/5 blur-[45px] pointer-events-none" />
-            <div className="absolute bottom-[-20%] right-[-20%] w-[50%] h-[50%] rounded-full bg-amber-600/3 blur-[45px] pointer-events-none" />
-
-            <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
-            
-            <div className="relative z-10 space-y-5">
-              <div className="space-y-1 text-center">
-                <h2 className="text-lg font-black text-zinc-900 uppercase tracking-tight flex items-center justify-center gap-2">
-                  Conectar {socialPlatform === 'INSTAGRAM' ? 'Instagram' : 'TikTok'}
-                </h2>
-                <p className="text-zinc-400 text-[8px] font-black uppercase tracking-widest">
-                  Acesso Instantâneo & Sincronização
-                </p>
-              </div>
-
-              <div className="flex border-b border-zinc-100 pb-1">
-                <button
-                  type="button"
-                  onClick={() => setSocialTab('direct')}
-                  className={`flex-1 pb-2 text-[9px] font-black uppercase tracking-wider text-center border-b-2 transition-all ${
-                    socialTab === 'direct'
-                      ? 'border-[#d96b27] text-[#d96b27]'
-                      : 'border-transparent text-zinc-400 hover:text-zinc-600'
-                  }`}
-                >
-                  ✦ Acesso com @Handle
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSocialTab('oauth')}
-                  className={`flex-1 pb-2 text-[9px] font-black uppercase tracking-wider text-center border-b-2 transition-all ${
-                    socialTab === 'oauth'
-                      ? 'border-[#d96b27] text-[#d96b27]'
-                      : 'border-transparent text-zinc-400 hover:text-zinc-600'
-                  }`}
-                >
-                  OAuth Oficial ({socialPlatform === 'INSTAGRAM' ? 'Meta' : 'TikTok'})
-                </button>
-              </div>
-
-              {socialTab === 'direct' ? (
-                <form onSubmit={handleSocialLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="block text-[8px] font-black text-zinc-500 uppercase tracking-[0.25em] ml-1">
-                      @ Nome de Usuário ({socialPlatform === 'INSTAGRAM' ? 'Instagram' : 'TikTok'})
-                    </label>
-                    <input
-                      type="text"
-                      value={socialHandle}
-                      onChange={(e) => setSocialHandle(e.target.value)}
-                      required
-                      placeholder={socialPlatform === 'INSTAGRAM' ? '@seu_perfil' : '@seu_tiktok'}
-                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-medium text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-orange-500/50 focus:bg-white focus:ring-1 focus:ring-orange-500/20 transition-all"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-[8px] font-black text-zinc-500 uppercase tracking-[0.25em] ml-1">
-                      Nicho de Atuação
-                    </label>
-                    <select
-                      value={socialNiche}
-                      onChange={(e) => setSocialNiche(e.target.value)}
-                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-medium text-zinc-900 focus:outline-none focus:border-orange-500/50 transition-all"
-                    >
-                      <option value="Lifestyle">Lifestyle</option>
-                      <option value="Games">Games & Esports</option>
-                      <option value="Tech">Tecnologia & Programação</option>
-                      <option value="Moda">Moda & Beleza</option>
-                      <option value="Finanças">Finanças & Negócios</option>
-                      <option value="Saúde">Saúde & Fitness</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-[8px] font-black text-zinc-500 uppercase tracking-[0.25em] ml-1">
-                      Gênero (Para Estrategista de IA)
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setSocialGender('feminino')}
-                        className={`py-2.5 rounded-xl border text-[9px] font-black uppercase tracking-wider transition-all ${
-                          socialGender === 'feminino'
-                            ? 'border-orange-500 bg-orange-50/50 text-[#d96b27]'
-                            : 'border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-100'
-                        }`}
-                      >
-                        Feminino (Valentina)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSocialGender('masculino')}
-                        className={`py-2.5 rounded-xl border text-[9px] font-black uppercase tracking-wider transition-all ${
-                          socialGender === 'masculino'
-                            ? 'border-orange-500 bg-orange-50/50 text-[#d96b27]'
-                            : 'border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-100'
-                        }`}
-                      >
-                        Masculino (Vincenzo)
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setSocialModalOpen(false)}
-                      className="flex-1 h-11 bg-zinc-50 border border-zinc-200 hover:bg-zinc-100 text-[8px] font-black uppercase tracking-widest text-zinc-500 rounded-xl transition-all"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isLoading || !socialHandle}
-                      className="flex-1 h-11 bg-[#d96b27] hover:bg-[#c65e21] disabled:opacity-50 text-[8px] font-black uppercase tracking-widest text-white rounded-xl shadow-lg shadow-orange-500/10 transition-all flex items-center justify-center gap-2"
-                    >
-                      {isLoading ? 'Conectando...' : 'Conectar & Entrar'}
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <div className="space-y-4 text-center">
-                  <div className="p-4 bg-orange-50/60 border border-orange-200/50 rounded-2xl text-left space-y-2">
-                    <p className="text-[10px] font-black uppercase text-[#d96b27] tracking-wider">
-                      Integração Oficial Meta / TikTok
-                    </p>
-                    <p className="text-[10px] text-zinc-600 leading-relaxed font-medium">
-                      O login via OAuth oficial conecta-se diretamente à API da Meta/TikTok para auditar métricas reais com hash SHA-256.
-                    </p>
-                  </div>
-
-                  <div className="flex gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setSocialModalOpen(false)}
-                      className="flex-1 h-11 bg-zinc-50 border border-zinc-200 hover:bg-zinc-100 text-[8px] font-black uppercase tracking-widest text-zinc-500 rounded-xl transition-all"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleSocialRedirect(socialPlatform)}
-                      className="flex-1 h-11 bg-zinc-900 hover:bg-zinc-800 text-[8px] font-black uppercase tracking-widest text-white rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
-                    >
-                      Autorizar no {socialPlatform === 'INSTAGRAM' ? 'Instagram' : 'TikTok'}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
