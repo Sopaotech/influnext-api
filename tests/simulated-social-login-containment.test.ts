@@ -2,6 +2,9 @@ import express from 'express';
 import request from 'supertest';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { resetOAuthRedis } from './helpers/oauth-redis';
+
+jest.mock('../src/lib/redis', () => require('./helpers/oauth-redis'));
 
 const mockPrisma = {
   user: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
@@ -62,6 +65,7 @@ describe('STEP 1F-B — simulated social login containment', () => {
 
   beforeAll(async () => { passwordHash = await bcrypt.hash(password, 4); });
   beforeEach(() => {
+    resetOAuthRedis();
     process.env = {
       ...originalEnv, NODE_ENV: 'production', JWT_SECRET: jwtSecret,
       INSTAGRAM_CLIENT_ID: 'test-instagram-client', TIKTOK_CLIENT_KEY: 'test-tiktok-client',
@@ -182,6 +186,10 @@ describe('STEP 1F-B — simulated social login containment', () => {
       expect(new URL(response.body[provider]).origin).toBe(origin);
       expect(new URL(response.body[provider]).searchParams.get('response_type')).toBe('code');
     }
+    // Issuing signed OAuth state is allowed; issuing a session token is not.
+    expect(signSpy).toHaveBeenCalledTimes(4);
+    for (const [payload] of signSpy.mock.calls) expect(payload).toMatchObject({ purpose: 'oauth_state' });
+    signSpy.mockClear();
     expectNoPrismaOrProviderCalls();
   });
 
@@ -192,9 +200,13 @@ describe('STEP 1F-B — simulated social login containment', () => {
   });
 
   it.each(['instagram', 'tiktok'])('OAuth %s has no username fallback when provider exchange fails', async platform => {
+    const start = await request(app).get('/v1/auth/social/public-urls');
+    const state = new URL(start.body[platform]).searchParams.get('state')!;
+    const cookies = (start.headers['set-cookie'] as unknown as string[]).map(value => value.split(';')[0]);
+    signSpy.mockClear();
     mockExchangeCode.mockRejectedValue(new Error('invalid-provider-code'));
     mockAxiosPost.mockRejectedValue(new Error('invalid-provider-code'));
-    const response = await request(app).get(`/v1/auth/social/callback/${platform}`).query({ code: 'invalid', state: `register_${platform}`, username: 'unverified_handle' });
+    const response = await request(app).get(`/v1/auth/social/callback/${platform}`).set('Cookie', cookies).query({ code: 'invalid', state, username: 'unverified_handle' });
     expect(response.status).toBe(400);
     expect(response.body.token).toBeUndefined();
     expect(signSpy).not.toHaveBeenCalled();
@@ -204,6 +216,9 @@ describe('STEP 1F-B — simulated social login containment', () => {
   });
 
   it.each(['instagram', 'tiktok'])('preserves %s callback after provider exchange (mocked provider)', async platform => {
+    const start = await request(app).get('/v1/auth/social/public-urls');
+    const state = new URL(start.body[platform]).searchParams.get('state')!;
+    const cookies = (start.headers['set-cookie'] as unknown as string[]).map(value => value.split(';')[0]);
     mockExchangeCode.mockResolvedValue({ accessToken: 'provider-token', platformId: 'provider-user-1', expiresIn: 3600 });
     mockFetchProfile.mockResolvedValue({ username: 'provider_user', followers_count: 17 });
     mockAxiosPost.mockResolvedValue({ data: { access_token: 'provider-token', open_id: 'provider-user-1', expires_in: 3600 } });
@@ -213,7 +228,7 @@ describe('STEP 1F-B — simulated social login containment', () => {
     mockPrisma.socialPlatform.upsert.mockResolvedValue({});
     mockInstagramSync.mockResolvedValue(undefined);
     mockTikTokSync.mockResolvedValue(undefined);
-    const response = await request(app).get(`/v1/auth/social/callback/${platform}`).query({ code: 'provider-code', state: `register_${platform}` });
+    const response = await request(app).get(`/v1/auth/social/callback/${platform}`).set('Cookie', cookies).query({ code: 'provider-code', state });
     expect(response.status).toBe(200);
     expect(jwt.verify(response.body.token, jwtSecret)).toMatchObject({ id: user.id });
     const exchange = platform === 'instagram' ? mockExchangeCode : mockAxiosPost;

@@ -36,6 +36,13 @@ export const api = axios.create({
 
 // Interceptor para injetar o Token em todas as requisições
 api.interceptors.request.use((config) => {
+  // OAuth attempt cookies are HttpOnly and scoped to this API host, not session-token storage.
+  const requestPath = (config.url || '').split('?')[0];
+  if (requestPath.startsWith('/auth/social/') ||
+      ['/integrations/urls', '/integrations/instagram/auth-url',
+        '/integrations/instagram/callback', '/integrations/tiktok/callback'].includes(requestPath)) {
+    config.withCredentials = true;
+  }
   const token = Cookies.get('influnext_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

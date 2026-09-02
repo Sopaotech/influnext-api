@@ -21,7 +21,13 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
   }
   const token = authHeader.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, getJwtSecret()) as { id: string; role: any; email: string };
+    const decoded = jwt.verify(token, getJwtSecret(), { algorithms: ['HS256'] });
+    if (typeof decoded === 'string' || decoded.scope !== undefined || decoded.purpose !== undefined ||
+        decoded.aud !== undefined || typeof decoded.id !== 'string' || !decoded.id ||
+        typeof decoded.email !== 'string' || !decoded.email ||
+        !['INFLUENCER', 'COMPANY', 'ADMIN'].includes(decoded.role)) {
+      return res.status(401).json({ error: 'Sessão completa necessária.' });
+    }
     req.user = { id: decoded.id, role: decoded.role, email: decoded.email };
     next();
   } catch (err) {

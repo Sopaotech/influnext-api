@@ -7,6 +7,11 @@ import { prisma } from '../lib/prisma';
  * Rastreia rotas da API (/v1/) mas não assets estáticos ou arquivos.
  */
 export const trackPageView = (req: Request, _res: Response, next: NextFunction): void => {
+  // OAuth callbacks must reach the security boundary before any Prisma write.
+  if (/^\/v1\/(?:auth\/social\/callback(?:\/|$)|integrations\/[^/]+\/callback(?:\/|$))/i.test(req.path)) {
+    next();
+    return;
+  }
   // Processar apenas GETs e PATHs relevantes da API (sem extensão de arquivo)
   if (req.method === 'GET' && !req.path.includes('.')) {
     // Fire-and-forget: não aguarda a escrita no banco para não adicionar latência

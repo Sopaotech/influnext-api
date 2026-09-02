@@ -1,10 +1,18 @@
 "use client";
-import { useEffect, useState, useCallback, Suspense } from 'react';
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { Loader2, AlertCircle, RefreshCw, ArrowLeft } from 'lucide-react';
 import Cookies from 'js-cookie';
+
+type OAuthResult = {
+  token?: string;
+  user?: { role: 'INFLUENCER' | 'COMPANY' | 'ADMIN'; onboardingCompleted: boolean };
+  status?: 'PENDING_2FA';
+  tempToken?: string;
+  from?: string;
+};
 
 function SocialCallbackContent() {
   const router = useRouter();
@@ -12,13 +20,55 @@ function SocialCallbackContent() {
   const searchParams = useSearchParams();
   const platform = params.platform as string;
   const code = searchParams.get('code');
-  const state = searchParams.get('state'); // userId
+  const state = searchParams.get('state');
   
-  const [status, setStatus] = useState<'loading' | 'error' | 'success'>('loading');
+  const [status, setStatus] = useState<'loading' | 'error' | 'success' | '2fa'>('loading');
   const [errorMessage, setErrorMessage] = useState('');
+  const [tempToken, setTempToken] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const startedAttempt = useRef<string | null>(null);
+
+  const completeSession = useCallback((data: OAuthResult) => {
+    if (!data.token || !data.user) throw new Error('Sessão completa não recebida.');
+    setStatus('success');
+    const cookieOptions = {
+      expires: 7,
+      secure: window.location.protocol === 'https:',
+      path: '/',
+    };
+    const user = data.user;
+    Cookies.set('influnext_token', data.token, cookieOptions);
+    Cookies.set('influnext_role', user.role, cookieOptions);
+    Cookies.set('influnext_onboarding', user.onboardingCompleted ? 'true' : 'false', cookieOptions);
+
+    if (window.opener) {
+      window.opener.postMessage({
+        type: 'social-auth-success',
+        platform,
+        status: 'success',
+        user,
+        token: data.token
+      }, window.location.origin);
+      setTimeout(() => {
+        window.close();
+      }, 1500);
+      return;
+    }
+
+    setTimeout(() => {
+      if (!user.onboardingCompleted && user.role === 'INFLUENCER') {
+        router.push('/onboarding');
+      } else {
+        router.push('/dashboard/influencer');
+      }
+    }, 1500);
+    return;
+
+  }, [platform, router]);
 
   const processCallback = useCallback(async () => {
-    if (!code || !platform) {
+    if (!code || !state || !['instagram', 'tiktok', 'google', 'youtube'].includes(platform)) {
       setStatus('error');
       setErrorMessage('Dados de autenticação incompletos ou inválidos.');
       toast.error('Dados de autenticação inválidos.');
@@ -31,41 +81,17 @@ function SocialCallbackContent() {
 
     setStatus('loading');
     try {
-      const res = await api.get<{ token?: string; user?: { role: 'INFLUENCER' | 'COMPANY' | 'ADMIN'; onboardingCompleted: boolean } }>(`/auth/social/callback/${platform}?code=${code}&state=${state}`);
+      const res = await api.get<OAuthResult>(`/auth/social/callback/${platform}`, { params: { code, state } });
+      if (res.data.status === 'PENDING_2FA') {
+        if (!res.data.tempToken || res.data.token) throw new Error('Desafio 2FA inválido.');
+        setTempToken(res.data.tempToken);
+        setStatus('2fa');
+        return;
+      }
       setStatus('success');
       
-      if (res.data?.token && res.data?.user) {
-        const cookieOptions = {
-          expires: 7,
-          secure: window.location.protocol === 'https:',
-          path: '/',
-        };
-        const user = res.data.user;
-        Cookies.set('influnext_token', res.data.token, cookieOptions);
-        Cookies.set('influnext_role', user.role, cookieOptions);
-        Cookies.set('influnext_onboarding', user.onboardingCompleted ? 'true' : 'false', cookieOptions);
-
-        if (window.opener) {
-          window.opener.postMessage({ 
-            type: 'social-auth-success', 
-            platform, 
-            status: 'success', 
-            user, 
-            token: res.data.token 
-          }, window.location.origin);
-          setTimeout(() => {
-            window.close();
-          }, 1500);
-          return;
-        }
-
-        setTimeout(() => {
-          if (!user.onboardingCompleted && user.role === 'INFLUENCER') {
-            router.push('/onboarding');
-          } else {
-            router.push('/dashboard/influencer');
-          }
-        }, 1500);
+      if (res.data.token && res.data.user) {
+        completeSession(res.data);
         return;
       }
 
@@ -83,7 +109,7 @@ function SocialCallbackContent() {
 
       // Delay de 2 segundos para o usuário ver o feedback de sucesso premium
       setTimeout(() => {
-        if (state && state.endsWith('_onboarding')) {
+        if (res.data.from === 'onboarding') {
           router.push(`/onboarding?status=success&platform=${platform}`);
         } else {
           router.push(`/dashboard/settings?status=success&platform=${platform}`);
@@ -112,11 +138,27 @@ function SocialCallbackContent() {
         }, 3000);
       }
     }
-  }, [code, platform, state, router]);
+  }, [code, platform, state, router, completeSession]);
 
   useEffect(() => {
+    const attempt = `${platform}:${state}:${code}`;
+    if (startedAttempt.current === attempt) return;
+    startedAttempt.current = attempt;
     processCallback();
-  }, [processCallback]);
+  }, [processCallback, platform, state, code]);
+
+  const verifySecondFactor = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setVerifying(true);
+    setErrorMessage('');
+    try {
+      const res = await api.post<OAuthResult>('/auth/2fa/verify', { tempToken, code: otpCode });
+      completeSession(res.data);
+      setTempToken('');
+    } catch {
+      setErrorMessage('Não foi possível validar o código. Tente novamente ou reinicie o login.');
+    } finally { setVerifying(false); }
+  };
 
   return (
     <div className="min-h-screen bg-[#050508] flex flex-col items-center justify-center p-4">
@@ -126,6 +168,21 @@ function SocialCallbackContent() {
         <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-blue-600/10 blur-[100px] rounded-full" />
 
         <div className="relative z-10 flex flex-col items-center space-y-8">
+          {status === '2fa' && (
+            <form onSubmit={verifySecondFactor} className="w-full space-y-4 text-center">
+              <h2 className="text-xl font-bold text-white">Verificação em duas etapas</h2>
+              <p className="text-sm text-zinc-400">Confirme o código do seu autenticador para entrar.</p>
+              <input aria-label="Código do autenticador" autoComplete="one-time-code" inputMode="numeric"
+                maxLength={6} value={otpCode} onChange={event => setOtpCode(event.target.value.replace(/\D/g, ''))}
+                className="w-full rounded-xl p-4 bg-zinc-800 text-white text-center" required />
+              {errorMessage && <p role="alert" className="text-sm text-red-400">{errorMessage}</p>}
+              <button disabled={verifying || otpCode.length !== 6} type="submit"
+                className="w-full rounded-xl p-4 bg-white text-black disabled:opacity-50">
+                {verifying ? 'Verificando...' : 'Confirmar identidade'}
+              </button>
+              <button type="button" onClick={() => router.push('/auth/login')} className="text-zinc-400">Reiniciar login</button>
+            </form>
+          )}
           {status === 'loading' && (
             <>
               <div className="relative">
@@ -156,19 +213,15 @@ function SocialCallbackContent() {
               
               <div className="flex flex-col w-full gap-3 pt-4">
                 <button
-                  onClick={() => processCallback()}
+                  onClick={() => router.push('/auth/login')}
                   className="flex items-center justify-center gap-2 bg-white text-black font-bold py-4 rounded-2xl hover:bg-zinc-200 transition-all active:scale-95"
                 >
                   <RefreshCw className="w-4 h-4" />
-                  Tentar Novamente
+                  Reiniciar Autenticação
                 </button>
                 <button
                   onClick={() => {
-                    if (state && state.endsWith('_onboarding')) {
-                      router.push(`/onboarding?status=error&platform=${platform}`);
-                    } else {
-                      router.push(`/dashboard/settings?status=error&platform=${platform}`);
-                    }
+                    router.push('/dashboard/settings?status=error');
                   }}
                   className="flex items-center justify-center gap-2 bg-zinc-800 text-zinc-300 font-bold py-4 rounded-2xl hover:bg-zinc-700 transition-all"
                 >
@@ -229,4 +282,3 @@ export default function SocialCallbackPage() {
     </Suspense>
   );
 }
-

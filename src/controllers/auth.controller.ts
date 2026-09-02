@@ -6,6 +6,7 @@ import { UserRole } from '../types/roles';
 import { z } from 'zod';
 import { TwoFactorService } from '../services/twoFactor.service';
 import { getJwtSecret } from '../lib/jwt-secret';
+import { createTwoFactorChallenge, verifyTwoFactorChallenge } from '../lib/two-factor-challenge';
 
 // ─── Schemas de Validação ─────────────────────────────────────────────────────
 
@@ -231,11 +232,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     if (user.twoFactorEnabled) {
-      const tempToken = jwt.sign(
-        { id: user.id, scope: '2fa_pending' },
-        getJwtSecret(),
-        { expiresIn: '5m' }
-      );
+      const tempToken = createTwoFactorChallenge(user.id);
       res.status(200).json({
         status:    'PENDING_2FA',
         tempToken,
@@ -295,16 +292,16 @@ export const verify2FA = async (req: Request, res: Response): Promise<void> => {
     }
 
     const { tempToken, code } = parsed.data;
-    let payload: { id: string; scope: string };
+    let userId: string;
     try {
-      payload = jwt.verify(tempToken, getJwtSecret()) as { id: string; scope: string };
+      userId = verifyTwoFactorChallenge(tempToken);
     } catch {
       res.status(401).json({ error: 'Token temporário inválido ou expirado.' });
       return;
     }
 
-    const user = await prisma.user.findUnique({ where: { id: payload.id } });
-    if (!user || !user.twoFactorSecret) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
       res.status(401).json({ error: 'Usuário não encontrado ou 2FA não configurado.' });
       return;
     }

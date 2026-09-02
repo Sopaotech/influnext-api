@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import type { User } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import axios from 'axios';
 import { ScoringService } from '../services/scoring.service';
@@ -8,6 +9,8 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { getJwtSecret } from '../lib/jwt-secret';
+import { createOAuthState, consumeOAuthState, getOAuthFrontendUrl, isOAuthPlatform, oauthBoundaryFailure, assertOAuthIdentity } from '../lib/oauth-state';
+import { createTwoFactorChallenge } from '../lib/two-factor-challenge';
 
 function signFullToken(user: { id: string; role: string; email: string }) {
   return jwt.sign(
@@ -17,28 +20,13 @@ function signFullToken(user: { id: string; role: string; email: string }) {
   );
 }
 
-function getFrontendUrl(req: Request): string {
-  const origin = req.headers.origin as string;
-  if (origin) return origin.endsWith('/') ? origin.slice(0, -1) : origin;
-  
-  const referer = req.headers.referer as string;
-  if (referer) {
-    try {
-      const parsed = new URL(referer);
-      return parsed.origin;
-    } catch (_) {}
-  }
-  
-  const raw = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
-  return raw.endsWith('/') ? raw.slice(0, -1) : raw;
-}
-
 export class SocialAuthController {
   static async getAuthUrls(req: Request, res: Response) {
-    const userId = req.user!.id;
-    const frontendUrl = getFrontendUrl(req);
-    const jwtSecret = getJwtSecret();
-    const stateIg = jwt.sign({ userId }, jwtSecret, { expiresIn: '1h' });
+    try {
+    const frontendUrl = getOAuthFrontendUrl(req);
+    const stateIg = await createOAuthState(req, res, 'instagram', 'link');
+    const stateTiktok = await createOAuthState(req, res, 'tiktok', 'link');
+    const stateYoutube = await createOAuthState(req, res, 'youtube', 'link');
     const instagramRedirectUri = `${frontendUrl}/auth/callback/instagram`;
 
     const isInstagramConfigured = Boolean(process.env.INSTAGRAM_CLIENT_ID && process.env.INSTAGRAM_CLIENT_ID !== 'seu_instagram_app_client_id');
@@ -48,8 +36,8 @@ export class SocialAuthController {
     const urls = {
       instagram: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=instagram_business_basic&response_type=code&state=${stateIg}`,
       authUrl: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=instagram_business_basic&response_type=code&state=${stateIg}`,
-      tiktok: `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${frontendUrl}/auth/callback/tiktok&state=${userId}`,
-      youtube: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/youtube&response_type=code&scope=https://www.googleapis.com/auth/youtube.readonly&state=${userId}&access_type=offline&prompt=consent`,
+      tiktok: `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${frontendUrl}/auth/callback/tiktok&state=${stateTiktok}`,
+      youtube: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/youtube&response_type=code&scope=https://www.googleapis.com/auth/youtube.readonly&state=${stateYoutube}&access_type=offline&prompt=consent`,
       configured: {
         instagram: isInstagramConfigured,
         tiktok: isTikTokConfigured,
@@ -58,22 +46,28 @@ export class SocialAuthController {
     };
 
     res.json(urls);
+    } catch (error) { oauthBoundaryFailure(res, error); }
   }
 
   static async getPublicAuthUrls(req: Request, res: Response) {
-    const frontendUrl = getFrontendUrl(req);
+    try {
+    const frontendUrl = getOAuthFrontendUrl(req);
     const instagramRedirectUri = `${frontendUrl}/auth/callback/instagram`;
+    const stateInstagram = await createOAuthState(req, res, 'instagram', 'login');
+    const stateTiktok = await createOAuthState(req, res, 'tiktok', 'login');
+    const stateGoogle = await createOAuthState(req, res, 'google', 'login');
+    const stateYoutube = await createOAuthState(req, res, 'youtube', 'login');
 
     const isInstagramConfigured = Boolean(process.env.INSTAGRAM_CLIENT_ID && process.env.INSTAGRAM_CLIENT_ID !== 'seu_instagram_app_client_id');
     const isTikTokConfigured = Boolean(process.env.TIKTOK_CLIENT_KEY && process.env.TIKTOK_CLIENT_KEY !== 'seu_tiktok_client_key');
     const isGoogleConfigured = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_ID !== 'seu_google_client_id');
 
     const urls = {
-      instagram: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=instagram_business_basic&response_type=code&state=register_instagram`,
-      authUrl: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=instagram_business_basic&response_type=code&state=register_instagram`,
-      tiktok: `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${frontendUrl}/auth/callback/tiktok&state=register_tiktok`,
-      google: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/google&response_type=code&scope=openid%20email%20profile&state=register_google`,
-      youtube: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/youtube&response_type=code&scope=https://www.googleapis.com/auth/youtube.readonly&state=register_youtube&access_type=offline&prompt=consent`,
+      instagram: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=instagram_business_basic&response_type=code&state=${stateInstagram}`,
+      authUrl: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=instagram_business_basic&response_type=code&state=${stateInstagram}`,
+      tiktok: `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${frontendUrl}/auth/callback/tiktok&state=${stateTiktok}`,
+      google: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/google&response_type=code&scope=openid%20email%20profile&state=${stateGoogle}`,
+      youtube: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/youtube&response_type=code&scope=https://www.googleapis.com/auth/youtube.readonly&state=${stateYoutube}&access_type=offline&prompt=consent`,
       configured: {
         instagram: isInstagramConfigured,
         tiktok: isTikTokConfigured,
@@ -82,26 +76,21 @@ export class SocialAuthController {
     };
 
     res.json(urls);
+    } catch (error) { oauthBoundaryFailure(res, error); }
   }
 
   static async handleCallback(req: Request, res: Response) {
     const { platform } = req.params;
-    const { code, state } = req.query; // state contém o userId, userId_onboarding, ou register_platform
-
-    if (!code || !state) {
-      res.status(400).json({ error: 'Código ou estado ausente.' });
+    if (!isOAuthPlatform(platform)) {
+      res.status(400).json({ error: 'Plataforma OAuth não suportada.' });
       return;
     }
 
-    const stateStr = state as string;
-    const isBusiness = stateStr.includes('_business');
-    const cleanStateStr = stateStr.replace('_business', '');
-    const isRegister = cleanStateStr.startsWith('register_');
-    const isFromOnboarding = !isRegister && cleanStateStr.endsWith('_onboarding');
-    let userId = '';
-    if (!isRegister) {
-      userId = isFromOnboarding ? cleanStateStr.replace('_onboarding', '') : cleanStateStr;
-    }
+    let oauthState;
+    try { oauthState = await consumeOAuthState(req, res, platform); }
+    catch (error) { oauthBoundaryFailure(res, error); return; }
+    const isRegister = oauthState.mode === 'login';
+    let userId = oauthState.userId || '';
 
     try {
       let accessToken = '';
@@ -112,7 +101,7 @@ export class SocialAuthController {
       let tiktokFollowers = 0;
       let tiktokAvatar: string | null = null;
 
-      const frontendUrl = getFrontendUrl(req);
+      const frontendUrl = oauthState.frontendUrl;
 
       let refreshToken: string | null = null;
       let expiresAt: Date | null = null;
@@ -121,7 +110,7 @@ export class SocialAuthController {
         // Instagram API with Instagram Login — fluxo unificado Creator/Business
         // Não usa mais Facebook Dialog OAuth nem /me/accounts
         const tokenResult = await InstagramService.exchangeCodeForToken(
-          code as string,
+          req.query.code as string,
           `${frontendUrl}/auth/callback/instagram`
         );
 
@@ -143,7 +132,7 @@ export class SocialAuthController {
         const tokenResponse = await axios.post('https://open.tiktokapis.com/v2/oauth/token/', new URLSearchParams({
           client_key: process.env.TIKTOK_CLIENT_KEY!,
           client_secret: process.env.TIKTOK_CLIENT_SECRET!,
-          code: code as string,
+          code: req.query.code as string,
           grant_type: 'authorization_code',
           redirect_uri: `${frontendUrl}/auth/callback/tiktok`,
         }).toString(), {
@@ -174,7 +163,7 @@ export class SocialAuthController {
         const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', new URLSearchParams({
           client_id: process.env.GOOGLE_CLIENT_ID!,
           client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-          code: code as string,
+          code: req.query.code as string,
           grant_type: 'authorization_code',
           redirect_uri: `${frontendUrl}/auth/callback/${platform}`,
         }).toString(), {
@@ -195,6 +184,7 @@ export class SocialAuthController {
         platformId = channel.id;
       }
 
+      assertOAuthIdentity(accessToken, platformId);
       let profile;
       let platformName = platform.toUpperCase();
       if (platformName === 'GOOGLE') platformName = 'YOUTUBE';
@@ -210,6 +200,7 @@ export class SocialAuthController {
         profilePicture = tiktokAvatar;
       }
 
+      let oauthUser: User | null = null;
       if (isRegister) {
         // 1. Procurar se já existe essa plataforma social conectada
         const existingPlatform = await prisma.socialPlatform.findFirst({
@@ -229,6 +220,7 @@ export class SocialAuthController {
         if (existingPlatform && existingPlatform.influencer) {
           profile = existingPlatform.influencer;
           userId = profile.userId;
+          oauthUser = existingPlatform.influencer.user;
         } else {
           // 2. Criar novo usuário e perfil
           const tempEmail = `${username.toLowerCase().replace(/\s+/g, '_')}_${Math.floor(1000 + Math.random() * 9000)}@influnext.temp`;
@@ -257,6 +249,7 @@ export class SocialAuthController {
           });
 
           userId = newUser.id;
+          oauthUser = newUser;
         }
       } else {
         const foundProfile = await prisma.influencerProfile.findUnique({
@@ -268,6 +261,19 @@ export class SocialAuthController {
           return;
         }
         profile = foundProfile;
+      }
+
+      if (isRegister && !oauthUser) {
+        res.status(401).json({ error: 'Conta OAuth não encontrada.' });
+        return;
+      }
+      if (isRegister && oauthUser?.twoFactorEnabled) {
+        res.json({
+          success: true, status: 'PENDING_2FA',
+          tempToken: createTwoFactorChallenge(oauthUser.id),
+          message: 'Código de autenticação necessário.',
+        });
+        return;
       }
 
       // Atualizar handle do perfil se for a primeira conexão
@@ -327,8 +333,8 @@ export class SocialAuthController {
       }
 
       if (isRegister) {
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-        const token = signFullToken(user as any);
+        const user = oauthUser!;
+        const token = signFullToken(user);
         res.json({
           success: true,
           token,
@@ -344,7 +350,7 @@ export class SocialAuthController {
         return;
       }
 
-      res.json({ success: true, platform, username });
+      res.json({ success: true, platform, username, from: oauthState.from });
     } catch (error: any) {
       console.error(`[SOCIAL_AUTH] Erro no callback ${platform}:`, error.response?.data || error.message);
       
