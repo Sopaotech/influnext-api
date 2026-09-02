@@ -7,13 +7,12 @@ import { TikTokService } from '../services/tiktok.service';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_change_me';
+import { getJwtSecret } from '../lib/jwt-secret';
 
 function signFullToken(user: { id: string; role: string; email: string }) {
   return jwt.sign(
     { id: user.id, role: user.role, email: user.email },
-    JWT_SECRET,
+    getJwtSecret(),
     { expiresIn: '7d' }
   );
 }
@@ -38,7 +37,7 @@ export class SocialAuthController {
   static async getAuthUrls(req: Request, res: Response) {
     const userId = req.user!.id;
     const frontendUrl = getFrontendUrl(req);
-    const jwtSecret = process.env.JWT_SECRET || 'fallback_secret_change_me';
+    const jwtSecret = getJwtSecret();
     const stateIg = jwt.sign({ userId }, jwtSecret, { expiresIn: '1h' });
     const instagramRedirectUri = `${frontendUrl}/auth/callback/instagram`;
 

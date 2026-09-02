@@ -19,6 +19,13 @@ const aiTaskSuggestionSchema = z.object({
 
 const createAITasksSchema = z.array(aiTaskSuggestionSchema);
 
+const findOwnedTask = (taskId: string, userId: string) => prisma.task.findFirst({
+  where: {
+    id: taskId,
+    influencer: { userId },
+  },
+});
+
 // ─── Controllers ──────────────────────────────────────────────────────────────
 
 export const createTask = async (req: Request, res: Response): Promise<void> => {
@@ -194,8 +201,15 @@ export const processAICommand = async (req: Request, res: Response): Promise<voi
 
 export const completeTaskWithProof = async (req: Request, res: Response): Promise<void> => {
   try {
+    const userId = req.user!.id;
     const { taskId } = req.params;
     const { proofUrl } = req.body;
+
+    const ownedTask = await findOwnedTask(taskId, userId);
+    if (!ownedTask) {
+      res.status(404).json({ error: 'Tarefa não encontrada.' });
+      return;
+    }
 
     if (!proofUrl) {
       res.status(400).json({ error: 'URL de prova obrigatória.' });
@@ -249,8 +263,9 @@ export const getTelemetryResults = async (req: Request, res: Response): Promise<
 
 export const toggleTask = async (req: Request, res: Response): Promise<void> => {
   try {
+    const userId = req.user!.id;
     const { taskId } = req.params;
-    const task = await prisma.task.findUnique({ where: { id: taskId } });
+    const task = await findOwnedTask(taskId, userId);
     if (!task) {
       res.status(404).json({ error: 'Tarefa não encontrada.' });
       return;
@@ -269,7 +284,14 @@ export const toggleTask = async (req: Request, res: Response): Promise<void> => 
 
 export const deleteTask = async (req: Request, res: Response): Promise<void> => {
   try {
+    const userId = req.user!.id;
     const { taskId } = req.params;
+    const task = await findOwnedTask(taskId, userId);
+    if (!task) {
+      res.status(404).json({ error: 'Tarefa não encontrada.' });
+      return;
+    }
+
     await prisma.task.delete({ where: { id: taskId } });
     res.status(200).json({ message: 'Tarefa excluída com sucesso.' });
   } catch (error) {

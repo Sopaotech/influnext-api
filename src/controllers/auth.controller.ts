@@ -5,13 +5,14 @@ import { prisma } from '../lib/prisma';
 import { UserRole } from '../types/roles';
 import { z } from 'zod';
 import { TwoFactorService } from '../services/twoFactor.service';
+import { getJwtSecret } from '../lib/jwt-secret';
 
 // ─── Schemas de Validação ─────────────────────────────────────────────────────
 
 const signupSchema = z.object({
   email:    z.string().email({ message: 'E-mail inválido.' }),
   password: z.string().min(8, { message: 'Senha deve ter ao menos 8 caracteres.' }),
-  role:     z.enum(['ADMIN', 'INFLUENCER', 'COMPANY'], { required_error: 'Role inválida.' }),
+  role:     z.enum(['INFLUENCER', 'COMPANY'], { required_error: 'Role inválida.' }),
 });
 
 const loginSchema = z.object({
@@ -26,12 +27,10 @@ const verify2FASchema = z.object({
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_change_me';
-
 function signFullToken(user: { id: string; role: UserRole; email: string }) {
   return jwt.sign(
     { id: user.id, role: user.role, email: user.email },
-    JWT_SECRET,
+    getJwtSecret(),
     { expiresIn: '7d' }
   );
 }
@@ -234,7 +233,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     if (user.twoFactorEnabled) {
       const tempToken = jwt.sign(
         { id: user.id, scope: '2fa_pending' },
-        JWT_SECRET,
+        getJwtSecret(),
         { expiresIn: '5m' }
       );
       res.status(200).json({
@@ -298,7 +297,7 @@ export const verify2FA = async (req: Request, res: Response): Promise<void> => {
     const { tempToken, code } = parsed.data;
     let payload: { id: string; scope: string };
     try {
-      payload = jwt.verify(tempToken, JWT_SECRET) as { id: string; scope: string };
+      payload = jwt.verify(tempToken, getJwtSecret()) as { id: string; scope: string };
     } catch {
       res.status(401).json({ error: 'Token temporário inválido ou expirado.' });
       return;

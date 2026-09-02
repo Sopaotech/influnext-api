@@ -65,10 +65,19 @@ async function main() {
   // 2. Criar contas de administrador oficiais zeradas
   console.log('👤 Criando administradores oficiais...');
 
-  const passwordHashAlexsandro = await bcrypt.hash('123456', 12);
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  const secondaryAdminEmail = process.env.SECONDARY_ADMIN_EMAIL?.trim().toLowerCase();
+  const secondaryAdminPassword = process.env.SECONDARY_ADMIN_PASSWORD;
+
+  if (!adminEmail || !adminPassword) {
+    throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD are required to create an administrator.');
+  }
+
+  const passwordHashAlexsandro = await bcrypt.hash(adminPassword, 12);
   const admin1 = await prisma.user.create({
     data: {
-      email: 'alexsandro@influnext.com.br',
+      email: adminEmail,
       passwordHash: passwordHashAlexsandro,
       role: 'ADMIN',
       onboardingCompleted: false,
@@ -78,18 +87,20 @@ async function main() {
   });
   console.log(`✅ Administrador 1 criado: ${admin1.email} (onboarding zerado)`);
 
-  const passwordHashJuninho = await bcrypt.hash('Juninho1440@', 12);
-  const admin2 = await prisma.user.create({
-    data: {
-      email: 'alexsandrojunior144@gmail.com',
-      passwordHash: passwordHashJuninho,
-      role: 'ADMIN',
-      onboardingCompleted: false,
-      subscriptionStatus: 'ACTIVE',
-      subscriptionTier: 'MASTER',
-    }
-  });
-  console.log(`✅ Administrador 2 criado: ${admin2.email} (onboarding zerado)`);
+  if (secondaryAdminEmail && secondaryAdminPassword) {
+    const secondaryPasswordHash = await bcrypt.hash(secondaryAdminPassword, 12);
+    const admin2 = await prisma.user.create({
+      data: {
+        email: secondaryAdminEmail,
+        passwordHash: secondaryPasswordHash,
+        role: 'ADMIN',
+        onboardingCompleted: false,
+        subscriptionStatus: 'ACTIVE',
+        subscriptionTier: 'MASTER',
+      }
+    });
+    console.log(`✅ Administrador 2 criado: ${admin2.email} (onboarding zerado)`);
+  }
 
   // 3. Cadastrar Planos de Assinatura Básicos de Produção (para o sistema não quebrar ao buscar planos)
   console.log('🌱 Cadastrando planos de assinatura padrão...');

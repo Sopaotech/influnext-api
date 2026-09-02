@@ -30,6 +30,18 @@ const createContractSchema = z.object({
   legalTerms: z.any().optional(),
 });
 
+const getParticipantContractWhere = (contractId: string, userId: string, userRole: string) => {
+  if (userRole === UserRole.COMPANY) {
+    return { id: contractId, company: { userId } };
+  }
+
+  if (userRole === UserRole.INFLUENCER) {
+    return { id: contractId, influencer: { userId } };
+  }
+
+  return null;
+};
+
 // ─── Controllers ──────────────────────────────────────────────────────────────
 
 export const createContract = async (req: Request, res: Response): Promise<void> => {
@@ -212,24 +224,13 @@ export const acceptContract = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
-    if (!influencer) {
-      res.status(404).json({ error: "Perfil de influenciador não encontrado." });
-      return;
-    }
-
-    const contract = await prisma.contract.findUnique({
-      where: { id },
-      include: { deliverables: true, company: true }
+    const contract = await prisma.contract.findFirst({
+      where: { id, influencer: { userId } },
+      include: { deliverables: true, company: true, influencer: true }
     });
 
     if (!contract) {
       res.status(404).json({ error: "Contrato não encontrado." });
-      return;
-    }
-
-    if (contract.influencerId !== influencer.id) {
-      res.status(403).json({ error: "Você não é o influenciador designado para este contrato." });
       return;
     }
 
@@ -247,7 +248,7 @@ export const acceptContract = async (req: Request, res: Response): Promise<void>
     const deliverablesString = contract.deliverables
       .map((d) => `${d.type}:${d.deadline.toISOString()}`)
       .join(';');
-    const consentContent = `${contract.company.companyName}|${contract.company.taxId}|${influencer.handle}|${contract.title}|${contract.budget}|${contract.briefing || ''}|${contract.exclusivityDays || 0}|${contract.usageRightsDays || 30}|${contract.allowPaidMedia ? 'PAID_MEDIA' : 'ORGANIC'}|${deliverablesString}`;
+    const consentContent = `${contract.company.companyName}|${contract.company.taxId}|${contract.influencer.handle}|${contract.title}|${contract.budget}|${contract.briefing || ''}|${contract.exclusivityDays || 0}|${contract.usageRightsDays || 30}|${contract.allowPaidMedia ? 'PAID_MEDIA' : 'ORGANIC'}|${deliverablesString}`;
     const signatureHash = crypto.createHash('sha256').update(consentContent).digest('hex');
 
     const clientIp = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || req.ip || '127.0.0.1';
@@ -302,28 +303,24 @@ export const confirmPayment = async (req: Request, res: Response): Promise<void>
     const { id }   = req.params;
 
     // Apenas ADMIN ou a COMPANY dona do contrato podem confirmar
-    if (userRole === UserRole.INFLUENCER) {
-      res.status(403).json({ error: "Influenciadores não podem confirmar pagamentos." });
+    if (userRole !== UserRole.COMPANY && userRole !== UserRole.ADMIN) {
+      res.status(403).json({ error: "Apenas empresas ou admins podem confirmar pagamentos." });
       return;
     }
 
-    const contract = await prisma.contract.findUnique({
-      where: { id },
-      include: { company: true, influencer: true }
-    });
+    const contract = userRole === UserRole.ADMIN
+      ? await prisma.contract.findUnique({
+          where: { id },
+          include: { company: true, influencer: true }
+        })
+      : await prisma.contract.findFirst({
+          where: { id, company: { userId } },
+          include: { company: true, influencer: true }
+        });
 
     if (!contract) {
       res.status(404).json({ error: "Contrato não encontrado." });
       return;
-    }
-
-    // Garantir que apenas o ADMIN ou a própria Company dona confirme
-    if (userRole === UserRole.COMPANY) {
-      const company = await prisma.companyProfile.findUnique({ where: { userId } });
-      if (!company || company.id !== contract.companyId) {
-        res.status(403).json({ error: "Você não é o dono deste contrato." });
-        return;
-      }
     }
 
     if (!contract.influencerSigned) {
@@ -388,25 +385,23 @@ export const releasePayment = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const contract = await prisma.contract.findUnique({
-      where: { id },
-      include: {
-        influencer: { include: { user: true } },
-        company: { include: { user: true } }
-      }
-    });
+    const contractInclude = {
+      influencer: { include: { user: true } },
+      company: { include: { user: true } }
+    };
+    const contract = userRole === UserRole.ADMIN
+      ? await prisma.contract.findUnique({
+          where: { id },
+          include: contractInclude
+        })
+      : await prisma.contract.findFirst({
+          where: { id, company: { userId } },
+          include: contractInclude
+        });
 
     if (!contract) {
       res.status(404).json({ error: "Contrato não encontrado." });
       return;
-    }
-
-    if (userRole === UserRole.COMPANY) {
-      const company = await prisma.companyProfile.findUnique({ where: { userId } });
-      if (!company || company.id !== contract.companyId) {
-        res.status(403).json({ error: "Você não tem permissão para liberar pagamentos deste contrato." });
-        return;
-      }
     }
 
     if (contract.escrowStatus !== 'UNDER_REVIEW' && contract.escrowStatus !== 'IN_PROGRESS') {
@@ -550,33 +545,21 @@ export const getContractById = async (req: Request, res: Response): Promise<void
     const userId = req.user!.id;
     const userRole = req.user!.role;
 
-    const contract = await prisma.contract.findUnique({
-      where: { id },
-      include: {
-        influencer: { include: { user: { select: { email: true } } } },
-        company: { include: { user: { select: { email: true } } } },
-        deliverables: true
-      }
-    });
+    const include = {
+      influencer: { include: { user: { select: { email: true } } } },
+      company: { include: { user: { select: { email: true } } } },
+      deliverables: true
+    } as const;
+    const participantWhere = getParticipantContractWhere(id, userId, userRole);
+    const contract = userRole === UserRole.ADMIN
+      ? await prisma.contract.findUnique({ where: { id }, include })
+      : participantWhere
+        ? await prisma.contract.findFirst({ where: participantWhere, include })
+        : null;
 
     if (!contract) {
       res.status(404).json({ error: "Contrato não encontrado." });
       return;
-    }
-
-    // Validação de permissão de visualização
-    if (userRole === UserRole.COMPANY) {
-      const company = await prisma.companyProfile.findUnique({ where: { userId } });
-      if (!company || contract.companyId !== company.id) {
-        res.status(403).json({ error: "Você não tem permissão para visualizar este contrato." });
-        return;
-      }
-    } else if (userRole === UserRole.INFLUENCER) {
-      const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
-      if (!influencer || contract.influencerId !== influencer.id) {
-        res.status(403).json({ error: "Você não tem permissão para visualizar este contrato." });
-        return;
-      }
     }
 
     res.json(contract);
@@ -598,33 +581,16 @@ export const updateContractScript = async (req: Request, res: Response): Promise
       return;
     }
 
-    const contract = await prisma.contract.findUnique({
-      where: { id },
-      include: { influencer: true, company: true }
-    });
+    const include = { influencer: true, company: true } as const;
+    const participantWhere = getParticipantContractWhere(id, userId, userRole);
+    const contract = userRole === UserRole.ADMIN
+      ? await prisma.contract.findUnique({ where: { id }, include })
+      : participantWhere
+        ? await prisma.contract.findFirst({ where: participantWhere, include })
+        : null;
 
     if (!contract) {
       res.status(404).json({ error: "Contrato não encontrado." });
-      return;
-    }
-
-    let hasAccess = false;
-    if (userRole === UserRole.INFLUENCER) {
-      const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
-      if (influencer && contract.influencerId === influencer.id) {
-        hasAccess = true;
-      }
-    } else if (userRole === UserRole.COMPANY) {
-      const company = await prisma.companyProfile.findUnique({ where: { userId } });
-      if (company && contract.companyId === company.id) {
-        hasAccess = true;
-      }
-    } else if (userRole === UserRole.ADMIN) {
-      hasAccess = true;
-    }
-
-    if (!hasAccess) {
-      res.status(403).json({ error: "Você não tem permissão para alterar este contrato." });
       return;
     }
 
@@ -655,22 +621,19 @@ export const cancelAndRefundContract = async (req: Request, res: Response): Prom
       return;
     }
 
-    const contract = await prisma.contract.findUnique({
-      where: { id },
-      include: { company: true, influencer: { include: { user: true } } }
-    });
+    const contract = userRole === UserRole.ADMIN
+      ? await prisma.contract.findUnique({
+          where: { id },
+          include: { company: true, influencer: { include: { user: true } } }
+        })
+      : await prisma.contract.findFirst({
+          where: { id, company: { userId } },
+          include: { company: true, influencer: { include: { user: true } } }
+        });
 
     if (!contract) {
       res.status(404).json({ error: "Contrato não encontrado." });
       return;
-    }
-
-    if (userRole === UserRole.COMPANY) {
-      const company = await prisma.companyProfile.findUnique({ where: { userId } });
-      if (!company || company.id !== contract.companyId) {
-        res.status(403).json({ error: "Você não tem permissão para cancelar este contrato." });
-        return;
-      }
     }
 
     // Apenas contratos PENDING_PAYMENT ou IN_PROGRESS ou DRAFT podem ser cancelados
@@ -765,8 +728,26 @@ export const cancelAndRefundContract = async (req: Request, res: Response): Prom
 export const generateROIReport = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+
+    if (userRole !== UserRole.COMPANY) {
+      res.status(403).json({ error: "Apenas a empresa contratante pode gerar o relatório de ROI." });
+      return;
+    }
+
+    const contract = await prisma.contract.findFirst({
+      where: { id, company: { userId } },
+      select: { id: true }
+    });
+
+    if (!contract) {
+      res.status(404).json({ error: "Contrato não encontrado." });
+      return;
+    }
+
     const { MarketingIntelligenceService } = await import('../services/marketing-intelligence.service');
-    const report = await MarketingIntelligenceService.generateCampaignROIReport(id);
+    const report = await MarketingIntelligenceService.generateCampaignROIReport(contract.id);
     res.json(report);
   } catch (error: any) {
     console.error('[CONTRACT ROI REPORT] Erro ao gerar relatório:', error);
@@ -789,23 +770,19 @@ export const submitContractReview = async (req: Request, res: Response): Promise
       return;
     }
 
-    const contract = await prisma.contract.findUnique({
-      where: { id: contractId },
-      include: {
-        company: { select: { id: true, userId: true, companyName: true } },
-        influencer: { select: { id: true, userId: true, handle: true } },
-        review: true
-      }
-    });
+    const include = {
+      company: { select: { id: true, userId: true, companyName: true } },
+      influencer: { select: { id: true, userId: true, handle: true } },
+      review: true
+    } as const;
+    const contract = req.user!.role === UserRole.ADMIN
+      ? await prisma.contract.findUnique({ where: { id: contractId }, include })
+      : req.user!.role === UserRole.COMPANY
+        ? await prisma.contract.findFirst({ where: { id: contractId, company: { userId } }, include })
+        : null;
 
     if (!contract) {
       res.status(404).json({ error: "Contrato não encontrado." });
-      return;
-    }
-
-    // Apenas a empresa contratante ou Admin pode avaliar a entrega da campanha
-    if (contract.company.userId !== userId && req.user!.role !== 'ADMIN') {
-      res.status(403).json({ error: "Apenas a empresa contratante pode avaliar a campanha." });
       return;
     }
 
@@ -851,5 +828,3 @@ export const submitContractReview = async (req: Request, res: Response): Promise
     res.status(500).json({ error: "Erro ao registrar avaliação da campanha." });
   }
 };
-
-

@@ -6,24 +6,20 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Iniciando Seed de Produção...');
 
-  // 1. Admin Master
-  const adminEmail = process.env.ADMIN_EMAIL || 'Alexsandrojunior144@gmail.com'.toLowerCase().trim();
-  const adminPassword = process.env.ADMIN_PASSWORD || 'Juninho1440@';
-  const passwordHash = await bcrypt.hash(adminPassword, 12);
-
-  const admin = await prisma.user.upsert({
-    where: { email: adminEmail },
-    update: {
-      role: 'ADMIN',
-      passwordHash,
-    },
-    create: {
-      email: adminEmail,
-      passwordHash,
-      role: 'ADMIN',
-    },
-  });
-  console.log(`✅ Admin master configurado: ${admin.email}`);
+  // A criação de admin é opcional e exige credenciais explícitas no ambiente.
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (adminEmail && adminPassword) {
+    const passwordHash = await bcrypt.hash(adminPassword, 12);
+    const admin = await prisma.user.upsert({
+      where: { email: adminEmail },
+      update: { role: 'ADMIN', passwordHash },
+      create: { email: adminEmail, passwordHash, role: 'ADMIN' },
+    });
+    console.log(`✅ Admin master configurado: ${admin.email}`);
+  } else {
+    console.log('ℹ️  Admin não configurado: defina ADMIN_EMAIL e ADMIN_PASSWORD para criação manual via seed.');
+  }
 
   // 2. Planos de Assinatura
   const plans = [

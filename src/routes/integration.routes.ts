@@ -13,6 +13,7 @@ import {
 import { authenticate } from '../middlewares/auth.middleware';
 import { authorize } from '../middlewares/role.middleware';
 import { UserRole } from '../types/roles';
+import { developmentOrTestOnly } from '../middlewares/environment.middleware';
 
 const router = Router();
 
@@ -32,10 +33,10 @@ router.get('/instagram/auth-url', authenticate, getAuthUrls);
 router.post('/sync-metrics', authenticate, syncPlatformMetrics);
 
 // Simulação de conexão (ex: Instagram/TikTok)
-router.post('/simulate', authenticate, simulateInstagramConnection);
+router.post('/simulate', developmentOrTestOnly, authenticate, simulateInstagramConnection);
 
 // Simulação do fluxo completo de contratos e IA
-router.post('/simulate/flow-step', simulateFlowStep);
+router.post('/simulate/flow-step', developmentOrTestOnly, simulateFlowStep);
 
 // Execução manual da renovação de tokens (Apenas Admin)
 router.post('/refresh-tokens-debug', authenticate, authorize([UserRole.ADMIN]), triggerTokenRenewalDebug);

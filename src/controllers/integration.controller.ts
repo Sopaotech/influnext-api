@@ -8,7 +8,7 @@ import { AIService } from '../services/ai.service';
 import { TrendScannerService } from '../services/trend-scanner.service';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
-import { seedDemo } from '../scripts/seed-demo';
+import { getJwtSecret } from '../lib/jwt-secret';
 
 const getFrontendUrl = (req?: Request) => {
   const origin = req?.headers.origin as string;
@@ -42,7 +42,7 @@ export const getAuthUrls = async (req: Request, res: Response): Promise<void> =>
     }
 
     const from = req.query.from as string;
-    const jwtSecret = process.env.JWT_SECRET || 'fallback_secret_change_me';
+    const jwtSecret = getJwtSecret();
 
     // State JWT assinado (1h) — previne ataques CSRF
     const stateInstagram = jwt.sign({ userId, from: from || '' }, jwtSecret, { expiresIn: '1h' });
@@ -87,7 +87,7 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
     }
 
     // Validar o state JWT para evitar ataques CSRF ou de manipulação de ID
-    const jwtSecret = process.env.JWT_SECRET || 'fallback_secret_change_me';
+    const jwtSecret = getJwtSecret();
     let decodedState: { userId: string; from?: string };
     try {
       decodedState = jwt.verify(stateStr, jwtSecret) as { userId: string; from?: string };
@@ -403,7 +403,7 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
     }
 
     // Validar o state JWT para evitar ataques CSRF ou de manipulação de ID
-    const jwtSecret = process.env.JWT_SECRET || 'fallback_secret_change_me';
+    const jwtSecret = getJwtSecret();
     let decodedState: { userId: string; from?: string };
     try {
       decodedState = jwt.verify(stateStr, jwtSecret) as { userId: string; from?: string };
@@ -585,13 +585,10 @@ export const triggerTokenRenewalDebug = async (req: Request, res: Response): Pro
     const { runTokenRenewalLogic } = await import('../workers/token-renewal.worker');
     await runTokenRenewalLogic();
 
-    console.log('[DEBUG] Resetando banco de dados com seed do demo...');
-    await seedDemo();
-
-    res.json({ success: true, message: 'Simulação reiniciada e dados semeados com sucesso!' });
+    res.json({ success: true, message: 'Renovação de tokens executada com sucesso.' });
   } catch (error: any) {
-    console.error('[DEBUG] Erro na renovação e reset:', error);
-    res.status(500).json({ error: 'Erro ao executar o processo de reinicialização da simulação.', details: error.message });
+    console.error('[DEBUG] Erro na renovação de tokens:', error);
+    res.status(500).json({ error: 'Erro ao executar a renovação de tokens.', details: error.message });
   }
 };
 

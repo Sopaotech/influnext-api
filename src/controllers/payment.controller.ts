@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import { stripe } from '../lib/stripe';
 import { QuickAlertService } from '../services/quick-alert.service';
 import Stripe from 'stripe';
+import { UserRole } from '../types/roles';
 
 const getFrontendUrl = () => {
   const url = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
@@ -10,6 +11,11 @@ const getFrontendUrl = () => {
 };
 
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
+
+const getCompanyOwnedContractWhere = (contractId: string, userId: string) => ({
+  id: contractId,
+  company: { userId }
+});
 
 export class PaymentController {
   /**
@@ -81,12 +87,18 @@ export class PaymentController {
    */
   static async createContractCheckoutSession(req: Request, res: Response) {
     try {
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
       const { contractId } = req.body;
 
       if (!contractId) return res.status(400).json({ error: 'contractId é obrigatório' });
 
-      const contract = await prisma.contract.findUnique({
-        where: { id: contractId },
+      if (userRole !== UserRole.COMPANY) {
+        return res.status(403).json({ error: 'Apenas a empresa responsável pelo contrato pode iniciar o pagamento.' });
+      }
+
+      const contract = await prisma.contract.findFirst({
+        where: getCompanyOwnedContractWhere(contractId, userId),
         include: { company: { include: { user: true } } }
       });
 
@@ -153,12 +165,18 @@ export class PaymentController {
    */
   static async createPaymentIntent(req: Request, res: Response) {
     try {
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
       const { contractId } = req.body;
 
       if (!contractId) return res.status(400).json({ error: 'contractId é obrigatório' });
 
-      const contract = await prisma.contract.findUnique({
-        where: { id: contractId },
+      if (userRole !== UserRole.COMPANY) {
+        return res.status(403).json({ error: 'Apenas a empresa responsável pelo contrato pode iniciar o pagamento.' });
+      }
+
+      const contract = await prisma.contract.findFirst({
+        where: getCompanyOwnedContractWhere(contractId, userId),
         include: { company: { include: { user: true } } }
       });
 
@@ -419,11 +437,26 @@ export class PaymentController {
    */
   static async createMercadoPagoPix(req: Request, res: Response) {
     try {
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
       const { contractId, email } = req.body;
       const userEmail = email || req.user?.email || '';
 
       if (!contractId) {
         return res.status(400).json({ error: 'contractId é obrigatório' });
+      }
+
+      if (userRole !== UserRole.COMPANY) {
+        return res.status(403).json({ error: 'Apenas a empresa responsável pelo contrato pode gerar a cobrança PIX.' });
+      }
+
+      const contract = await prisma.contract.findFirst({
+        where: getCompanyOwnedContractWhere(contractId, userId),
+        select: { id: true }
+      });
+
+      if (!contract) {
+        return res.status(404).json({ error: 'Contrato não encontrado' });
       }
 
       const { MercadoPagoService } = await import('../services/mercadopago.service');
@@ -442,11 +475,26 @@ export class PaymentController {
    */
   static async createMercadoPagoPreference(req: Request, res: Response) {
     try {
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
       const { contractId, email } = req.body;
       const userEmail = email || req.user?.email || '';
 
       if (!contractId) {
         return res.status(400).json({ error: 'contractId é obrigatório' });
+      }
+
+      if (userRole !== UserRole.COMPANY) {
+        return res.status(403).json({ error: 'Apenas a empresa responsável pelo contrato pode gerar a preferência de pagamento.' });
+      }
+
+      const contract = await prisma.contract.findFirst({
+        where: getCompanyOwnedContractWhere(contractId, userId),
+        select: { id: true }
+      });
+
+      if (!contract) {
+        return res.status(404).json({ error: 'Contrato não encontrado' });
       }
 
       const { MercadoPagoService } = await import('../services/mercadopago.service');
@@ -465,14 +513,38 @@ export class PaymentController {
    */
   static async checkMercadoPagoStatus(req: Request, res: Response) {
     try {
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
       const { paymentId } = req.params;
 
       if (!paymentId) {
         return res.status(400).json({ error: 'paymentId é obrigatório' });
       }
 
+      if (userRole !== UserRole.COMPANY) {
+        return res.status(403).json({ error: 'Apenas a empresa responsável pelo contrato pode consultar este pagamento.' });
+      }
+
+      const contract = await prisma.contract.findFirst({
+        where: {
+          mpPaymentId: paymentId,
+          company: { userId }
+        },
+        select: { id: true }
+      });
+
+      if (!contract) {
+        return res.status(404).json({ error: 'Pagamento não encontrado' });
+      }
+
       const { MercadoPagoService } = await import('../services/mercadopago.service');
       const statusData = await MercadoPagoService.getPaymentStatus(paymentId);
+      const metadata = statusData.metadata || {};
+      const paymentContractId = metadata.contract_id || metadata.contractId;
+
+      if (paymentContractId && paymentContractId !== contract.id) {
+        return res.status(409).json({ error: 'Pagamento não corresponde ao contrato autorizado.' });
+      }
 
       // Se foi aprovado, processa a ativação do contrato se ainda não foi
       if (statusData.isApproved) {
@@ -555,4 +627,3 @@ export class PaymentController {
     }
   }
 }
-

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { getJwtSecret } from '../lib/jwt-secret';
 
 declare global {
   namespace Express {
@@ -20,10 +21,13 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
   }
   const token = authHeader.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string; role: any; email: string };
+    const decoded = jwt.verify(token, getJwtSecret()) as { id: string; role: any; email: string };
     req.user = { id: decoded.id, role: decoded.role, email: decoded.email };
     next();
   } catch (err) {
+    if (err instanceof Error && err.message.startsWith('JWT_SECRET is required')) {
+      return res.status(500).json({ error: 'Configuração de autenticação indisponível.' });
+    }
     return res.status(401).json({ error: 'Token inválido ou expirado.' });
   }
 };

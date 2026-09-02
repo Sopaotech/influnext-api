@@ -92,10 +92,6 @@ const startServer = async () => {
     await prisma.$connect();
     console.log('✅ Banco de dados conectado!');
 
-    // Garante que o administrador solicitado pelo usuário exista
-    const { ensureAdminExists } = await import('./lib/admin-init');
-    await ensureAdminExists();
-
     // Inicializa workers e crons de background de forma assíncrona/defensiva (não bloqueante)
     console.log('🔄 Inicializando workers e crons de background em paralelo...');
     Promise.all([

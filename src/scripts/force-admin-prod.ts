@@ -7,8 +7,12 @@ dotenv.config();
 const prisma = new PrismaClient();
 
 async function main() {
-  const email = 'alexsandro.adm@influnext.com.br'; // Ajuste para o seu e-mail se for diferente
-  const password = 'Juninho1440@'; // Sua senha definitiva
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD;
+
+  if (!email || !password) {
+    throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD are required.');
+  }
   
   console.log(`🚀 Iniciando reset de Admin para: ${email}...`);
 
@@ -16,7 +20,7 @@ async function main() {
     const passwordHash = await bcrypt.hash(password, 12);
 
     const user = await prisma.user.upsert({
-      where: { email: email.toLowerCase().trim() },
+      where: { email },
       update: {
         role: 'ADMIN',
         passwordHash,
@@ -24,7 +28,7 @@ async function main() {
         subscriptionStatus: 'ACTIVE'
       },
       create: {
-        email: email.toLowerCase().trim(),
+        email,
         role: 'ADMIN',
         passwordHash,
         onboardingCompleted: true,

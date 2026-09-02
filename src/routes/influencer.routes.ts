@@ -16,6 +16,7 @@ import {
   seedDemoBalance
 } from '../controllers/influencer.controller';
 import { authenticate } from '../middlewares/auth.middleware';
+import { developmentOrTestOnly } from '../middlewares/environment.middleware';
 
 const router = Router();
 
@@ -41,7 +42,6 @@ router.post('/rate-card', authenticate, updateRateCard);
 // Carteira & Saque PIX
 router.get('/balance', authenticate, getBalance);
 router.post('/withdraw', authenticate, requestWithdraw);
-router.post('/seed-balance', authenticate, seedDemoBalance);
+router.post('/seed-balance', developmentOrTestOnly, authenticate, seedDemoBalance);
 
 export default router;
-
