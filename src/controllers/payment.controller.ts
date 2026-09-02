@@ -10,8 +10,6 @@ const getFrontendUrl = () => {
   return url.endsWith('/') ? url.slice(0, -1) : url;
 };
 
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
-
 const getCompanyOwnedContractWhere = (contractId: string, userId: string) => ({
   id: contractId,
   company: { userId }
@@ -237,14 +235,26 @@ export class PaymentController {
 
     try {
       if (!stripe) {
-        return res.status(500).json({ error: 'Webhook: Stripe não configurado.' });
+        return res.status(503).json({ error: 'Webhook Stripe indisponível.' });
       }
-      // É necessário o raw body para validar a assinatura
-      // No Express, isso geralmente requer um middleware específico (express.raw)
-      event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
-    } catch (err: any) {
-      console.error(`[STRIPE WEBHOOK] ❌ Erro de assinatura: ${err.message}`);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
+
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
+      if (!webhookSecret) {
+        return res.status(503).json({ error: 'Webhook Stripe não configurado.' });
+      }
+
+      if (!sig) {
+        return res.status(400).json({ error: 'Assinatura Stripe ausente.' });
+      }
+
+      if (!Buffer.isBuffer(req.body) && typeof req.body !== 'string') {
+        return res.status(400).json({ error: 'Payload Stripe inválido.' });
+      }
+
+      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } catch {
+      console.warn('[STRIPE WEBHOOK] Assinatura ou payload inválido.');
+      return res.status(400).json({ error: 'Assinatura ou payload Stripe inválido.' });
     }
 
     try {

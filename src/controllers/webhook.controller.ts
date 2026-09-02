@@ -1,73 +1,93 @@
 import { Request, Response } from 'express';
-import { prisma } from '../lib/prisma';
+import { InvalidWebhookSignatureError, WebhookSignatureValidator } from 'mercadopago';
+
+const singleString = (value: unknown): string => {
+  if (Array.isArray(value)) return String(value[0] || '');
+  return typeof value === 'string' ? value : '';
+};
 
 /**
- * Endpoint silencioso (Webhook) para processar postbacks do Gateway de Pagamento (ex: Pagar.me).
- * Não necessita de autenticação via Token (JWT), mas validação de assinatura (Hash) na vida real.
+ * Rota legada preservada, mas fail-closed até que versão, credenciais e
+ * mecanismo oficial de assinatura da integração Pagar.me sejam comprovados.
  */
 export const handlePagarmeWebhook = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const event = req.body;
-    
-    // Na vida real: Validar assinatura do header X-Hub-Signature ou Pagarme-Signature
-    console.log('[WEBHOOK] Recebido evento do gateway:', event.type);
-
-    // Estrutura mockada: Esperamos que o payload contenha o e-mail ou o ID do usuário como metadata
-    const userEmail = event.customer?.email || event.data?.customer?.email;
-    const status = event.type || event.status;
-
-    if (!userEmail) {
-      res.status(400).json({ error: 'Payload inválido. Email do cliente não encontrado.' });
-      return;
-    }
-
-    if (status === 'transaction.paid' || status === 'subscription.active' || status === 'paid') {
-      console.log(`[WEBHOOK] Pagamento confirmado para ${userEmail}. Atualizando status para ACTIVE.`);
-      
-      const user = await prisma.user.findUnique({ where: { email: userEmail } });
-      if (!user) {
-        res.status(404).json({ error: 'Usuário não encontrado.' });
-        return;
-      }
-
-      await prisma.user.update({
-        where: { email: userEmail },
-        data: { subscriptionStatus: 'ACTIVE' }
-      });
-
-      console.log(`[WEBHOOK] Assinatura de ${userEmail} ativada com sucesso!`);
-    }
-
-    res.status(200).json({ received: true });
-  } catch (error) {
-    console.error('[WEBHOOK] Erro ao processar webhook:', error);
-    res.status(500).json({ error: 'Erro interno ao processar webhook' });
-  }
+  res.status(503).json({
+    error: 'Webhook Pagar.me desabilitado: integração ativa e mecanismo de assinatura não comprovados.'
+  });
 };
 
 /**
  * Endpoint para processar webhooks do Mercado Pago (PIX, Cartão, Assinaturas).
  */
 export const handleMercadoPagoWebhook = async (req: Request, res: Response): Promise<void> => {
+  const webhookSecret = process.env.MERCADOPAGO_WEBHOOK_SECRET?.trim();
+  if (!webhookSecret) {
+    res.status(503).json({ error: 'Webhook Mercado Pago não configurado.' });
+    return;
+  }
+
+  const dataId = req.query['data.id'] as string | string[] | undefined;
+
   try {
-    const { topic, type } = req.query;
-    const body = req.body || {};
-
-    const eventType = (type || topic || body.type || body.action || '') as string;
-    const paymentId = (req.query.id || req.query['data.id'] || body.data?.id || body.id) as string;
-
-    console.log(`[MERCADO PAGO WEBHOOK] Evento recebido: ${eventType} (ID: ${paymentId})`);
-
-    if (paymentId && (eventType === 'payment' || eventType === 'payment.created' || eventType === 'payment.updated')) {
-      const { MercadoPagoService } = await import('../services/mercadopago.service');
-      await MercadoPagoService.handlePaymentApproved(paymentId);
+    WebhookSignatureValidator.validate({
+      xSignature: req.headers['x-signature'],
+      xRequestId: req.headers['x-request-id'],
+      dataId,
+      secret: webhookSecret,
+      toleranceSeconds: 300
+    });
+  } catch (error) {
+    if (error instanceof InvalidWebhookSignatureError) {
+      res.status(401).json({ error: 'Assinatura Mercado Pago inválida.' });
+      return;
     }
 
-    // Retorna 200 pro Mercado Pago confirmar o recebimento
+    console.error('[MERCADO PAGO WEBHOOK] Falha ao validar assinatura.');
+    res.status(500).json({ error: 'Erro ao validar webhook Mercado Pago.' });
+    return;
+  }
+
+  const body = req.body;
+  if (!body || typeof body !== 'object' || Array.isArray(body) || Buffer.isBuffer(body)) {
+    res.status(400).json({ error: 'Payload Mercado Pago inválido.' });
+    return;
+  }
+
+  const eventType = singleString(req.query.type)
+    || singleString(req.query.topic)
+    || singleString(body.type)
+    || singleString(body.action);
+
+  if (!eventType) {
+    res.status(400).json({ error: 'Tipo de evento Mercado Pago ausente.' });
+    return;
+  }
+
+  const paymentEvents = new Set(['payment', 'payment.created', 'payment.updated']);
+  if (!paymentEvents.has(eventType)) {
+    res.status(200).json({ received: true, ignored: true });
+    return;
+  }
+
+  const paymentId = singleString(dataId);
+  if (!paymentId) {
+    res.status(400).json({ error: 'Identificador autenticado do pagamento ausente.' });
+    return;
+  }
+
+  const bodyPaymentId = body.data?.id ?? body.id;
+  if (bodyPaymentId !== undefined && String(bodyPaymentId) !== paymentId) {
+    res.status(400).json({ error: 'Payload Mercado Pago inconsistente.' });
+    return;
+  }
+
+  try {
+    const { MercadoPagoService } = await import('../services/mercadopago.service');
+    await MercadoPagoService.handlePaymentApproved(paymentId);
+
     res.status(200).json({ received: true });
   } catch (error: any) {
     console.error('[MERCADO PAGO WEBHOOK] ❌ Erro ao processar webhook:', error);
-    // Respondemos 200 para evitar que o gateway fique re-tentando em caso de erro de parse
-    res.status(200).json({ received: true, error: error?.message });
+    res.status(500).json({ error: 'Erro ao processar webhook Mercado Pago.' });
   }
 };
