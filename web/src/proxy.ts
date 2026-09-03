@@ -8,12 +8,13 @@ function redirectNoCache(url: URL) {
 }
 
 export function proxy(request: NextRequest) {
+  // HttpOnly blocks browser JavaScript, while the server-side proxy can still read presence.
   const token = request.cookies.get('influnext_token')?.value;
   const role = request.cookies.get('influnext_role')?.value;
   const { pathname } = request.nextUrl;
 
   // Se o usuário tentar entrar no dashboard sem token
-  if (pathname.startsWith('/dashboard') && !token) {
+  if ((pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) && !token) {
     return redirectNoCache(new URL('/auth/login', request.url));
   }
 
@@ -49,5 +50,5 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   // A raiz '/' NÃO está no matcher — usuários não logados sempre veem a Landing Page
-  matcher: ['/dashboard/:path*', '/auth/:path*', '/onboarding/:path*'],
+  matcher: ['/dashboard/:path*', '/admin/:path*', '/auth/:path*', '/onboarding/:path*'],
 };

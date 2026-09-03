@@ -48,6 +48,14 @@ const user = { id: 'user-1', email: 'oauth@example.com', role: 'INFLUENCER', two
 const profile = { id: 'profile-1', userId: user.id, handle: 'real_user', influScore: 70, lastLoginAt: new Date(), user };
 const platforms = ['instagram', 'tiktok', 'google', 'youtube'] as const;
 
+function sessionFrom(response: request.Response): { cookie: string; token: string; serialized: string } {
+  const values = (response.headers['set-cookie'] || []) as unknown as string[];
+  const serialized = values.find(cookie => cookie.startsWith('influnext_token='));
+  expect(serialized).toBeDefined();
+  const cookie = serialized!.split(';')[0];
+  return { cookie, serialized: serialized!, token: decodeURIComponent(cookie.slice('influnext_token='.length)) };
+}
+
 describe('STEP 1F-C — OAuth security boundary', () => {
   const originalEnv = process.env;
   let signSpy: jest.SpyInstance;
@@ -120,7 +128,12 @@ describe('STEP 1F-C — OAuth security boundary', () => {
     }
     const response = await callback(platform, attempt);
     expect(response.status).toBe(200);
-    expect(jwt.verify(response.body.token, secret)).toMatchObject({ id: user.id, role: user.role });
+    expect(response.body.token).toBeUndefined();
+    const session = sessionFrom(response);
+    expect(jwt.verify(session.token, secret)).toMatchObject({ id: user.id, role: user.role, purpose: 'session' });
+    expect(session.serialized).toContain('HttpOnly');
+    expect(session.serialized).toContain('Secure');
+    expect(session.serialized).toContain('SameSite=Lax');
     expect(mockPrisma.socialPlatform.upsert).toHaveBeenCalledTimes(1);
     const exchange = platform === 'instagram' ? mockExchange : mockPost;
     expect(redisConnection.eval.mock.invocationCallOrder[0]).toBeLessThan(exchange.mock.invocationCallOrder[0]);
@@ -185,7 +198,8 @@ describe('STEP 1F-C — OAuth security boundary', () => {
     mockVerifyTOTP.mockReturnValue(true);
     const accepted = await request(app).post('/v1/auth/2fa/verify').send({ tempToken: pending, code: '123456' });
     expect(accepted.status).toBe(200);
-    expect(jwt.verify(accepted.body.token, secret)).toMatchObject({ id: user.id, role: user.role });
+    expect(accepted.body.token).toBeUndefined();
+    expect(jwt.verify(sessionFrom(accepted).token, secret)).toMatchObject({ id: user.id, role: user.role, purpose: 'session' });
   });
 
   it.each(platforms)('preserves new-account registration after authenticated %s provider identity', async platform => {
@@ -196,7 +210,8 @@ describe('STEP 1F-C — OAuth security boundary', () => {
     const response = await callback(platform, attempt);
     expect(response.status).toBe(200);
     expect(response.body.user.onboardingCompleted).toBe(false);
-    expect(jwt.verify(response.body.token, secret)).toMatchObject({ id: user.id });
+    expect(response.body.token).toBeUndefined();
+    expect(jwt.verify(sessionFrom(response).token, secret)).toMatchObject({ id: user.id, purpose: 'session' });
     expect(mockPrisma.user.create).toHaveBeenCalledTimes(1);
     expect(mockPrisma.socialPlatform.upsert).toHaveBeenCalledWith(expect.objectContaining({
       create: expect.objectContaining({ platformId: 'provider-id', accessToken: 'provider-token' }),
@@ -231,7 +246,8 @@ describe('STEP 1F-C — OAuth security boundary', () => {
     expect(login.body.status).toBe('PENDING_2FA'); expect(login.body.token).toBeUndefined();
     const verified = await request(app).post('/v1/auth/2fa/verify').send({ tempToken: login.body.tempToken, code: '123456' });
     expect(verified.status).toBe(200);
-    expect((await request(app).get('/v1/auth/me').set('Authorization', `Bearer ${verified.body.token}`)).status).toBe(200);
+    expect(verified.body.token).toBeUndefined();
+    expect((await request(app).get('/v1/auth/me').set('Cookie', sessionFrom(verified).cookie)).status).toBe(200);
   });
 
   it.each(['instagram', 'tiktok'])('integration %s accepts bound link state but rejects login state and replay', async platform => {
@@ -361,7 +377,9 @@ describe('STEP 1F-C — OAuth security boundary', () => {
     expect(source).not.toContain('jwt.decode'); expect(source).not.toContain("state.endsWith");
     expect(source).toContain('startedAttempt.current === attempt');
     const client = fs.readFileSync(path.resolve(__dirname, '../web/src/lib/api.ts'), 'utf8');
-    expect(client).toContain('config.withCredentials = true');
+    expect(client).toContain('withCredentials: true');
+    expect(client).not.toContain("Cookies.get('influnext_token')");
+    expect(client).not.toContain('headers.Authorization');
     for (const file of ['auth.social.controller.ts', 'integration.controller.ts']) {
       expect(fs.readFileSync(path.resolve(__dirname, '../src/controllers', file), 'utf8')).not.toMatch(/state=register_|jwt\.decode/);
     }

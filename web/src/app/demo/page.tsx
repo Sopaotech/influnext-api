@@ -51,7 +51,6 @@ export default function DemoPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isExecuting, setIsExecuting] = useState(false);
   const [username, setUsername] = useState('demo.influencer');
-  const [token, setToken] = useState<string | null>(null);
 
   // Dados Sincronizados do Banco de Dados
   const [dbData, setDbData] = useState<DemoDbData>({
@@ -82,17 +81,12 @@ export default function DemoPage() {
 
   const autoLoginDemo = async () => {
     try {
-      // Login automático do influenciador demo para obter token para chamadas autenticadas
-      const res = await api.post<{ token?: string }>('/auth/login', {
+      // Login automático; a sessão permanece no cookie HttpOnly.
+      await api.post('/auth/login', {
         email: 'influencer@demo.influnext.com.br',
         password: 'Demo@2026!'
       });
-      if (res.data.token) {
-        setToken(res.data.token);
-        // Configurar token no cabeçalho das próximas requisições
-        api.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
-        fetchDatabaseState();
-      }
+      fetchDatabaseState();
     } catch (err) {
       console.error('Falha no login automático do demo:', err);
       toast.error('Erro ao conectar ao simulador. Rode o script de seed.');

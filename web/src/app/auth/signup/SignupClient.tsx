@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { getSocialAuthUrl, type SocialAuthProvider } from '@/lib/social-auth';
-import Cookies from 'js-cookie';
+import { storeSessionMetadata } from '@/lib/auth-browser';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 import { Check } from 'lucide-react';
@@ -148,13 +148,6 @@ export default function SignupClient() {
   const [averageTicket, setAverageTicket] = useState('');
   const [instagramPositioning, setInstagramPositioning] = useState('');
 
-  const cookieOptions: Cookies.CookieAttributes = {
-    expires: 7,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN || undefined,
-  };
-
   const step1Valid = email.trim() !== '' && password.length >= 8 && password === confirmPassword;
   const step2InfluencerValid = niche !== '' && (city.trim() !== '' || true); // city optional
   const step2CompanyValid = companyName.trim().length >= 2;
@@ -173,10 +166,9 @@ export default function SignupClient() {
       const role = isInfluencer ? 'INFLUENCER' : 'COMPANY';
       await api.post('/auth/signup', { email, password, role });
 
-      // Immediately login to get the JWT
-      const loginRes = await api.post<{ token: string; user: { role: 'INFLUENCER' | 'COMPANY' | 'ADMIN'; onboardingCompleted: boolean } }>('/auth/login', { email, password });
-      Cookies.set('influnext_token', loginRes.data.token, cookieOptions);
-      Cookies.set('influnext_role', loginRes.data.user.role, cookieOptions);
+      // Immediately login; the backend establishes the HttpOnly session cookie.
+      const loginRes = await api.post<{ user: { role: 'INFLUENCER' | 'COMPANY' | 'ADMIN'; onboardingCompleted: boolean } }>('/auth/login', { email, password });
+      storeSessionMetadata(loginRes.data.user);
 
       if (loginRes.data.user.role === 'INFLUENCER') {
         router.push('/onboarding');

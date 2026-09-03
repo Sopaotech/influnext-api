@@ -1,5 +1,5 @@
 import axios from 'axios';
-import Cookies from 'js-cookie';
+import { clearBrowserAuthState } from './auth-browser';
 
 // Centralização da URL da API com Auto-Detecção
 const envApiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -29,24 +29,14 @@ const API_URL = baseApiUrl;
 
 export const api = axios.create({
   baseURL: API_URL,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Interceptor para injetar o Token em todas as requisições
+// The browser session is an HttpOnly cookie sent automatically by Axios.
 api.interceptors.request.use((config) => {
-  // OAuth attempt cookies are HttpOnly and scoped to this API host, not session-token storage.
-  const requestPath = (config.url || '').split('?')[0];
-  if (requestPath.startsWith('/auth/social/') ||
-      ['/integrations/urls', '/integrations/instagram/auth-url',
-        '/integrations/instagram/callback', '/integrations/tiktok/callback'].includes(requestPath)) {
-    config.withCredentials = true;
-  }
-  const token = Cookies.get('influnext_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
   return config;
 });
 
@@ -69,8 +59,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       console.error(`❌ [401 UNAUTHORIZED]: A requisição para ${error.config?.url} falhou com 401.`);
       
-      Cookies.remove('influnext_token', { path: '/' });
-      Cookies.remove('influnext_role', { path: '/' });
+      clearBrowserAuthState();
       
       // Evitar loop infinito se já estivermos na página de login
       if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
@@ -92,7 +81,6 @@ export interface User {
 }
 
 export interface LoginResponse {
-  token: string;
   user: User;
   status?: string; // Para o fluxo de 2FA
   tempToken?: string;

@@ -6,6 +6,8 @@ import path from 'path';
 import { routes } from './routes';
 import { trackPageView } from './middlewares/analytics.middleware';
 import { helmetSecurity, globalRateLimiter, responseHardening } from './middlewares/security-hardening.middleware';
+import { getAllowedOrigins } from './lib/origins';
+import { protectCookieSessionFromCsrf } from './middlewares/csrf.middleware';
 
 dotenv.config();
 
@@ -19,14 +21,13 @@ app.use(responseHardening);
 app.use(globalRateLimiter);
 
 // 3. Configuração de CORS Dinâmica para Multi-Domínio
-const allowedOriginsStr = process.env.ALLOWED_ORIGINS || 'http://localhost:3000,https://influnext.com.br,https://www.influnext.com.br,https://influnext.com,https://www.influnext.com';
-const ALLOWED_ORIGINS = allowedOriginsStr.split(',').map(origin => origin.trim());
+const ALLOWED_ORIGINS = getAllowedOrigins();
 
 app.use(cors({
   origin: (origin, callback) => {
     // Permite requisições sem origem (como Postman, aplicativos móveis ou requisições locais de servidor para servidor)
     if (!origin) return callback(null, true);
-    if (ALLOWED_ORIGINS.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+    if (ALLOWED_ORIGINS.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       callback(new Error('Bloqueado por CORS: Origem não permitida.'));
@@ -41,6 +42,7 @@ app.use('/v1/webhooks/stripe', express.raw({ type: 'application/json' }));
 
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ limit: '2mb', extended: true }));
+app.use(protectCookieSessionFromCsrf);
 app.use((req, res, next) => {
   if (process.env.NODE_ENV !== 'production') {
     console.log(`[REQUEST] ${req.method} ${req.url}`);

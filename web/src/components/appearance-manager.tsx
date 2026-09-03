@@ -6,8 +6,8 @@ import Cookies from 'js-cookie';
 
 export function AppearanceManager() {
   useEffect(() => {
-    const token = Cookies.get('influnext_token');
-    if (!token) return; // Se não estiver logado, não tenta carregar estilo customizado
+    const role = Cookies.get('influnext_role');
+    if (!role) return; // Hint de UI; a autorização real é validada pelo backend.
 
     const applyPreferences = async () => {
       try {

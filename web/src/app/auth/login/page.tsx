@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, LoginResponse } from '@/lib/api';
 import { getSocialAuthUrl, type SocialAuthProvider } from '@/lib/social-auth';
-import Cookies from 'js-cookie';
+import { storeSessionMetadata } from '@/lib/auth-browser';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 import { ArrowRight, Shield } from 'lucide-react';
@@ -31,17 +31,8 @@ export default function LoginPage() {
     }
   };
 
-  const cookieOptions: Cookies.CookieAttributes = {
-    expires: 7,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    path: '/',
-  };
-
   const completeLogin = (data: LoginResponse) => {
-    Cookies.set('influnext_token', data.token, cookieOptions);
-    Cookies.set('influnext_role', data.user.role, cookieOptions);
-    Cookies.set('influnext_onboarding', data.user.onboardingCompleted ? 'true' : 'false', cookieOptions);
+    storeSessionMetadata(data.user);
 
     if (!data.user.onboardingCompleted) {
       if (data.user.role === 'INFLUENCER') router.push('/onboarding');

@@ -4,10 +4,9 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { Loader2, AlertCircle, RefreshCw, ArrowLeft } from 'lucide-react';
-import Cookies from 'js-cookie';
+import { storeSessionMetadata } from '@/lib/auth-browser';
 
 type OAuthResult = {
-  token?: string;
   user?: { role: 'INFLUENCER' | 'COMPANY' | 'ADMIN'; onboardingCompleted: boolean };
   status?: 'PENDING_2FA';
   tempToken?: string;
@@ -30,25 +29,17 @@ function SocialCallbackContent() {
   const startedAttempt = useRef<string | null>(null);
 
   const completeSession = useCallback((data: OAuthResult) => {
-    if (!data.token || !data.user) throw new Error('Sessão completa não recebida.');
+    if (!data.user) throw new Error('Sessão completa não recebida.');
     setStatus('success');
-    const cookieOptions = {
-      expires: 7,
-      secure: window.location.protocol === 'https:',
-      path: '/',
-    };
     const user = data.user;
-    Cookies.set('influnext_token', data.token, cookieOptions);
-    Cookies.set('influnext_role', user.role, cookieOptions);
-    Cookies.set('influnext_onboarding', user.onboardingCompleted ? 'true' : 'false', cookieOptions);
+    storeSessionMetadata(user);
 
     if (window.opener) {
       window.opener.postMessage({
         type: 'social-auth-success',
         platform,
         status: 'success',
-        user,
-        token: data.token
+        user
       }, window.location.origin);
       setTimeout(() => {
         window.close();
@@ -83,14 +74,14 @@ function SocialCallbackContent() {
     try {
       const res = await api.get<OAuthResult>(`/auth/social/callback/${platform}`, { params: { code, state } });
       if (res.data.status === 'PENDING_2FA') {
-        if (!res.data.tempToken || res.data.token) throw new Error('Desafio 2FA inválido.');
+        if (!res.data.tempToken || res.data.user) throw new Error('Desafio 2FA inválido.');
         setTempToken(res.data.tempToken);
         setStatus('2fa');
         return;
       }
       setStatus('success');
       
-      if (res.data.token && res.data.user) {
+      if (res.data.user) {
         completeSession(res.data);
         return;
       }

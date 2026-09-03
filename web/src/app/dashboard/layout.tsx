@@ -17,6 +17,7 @@ const BottomNav = dynamic(
 );
 
 import { api } from '@/lib/api';
+import { clearBrowserAuthState } from '@/lib/auth-browser';
 import { BACKGROUNDS } from '@/lib/constants';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -76,11 +77,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     fetchTheme();
   }, [pathname, router]);
 
-  const handleLogout = () => {
-    Cookies.remove('influnext_token', { path: '/' });
-    Cookies.remove('influnext_role', { path: '/' });
-    Cookies.remove('influnext_onboarding', { path: '/' });
-    window.location.href = '/auth/login';
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } finally {
+      clearBrowserAuthState();
+      window.location.href = '/auth/login';
+    }
   };
 
   const [isAdmin, setIsAdmin] = useState(false);
@@ -236,4 +239,3 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </div>
   );
 }
-

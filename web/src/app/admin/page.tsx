@@ -1,10 +1,17 @@
-import { api } from '@/lib/api';
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 
 async function getAdminStats() {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/admin/stats`, {
-      headers: { 'Cache-Control': 'no-store' },
+    const session = (await cookies()).get('influnext_token')?.value;
+    if (!session) return null;
+    const configuredApiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/v1').replace(/\/$/, '');
+    const apiUrl = configuredApiUrl.endsWith('/v1') ? configuredApiUrl : `${configuredApiUrl}/v1`;
+    const res = await fetch(`${apiUrl}/admin/stats`, {
+      headers: {
+        'Cache-Control': 'no-store',
+        Cookie: `influnext_token=${encodeURIComponent(session)}`,
+      },
       cache: 'no-store',
     });
     if (!res.ok) return null;

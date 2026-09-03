@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { getJwtSecret } from '../lib/jwt-secret';
+import { clearSession, readSessionCookie } from '../lib/session-cookie';
 
 declare global {
   namespace Express {
@@ -16,13 +17,18 @@ declare global {
 
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
+  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : undefined;
+  const cookieToken = readSessionCookie(req.headers.cookie);
+  const token = bearerToken || cookieToken;
+  const usesCookieSession = !bearerToken && Boolean(cookieToken);
+  if (!token) {
     return res.status(401).json({ error: 'Acesso negado. Token não fornecido.' });
   }
-  const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, getJwtSecret(), { algorithms: ['HS256'] });
-    if (typeof decoded === 'string' || decoded.scope !== undefined || decoded.purpose !== undefined ||
+    const validPurpose = usesCookieSession ? decoded !== null && typeof decoded !== 'string' && decoded.purpose === 'session' :
+      decoded !== null && typeof decoded !== 'string' && (decoded.purpose === undefined || decoded.purpose === 'session');
+    if (typeof decoded === 'string' || !validPurpose || decoded.scope !== undefined ||
         decoded.aud !== undefined || typeof decoded.id !== 'string' || !decoded.id ||
         typeof decoded.email !== 'string' || !decoded.email ||
         !['INFLUENCER', 'COMPANY', 'ADMIN'].includes(decoded.role)) {
@@ -34,6 +40,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
     if (err instanceof Error && err.message.startsWith('JWT_SECRET is required')) {
       return res.status(500).json({ error: 'Configuração de autenticação indisponível.' });
     }
+    if (cookieToken) clearSession(res);
     return res.status(401).json({ error: 'Token inválido ou expirado.' });
   }
 };

@@ -1,12 +1,10 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
-import { UserRole } from '../types/roles';
 import { z } from 'zod';
 import { TwoFactorService } from '../services/twoFactor.service';
-import { getJwtSecret } from '../lib/jwt-secret';
 import { createTwoFactorChallenge, verifyTwoFactorChallenge } from '../lib/two-factor-challenge';
+import { clearSession, establishSession } from '../lib/session-cookie';
 
 // ─── Schemas de Validação ─────────────────────────────────────────────────────
 
@@ -25,16 +23,6 @@ const verify2FASchema = z.object({
   tempToken: z.string().min(1, 'Token temporário obrigatório.'),
   code:      z.string().length(6, 'O código TOTP deve ter 6 dígitos.'),
 });
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function signFullToken(user: { id: string; role: UserRole; email: string }) {
-  return jwt.sign(
-    { id: user.id, role: user.role, email: user.email },
-    getJwtSecret(),
-    { expiresIn: '7d' }
-  );
-}
 
 // ─── Controllers ──────────────────────────────────────────────────────────────
 
@@ -241,7 +229,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const token = signFullToken(user as any);
+    establishSession(res, user as any);
     let scoreDecayed = 0;
 
     if (user.role === 'INFLUENCER') {
@@ -268,7 +256,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     res.status(200).json({
       message: 'Login bem-sucedido!',
-      token,
       user: { 
         id: user.id, 
         email: user.email, 
@@ -312,10 +299,9 @@ export const verify2FA = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const token = signFullToken(user as any);
+    establishSession(res, user as any);
     res.status(200).json({
       message: 'Autenticação 2FA bem-sucedida!',
-      token,
       user: { 
         id: user.id, 
         email: user.email, 
@@ -429,4 +415,9 @@ export const updateFcmToken = async (req: Request, res: Response): Promise<void>
     console.error('[UPDATE FCM TOKEN ERROR]:', error);
     res.status(500).json({ error: 'Erro ao atualizar token FCM.' });
   }
+};
+
+export const logout = (_req: Request, res: Response): void => {
+  clearSession(res);
+  res.status(204).send();
 };

@@ -63,6 +63,14 @@ describe('STEP 1F-B — simulated social login containment', () => {
     onboardingCompleted: true, twoFactorEnabled: false, twoFactorSecret: null,
   };
 
+  function sessionFrom(response: request.Response): { cookie: string; token: string } {
+    const values = (response.headers['set-cookie'] || []) as unknown as string[];
+    const value = values.find(cookie => cookie.startsWith('influnext_token='));
+    expect(value).toBeDefined();
+    const cookie = value!.split(';')[0];
+    return { cookie, token: decodeURIComponent(cookie.slice('influnext_token='.length)) };
+  }
+
   beforeAll(async () => { passwordHash = await bcrypt.hash(password, 4); });
   beforeEach(() => {
     resetOAuthRedis();
@@ -121,7 +129,8 @@ describe('STEP 1F-B — simulated social login containment', () => {
     mockPrisma.user.findUnique.mockResolvedValue({ ...user, role, passwordHash });
     const response = await request(app).post('/v1/auth/login').send({ email: user.email, password });
     expect(response.status).toBe(200);
-    expect(jwt.verify(response.body.token, jwtSecret)).toMatchObject({ id: user.id, email: user.email, role });
+    expect(response.body.token).toBeUndefined();
+    expect(jwt.verify(sessionFrom(response).token, jwtSecret)).toMatchObject({ id: user.id, email: user.email, role, purpose: 'session' });
     expect(response.body.user.onboardingCompleted).toBe(true);
   });
 
@@ -157,7 +166,10 @@ describe('STEP 1F-B — simulated social login containment', () => {
     const verified = await request(app).post('/v1/auth/2fa/verify').send({ tempToken: login.body.tempToken, code: '123456' });
     expect(mockVerifyToken).toHaveBeenCalledWith('encrypted-totp-fixture', '123456');
     expect(verified.status).toBe(valid ? 200 : 401);
-    if (valid) expect(jwt.verify(verified.body.token, jwtSecret)).toMatchObject({ id: user.id, role: user.role });
+    if (valid) {
+      expect(verified.body.token).toBeUndefined();
+      expect(jwt.verify(sessionFrom(verified).token, jwtSecret)).toMatchObject({ id: user.id, role: user.role, purpose: 'session' });
+    }
     else {
       expect(verified.body.token).toBeUndefined();
       expect(signSpy).not.toHaveBeenCalled();
@@ -230,7 +242,8 @@ describe('STEP 1F-B — simulated social login containment', () => {
     mockTikTokSync.mockResolvedValue(undefined);
     const response = await request(app).get(`/v1/auth/social/callback/${platform}`).set('Cookie', cookies).query({ code: 'provider-code', state });
     expect(response.status).toBe(200);
-    expect(jwt.verify(response.body.token, jwtSecret)).toMatchObject({ id: user.id });
+    expect(response.body.token).toBeUndefined();
+    expect(jwt.verify(sessionFrom(response).token, jwtSecret)).toMatchObject({ id: user.id, purpose: 'session' });
     const exchange = platform === 'instagram' ? mockExchangeCode : mockAxiosPost;
     expect(exchange.mock.invocationCallOrder[0]).toBeLessThan(mockPrisma.socialPlatform.findFirst.mock.invocationCallOrder[0]);
     expect(mockPrisma.socialPlatform.upsert).toHaveBeenCalledWith(expect.objectContaining({

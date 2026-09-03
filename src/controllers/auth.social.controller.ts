@@ -5,20 +5,11 @@ import axios from 'axios';
 import { ScoringService } from '../services/scoring.service';
 import { InstagramService } from '../services/instagram.service';
 import { TikTokService } from '../services/tiktok.service';
-import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { getJwtSecret } from '../lib/jwt-secret';
 import { createOAuthState, consumeOAuthState, getOAuthFrontendUrl, isOAuthPlatform, oauthBoundaryFailure, assertOAuthIdentity } from '../lib/oauth-state';
 import { createTwoFactorChallenge } from '../lib/two-factor-challenge';
-
-function signFullToken(user: { id: string; role: string; email: string }) {
-  return jwt.sign(
-    { id: user.id, role: user.role, email: user.email },
-    getJwtSecret(),
-    { expiresIn: '7d' }
-  );
-}
+import { establishSession } from '../lib/session-cookie';
 
 export class SocialAuthController {
   static async getAuthUrls(req: Request, res: Response) {
@@ -334,10 +325,9 @@ export class SocialAuthController {
 
       if (isRegister) {
         const user = oauthUser!;
-        const token = signFullToken(user);
+        establishSession(res, user);
         res.json({
           success: true,
-          token,
           user: {
             id: user!.id,
             email: user!.email,
