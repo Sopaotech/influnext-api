@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { prisma } from '../lib/prisma';
 import { AuditorService } from './auditor.service';
+import { sanitizeProviderError } from '../utils/provider-error';
 
 export class TikTokService {
   private static readonly TOKEN_URL = 'https://open.tiktokapis.com/v2/oauth/token/';
@@ -46,8 +47,7 @@ export class TikTokService {
         openId: open_id
       };
     } catch (error: any) {
-      const errData = error.response?.data?.error || error.response?.data || error.message || error;
-      console.error('[TIKTOK SERVICE] Erro ao renovar token:', JSON.stringify(errData, null, 2));
+      console.error('[TIKTOK SERVICE] Erro ao renovar token:', sanitizeProviderError(error));
       throw new Error('Falha ao renovar token do TikTok');
     }
   }
@@ -68,7 +68,7 @@ export class TikTokService {
         );
         profileData = userRes.data?.data?.user || {};
       } catch (profileErr: any) {
-        console.warn('[TIKTOK_SYNC] Aviso ao buscar perfil do TikTok:', profileErr.response?.data || profileErr.message);
+        console.warn('[TIKTOK_SYNC] Aviso ao buscar perfil do TikTok:', sanitizeProviderError(profileErr));
       }
 
       const username = profileData.display_name || profileData.username || `tiktok_user_${openId.slice(-6)}`;
@@ -90,7 +90,7 @@ export class TikTokService {
         );
         videoList = videosRes.data?.data?.videos || [];
       } catch (videoErr: any) {
-        console.warn('[TIKTOK_SYNC] Aviso ao buscar vídeos do TikTok:', videoErr.response?.data || videoErr.message);
+        console.warn('[TIKTOK_SYNC] Aviso ao buscar vídeos do TikTok:', sanitizeProviderError(videoErr));
       }
 
       let totalViews = 0;
@@ -194,9 +194,8 @@ export class TikTokService {
         avgViews
       };
     } catch (err: any) {
-      console.error('[TIKTOK_SYNC] ❌ Erro na sincronização:', err.response?.data || err.message);
-      throw new Error(`Falha ao sincronizar dados do TikTok: ${err.message}`);
+      console.error('[TIKTOK_SYNC] ❌ Erro na sincronização:', sanitizeProviderError(err));
+      throw new Error('Falha ao sincronizar dados do TikTok.');
     }
   }
 }
-

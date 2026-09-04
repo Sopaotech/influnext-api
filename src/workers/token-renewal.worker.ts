@@ -4,6 +4,7 @@ import { InstagramService } from '../services/instagram.service';
 import { TikTokService } from '../services/tiktok.service';
 import { addNotificationJob } from '../queues/notification.queue';
 import { redisConnection } from '../lib/redis';
+import { sanitizeProviderError } from '../utils/provider-error';
 
 
 export const runTokenRenewalLogic = async () => {
@@ -23,7 +24,8 @@ export const runTokenRenewalLogic = async () => {
         { expiresAt: { lt: next6Hours } },
         { expiresAt: null }
       ]
-    }
+    },
+    select: { id: true, influencerId: true, username: true, refreshToken: true }
   });
 
   console.log(`[TOKEN_RENEWAL] Encontradas ${tiktokPlatforms.length} contas TikTok qualificadas para renovação.`);
@@ -46,7 +48,7 @@ export const runTokenRenewalLogic = async () => {
       });
       console.log(`[TOKEN_RENEWAL] ✅ Token do TikTok renovado com sucesso para @${platform.username}.`);
     } catch (err: any) {
-      console.error(`[TOKEN_RENEWAL] ❌ Erro ao renovar TikTok para @${platform.username}:`, err.message);
+      console.error(`[TOKEN_RENEWAL] ❌ Erro ao renovar TikTok para @${platform.username}:`, sanitizeProviderError(err));
     }
   }
 
@@ -60,7 +62,12 @@ export const runTokenRenewalLogic = async () => {
       isActive: true,
       expiresAt: { lt: next15Days, gt: now } // ativo, com expiração em menos de 15 dias mas ainda não expirado
     },
-    include: {
+    select: {
+      id: true,
+      influencerId: true,
+      username: true,
+      accessToken: true,
+      expiresAt: true,
       influencer: {
         select: {
           userId: true
@@ -113,7 +120,7 @@ export const runTokenRenewalLogic = async () => {
         );
       }
     } catch (err: any) {
-      console.error(`[TOKEN_RENEWAL] ❌ Erro ao processar Instagram para @${platform.username}:`, err.message);
+      console.error(`[TOKEN_RENEWAL] ❌ Erro ao processar Instagram para @${platform.username}:`, sanitizeProviderError(err));
     }
   }
 };

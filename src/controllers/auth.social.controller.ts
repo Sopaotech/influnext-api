@@ -10,6 +10,7 @@ import crypto from 'crypto';
 import { createOAuthState, consumeOAuthState, getOAuthFrontendUrl, isOAuthPlatform, oauthBoundaryFailure, assertOAuthIdentity } from '../lib/oauth-state';
 import { createTwoFactorChallenge } from '../lib/two-factor-challenge';
 import { establishSession } from '../lib/session-cookie';
+import { sanitizeProviderError, sanitizeProviderMessage } from '../utils/provider-error';
 
 export class SocialAuthController {
   static async getAuthUrls(req: Request, res: Response) {
@@ -116,7 +117,7 @@ export class SocialAuthController {
           instagramFollowers = profileData.followers_count || 0;
           instagramProfilePicture = profileData.profile_picture_url || null;
         } catch (profileErr) {
-          console.warn('[INSTAGRAM] Falha ao buscar perfil no callback social:', profileErr);
+          console.warn('[INSTAGRAM] Falha ao buscar perfil no callback social:', sanitizeProviderError(profileErr));
           username = `ig_user_${platformId}`;
         }
       } else if (platform === 'tiktok') {
@@ -147,7 +148,7 @@ export class SocialAuthController {
             tiktokFollowers = userObj.follower_count || 0;
           }
         } catch (err) {
-          console.warn('[TIKTOK] Falha ao buscar detalhes do usuário do TikTok', err);
+          console.warn('[TIKTOK] Falha ao buscar detalhes do usuário do TikTok', sanitizeProviderError(err));
           username = `tiktok_user_${platformId?.slice(-6) || ''}`;
         }
       } else if (platform === 'google' || platform === 'youtube') {
@@ -199,7 +200,7 @@ export class SocialAuthController {
             platformId: platformId,
             platformName: platformName
           },
-          include: {
+          select: {
             influencer: {
               include: {
                 user: true
@@ -314,12 +315,12 @@ export class SocialAuthController {
       if (platformName === 'INSTAGRAM') {
         // Executar sincronização real em background
         InstagramService.syncInstagramData(profile.id, accessToken, platformId).catch(err => {
-          console.error('[INSTAGRAM] Falha na sincronização de dados reais:', err);
+          console.error('[INSTAGRAM] Falha na sincronização de dados reais:', sanitizeProviderError(err));
         });
       } else if (platformName === 'TIKTOK') {
         // Executar sincronização real do TikTok em background
         TikTokService.syncTikTokData(profile.id, accessToken, platformId).catch(err => {
-          console.error('[TIKTOK] Falha na sincronização de dados reais:', err);
+          console.error('[TIKTOK] Falha na sincronização de dados reais:', sanitizeProviderError(err));
         });
       }
 
@@ -342,7 +343,8 @@ export class SocialAuthController {
 
       res.json({ success: true, platform, username, from: oauthState.from });
     } catch (error: any) {
-      console.error(`[SOCIAL_AUTH] Erro no callback ${platform}:`, error.response?.data || error.message);
+      const sanitizedError = sanitizeProviderError(error, 'Falha no callback do provedor social.');
+      console.error(`[SOCIAL_AUTH] Erro no callback ${platform}:`, sanitizedError);
       
       let clientMessage = 'Falha na autenticação social. Por favor, tente novamente.';
       let errorType = 'error';
@@ -361,11 +363,11 @@ export class SocialAuthController {
           errorType = 'no_creator_account';
           clientMessage = 'Sua conta do Instagram é Pessoal. A Meta exige uma conta do tipo Criador de Conteúdo ou Comercial para liberar a conexão com a API.';
         } else if (error.response?.data?.error_message) {
-          clientMessage = `Erro do Instagram: ${error.response.data.error_message}`;
+          clientMessage = `Erro do Instagram: ${sanitizeProviderMessage(error.response.data.error_message, 'Falha na autenticação com Instagram.')}`;
         }
       }
       
-      res.status(400).json({ error: clientMessage, errorType, details: error.response?.data });
+      res.status(400).json({ error: clientMessage, errorType });
     }
   }
 }

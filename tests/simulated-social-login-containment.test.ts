@@ -216,11 +216,20 @@ describe('STEP 1F-B — simulated social login containment', () => {
     const state = new URL(start.body[platform]).searchParams.get('state')!;
     const cookies = (start.headers['set-cookie'] as unknown as string[]).map(value => value.split(';')[0]);
     signSpy.mockClear();
-    mockExchangeCode.mockRejectedValue(new Error('invalid-provider-code'));
-    mockAxiosPost.mockRejectedValue(new Error('invalid-provider-code'));
+    const providerFailure = {
+      message: 'invalid-provider-code',
+      response: {
+        status: 400,
+        data: { access_token: 'callback-access-secret', refresh_token: 'callback-refresh-secret' }
+      }
+    };
+    mockExchangeCode.mockRejectedValue(providerFailure);
+    mockAxiosPost.mockRejectedValue(providerFailure);
     const response = await request(app).get(`/v1/auth/social/callback/${platform}`).set('Cookie', cookies).query({ code: 'invalid', state, username: 'unverified_handle' });
     expect(response.status).toBe(400);
     expect(response.body.token).toBeUndefined();
+    expect(response.body.details).toBeUndefined();
+    expect(JSON.stringify(response.body)).not.toMatch(/callback-(access|refresh)-secret/);
     expect(signSpy).not.toHaveBeenCalled();
     for (const model of Object.values(mockPrisma)) {
       for (const method of Object.values(model)) expect(method).not.toHaveBeenCalled();

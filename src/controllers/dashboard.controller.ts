@@ -9,7 +9,18 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
       where: { userId },
       include: {
         user: { select: { email: true, role: true, onboardingCompleted: true, subscriptionStatus: true, trialEndsAt: true, theme: true, accentColor: true } },
-        platforms: true,
+        platforms: {
+          select: {
+            id: true,
+            platformName: true,
+            platformId: true,
+            username: true,
+            profilePicture: true,
+            followersCount: true,
+            expiresAt: true,
+            isActive: true,
+          }
+        },
         contracts: {
           where: { escrowStatus: { in: ['DRAFT', 'IN_PROGRESS', 'PENDING_PAYMENT', 'UNDER_REVIEW'] } },
           select: { id: true, title: true, budget: true, netAmount: true, escrowStatus: true, createdAt: true, company: { select: { companyName: true } } },
@@ -110,7 +121,16 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
       userState: profile.user,
       contracts: profile.contracts,
       tasks: profile.tasks,
-      platforms: profile.platforms,
+      platforms: profile.platforms.map(platform => ({
+        id: platform.id,
+        platformName: platform.platformName,
+        platformId: platform.platformId,
+        username: platform.username,
+        profilePicture: platform.profilePicture,
+        followersCount: platform.followersCount,
+        expiresAt: platform.expiresAt,
+        isActive: platform.isActive,
+      })),
       trendVault: profile.trendVault,
       metricsHistory: profile.metricsHistory,
       analysis: profile.aiAnalyses[0] || null,

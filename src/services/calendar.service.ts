@@ -1,5 +1,6 @@
 import { google } from 'googleapis';
 import { prisma } from '../lib/prisma';
+import { sanitizeProviderError } from '../utils/provider-error';
 
 export class CalendarService {
   /**
@@ -16,7 +17,8 @@ export class CalendarService {
             influencerId: await this.getInfluencerId(userId),
             platformName: 'GOOGLE'
           }
-        }
+        },
+        select: { accessToken: true, refreshToken: true }
       });
 
       if (!googlePlatform || !googlePlatform.accessToken) {
@@ -56,7 +58,7 @@ export class CalendarService {
 
       console.log(`[CALENDAR] Evento criado: ${task.title}`);
     } catch (error) {
-      console.error('[CALENDAR] Erro ao sincronizar:', error);
+      console.error('[CALENDAR] Erro ao sincronizar:', sanitizeProviderError(error));
     }
   }
 

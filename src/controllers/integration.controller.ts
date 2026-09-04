@@ -8,6 +8,7 @@ import { AIService } from '../services/ai.service';
 import { TrendScannerService } from '../services/trend-scanner.service';
 import axios from 'axios';
 import { createOAuthState, consumeOAuthState, getOAuthFrontendUrl, oauthBoundaryFailure, assertOAuthIdentity } from '../lib/oauth-state';
+import { sanitizeProviderError } from '../utils/provider-error';
 
 
 /**
@@ -91,7 +92,7 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
       instagramFollowers = profileData.followers_count || 0;
       instagramProfilePicture = profileData.profile_picture_url || null;
     } catch (profileErr) {
-      console.warn('[INSTAGRAM] Falha ao buscar detalhes do perfil:', profileErr);
+      console.warn('[INSTAGRAM] Falha ao buscar detalhes do perfil:', sanitizeProviderError(profileErr));
       instagramUsername = null;
     }
 
@@ -134,7 +135,7 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
 
       // Sempre dispara a sincronização de métricas para contas Creator e Business
       InstagramService.syncInstagramData(influencer.id, accessToken, instagramBusinessId).catch(err => {
-        console.error('[INSTAGRAM] Falha na sincronização de dados pós-callback:', err);
+        console.error('[INSTAGRAM] Falha na sincronização de dados pós-callback:', sanitizeProviderError(err));
       });
     }
     
@@ -143,8 +144,7 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
       : `${decodedState.frontendUrl}/dashboard/settings?status=success&platform=instagram`;
     res.redirect(redirectUrl);
   } catch (error: any) {
-    const errData = error.response?.data?.error || error.response?.data || error.message || error;
-    console.error('[INSTAGRAM] Erro no callback:', JSON.stringify(errData, null, 2));
+    console.error('[INSTAGRAM] Erro no callback:', sanitizeProviderError(error));
     
     let errorType = 'error';
     if (error.message && (error.message.includes('Creator') || error.message.includes('Business') || error.message.includes('profissional'))) {
@@ -340,7 +340,7 @@ export const simulateInstagramConnection = async (req: Request, res: Response): 
 
     // 5. Gerar análise proativa e de onboarding da IA de forma assíncrona
     AIService.generateWeeklyAnalysis(influencer.id).catch((err) => {
-      console.error('[SIMULATE] Erro ao disparar análise pós-conexão simulada:', err);
+      console.error('[SIMULATE] Erro ao disparar análise pós-conexão simulada:', sanitizeProviderError(err));
     });
 
     res.json({
@@ -351,7 +351,7 @@ export const simulateInstagramConnection = async (req: Request, res: Response): 
       followersCount
     });
   } catch (error) {
-    console.error('[SIMULATE] Erro ao simular conexão:', error);
+    console.error('[SIMULATE] Erro ao simular conexão:', sanitizeProviderError(error));
     res.status(500).json({ error: 'Erro ao simular conexão com a plataforma social.' });
   }
 };
@@ -403,7 +403,7 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
           tiktokAvatar = profileData.avatar_url || null;
         }
       } catch (err) {
-        console.warn('[TIKTOK] Falha ao buscar perfil adicional, usando defaults.', err);
+        console.warn('[TIKTOK] Falha ao buscar perfil adicional, usando defaults.', sanitizeProviderError(err));
       }
 
       await prisma.socialPlatform.upsert({
@@ -441,7 +441,7 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
 
       // Dispara a sincronização completa do TikTok em background
       TikTokService.syncTikTokData(influencer.id, access_token, open_id).catch(err => {
-        console.error('[TIKTOK] Falha na sincronização de dados pós-callback:', err);
+        console.error('[TIKTOK] Falha na sincronização de dados pós-callback:', sanitizeProviderError(err));
       });
     }
     
@@ -450,8 +450,7 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
       : `${decodedState.frontendUrl}/dashboard/settings?status=success&platform=tiktok`;
     res.redirect(redirectUrl);
   } catch (error: any) {
-    const errData = error.response?.data?.error || error.response?.data || error.message || error;
-    console.error('[TIKTOK] Erro no callback:', JSON.stringify(errData, null, 2));
+    console.error('[TIKTOK] Erro no callback:', sanitizeProviderError(error));
     if (!verifiedFrontendUrl) { oauthBoundaryFailure(res, error); return; }
     const redirectUrl = isFromOnboarding
       ? `${verifiedFrontendUrl}/onboarding?status=error`
@@ -470,7 +469,12 @@ export const syncPlatformMetrics = async (req: Request, res: Response): Promise<
     const userId = req.user!.id;
     const influencer = await prisma.influencerProfile.findUnique({
       where: { userId },
-      include: { platforms: { where: { isActive: true } } }
+      include: {
+        platforms: {
+          where: { isActive: true },
+          select: { platformName: true, platformId: true, accessToken: true }
+        }
+      }
     });
 
     if (!influencer) {
@@ -492,7 +496,7 @@ export const syncPlatformMetrics = async (req: Request, res: Response): Promise<
           results['TIKTOK'] = 'synced';
         }
       } catch (err) {
-        console.warn(`[SYNC] Falha ao sincronizar ${platform.platformName}:`, err);
+        console.warn(`[SYNC] Falha ao sincronizar ${platform.platformName}:`, sanitizeProviderError(err));
         results[platform.platformName] = 'error';
       }
     }
@@ -501,7 +505,7 @@ export const syncPlatformMetrics = async (req: Request, res: Response): Promise<
 
     res.json({ synced: true, results });
   } catch (error) {
-    console.error('[SYNC] Erro geral ao sincronizar métricas:', error);
+    console.error('[SYNC] Erro geral ao sincronizar métricas:', sanitizeProviderError(error));
     res.status(500).json({ error: 'Erro ao sincronizar métricas.' });
   }
 };
@@ -511,7 +515,12 @@ export const getConnectedPlatforms = async (req: Request, res: Response): Promis
     const userId = req.user!.id;
     const influencer = await prisma.influencerProfile.findUnique({
       where: { userId },
-      include: { platforms: true }
+      include: {
+        platforms: {
+          where: { isActive: true },
+          select: { platformName: true }
+        }
+      }
     });
 
     if (!influencer) {
@@ -520,9 +529,7 @@ export const getConnectedPlatforms = async (req: Request, res: Response): Promis
       return;
     }
 
-    const platformNames = influencer.platforms
-      .filter(p => p.isActive)
-      .map(p => p.platformName);
+    const platformNames = influencer.platforms.map(p => p.platformName);
 
     res.json({ platforms: platformNames });
   } catch (error) {
@@ -538,8 +545,8 @@ export const triggerTokenRenewalDebug = async (req: Request, res: Response): Pro
 
     res.json({ success: true, message: 'Renovação de tokens executada com sucesso.' });
   } catch (error: any) {
-    console.error('[DEBUG] Erro na renovação de tokens:', error);
-    res.status(500).json({ error: 'Erro ao executar a renovação de tokens.', details: error.message });
+    console.error('[DEBUG] Erro na renovação de tokens:', sanitizeProviderError(error));
+    res.status(500).json({ error: 'Erro ao executar a renovação de tokens.' });
   }
 };
 
@@ -939,8 +946,8 @@ export const simulateFlowStep = async (req: Request, res: Response): Promise<voi
 
     res.status(400).json({ error: 'Etapa de simulação inválida.' });
   } catch (error: any) {
-    console.error('[SIMULATE FLOW STEP] Erro na etapa:', error);
-    res.status(500).json({ error: `Erro na execução da etapa: ${error.message}` });
+    console.error('[SIMULATE FLOW STEP] Erro na etapa:', sanitizeProviderError(error));
+    res.status(500).json({ error: 'Erro na execução da etapa de simulação.' });
   }
 };
 
