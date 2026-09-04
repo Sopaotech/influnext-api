@@ -44,6 +44,7 @@ export class TikTokService {
         accessToken: access_token,
         expiresIn: expires_in || 86400,
         refreshToken: refresh_token || refreshToken, // se não retornar um novo, mantém o atual
+        refreshTokenRotated: Boolean(refresh_token),
         openId: open_id
       };
     } catch (error: any) {

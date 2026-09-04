@@ -11,6 +11,7 @@
 
 import { prisma } from '../lib/prisma';
 import bcrypt from 'bcrypt';
+import { encryptSocialToken } from '../utils/social-token-crypto';
 
 const DEMO_PASSWORD = 'Demo@2026!';
 
@@ -121,6 +122,16 @@ export async function seedDemo() {
 
   // ── 4. Plataformas Sociais Simuladas (Para ativar os Relatórios) ────────────────
   console.log('🌱 [SEED] Gerando plataformas sociais simuladas...');
+  const instagramAccessToken = encryptSocialToken('dummy_token', {
+    influencerId: influencerProfile.id,
+    platformName: 'INSTAGRAM',
+    field: 'accessToken',
+  });
+  const tiktokAccessToken = encryptSocialToken('dummy_token', {
+    influencerId: influencerProfile.id,
+    platformName: 'TIKTOK',
+    field: 'accessToken',
+  });
   await prisma.socialPlatform.deleteMany({ where: { influencerId: influencerProfile.id } });
   await prisma.socialPlatform.createMany({
     data: [
@@ -130,7 +141,7 @@ export async function seedDemo() {
         platformId: 'ig_demo_123',
         username: 'demo.influencer',
         followersCount: 120000,
-        accessToken: 'dummy_token'
+        accessToken: instagramAccessToken
       },
       {
         influencerId: influencerProfile.id,
@@ -138,7 +149,7 @@ export async function seedDemo() {
         platformId: 'tt_demo_123',
         username: 'demo.influencer',
         followersCount: 250000,
-        accessToken: 'dummy_token'
+        accessToken: tiktokAccessToken
       }
     ]
   });

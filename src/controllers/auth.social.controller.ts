@@ -11,6 +11,7 @@ import { createOAuthState, consumeOAuthState, getOAuthFrontendUrl, isOAuthPlatfo
 import { createTwoFactorChallenge } from '../lib/two-factor-challenge';
 import { establishSession } from '../lib/session-cookie';
 import { sanitizeProviderError, sanitizeProviderMessage } from '../utils/provider-error';
+import { assertSocialTokenEncryptionConfigured, encryptSocialToken } from '../utils/social-token-crypto';
 
 export class SocialAuthController {
   static async getAuthUrls(req: Request, res: Response) {
@@ -85,6 +86,7 @@ export class SocialAuthController {
     let userId = oauthState.userId || '';
 
     try {
+      assertSocialTokenEncryptionConfigured();
       let accessToken = '';
       let username = '';
       let platformId = '';
@@ -281,6 +283,19 @@ export class SocialAuthController {
         });
       }
 
+      const encryptedAccessToken = encryptSocialToken(accessToken, {
+        influencerId: profile.id,
+        platformName,
+        field: 'accessToken',
+      });
+      const encryptedRefreshToken = refreshToken
+        ? encryptSocialToken(refreshToken, {
+            influencerId: profile.id,
+            platformName,
+            field: 'refreshToken',
+          })
+        : null;
+
       await prisma.socialPlatform.upsert({
         where: {
           influencerId_platformName: {
@@ -289,8 +304,8 @@ export class SocialAuthController {
           }
         },
         update: {
-          accessToken,
-          refreshToken,
+          accessToken: encryptedAccessToken,
+          ...(encryptedRefreshToken ? { refreshToken: encryptedRefreshToken } : {}),
           expiresAt,
           username: username,
           platformId: platformId,
@@ -305,8 +320,8 @@ export class SocialAuthController {
           username: username,
           followersCount,
           profilePicture,
-          accessToken,
-          refreshToken,
+          accessToken: encryptedAccessToken,
+          refreshToken: encryptedRefreshToken,
           expiresAt,
           isActive: true
         }

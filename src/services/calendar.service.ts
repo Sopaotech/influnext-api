@@ -1,6 +1,7 @@
 import { google } from 'googleapis';
 import { prisma } from '../lib/prisma';
 import { sanitizeProviderError } from '../utils/provider-error';
+import { decryptSocialToken } from '../utils/social-token-crypto';
 
 export class CalendarService {
   /**
@@ -11,10 +12,11 @@ export class CalendarService {
       if (!task.scheduledDate) return;
 
       // Buscar tokens do Google (assumindo que salvamos na tabela SocialPlatform com platformName "GOOGLE")
+      const influencerId = await this.getInfluencerId(userId);
       const googlePlatform = await prisma.socialPlatform.findUnique({
         where: { 
           influencerId_platformName: {
-            influencerId: await this.getInfluencerId(userId),
+            influencerId,
             platformName: 'GOOGLE'
           }
         },
@@ -31,9 +33,22 @@ export class CalendarService {
         process.env.GOOGLE_CLIENT_SECRET
       );
 
+      const accessToken = decryptSocialToken(googlePlatform.accessToken, {
+        influencerId,
+        platformName: 'GOOGLE',
+        field: 'accessToken',
+      }).value;
+      const refreshToken = googlePlatform.refreshToken
+        ? decryptSocialToken(googlePlatform.refreshToken, {
+            influencerId,
+            platformName: 'GOOGLE',
+            field: 'refreshToken',
+          }).value
+        : null;
+
       oauth2Client.setCredentials({
-        access_token: googlePlatform.accessToken,
-        refresh_token: googlePlatform.refreshToken
+        access_token: accessToken,
+        refresh_token: refreshToken
       });
 
       const calendar = google.calendar({ version: 'v3', auth: oauth2Client });

@@ -37,6 +37,7 @@ import socialRoutes from '../src/routes/auth.social.routes';
 import integrationRoutes from '../src/routes/integration.routes';
 import { createTwoFactorChallenge } from '../src/lib/two-factor-challenge';
 import { trackPageView } from '../src/middlewares/analytics.middleware';
+import { decryptSocialToken, isEncryptedSocialToken } from '../src/utils/social-token-crypto';
 
 const app = express();
 app.use(express.json());
@@ -63,6 +64,7 @@ describe('STEP 1F-C — OAuth security boundary', () => {
     process.env = {
       ...originalEnv, NODE_ENV: 'production', JWT_SECRET: secret, FRONTEND_URL: 'https://frontend.example',
       INSTAGRAM_CLIENT_ID: 'test-ig', TIKTOK_CLIENT_KEY: 'test-tt', GOOGLE_CLIENT_ID: 'test-google',
+      SOCIAL_TOKEN_ACTIVE_KEY_ID: 'v1', SOCIAL_TOKEN_KEY_V1: '11'.repeat(32),
     };
     resetOAuthRedis();
     signSpy = jest.spyOn(jwt, 'sign');
@@ -73,7 +75,9 @@ describe('STEP 1F-C — OAuth security boundary', () => {
     mockPrisma.socialPlatform.upsert.mockResolvedValue({});
     mockExchange.mockResolvedValue({ accessToken: 'provider-token', platformId: 'provider-id', expiresIn: 3600 });
     mockProfile.mockResolvedValue({ username: 'real_user', followers_count: 42 });
-    mockPost.mockResolvedValue({ data: { access_token: 'provider-token', open_id: 'provider-id', expires_in: 3600 } });
+    mockPost.mockResolvedValue({ data: {
+      access_token: 'provider-token', refresh_token: 'provider-refresh-token', open_id: 'provider-id', expires_in: 3600,
+    } });
     mockGet.mockResolvedValue({ data: {
       data: { user: { username: 'real_user', display_name: 'real_user', follower_count: 42 } },
       items: [{ id: 'provider-id', snippet: { title: 'real_user' } }],
@@ -213,9 +217,39 @@ describe('STEP 1F-C — OAuth security boundary', () => {
     expect(response.body.token).toBeUndefined();
     expect(jwt.verify(sessionFrom(response).token, secret)).toMatchObject({ id: user.id, purpose: 'session' });
     expect(mockPrisma.user.create).toHaveBeenCalledTimes(1);
-    expect(mockPrisma.socialPlatform.upsert).toHaveBeenCalledWith(expect.objectContaining({
-      create: expect.objectContaining({ platformId: 'provider-id', accessToken: 'provider-token' }),
-    }));
+    const write = mockPrisma.socialPlatform.upsert.mock.calls[0][0];
+    const platformName = platform === 'instagram' ? 'INSTAGRAM' : platform === 'tiktok' ? 'TIKTOK' : 'YOUTUBE';
+    expect(write.create).toEqual(expect.objectContaining({ platformId: 'provider-id' }));
+    expect(isEncryptedSocialToken(write.create.accessToken)).toBe(true);
+    expect(decryptSocialToken(write.create.accessToken, {
+      influencerId: profile.id, platformName, field: 'accessToken',
+    }).value).toBe('provider-token');
+    if (platform !== 'instagram') {
+      expect(isEncryptedSocialToken(write.create.refreshToken)).toBe(true);
+      expect(decryptSocialToken(write.create.refreshToken, {
+        influencerId: profile.id, platformName, field: 'refreshToken',
+      }).value).toBe('provider-refresh-token');
+    }
+  });
+
+  it('TikTok link callback preserves the stored refresh token when the provider omits a replacement', async () => {
+    mockPost.mockResolvedValue({ data: { access_token: 'provider-token', open_id: 'provider-id', expires_in: 3600 } });
+    const response = await callback('tiktok', await start('tiktok', '/v1/integrations/urls'), '/v1/integrations/tiktok/callback');
+    expect(response.status).toBe(302);
+    const write = mockPrisma.socialPlatform.upsert.mock.calls[0][0];
+    expect(write.create.refreshToken).toBeNull();
+    expect(write.update).not.toHaveProperty('refreshToken');
+    expect(isEncryptedSocialToken(write.update.accessToken)).toBe(true);
+  });
+
+  it('TikTok social callback preserves the stored refresh token when the provider omits a replacement', async () => {
+    mockPost.mockResolvedValue({ data: { access_token: 'provider-token', open_id: 'provider-id', expires_in: 3600 } });
+    const response = await callback('tiktok', await start('tiktok'));
+    expect(response.status).toBe(200);
+    const write = mockPrisma.socialPlatform.upsert.mock.calls[0][0];
+    expect(write.create.refreshToken).toBeNull();
+    expect(write.update).not.toHaveProperty('refreshToken');
+    expect(isEncryptedSocialToken(write.update.accessToken)).toBe(true);
   });
 
   it.each(['/v1/auth/me', '/v1/auth/social/urls', '/v1/integrations/urls', '/v1/integrations/instagram/auth-url'])('denies pending 2FA session on %s', async route => {

@@ -202,12 +202,28 @@ describe('Integrações de Redes Sociais Reais (Instagram & TikTok API)', () => 
 
       expect(result.accessToken).toBe('new_tt_access_token');
       expect(result.refreshToken).toBe('new_tt_refresh_token');
+      expect(result.refreshTokenRotated).toBe(true);
       expect(result.openId).toBe('tt_open_id_123');
       expect(mockedAxios.post).toHaveBeenCalledWith(
         'https://open.tiktokapis.com/v2/oauth/token/',
         expect.stringContaining('grant_type=refresh_token'),
         expect.any(Object)
       );
+    });
+
+    it('informa quando o TikTok omite um refresh token novo', async () => {
+      mockedAxios.post.mockResolvedValueOnce({
+        data: {
+          access_token: 'new_tt_access_token',
+          expires_in: 86400,
+          open_id: 'tt_open_id_123'
+        }
+      });
+
+      const result = await TikTokService.refreshAccessToken('current_tt_refresh_token');
+
+      expect(result.refreshToken).toBe('current_tt_refresh_token');
+      expect(result.refreshTokenRotated).toBe(false);
     });
 
     it('deve sincronizar métricas reais do TikTok, salvar perfil e snapshot auditado', async () => {

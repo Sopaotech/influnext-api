@@ -5,6 +5,8 @@ const mockCalculateAndPersist = jest.fn();
 const mockGenerateWeeklyAnalysis = jest.fn();
 const mockCalendarInsert = jest.fn();
 const mockSetCredentials = jest.fn();
+const mockGoogleOAuth2 = jest.fn();
+const mockGoogleCalendar = jest.fn();
 
 const mockPrisma = {
   influencerProfile: { findUnique: jest.fn(), update: jest.fn() },
@@ -27,19 +29,20 @@ jest.mock('../src/services/trend-scanner.service', () => ({
 }));
 jest.mock('googleapis', () => ({
   google: {
-    auth: { OAuth2: jest.fn(() => ({ setCredentials: mockSetCredentials })) },
-    calendar: jest.fn(() => ({ events: { insert: mockCalendarInsert } })),
+    auth: { OAuth2: mockGoogleOAuth2 },
+    calendar: mockGoogleCalendar,
   },
 }));
 jest.mock('axios');
 
 import { getInfluencerDashboard } from '../src/controllers/dashboard.controller';
-import { getConnectedPlatforms, simulateInstagramConnection, triggerTokenRenewalDebug } from '../src/controllers/integration.controller';
+import { getConnectedPlatforms, simulateInstagramConnection, syncPlatformMetrics, triggerTokenRenewalDebug } from '../src/controllers/integration.controller';
 import { getPublicProfile } from '../src/controllers/public.controller';
 import { InstagramService } from '../src/services/instagram.service';
 import { TikTokService } from '../src/services/tiktok.service';
 import { CalendarService } from '../src/services/calendar.service';
 import { sanitizeProviderError } from '../src/utils/provider-error';
+import { decryptSocialToken, encryptSocialToken, isEncryptedSocialToken } from '../src/utils/social-token-crypto';
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
@@ -84,10 +87,14 @@ describe('STEP 1H-B1 — Social token exposure containment', () => {
       INSTAGRAM_CLIENT_SECRET: 'test-instagram-client-secret',
       TIKTOK_CLIENT_KEY: 'test-tiktok-client',
       TIKTOK_CLIENT_SECRET: 'test-tiktok-client-secret',
+      SOCIAL_TOKEN_ACTIVE_KEY_ID: 'v1',
+      SOCIAL_TOKEN_KEY_V1: '33'.repeat(32),
     };
     mockPrisma.contract.findMany.mockResolvedValue([]);
     mockCalculateAndPersist.mockResolvedValue({});
     mockGenerateWeeklyAnalysis.mockResolvedValue({});
+    mockGoogleOAuth2.mockImplementation(() => ({ setCredentials: mockSetCredentials }));
+    mockGoogleCalendar.mockImplementation(() => ({ events: { insert: mockCalendarInsert } }));
   });
 
   afterAll(() => { process.env = originalEnv; });
@@ -113,6 +120,22 @@ describe('STEP 1H-B1 — Social token exposure containment', () => {
     expect(query.include.platforms.select.accessToken).toBeUndefined();
     expect(query.include.platforms.select.refreshToken).toBeUndefined();
     expect(query.include.platforms.select).toMatchObject({ platformName: true, username: true, followersCount: true });
+  });
+
+  it('dashboard never serializes an encrypted token returned by an over-permissive data mock', async () => {
+    const encryptedAccessToken = encryptSocialToken('dashboard-encrypted-secret', {
+      influencerId: 'profile-1', platformName: 'INSTAGRAM', field: 'accessToken',
+    });
+    const profile = dashboardProfile();
+    profile.platforms[0].accessToken = encryptedAccessToken;
+    mockPrisma.influencerProfile.findUnique.mockResolvedValue(profile);
+    const res = responseMock();
+
+    await getInfluencerDashboard({ user: { id: 'user-1' } } as any, res);
+
+    const serialized = JSON.stringify(res.json.mock.calls[0][0]);
+    expect(serialized).not.toContain(encryptedAccessToken);
+    expect(serialized).not.toContain('dashboard-encrypted-secret');
   });
 
   it('connected platforms returns names only and does not load tokens', async () => {
@@ -155,6 +178,28 @@ describe('STEP 1H-B1 — Social token exposure containment', () => {
 
     expect(res.json.mock.calls[0][0]).toMatchObject({ success: true, platform: 'INSTAGRAM', username: 'creator' });
     expect(JSON.stringify(res.json.mock.calls[0][0])).not.toMatch(/accessToken|refreshToken|simulated_access_token/);
+    const write = mockPrisma.socialPlatform.upsert.mock.calls[0][0];
+    expect(isEncryptedSocialToken(write.create.accessToken)).toBe(true);
+    expect(decryptSocialToken(write.create.accessToken, {
+      influencerId: 'profile-1', platformName: 'INSTAGRAM', field: 'accessToken',
+    }).value).toBe('simulated_access_token_instagram');
+  });
+
+  it('sync metrics decrypts an encrypted access token before the provider call', async () => {
+    const encryptedToken = encryptSocialToken('sync-access-secret', {
+      influencerId: 'profile-1', platformName: 'INSTAGRAM', field: 'accessToken',
+    });
+    mockPrisma.influencerProfile.findUnique.mockResolvedValue({
+      id: 'profile-1',
+      platforms: [{ platformName: 'INSTAGRAM', platformId: 'provider-1', accessToken: encryptedToken }],
+    });
+    const sync = jest.spyOn(InstagramService, 'syncInstagramData').mockResolvedValue({} as any);
+    const res = responseMock();
+
+    await syncPlatformMetrics({ user: { id: 'user-1' } } as any, res);
+
+    expect(sync).toHaveBeenCalledWith('profile-1', 'sync-access-secret', 'provider-1');
+    expect(res.json).toHaveBeenCalledWith({ synced: true, results: { INSTAGRAM: 'synced' } });
   });
 
   it('admin renewal debug response and log do not expose an error token', async () => {
@@ -213,7 +258,12 @@ describe('STEP 1H-B1 — Social token exposure containment', () => {
   it('Calendar logs a sanitized Google error instead of the SDK object', async () => {
     mockPrisma.influencerProfile.findUnique.mockResolvedValue({ id: 'profile-1' });
     mockPrisma.socialPlatform.findUnique.mockResolvedValue({
-      accessToken: 'calendar-access-secret', refreshToken: 'calendar-refresh-secret',
+      accessToken: encryptSocialToken('calendar-access-secret', {
+        influencerId: 'profile-1', platformName: 'GOOGLE', field: 'accessToken',
+      }),
+      refreshToken: encryptSocialToken('calendar-refresh-secret', {
+        influencerId: 'profile-1', platformName: 'GOOGLE', field: 'refreshToken',
+      }),
     });
     mockCalendarInsert.mockRejectedValue({
       message: 'Authorization: Bearer calendar-access-secret',
@@ -227,6 +277,9 @@ describe('STEP 1H-B1 — Social token exposure containment', () => {
 
     const output = serializedCalls(log);
     expect(output).not.toMatch(/calendar-access-secret|calendar-refresh-secret/);
+    expect(mockSetCredentials).toHaveBeenCalledWith({
+      access_token: 'calendar-access-secret', refresh_token: 'calendar-refresh-secret',
+    });
     expect(mockPrisma.socialPlatform.findUnique).toHaveBeenCalledWith(expect.objectContaining({
       select: { accessToken: true, refreshToken: true },
     }));

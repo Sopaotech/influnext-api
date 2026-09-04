@@ -46,6 +46,7 @@ jest.mock('axios', () => ({ __esModule: true, default: { post: mockAxiosPost, ge
 
 import authRoutes from '../src/routes/auth.routes';
 import socialAuthRoutes from '../src/routes/auth.social.routes';
+import { decryptSocialToken, isEncryptedSocialToken } from '../src/utils/social-token-crypto';
 
 const app = express();
 app.use(express.json());
@@ -78,6 +79,7 @@ describe('STEP 1F-B — simulated social login containment', () => {
       ...originalEnv, NODE_ENV: 'production', JWT_SECRET: jwtSecret,
       INSTAGRAM_CLIENT_ID: 'test-instagram-client', TIKTOK_CLIENT_KEY: 'test-tiktok-client',
       GOOGLE_CLIENT_ID: 'test-google-client', FRONTEND_URL: 'https://frontend.example',
+      SOCIAL_TOKEN_ACTIVE_KEY_ID: 'v1', SOCIAL_TOKEN_KEY_V1: '22'.repeat(32),
     };
     signSpy = jest.spyOn(jwt, 'sign');
     mockPrisma.pageView.count.mockResolvedValue(0);
@@ -255,8 +257,12 @@ describe('STEP 1F-B — simulated social login containment', () => {
     expect(jwt.verify(sessionFrom(response).token, jwtSecret)).toMatchObject({ id: user.id, purpose: 'session' });
     const exchange = platform === 'instagram' ? mockExchangeCode : mockAxiosPost;
     expect(exchange.mock.invocationCallOrder[0]).toBeLessThan(mockPrisma.socialPlatform.findFirst.mock.invocationCallOrder[0]);
-    expect(mockPrisma.socialPlatform.upsert).toHaveBeenCalledWith(expect.objectContaining({
-      create: expect.objectContaining({ platformId: 'provider-user-1', followersCount: 17, accessToken: 'provider-token' }),
-    }));
+    const write = mockPrisma.socialPlatform.upsert.mock.calls[0][0];
+    const platformName = platform.toUpperCase();
+    expect(write.create).toEqual(expect.objectContaining({ platformId: 'provider-user-1', followersCount: 17 }));
+    expect(isEncryptedSocialToken(write.create.accessToken)).toBe(true);
+    expect(decryptSocialToken(write.create.accessToken, {
+      influencerId: 'profile-1', platformName, field: 'accessToken',
+    }).value).toBe('provider-token');
   });
 });

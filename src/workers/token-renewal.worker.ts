@@ -5,6 +5,7 @@ import { TikTokService } from '../services/tiktok.service';
 import { addNotificationJob } from '../queues/notification.queue';
 import { redisConnection } from '../lib/redis';
 import { sanitizeProviderError } from '../utils/provider-error';
+import { assertSocialTokenEncryptionConfigured, decryptSocialToken, encryptSocialToken } from '../utils/social-token-crypto';
 
 
 export const runTokenRenewalLogic = async () => {
@@ -32,8 +33,14 @@ export const runTokenRenewalLogic = async () => {
 
   for (const platform of tiktokPlatforms) {
     try {
+      assertSocialTokenEncryptionConfigured();
       console.log(`[TOKEN_RENEWAL] Renovando token do TikTok para o influenciador ID: ${platform.influencerId} (@${platform.username})`);
-      const refreshResult = await TikTokService.refreshAccessToken(platform.refreshToken!);
+      const refreshToken = decryptSocialToken(platform.refreshToken!, {
+        influencerId: platform.influencerId,
+        platformName: 'TIKTOK',
+        field: 'refreshToken',
+      }).value;
+      const refreshResult = await TikTokService.refreshAccessToken(refreshToken);
       
       const ttExpiresIn = refreshResult.expiresIn || 86400;
       const ttExpiresAt = new Date(Date.now() + ttExpiresIn * 1000);
@@ -41,8 +48,20 @@ export const runTokenRenewalLogic = async () => {
       await prisma.socialPlatform.update({
         where: { id: platform.id },
         data: {
-          accessToken: refreshResult.accessToken,
-          refreshToken: refreshResult.refreshToken,
+          accessToken: encryptSocialToken(refreshResult.accessToken, {
+            influencerId: platform.influencerId,
+            platformName: 'TIKTOK',
+            field: 'accessToken',
+          }),
+          ...(refreshResult.refreshTokenRotated
+            ? {
+                refreshToken: encryptSocialToken(refreshResult.refreshToken, {
+                  influencerId: platform.influencerId,
+                  platformName: 'TIKTOK',
+                  field: 'refreshToken',
+                }),
+              }
+            : {}),
           expiresAt: ttExpiresAt
         }
       });
@@ -80,21 +99,31 @@ export const runTokenRenewalLogic = async () => {
 
   for (const platform of instagramPlatforms) {
     try {
+      assertSocialTokenEncryptionConfigured();
+      const accessToken = decryptSocialToken(platform.accessToken, {
+        influencerId: platform.influencerId,
+        platformName: 'INSTAGRAM',
+        field: 'accessToken',
+      }).value;
       // Se for um token simulado, ignora
-      if (platform.accessToken.startsWith('simulated_')) {
+      if (accessToken.startsWith('simulated_')) {
         continue;
       }
 
       console.log(`[TOKEN_RENEWAL] Tentando renovar token do Instagram para o influenciador ID: ${platform.influencerId} (@${platform.username})`);
       
       try {
-        const refreshResult = await InstagramService.refreshLongLivedToken(platform.accessToken);
+        const refreshResult = await InstagramService.refreshLongLivedToken(accessToken);
         const expiresAtNew = new Date(Date.now() + refreshResult.expiresIn * 1000);
 
         await prisma.socialPlatform.update({
           where: { id: platform.id },
           data: {
-            accessToken: refreshResult.accessToken,
+            accessToken: encryptSocialToken(refreshResult.accessToken, {
+              influencerId: platform.influencerId,
+              platformName: 'INSTAGRAM',
+              field: 'accessToken',
+            }),
             expiresAt: expiresAtNew
           }
         });

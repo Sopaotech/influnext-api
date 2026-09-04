@@ -9,6 +9,7 @@ import { TrendScannerService } from '../services/trend-scanner.service';
 import axios from 'axios';
 import { createOAuthState, consumeOAuthState, getOAuthFrontendUrl, oauthBoundaryFailure, assertOAuthIdentity } from '../lib/oauth-state';
 import { sanitizeProviderError } from '../utils/provider-error';
+import { assertSocialTokenEncryptionConfigured, decryptSocialToken, encryptSocialToken } from '../utils/social-token-crypto';
 
 
 /**
@@ -61,6 +62,7 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
   let isFromOnboarding = false;
   try {
     const decodedState = await consumeOAuthState(req, res, 'instagram', 'link');
+    assertSocialTokenEncryptionConfigured();
     verifiedFrontendUrl = decodedState.frontendUrl;
     const userId = decodedState.userId!;
     isFromOnboarding = decodedState.from === 'onboarding';
@@ -99,6 +101,11 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
     const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
 
     if (influencer) {
+      const encryptedAccessToken = encryptSocialToken(accessToken, {
+        influencerId: influencer.id,
+        platformName: 'INSTAGRAM',
+        field: 'accessToken',
+      });
       await prisma.socialPlatform.upsert({
         where: {
           influencerId_platformName: {
@@ -113,7 +120,7 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
           username: instagramUsername,
           profilePicture: instagramProfilePicture,
           followersCount: instagramFollowers,
-          accessToken: accessToken,
+          accessToken: encryptedAccessToken,
           expiresAt: expiresAt,
           isActive: true
         },
@@ -122,7 +129,7 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
           username: instagramUsername,
           profilePicture: instagramProfilePicture,
           followersCount: instagramFollowers,
-          accessToken: accessToken,
+          accessToken: encryptedAccessToken,
           expiresAt: expiresAt,
           isActive: true
         }
@@ -166,6 +173,7 @@ export const simulateInstagramConnection = async (req: Request, res: Response): 
       res.status(401).json({ error: 'Usuário não autenticado' });
       return;
     }
+    assertSocialTokenEncryptionConfigured();
 
     const influencer = await prisma.influencerProfile.findUnique({
       where: { userId }
@@ -276,6 +284,11 @@ export const simulateInstagramConnection = async (req: Request, res: Response): 
     };
 
     const platformId = `simulated_${platform.toLowerCase()}_${Math.floor(100000 + Math.random() * 900000)}`;
+    const encryptedAccessToken = encryptSocialToken(`simulated_access_token_${platform.toLowerCase()}`, {
+      influencerId: influencer.id,
+      platformName: platform,
+      field: 'accessToken',
+    });
 
     // 1. Criar ou atualizar a SocialPlatform
     await prisma.socialPlatform.upsert({
@@ -292,7 +305,7 @@ export const simulateInstagramConnection = async (req: Request, res: Response): 
         username,
         profilePicture,
         followersCount,
-        accessToken: `simulated_access_token_${platform.toLowerCase()}`,
+        accessToken: encryptedAccessToken,
         isActive: true
       },
       update: {
@@ -300,7 +313,7 @@ export const simulateInstagramConnection = async (req: Request, res: Response): 
         username,
         profilePicture,
         followersCount,
-        accessToken: `simulated_access_token_${platform.toLowerCase()}`,
+        accessToken: encryptedAccessToken,
         isActive: true
       }
     });
@@ -361,6 +374,7 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
   let isFromOnboarding = false;
   try {
     const decodedState = await consumeOAuthState(req, res, 'tiktok', 'link');
+    assertSocialTokenEncryptionConfigured();
     verifiedFrontendUrl = decodedState.frontendUrl;
     const userId = decodedState.userId!;
     isFromOnboarding = decodedState.from === 'onboarding';
@@ -381,6 +395,18 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
 
       const { access_token, expires_in, refresh_token, open_id } = tokenResponse.data;
       assertOAuthIdentity(access_token, open_id);
+      const encryptedAccessToken = encryptSocialToken(access_token, {
+        influencerId: influencer.id,
+        platformName: 'TIKTOK',
+        field: 'accessToken',
+      });
+      const encryptedRefreshToken = refresh_token
+        ? encryptSocialToken(refresh_token, {
+            influencerId: influencer.id,
+            platformName: 'TIKTOK',
+            field: 'refreshToken',
+          })
+        : null;
 
       // Calcular expiração do token (default de 24 horas)
       const ttExpiresIn = expires_in || 86400;
@@ -420,8 +446,8 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
           username: tiktokUsername,
           profilePicture: tiktokAvatar,
           followersCount: tiktokFollowers,
-          accessToken: access_token,
-          refreshToken: refresh_token || null,
+          accessToken: encryptedAccessToken,
+          refreshToken: encryptedRefreshToken,
           expiresAt: ttExpiresAt,
           isActive: true
         },
@@ -430,8 +456,8 @@ export const handleTikTokCallback = async (req: Request, res: Response): Promise
           username: tiktokUsername,
           profilePicture: tiktokAvatar,
           followersCount: tiktokFollowers,
-          accessToken: access_token,
-          refreshToken: refresh_token || null,
+          accessToken: encryptedAccessToken,
+          ...(encryptedRefreshToken ? { refreshToken: encryptedRefreshToken } : {}),
           expiresAt: ttExpiresAt,
           isActive: true
         }
@@ -487,12 +513,22 @@ export const syncPlatformMetrics = async (req: Request, res: Response): Promise<
     for (const platform of influencer.platforms) {
       try {
         if (platform.platformName === 'INSTAGRAM' && platform.accessToken && platform.platformId) {
-          await InstagramService.syncInstagramData(influencer.id, platform.accessToken, platform.platformId);
+          const accessToken = decryptSocialToken(platform.accessToken, {
+            influencerId: influencer.id,
+            platformName: platform.platformName,
+            field: 'accessToken',
+          }).value;
+          await InstagramService.syncInstagramData(influencer.id, accessToken, platform.platformId);
           results['INSTAGRAM'] = 'synced';
         }
 
         if (platform.platformName === 'TIKTOK' && platform.accessToken && platform.platformId) {
-          await TikTokService.syncTikTokData(influencer.id, platform.accessToken, platform.platformId);
+          const accessToken = decryptSocialToken(platform.accessToken, {
+            influencerId: influencer.id,
+            platformName: platform.platformName,
+            field: 'accessToken',
+          }).value;
+          await TikTokService.syncTikTokData(influencer.id, accessToken, platform.platformId);
           results['TIKTOK'] = 'synced';
         }
       } catch (err) {
@@ -583,6 +619,7 @@ export const simulateFlowStep = async (req: Request, res: Response): Promise<voi
     const company = companyUser.company;
 
     if (step === 1) {
+      assertSocialTokenEncryptionConfigured();
       // --- PASSO 1: Onboarding & Conexão Instagram ---
       const handle = username || influencer.handle || 'demo.influencer';
       const cleanHandle = handle.replace('@', '');
@@ -591,6 +628,11 @@ export const simulateFlowStep = async (req: Request, res: Response): Promise<voi
       const avgViews = 14200;
       const reachLast30Days = 85600;
       const profilePicture = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&auto=format&fit=crop';
+      const encryptedAccessToken = encryptSocialToken('simulated_access_token_demo', {
+        influencerId: influencer.id,
+        platformName: 'INSTAGRAM',
+        field: 'accessToken',
+      });
 
       // 1. Criar posts e insights realistas
       const sumLikes = Math.round(followers * (engagement / 100) * 0.85);
@@ -658,13 +700,14 @@ export const simulateFlowStep = async (req: Request, res: Response): Promise<voi
             username: cleanHandle,
             profilePicture,
             followersCount: followers,
-            accessToken: 'simulated_access_token_demo',
+            accessToken: encryptedAccessToken,
             isActive: true
           },
           update: {
             username: cleanHandle,
             profilePicture,
             followersCount: followers,
+            accessToken: encryptedAccessToken,
             isActive: true
           }
         }),
