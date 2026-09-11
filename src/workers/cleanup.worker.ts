@@ -1,17 +1,27 @@
-import { Worker } from 'bullmq';
+import { ConnectionOptions, Job, Worker, WorkerOptions } from 'bullmq';
 import { prisma } from '../lib/prisma';
 import { redisConnection } from '../lib/redis';
 
+export async function processCleanup(job: Job): Promise<void> {
+  if (job.name !== 'daily-cleanup') return;
 
-export const cleanupWorker = new Worker(
-  'cleanup-tasks',
-  async (job) => {
-    if (job.name === 'daily-cleanup') {
-      const deleted = await prisma.trendReference.deleteMany({
-        where: { expiresAt: { lt: new Date() } }
-      });
-      console.log(`[CLEANUP] ${deleted.count} referências removidas.`);
-    }
-  },
-  { connection: redisConnection }
-);
+  const deleted = await prisma.trendReference.deleteMany({
+    where: { expiresAt: { lt: new Date() } },
+  });
+  console.log(`[CLEANUP] ${deleted.count} referências removidas.`);
+}
+
+export type ControlledWorkerOptions = Pick<WorkerOptions, 'prefix'> & {
+  connection?: ConnectionOptions;
+};
+
+export function createCleanupWorker(options: ControlledWorkerOptions = {}): Worker {
+  return new Worker('cleanup-tasks', processCleanup, {
+    connection: options.connection || redisConnection,
+    prefix: options.prefix,
+  });
+}
+
+export const cleanupWorker = process.env.NODE_ENV === 'test'
+  ? undefined
+  : createCleanupWorker();

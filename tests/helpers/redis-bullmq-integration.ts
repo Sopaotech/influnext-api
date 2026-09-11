@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import IORedis from 'ioredis';
-import { Processor, Queue, QueueEvents, Worker } from 'bullmq';
+import { ConnectionOptions, Processor, Queue, QueueEvents, Worker } from 'bullmq';
 
 const LOCAL_REDIS_HOSTS = new Set(['127.0.0.1', 'localhost', '::1']);
 const TEST_REDIS_PORT = '6380';
@@ -32,12 +32,23 @@ export interface RedisBullMqIntegrationHarness {
   close(): Promise<void>;
 }
 
+export interface ControlledApplicationWorkerOptions {
+  connection: ConnectionOptions;
+  prefix: string;
+}
+
+export interface RedisBullMqHarnessOptions {
+  queueName?: string;
+  workerFactory?: (options: ControlledApplicationWorkerOptions) => Worker;
+}
+
 export async function createRedisBullMqIntegrationHarness(
   processor: Processor,
+  harnessOptions: RedisBullMqHarnessOptions = {},
 ): Promise<RedisBullMqIntegrationHarness> {
   const url = assertSafeRedisTestUrl();
   const prefix = `influnext-test-${randomUUID().replace(/-/g, '')}`;
-  const queueName = 'bullmq-integration';
+  const queueName = harnessOptions.queueName || 'bullmq-integration';
   const options = {
     lazyConnect: true,
     maxRetriesPerRequest: null,
@@ -55,7 +66,9 @@ export async function createRedisBullMqIntegrationHarness(
   ]);
 
   const queue = new Queue(queueName, { connection: commandConnection, prefix });
-  const worker = new Worker(queueName, processor, { connection: workerConnection, prefix });
+  const worker = harnessOptions.workerFactory
+    ? harnessOptions.workerFactory({ connection: workerConnection, prefix })
+    : new Worker(queueName, processor, { connection: workerConnection, prefix });
   const events = new QueueEvents(queueName, { connection: eventsConnection, prefix });
 
   await Promise.all([queue.waitUntilReady(), worker.waitUntilReady(), events.waitUntilReady()]);

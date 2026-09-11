@@ -1,4 +1,4 @@
-import { Worker } from 'bullmq';
+import { ConnectionOptions, Worker, WorkerOptions } from 'bullmq';
 import { prisma } from '../lib/prisma';
 import { sendPushNotification } from '../services/push-notification.service';
 import { redisConnection } from '../lib/redis';
@@ -28,8 +28,23 @@ export const processNotification = async (job: any) => {
   return { success: true };
 };
 
-export const notificationWorker = new Worker('notifications', processNotification, { connection: redisConnection });
+export type ControlledWorkerOptions = Pick<WorkerOptions, 'prefix'> & {
+  connection?: ConnectionOptions;
+};
 
-notificationWorker.on('error', () => {
-  // Ignora erro de conexão do Redis para não derrubar o host
-});
+export function createNotificationWorker(options: ControlledWorkerOptions = {}): Worker {
+  const worker = new Worker('notifications', processNotification, {
+    connection: options.connection || redisConnection,
+    prefix: options.prefix,
+  });
+
+  worker.on('error', () => {
+    // Ignora erro de conexão do Redis para não derrubar o host
+  });
+
+  return worker;
+}
+
+export const notificationWorker = process.env.NODE_ENV === 'test'
+  ? undefined
+  : createNotificationWorker();

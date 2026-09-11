@@ -17,7 +17,8 @@
     "test:unit": "jest --passWithNoTests --testPathIgnorePatterns=tests/integration",
     "test:integration": "node scripts/run-postgres-integration-tests.js",
     "test:integration:http": "node scripts/run-postgres-http-integration-tests.js",
-    "test:integration:redis": "node scripts/run-redis-bullmq-integration-tests.js"
+    "test:integration:redis": "node scripts/run-redis-bullmq-integration-tests.js",
+    "test:integration:workers": "node scripts/run-application-worker-integration-tests.js"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
