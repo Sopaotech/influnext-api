@@ -64,6 +64,7 @@ try {
     '--runInBand',
     '--runTestsByPath',
     path.join('tests', 'integration', 'http.integration.test.ts'),
+    path.join('tests', 'integration', 'lifecycle.integration.test.ts'),
   ], testEnvironment);
 } catch (error) {
   console.error('[http-integration-test-harness] blocked:', error instanceof Error ? error.message : 'unknown error');
