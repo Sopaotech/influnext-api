@@ -11,7 +11,7 @@ import { protectCookieSessionFromCsrf } from './middlewares/csrf.middleware';
 
 dotenv.config();
 
-const app = express();
+export const app = express();
 
 // 1. Hardening de Headers de Segurança (Helmet & Anti-Fingerprinting)
 app.use(helmetSecurity);
@@ -44,16 +44,18 @@ app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ limit: '2mb', extended: true }));
 app.use(protectCookieSessionFromCsrf);
 app.use((req, res, next) => {
-  if (process.env.NODE_ENV !== 'production') {
-    console.log(`[REQUEST] ${req.method} ${req.url}`);
-  }
-  res.on('finish', () => {
-    if (res.statusCode === 404) {
-      const logLine = `[404] ${new Date().toISOString()} ${req.method} ${req.url}\n`;
-      // fs.appendFile é assíncrono — não bloqueia o event loop
-      fs.appendFile(path.join(__dirname, '../404-debug.log'), logLine, () => {});
+  if (process.env.NODE_ENV !== 'test') {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[REQUEST] ${req.method} ${req.url}`);
     }
-  });
+    res.on('finish', () => {
+      if (res.statusCode === 404) {
+        const logLine = `[404] ${new Date().toISOString()} ${req.method} ${req.url}\n`;
+        // fs.appendFile é assíncrono — não bloqueia o event loop
+        fs.appendFile(path.join(__dirname, '../404-debug.log'), logLine, () => {});
+      }
+    });
+  }
   next();
 });
 
@@ -122,4 +124,6 @@ const startServer = async () => {
   }
 };
 
-startServer();
+if (require.main === module) {
+  void startServer();
+}
