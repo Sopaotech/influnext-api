@@ -1,129 +1,72 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import fs from 'fs';
-import path from 'path';
-import { routes } from './routes';
-import { trackPageView } from './middlewares/analytics.middleware';
-import { helmetSecurity, globalRateLimiter, responseHardening } from './middlewares/security-hardening.middleware';
-import { getAllowedOrigins } from './lib/origins';
-import { protectCookieSessionFromCsrf } from './middlewares/csrf.middleware';
+import { app } from './app';
 
-dotenv.config();
+export { app };
 
-export const app = express();
+let runtimeHandlersRegistered = false;
 
-// 1. Hardening de Headers de Segurança (Helmet & Anti-Fingerprinting)
-app.use(helmetSecurity);
-app.use(responseHardening);
+function registerRuntimeProcessHandlers(): void {
+  if (runtimeHandlersRegistered) return;
+  runtimeHandlersRegistered = true;
 
-// 2. Rate Limiting Global
-app.use(globalRateLimiter);
+  process.on('unhandledRejection', (reason: any) => {
+    if (reason?.message?.includes('ECONNREFUSED') && reason?.message?.includes('6379')) return;
+    console.error('❌ REJEIÇÃO:', reason);
+  });
 
-// 3. Configuração de CORS Dinâmica para Multi-Domínio
-const ALLOWED_ORIGINS = getAllowedOrigins();
+  process.on('uncaughtException', (error: any) => {
+    if (error?.message?.includes('ECONNREFUSED') && error?.message?.includes('6379')) return;
+    console.error('❌ EXCEÇÃO:', error);
+  });
+}
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Permite requisições sem origem (como Postman, aplicativos móveis ou requisições locais de servidor para servidor)
-    if (!origin) return callback(null, true);
-    if (ALLOWED_ORIGINS.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Bloqueado por CORS: Origem não permitida.'));
-    }
-  },
-  credentials: true
-}));
+/**
+ * Temporary compatibility path: direct HTTP startup still owns workers and
+ * schedules until their dedicated runtime entrypoints are introduced.
+ */
+function startLegacyBackgroundRuntime(): void {
+  console.log('🔄 Inicializando workers e crons de background em paralelo...');
+  void Promise.all([
+    import('./workers/notification.worker'),
+    import('./workers/cleanup.worker'),
+    import('./workers/token-renewal.worker'),
+    import('./workers/post-analyzer.worker'),
+    import('./queues/cleanup.queue').then(module => module.addDailyCleanupJob()),
+    import('./queues/token-renewal.queue').then(module => module.addDailyTokenRenewalJob()),
+  ]).then(() => {
+    console.log('✅ Workers e crons de background ativos.');
+  }).catch((workerError: any) => {
+    console.warn('⚠️ Falha ao inicializar workers em background (Redis offline?):', workerError.message || workerError);
+  });
+}
 
-// Webhook da Stripe precisa do body cru (Buffer) ANTES do express.json() processar a requisição
-app.use('/v1/payments/webhook', express.raw({ type: 'application/json' }));
-app.use('/v1/webhooks/stripe', express.raw({ type: 'application/json' }));
+export async function startHttpServer() {
+  const port = Number(process.env.PORT) || 4000;
+  registerRuntimeProcessHandlers();
 
-app.use(express.json({ limit: '2mb' }));
-app.use(express.urlencoded({ limit: '2mb', extended: true }));
-app.use(protectCookieSessionFromCsrf);
-app.use((req, res, next) => {
-  if (process.env.NODE_ENV !== 'test') {
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`[REQUEST] ${req.method} ${req.url}`);
-    }
-    res.on('finish', () => {
-      if (res.statusCode === 404) {
-        const logLine = `[404] ${new Date().toISOString()} ${req.method} ${req.url}\n`;
-        // fs.appendFile é assíncrono — não bloqueia o event loop
-        fs.appendFile(path.join(__dirname, '../404-debug.log'), logLine, () => {});
-      }
-    });
-  }
-  next();
-});
-
-// Endpoint de Health Check (CRÍTICO para o Railway)
-app.get('/', (req, res) => {
-  res.setHeader('Content-Type', 'text/plain');
-  res.status(200).send('🚀 API ONLINE');
-});
-
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'online', timestamp: new Date().toISOString() });
-});
-
-// Rastreamento de Page Views (fire-and-forget, não bloqueia respostas)
-app.use(trackPageView);
-
-// Todas as suas rotas começarão com /v1
-app.use('/v1', routes);
-
-// Tratamento de erros globais
-process.on('unhandledRejection', (reason: any) => {
-  // Silencia erros de conexão do Redis para não poluir o terminal
-  if (reason?.message?.includes('ECONNREFUSED') && reason?.message?.includes('6379')) return;
-  console.error('❌ REJEIÇÃO:', reason);
-});
-
-process.on('uncaughtException', (error: any) => {
-  if (error?.message?.includes('ECONNREFUSED') && error?.message?.includes('6379')) return;
-  console.error('❌ EXCEÇÃO:', error);
-});
-
-const PORT = Number(process.env.PORT) || 4000;
-
-const startServer = async () => {
   try {
     console.log('🔍 Verificando conexão com o banco de dados...');
     const { prisma } = await import('./lib/prisma');
     await prisma.$connect();
     console.log('✅ Banco de dados conectado!');
 
-    // Inicializa workers e crons de background de forma assíncrona/defensiva (não bloqueante)
-    console.log('🔄 Inicializando workers e crons de background em paralelo...');
-    Promise.all([
-      import('./workers/notification.worker'),
-      import('./workers/cleanup.worker'),
-      import('./workers/token-renewal.worker'),
-      import('./workers/post-analyzer.worker'),
-      import('./queues/cleanup.queue').then(m => m.addDailyCleanupJob()),
-      import('./queues/token-renewal.queue').then(m => m.addDailyTokenRenewalJob())
-    ]).then(() => {
-      console.log('✅ Workers e crons de background ativos.');
-    }).catch((workerError) => {
-      console.warn('⚠️ Falha ao inicializar workers em background (Redis offline?):', workerError.message || workerError);
-    });
+    startLegacyBackgroundRuntime();
 
-    app.listen(PORT, () => {
-      console.log(`🚀 INFLUNEXT ONLINE: Port ${PORT}`);
-      console.log(`🌍 URL da API: https://api.influnext.com.br`);
+    return app.listen(port, () => {
+      console.log(`🚀 INFLUNEXT ONLINE: Port ${port}`);
+      console.log('🌍 URL da API: https://api.influnext.com.br');
     });
   } catch (error: any) {
     console.error('❌ FALHA CRÍTICA NO STARTUP:', error);
-    // Tenta subir o servidor mesmo com erro no banco para podermos ver o erro via HTTP/Health
-    app.listen(PORT, () => {
-      console.log(`⚠️ Servidor subiu com ERROS (Port ${PORT}). Verifique os logs.`);
+    // Preserve the legacy HTTP availability behavior while readiness remains future work.
+    return app.listen(port, () => {
+      console.log(`⚠️ Servidor subiu com ERROS (Port ${port}). Verifique os logs.`);
     });
   }
-};
+}
+
+// Compatibility alias for callers that used the previous runtime name.
+export const startServer = startHttpServer;
 
 if (require.main === module) {
-  void startServer();
+  void startHttpServer();
 }

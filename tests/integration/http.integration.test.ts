@@ -30,7 +30,7 @@ jest.mock('../../src/services/twoFactor.service', () => ({
   TwoFactorService: { verifyToken: jest.fn(), generateSecret: jest.fn() },
 }));
 
-import { app } from '../../src/server';
+import { app } from '../../src/app';
 import { prisma } from '../../src/lib/prisma';
 import { getJwtSecret } from '../../src/lib/jwt-secret';
 import {

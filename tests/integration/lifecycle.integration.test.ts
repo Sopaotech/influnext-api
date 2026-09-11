@@ -95,7 +95,7 @@ beforeAll(() => {
   jest.isolateModules(() => {
     const express = require('express');
     listenSpy = jest.spyOn(express.application, 'listen').mockImplementation(mockListen);
-    ({ app } = require('../../src/server'));
+    ({ app } = require('../../src/app'));
     ({ prisma: appPrisma } = require('../../src/lib/prisma'));
   });
 
