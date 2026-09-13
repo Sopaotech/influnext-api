@@ -30,8 +30,7 @@ function startLegacyBackgroundRuntime(): void {
     import('./workers/cleanup.worker').then(module => module.startCleanupWorker()),
     import('./workers/token-renewal.worker'),
     import('./workers/post-analyzer.worker'),
-    import('./queues/cleanup.queue').then(module => module.addDailyCleanupJob()),
-    import('./queues/token-renewal.queue').then(module => module.addDailyTokenRenewalJob()),
+    import('./queues/scheduler').then(module => module.registerApplicationSchedules()),
   ]).then(() => {
     console.log('✅ Workers e crons de background ativos.');
   }).catch((workerError: any) => {
