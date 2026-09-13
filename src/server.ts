@@ -26,8 +26,8 @@ function registerRuntimeProcessHandlers(): void {
 function startLegacyBackgroundRuntime(): void {
   console.log('🔄 Inicializando workers e crons de background em paralelo...');
   void Promise.all([
-    import('./workers/notification.worker'),
-    import('./workers/cleanup.worker'),
+    import('./workers/notification.worker').then(module => module.startNotificationWorker()),
+    import('./workers/cleanup.worker').then(module => module.startCleanupWorker()),
     import('./workers/token-renewal.worker'),
     import('./workers/post-analyzer.worker'),
     import('./queues/cleanup.queue').then(module => module.addDailyCleanupJob()),

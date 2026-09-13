@@ -22,6 +22,11 @@ export function createCleanupWorker(options: ControlledWorkerOptions = {}): Work
   });
 }
 
-export const cleanupWorker = process.env.NODE_ENV === 'test'
-  ? undefined
-  : createCleanupWorker();
+// Runtime entrypoints opt in explicitly so importing this module remains safe.
+// The legacy HTTP runtime calls startCleanupWorker() to preserve its current behavior.
+export let cleanupWorker: Worker | undefined;
+
+export function startCleanupWorker(): Worker {
+  cleanupWorker ||= createCleanupWorker();
+  return cleanupWorker;
+}

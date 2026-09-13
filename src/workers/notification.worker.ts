@@ -45,6 +45,11 @@ export function createNotificationWorker(options: ControlledWorkerOptions = {}):
   return worker;
 }
 
-export const notificationWorker = process.env.NODE_ENV === 'test'
-  ? undefined
-  : createNotificationWorker();
+// Runtime entrypoints opt in explicitly so importing this module remains safe.
+// The legacy HTTP runtime calls startNotificationWorker() to preserve its current behavior.
+export let notificationWorker: Worker | undefined;
+
+export function startNotificationWorker(): Worker {
+  notificationWorker ||= createNotificationWorker();
+  return notificationWorker;
+}

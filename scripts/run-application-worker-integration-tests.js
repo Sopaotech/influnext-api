@@ -84,6 +84,8 @@ try {
     '--runInBand',
     '--runTestsByPath',
     path.join('tests', 'integration', 'application-workers.integration.test.ts'),
+    path.join('tests', 'integration', 'worker-entrypoint.integration.test.ts'),
+    path.join('tests', 'integration', 'worker-entrypoint.runtime.integration.test.ts'),
   ], testEnvironment);
 } catch (error) {
   console.error('[application-worker-integration-test-harness] blocked:', error instanceof Error ? error.message : 'unknown error');
