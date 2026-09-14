@@ -7,7 +7,9 @@ const mockAxiosCreate = jest.fn((options: unknown) => {
 jest.mock(require.resolve('axios', { paths: [__dirname + '/../web'] }), () => ({ __esModule: true, default: {
   create: mockAxiosCreate,
 } }));
-jest.mock(require.resolve('js-cookie', { paths: [__dirname + '/../web'] }), () => ({ __esModule: true, default: { remove: jest.fn() } }));
+// This suite verifies Axios transport only; browser cookie persistence belongs to auth-browser.
+// Mock that boundary so the root backend test command does not require web/node_modules.
+jest.mock('../web/src/lib/auth-browser', () => ({ clearBrowserAuthState: jest.fn() }));
 import '../web/src/lib/api';
 
 // Capture the actual registered callback before Jest clears mock call histories.
