@@ -4,6 +4,7 @@ import { stripe } from '../lib/stripe';
 import { calcContractFees } from '../lib/fees';
 import { QuickAlertService } from '../services/quick-alert.service';
 import crypto from 'crypto';
+import { getInstagramSyncStatus } from '../utils/instagram-sync-status';
 
 const getFrontendUrl = () => {
   const url = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
@@ -40,6 +41,7 @@ export const getPublicProfile = async (req: Request, res: Response): Promise<voi
         },
         // Buscamos apenas o último snapshot de métricas auditadas
         metricsHistory: {
+          where: { provider: 'INSTAGRAM' },
           take: 1,
           orderBy: { capturedAt: 'desc' },
           select: {
@@ -53,7 +55,7 @@ export const getPublicProfile = async (req: Request, res: Response): Promise<voi
         },
         // Buscamos as redes conectadas para mostrar os ícones, sem vazar AccessTokens
         platforms: {
-          select: { platformName: true, platformId: true }
+          select: { platformName: true, platformId: true, isActive: true }
         },
         // Buscamos as provas de ROI (Tasks da IA concluídas com performance medida)
         tasks: {
@@ -100,8 +102,15 @@ export const getPublicProfile = async (req: Request, res: Response): Promise<voi
       ? profile.tasks.reduce((acc, t) => acc + (t.performanceMultiplier || 1), 0) / profile.tasks.length
       : 1.0;
 
+    const instagramSync = getInstagramSyncStatus(profile.platforms, profile.metricsHistory[0]);
+    const { platforms, metricsHistory, verifiedMetrics: _legacyVerifiedMetrics, ...publicProfile } = profile;
+
     res.status(200).json({
-      ...profile,
+      ...publicProfile,
+      verifiedMetrics: instagramSync.hasVerifiedSnapshot,
+      metricsHistory,
+      platforms: platforms.map(({ platformName, platformId }) => ({ platformName, platformId })),
+      instagramSync,
       avgROI: Number(avgROI.toFixed(2))
     });
   } catch (error) {
@@ -272,4 +281,3 @@ export const createInstantCheckout = async (req: Request, res: Response): Promis
     res.status(500).json({ error: error.message || "Erro ao processar contratação instantânea." });
   }
 };
-

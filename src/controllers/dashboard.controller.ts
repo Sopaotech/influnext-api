@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { getInstagramSyncStatus } from '../utils/instagram-sync-status';
 
 export const getInfluencerDashboard = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -66,6 +67,13 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
       return;
     }
 
+    const latestInstagramSnapshot = await prisma.metricSnapshot.findFirst({
+      where: { influencerId: profile.id, provider: 'INSTAGRAM' },
+      orderBy: { capturedAt: 'desc' },
+      select: { capturedAt: true },
+    });
+    const instagramSync = getInstagramSyncStatus(profile.platforms, latestInstagramSnapshot);
+
     // Cálculo de Progresso de Perfil (Fase 1 do Roadmap)
     let progress = 0;
     if (profile.niche) progress += 20;
@@ -105,6 +113,7 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
         missionCompleted: profile.missionCompleted,
         profileProgress: progress,
         aiInterview: profile.aiInterview,
+        verifiedMetrics: instagramSync.hasVerifiedSnapshot,
       },
       kpis: {
         influScore: profile.influScore,
@@ -133,6 +142,7 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
       })),
       trendVault: profile.trendVault,
       metricsHistory: profile.metricsHistory,
+      instagramSync,
       analysis: profile.aiAnalyses[0] || null,
       rateCard: profile.rateCards,
     });

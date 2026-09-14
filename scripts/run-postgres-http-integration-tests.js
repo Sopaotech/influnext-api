@@ -97,6 +97,7 @@ try {
     path.join('tests', 'integration', 'lifecycle.integration.test.ts'),
     path.join('tests', 'integration', 'readiness.integration.test.ts'),
     path.join('tests', 'integration', 'instagram-oauth-contract.integration.test.ts'),
+    path.join('tests', 'integration', 'instagram-sync-status.integration.test.ts'),
   ], testEnvironment);
 } catch (error) {
   console.error('[http-integration-test-harness] blocked:', error instanceof Error ? error.message : 'unknown error');

@@ -11,7 +11,7 @@ const mockGoogleCalendar = jest.fn();
 const mockPrisma = {
   influencerProfile: { findUnique: jest.fn(), update: jest.fn() },
   socialPlatform: { findUnique: jest.fn(), upsert: jest.fn() },
-  metricSnapshot: { create: jest.fn() },
+  metricSnapshot: { create: jest.fn(), findFirst: jest.fn() },
   contract: { findMany: jest.fn() },
   user: { update: jest.fn() },
 };
@@ -152,14 +152,16 @@ describe('STEP 1H-B1 — Social token exposure containment', () => {
 
   it('public media kit keeps its explicit token-free platform projection', async () => {
     mockPrisma.influencerProfile.findUnique.mockResolvedValue({
-      id: 'profile-1', handle: 'creator', platforms: [{ platformName: 'INSTAGRAM', platformId: 'provider-1' }], tasks: [],
+      id: 'profile-1', handle: 'creator', verifiedMetrics: false,
+      platforms: [{ platformName: 'INSTAGRAM', platformId: 'provider-1', isActive: true }],
+      metricsHistory: [], tasks: [],
     });
     const res = responseMock();
 
     await getPublicProfile({ params: { handle: 'creator' } } as any, res);
 
     const query = mockPrisma.influencerProfile.findUnique.mock.calls[0][0];
-    expect(query.select.platforms.select).toEqual({ platformName: true, platformId: true });
+    expect(query.select.platforms.select).toEqual({ platformName: true, platformId: true, isActive: true });
     expect(JSON.stringify(res.json.mock.calls[0][0])).not.toMatch(/accessToken|refreshToken/);
   });
 

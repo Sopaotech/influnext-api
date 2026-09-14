@@ -205,6 +205,17 @@ describe('Instagram OAuth contract with local PostgreSQL and Redis', () => {
       expect(await integrationPrisma.socialPlatform.count()).toBe(1);
       expect(await integrationPrisma.metricSnapshot.count()).toBe(0);
       expect(log.mock.calls.flat().join(' ')).not.toContain(providerToken);
+
+      const dashboard = await request(app)
+        .get('/v1/dashboard/influencer')
+        .set(sessionHeader(creator.user))
+        .expect(200);
+      expect(dashboard.body.instagramSync).toMatchObject({
+        instagramSyncStatus: 'connected_without_snapshot',
+        hasVerifiedSnapshot: false,
+        lastSnapshotAt: null,
+        metricsSource: 'unavailable',
+      });
     } finally {
       log.mockRestore();
     }
