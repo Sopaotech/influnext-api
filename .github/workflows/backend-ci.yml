@@ -1,0 +1,98 @@
+name: Backend CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://influnext_ci:ci-test-password@127.0.0.1:5433/influnext_test_ci?schema=public
+      DIRECT_URL: postgresql://influnext_ci:ci-test-password@127.0.0.1:5433/influnext_test_ci?schema=public
+      TEST_DATABASE_URL: postgresql://influnext_ci:ci-test-password@127.0.0.1:5433/influnext_test_ci?schema=public
+      TEST_DIRECT_URL: postgresql://influnext_ci:ci-test-password@127.0.0.1:5433/influnext_test_ci?schema=public
+      REDIS_URL: redis://127.0.0.1:6380
+      REDIS_TEST_URL: redis://127.0.0.1:6380
+      JWT_SECRET: ci-jwt-secret-not-for-production
+      ALLOWED_ORIGINS: https://frontend.example.test
+      FRONTEND_URL: https://frontend.example.test
+      SESSION_COOKIE_DOMAIN: .example.test
+      NEXT_PUBLIC_COOKIE_DOMAIN: .example.test
+      ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      SOCIAL_TOKEN_ACTIVE_KEY_ID: test1
+      SOCIAL_TOKEN_KEY_TEST1: 123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: influnext_ci
+          POSTGRES_PASSWORD: ci-test-password
+          POSTGRES_DB: influnext_test_ci
+        ports:
+          - "5433:5432"
+        options: >-
+          --health-cmd "pg_isready -U influnext_ci -d influnext_test_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+      redis:
+        image: redis:8-alpine
+        ports:
+          - "6380:6379"
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Validate Prisma schema
+        run: node node_modules/prisma/build/index.js validate
+
+      - name: Generate Prisma Client
+        run: node node_modules/prisma/build/index.js generate
+
+      - name: Typecheck backend
+        run: node node_modules/typescript/bin/tsc --noEmit
+
+      # Explicit path separator handling keeps integration suites out of the
+      # unit job on Windows and Linux runners alike.
+      - name: Run unit tests
+        run: node node_modules/jest/bin/jest.js --runInBand --silent --testPathIgnorePatterns='tests[\\/]integration'
+
+      # Each versioned runner validates local test URLs and applies only the
+      # existing versioned migration to this ephemeral PostgreSQL service.
+      - name: Run PostgreSQL integration tests
+        run: npm run test:integration
+
+      - name: Run HTTP and lifecycle integration tests
+        run: npm run test:integration:http
+
+      - name: Run Redis and BullMQ integration tests
+        run: npm run test:integration:redis
+
+      - name: Run application worker integration tests
+        run: npm run test:integration:workers
+
+      - name: Run scheduler integration tests
+        run: npm run test:integration:scheduler
+
+      # Frontend typecheck is deliberately excluded: its 14 known baseline
+      # errors require a dedicated remediation step before frontend CI is gated.
