@@ -113,15 +113,13 @@ export class SocialAuthController {
         const expiresIn = tokenResult.expiresIn || 5184000;
         expiresAt = new Date(Date.now() + expiresIn * 1000);
 
-        try {
-          const profileData = await InstagramService.fetchProfileData(accessToken);
-          username = profileData.username || `ig_user_${platformId}`;
-          instagramFollowers = profileData.followers_count || 0;
-          instagramProfilePicture = profileData.profile_picture_url || null;
-        } catch (profileErr) {
-          console.warn('[INSTAGRAM] Falha ao buscar perfil no callback social:', sanitizeProviderError(profileErr));
-          username = `ig_user_${platformId}`;
-        }
+        // A connected account must be backed by a confirmed provider profile.
+        // Persisting an active connection after this lookup fails would leave the
+        // creator with a misleading "connected" status and no verified data.
+        const profileData = await InstagramService.fetchProfileData(accessToken);
+        username = profileData.username || `ig_user_${platformId}`;
+        instagramFollowers = profileData.followers_count || 0;
+        instagramProfilePicture = profileData.profile_picture_url || null;
       } else if (platform === 'tiktok') {
         const tokenResponse = await axios.post('https://open.tiktokapis.com/v2/oauth/token/', new URLSearchParams({
           client_key: process.env.TIKTOK_CLIENT_KEY!,

@@ -76,6 +76,10 @@ try {
     JWT_SECRET: randomBytes(32).toString('hex'),
     ALLOWED_ORIGINS: '',
     FRONTEND_URL: 'https://frontend.example.test',
+    INSTAGRAM_CLIENT_ID: 'test-instagram-client',
+    INSTAGRAM_CLIENT_SECRET: 'test-instagram-client-secret',
+    SOCIAL_TOKEN_ACTIVE_KEY_ID: 'test',
+    SOCIAL_TOKEN_KEY_TEST: randomBytes(32).toString('hex'),
   };
 
   run(process.execPath, [
@@ -92,6 +96,7 @@ try {
     path.join('tests', 'integration', 'http-runtime.integration.test.ts'),
     path.join('tests', 'integration', 'lifecycle.integration.test.ts'),
     path.join('tests', 'integration', 'readiness.integration.test.ts'),
+    path.join('tests', 'integration', 'instagram-oauth-contract.integration.test.ts'),
   ], testEnvironment);
 } catch (error) {
   console.error('[http-integration-test-harness] blocked:', error instanceof Error ? error.message : 'unknown error');

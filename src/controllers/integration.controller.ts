@@ -87,16 +87,12 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
     instagramBusinessId = tokenResponse.platformId; // ID do usuário Instagram (Creator)
     assertOAuthIdentity(accessToken, instagramBusinessId);
 
-    // Buscar dados do perfil diretamente via Instagram Creator API
-    try {
-      const profileData = await InstagramService.fetchProfileData(accessToken);
-      instagramUsername = profileData.username;
-      instagramFollowers = profileData.followers_count || 0;
-      instagramProfilePicture = profileData.profile_picture_url || null;
-    } catch (profileErr) {
-      console.warn('[INSTAGRAM] Falha ao buscar detalhes do perfil:', sanitizeProviderError(profileErr));
-      instagramUsername = null;
-    }
+    // Do not persist an active connection without a confirmed provider profile.
+    // The outer callback handler returns the existing safe error redirect.
+    const profileData = await InstagramService.fetchProfileData(accessToken);
+    instagramUsername = profileData.username;
+    instagramFollowers = profileData.followers_count || 0;
+    instagramProfilePicture = profileData.profile_picture_url || null;
 
     const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
 
