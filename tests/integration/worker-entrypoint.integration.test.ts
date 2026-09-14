@@ -6,8 +6,12 @@ const mockRedisConnect = jest.fn();
 const mockRedisQuit = jest.fn();
 const mockNotificationClose = jest.fn();
 const mockCleanupClose = jest.fn();
+const mockTokenRenewalClose = jest.fn();
+const mockPostAnalyzerClose = jest.fn();
 const mockNotificationReady = jest.fn();
 const mockCleanupReady = jest.fn();
+const mockTokenRenewalReady = jest.fn();
+const mockPostAnalyzerReady = jest.fn();
 const mockStartNotificationWorker = jest.fn(() => ({
   close: mockNotificationClose,
   waitUntilReady: mockNotificationReady,
@@ -16,9 +20,15 @@ const mockStartCleanupWorker = jest.fn(() => ({
   close: mockCleanupClose,
   waitUntilReady: mockCleanupReady,
 }));
+const mockStartTokenRenewalWorker = jest.fn(() => ({
+  close: mockTokenRenewalClose,
+  waitUntilReady: mockTokenRenewalReady,
+}));
+const mockStartPostAnalyzerWorker = jest.fn(() => ({
+  close: mockPostAnalyzerClose,
+  waitUntilReady: mockPostAnalyzerReady,
+}));
 const mockSchedulerImport = jest.fn();
-const mockTokenRenewalImport = jest.fn();
-const mockPostAnalyzerImport = jest.fn();
 const mockPushDelivery = jest.fn();
 
 jest.mock('../../src/lib/prisma', () => ({
@@ -55,13 +65,11 @@ jest.mock('../../src/queues/token-renewal.queue', () => {
 });
 
 jest.mock('../../src/workers/token-renewal.worker', () => {
-  mockTokenRenewalImport();
-  return {};
+  return { startTokenRenewalWorker: mockStartTokenRenewalWorker };
 });
 
 jest.mock('../../src/workers/post-analyzer.worker', () => {
-  mockPostAnalyzerImport();
-  return {};
+  return { startPostAnalyzerWorker: mockStartPostAnalyzerWorker };
 });
 
 jest.mock('../../src/services/push-notification.service', () => ({
@@ -99,6 +107,14 @@ describe('worker process entrypoint integration', () => {
       close: mockCleanupClose,
       waitUntilReady: mockCleanupReady,
     });
+    mockStartTokenRenewalWorker.mockReturnValue({
+      close: mockTokenRenewalClose,
+      waitUntilReady: mockTokenRenewalReady,
+    });
+    mockStartPostAnalyzerWorker.mockReturnValue({
+      close: mockPostAnalyzerClose,
+      waitUntilReady: mockPostAnalyzerReady,
+    });
     mockRedisConnect.mockImplementation(async () => {
       mockedRedisConnection.status = 'ready';
     });
@@ -110,13 +126,13 @@ describe('worker process entrypoint integration', () => {
     process.env.REDIS_URL = originalRedisUrl;
   });
 
-  it('imports without opening HTTP, workers, schedulers, or provider calls', () => {
+  it('imports without opening HTTP, starting workers, schedulers, or provider calls', () => {
     expect(listenSpy).not.toHaveBeenCalled();
     expect(mockStartNotificationWorker).not.toHaveBeenCalled();
     expect(mockStartCleanupWorker).not.toHaveBeenCalled();
     expect(mockSchedulerImport).not.toHaveBeenCalled();
-    expect(mockTokenRenewalImport).not.toHaveBeenCalled();
-    expect(mockPostAnalyzerImport).not.toHaveBeenCalled();
+    expect(mockStartTokenRenewalWorker).not.toHaveBeenCalled();
+    expect(mockStartPostAnalyzerWorker).not.toHaveBeenCalled();
     expect(mockPushDelivery).not.toHaveBeenCalled();
   });
 
@@ -135,18 +151,22 @@ describe('worker process entrypoint integration', () => {
     expect(mockRedisConnect).toHaveBeenCalledTimes(1);
     expect(mockStartNotificationWorker).toHaveBeenCalledTimes(1);
     expect(mockStartCleanupWorker).toHaveBeenCalledTimes(1);
+    expect(mockStartTokenRenewalWorker).toHaveBeenCalledTimes(1);
+    expect(mockStartPostAnalyzerWorker).toHaveBeenCalledTimes(1);
     expect(mockNotificationReady).toHaveBeenCalledTimes(1);
     expect(mockCleanupReady).toHaveBeenCalledTimes(1);
+    expect(mockTokenRenewalReady).toHaveBeenCalledTimes(1);
+    expect(mockPostAnalyzerReady).toHaveBeenCalledTimes(1);
     expect(listenSpy).not.toHaveBeenCalled();
     expect(mockSchedulerImport).not.toHaveBeenCalled();
-    expect(mockTokenRenewalImport).not.toHaveBeenCalled();
-    expect(mockPostAnalyzerImport).not.toHaveBeenCalled();
     expect(mockPushDelivery).not.toHaveBeenCalled();
 
     await runtime.shutdown();
 
     expect(mockNotificationClose).toHaveBeenCalledTimes(1);
     expect(mockCleanupClose).toHaveBeenCalledTimes(1);
+    expect(mockTokenRenewalClose).toHaveBeenCalledTimes(1);
+    expect(mockPostAnalyzerClose).toHaveBeenCalledTimes(1);
     expect(mockRedisQuit).toHaveBeenCalledTimes(1);
     expect(mockPrismaDisconnect).toHaveBeenCalledTimes(1);
   });

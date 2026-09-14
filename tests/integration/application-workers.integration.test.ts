@@ -11,9 +11,21 @@ import {
 } from '../helpers/postgres-integration';
 
 const mockSendPushNotification = jest.fn();
+const mockTikTokRefresh = jest.fn();
+const mockInstagramRefresh = jest.fn();
+const mockCalculateAndPersist = jest.fn();
 
 jest.mock('../../src/services/push-notification.service', () => ({
   sendPushNotification: mockSendPushNotification,
+}));
+jest.mock('../../src/services/tiktok.service', () => ({
+  TikTokService: { refreshAccessToken: mockTikTokRefresh },
+}));
+jest.mock('../../src/services/instagram.service', () => ({
+  InstagramService: { refreshLongLivedToken: mockInstagramRefresh },
+}));
+jest.mock('../../src/services/scoring.service', () => ({
+  ScoringService: { calculateAndPersist: mockCalculateAndPersist },
 }));
 
 import {
@@ -26,7 +38,18 @@ import {
   createCleanupWorker,
   processCleanup,
 } from '../../src/workers/cleanup.worker';
+import {
+  createTokenRenewalWorker,
+  processTokenRenewal,
+  tokenRenewalWorker,
+} from '../../src/workers/token-renewal.worker';
+import {
+  createPostAnalyzerWorker,
+  postAnalyzerWorker,
+  processPostAnalysis,
+} from '../../src/workers/post-analyzer.worker';
 import { prisma } from '../../src/lib/prisma';
+import { decryptSocialToken, encryptSocialToken, isEncryptedSocialToken } from '../../src/utils/social-token-crypto';
 
 let harness: RedisBullMqIntegrationHarness | undefined;
 
@@ -62,9 +85,11 @@ afterAll(async () => {
 });
 
 describe('controlled application worker integration', () => {
-  it('does not auto-start notification or cleanup workers in test mode', () => {
+  it('does not auto-start application workers in test mode', () => {
     expect(notificationWorker).toBeUndefined();
     expect(cleanupWorker).toBeUndefined();
+    expect(tokenRenewalWorker).toBeUndefined();
+    expect(postAnalyzerWorker).toBeUndefined();
   });
 
   it('processes a notification job with the real worker against local PostgreSQL and mocked push delivery', async () => {
@@ -138,5 +163,141 @@ describe('controlled application worker integration', () => {
       .resolves.toBeNull();
     await expect(integrationPrisma.trendReference.findUnique({ where: { id: activeReference.id } }))
       .resolves.toMatchObject({ id: activeReference.id });
+  });
+
+  it('renews an encrypted TikTok token through a controlled worker with a mocked provider', async () => {
+    const user = await integrationPrisma.user.create({
+      data: { email: fakeEmail(), passwordHash: 'worker-integration-hash', role: 'INFLUENCER' },
+    });
+    const influencer = await integrationPrisma.influencerProfile.create({
+      data: { userId: user.id, handle: fakeHandle() },
+    });
+    const oldRefreshToken = 'fake-tiktok-refresh-token';
+    const platform = await integrationPrisma.socialPlatform.create({
+      data: {
+        influencerId: influencer.id,
+        platformName: 'TIKTOK',
+        platformId: ['tiktok', randomUUID()].join('-'),
+        accessToken: encryptSocialToken('fake-old-access-token', {
+          influencerId: influencer.id, platformName: 'TIKTOK', field: 'accessToken',
+        }),
+        refreshToken: encryptSocialToken(oldRefreshToken, {
+          influencerId: influencer.id, platformName: 'TIKTOK', field: 'refreshToken',
+        }),
+        expiresAt: new Date(Date.now() - 1_000),
+      },
+    });
+    mockTikTokRefresh.mockResolvedValue({
+      accessToken: 'fake-renewed-access-token',
+      refreshToken: 'fake-renewed-refresh-token',
+      refreshTokenRotated: true,
+      expiresIn: 3_600,
+    });
+
+    harness = await createRedisBullMqIntegrationHarness(processTokenRenewal, {
+      queueName: 'token-renewal-tasks',
+      workerFactory: createTokenRenewalWorker,
+    });
+    const job = await harness.queue.add('daily-token-renewal', {});
+    await expect(job.waitUntilFinished(harness.events, 5_000)).resolves.toBeNull();
+
+    const renewed = await integrationPrisma.socialPlatform.findUniqueOrThrow({ where: { id: platform.id } });
+    expect(mockTikTokRefresh).toHaveBeenCalledWith(oldRefreshToken);
+    expect(isEncryptedSocialToken(renewed.accessToken)).toBe(true);
+    expect(isEncryptedSocialToken(renewed.refreshToken!)).toBe(true);
+    expect(decryptSocialToken(renewed.accessToken, {
+      influencerId: influencer.id, platformName: 'TIKTOK', field: 'accessToken',
+    }).value).toBe('fake-renewed-access-token');
+    expect(decryptSocialToken(renewed.refreshToken!, {
+      influencerId: influencer.id, platformName: 'TIKTOK', field: 'refreshToken',
+    }).value).toBe('fake-renewed-refresh-token');
+  });
+
+  it('contains a mocked TikTok provider failure without logging its fake token', async () => {
+    const user = await integrationPrisma.user.create({
+      data: { email: fakeEmail(), passwordHash: 'worker-integration-hash', role: 'INFLUENCER' },
+    });
+    const influencer = await integrationPrisma.influencerProfile.create({
+      data: { userId: user.id, handle: fakeHandle() },
+    });
+    const leakedFakeToken = 'fake-refresh-token-must-not-appear';
+    await integrationPrisma.socialPlatform.create({
+      data: {
+        influencerId: influencer.id,
+        platformName: 'TIKTOK',
+        platformId: ['tiktok', randomUUID()].join('-'),
+        accessToken: encryptSocialToken('fake-old-access-token', {
+          influencerId: influencer.id, platformName: 'TIKTOK', field: 'accessToken',
+        }),
+        refreshToken: encryptSocialToken(leakedFakeToken, {
+          influencerId: influencer.id, platformName: 'TIKTOK', field: 'refreshToken',
+        }),
+        expiresAt: new Date(Date.now() - 1_000),
+      },
+    });
+    mockTikTokRefresh.mockRejectedValue(new Error('refresh_token=' + leakedFakeToken));
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    harness = await createRedisBullMqIntegrationHarness(processTokenRenewal, {
+      queueName: 'token-renewal-tasks',
+      workerFactory: createTokenRenewalWorker,
+    });
+    const job = await harness.queue.add('daily-token-renewal', {});
+    await expect(job.waitUntilFinished(harness.events, 5_000)).resolves.toBeNull();
+
+    expect(mockTikTokRefresh).toHaveBeenCalledWith(leakedFakeToken);
+    expect(errorSpy.mock.calls.flat().join(' ')).not.toContain(leakedFakeToken);
+    errorSpy.mockRestore();
+  });
+
+  it('processes post analysis with the real worker, local PostgreSQL, and mocked scoring', async () => {
+    const user = await integrationPrisma.user.create({
+      data: { email: fakeEmail(), passwordHash: 'worker-integration-hash', role: 'INFLUENCER' },
+    });
+    const influencer = await integrationPrisma.influencerProfile.create({
+      data: { userId: user.id, handle: fakeHandle() },
+    });
+    const task = await integrationPrisma.task.create({
+      data: { influencerId: influencer.id, title: 'Controlled post analysis task' },
+    });
+
+    harness = await createRedisBullMqIntegrationHarness(processPostAnalysis, {
+      queueName: 'post-analyzer',
+      workerFactory: createPostAnalyzerWorker,
+    });
+    const job = await harness.queue.add('analyze-post', {
+      taskId: task.id,
+      proofUrl: 'https://example.test/fake-proof',
+    });
+    await expect(job.waitUntilFinished(harness.events, 5_000)).resolves.toBeNull();
+
+    await expect(integrationPrisma.task.findUniqueOrThrow({ where: { id: task.id } }))
+      .resolves.toMatchObject({ performanceMultiplier: 1 });
+    expect(mockCalculateAndPersist).toHaveBeenCalledWith(influencer.id);
+  });
+
+  it('records a generic failed post analysis job without exposing its proof URL', async () => {
+    const user = await integrationPrisma.user.create({
+      data: { email: fakeEmail(), passwordHash: 'worker-integration-hash', role: 'INFLUENCER' },
+    });
+    const influencer = await integrationPrisma.influencerProfile.create({
+      data: { userId: user.id, handle: fakeHandle() },
+    });
+    const task = await integrationPrisma.task.create({
+      data: { influencerId: influencer.id, title: 'Controlled failing post analysis task' },
+    });
+    const proofUrl = 'https://example.test/private-proof-must-not-appear';
+    mockCalculateAndPersist.mockRejectedValue(new Error('provider failure'));
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    harness = await createRedisBullMqIntegrationHarness(processPostAnalysis, {
+      queueName: 'post-analyzer',
+      workerFactory: createPostAnalyzerWorker,
+    });
+    const job = await harness.queue.add('analyze-post', { taskId: task.id, proofUrl });
+    await expect(job.waitUntilFinished(harness.events, 5_000)).rejects.toThrow('Post analysis job failed.');
+
+    expect(errorSpy.mock.calls.flat().join(' ')).not.toContain(proofUrl);
+    errorSpy.mockRestore();
   });
 });

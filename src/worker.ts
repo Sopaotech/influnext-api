@@ -3,6 +3,8 @@ import { prisma } from './lib/prisma';
 import { redisConnection } from './lib/redis';
 import { startCleanupWorker } from './workers/cleanup.worker';
 import { startNotificationWorker } from './workers/notification.worker';
+import { startPostAnalyzerWorker } from './workers/post-analyzer.worker';
+import { startTokenRenewalWorker } from './workers/token-renewal.worker';
 
 export interface WorkerProcessRuntime {
   workers: Worker[];
@@ -30,8 +32,8 @@ async function closeWorkerResources(workers: Worker[]): Promise<void> {
 }
 
 /**
- * Starts only the explicitly supported application workers. It deliberately
- * does not import the HTTP app, scheduler queues, token renewal, or analyzer.
+ * Starts every application worker explicitly. It deliberately does not import
+ * the HTTP app or scheduler queues.
  */
 export async function startWorkerProcess(): Promise<WorkerProcessRuntime> {
   assertWorkerRuntimeConfiguration();
@@ -49,7 +51,12 @@ export async function startWorkerProcess(): Promise<WorkerProcessRuntime> {
       throw new Error('Redis is not ready for application workers.');
     }
 
-    workers.push(startNotificationWorker(), startCleanupWorker());
+    workers.push(
+      startNotificationWorker(),
+      startCleanupWorker(),
+      startTokenRenewalWorker(),
+      startPostAnalyzerWorker(),
+    );
     await Promise.all(workers.map(worker => worker.waitUntilReady()));
 
     let stopped = false;

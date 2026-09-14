@@ -1,8 +1,6 @@
 import express from 'express';
 
 const mockSchedulerImport = jest.fn();
-const mockTokenRenewalImport = jest.fn();
-const mockPostAnalyzerImport = jest.fn();
 const mockPushDelivery = jest.fn();
 
 jest.mock('../../src/queues/cleanup.queue', () => {
@@ -12,16 +10,6 @@ jest.mock('../../src/queues/cleanup.queue', () => {
 
 jest.mock('../../src/queues/token-renewal.queue', () => {
   mockSchedulerImport();
-  return {};
-});
-
-jest.mock('../../src/workers/token-renewal.worker', () => {
-  mockTokenRenewalImport();
-  return {};
-});
-
-jest.mock('../../src/workers/post-analyzer.worker', () => {
-  mockPostAnalyzerImport();
   return {};
 });
 
@@ -60,11 +48,9 @@ describe('worker process local runtime smoke', () => {
 
     const runtime = await startWorkerProcess();
 
-    expect(runtime.workers).toHaveLength(2);
+    expect(runtime.workers).toHaveLength(4);
     expect(listenSpy).not.toHaveBeenCalled();
     expect(mockSchedulerImport).not.toHaveBeenCalled();
-    expect(mockTokenRenewalImport).not.toHaveBeenCalled();
-    expect(mockPostAnalyzerImport).not.toHaveBeenCalled();
     expect(mockPushDelivery).not.toHaveBeenCalled();
 
     await runtime.shutdown();

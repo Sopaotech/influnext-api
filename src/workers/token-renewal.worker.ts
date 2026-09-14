@@ -1,4 +1,4 @@
-import { Worker } from 'bullmq';
+import { ConnectionOptions, Job, Worker, WorkerOptions } from 'bullmq';
 import { prisma } from '../lib/prisma';
 import { InstagramService } from '../services/instagram.service';
 import { TikTokService } from '../services/tiktok.service';
@@ -154,12 +154,27 @@ export const runTokenRenewalLogic = async () => {
   }
 };
 
-export const tokenRenewalWorker = new Worker(
-  'token-renewal-tasks',
-  async (job) => {
-    if (job.name === 'daily-token-renewal') {
-      await runTokenRenewalLogic();
-    }
-  },
-  { connection: redisConnection }
-);
+export async function processTokenRenewal(job: Job): Promise<void> {
+  if (job.name === 'daily-token-renewal') {
+    await runTokenRenewalLogic();
+  }
+}
+
+export type ControlledTokenRenewalWorkerOptions = Pick<WorkerOptions, 'prefix'> & {
+  connection?: ConnectionOptions;
+};
+
+/** Creates a worker without starting one merely by importing this module. */
+export function createTokenRenewalWorker(options: ControlledTokenRenewalWorkerOptions = {}): Worker {
+  return new Worker('token-renewal-tasks', processTokenRenewal, {
+    connection: options.connection || redisConnection,
+    prefix: options.prefix,
+  });
+}
+
+export let tokenRenewalWorker: Worker | undefined;
+
+export function startTokenRenewalWorker(): Worker {
+  tokenRenewalWorker ||= createTokenRenewalWorker();
+  return tokenRenewalWorker;
+}

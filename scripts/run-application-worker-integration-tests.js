@@ -1,4 +1,5 @@
 const { spawnSync } = require('child_process');
+const { randomBytes } = require('crypto');
 const path = require('path');
 const dotenv = require('dotenv');
 
@@ -71,6 +72,8 @@ try {
     INTEGRATION_DATABASE_URL: databaseUrl.toString(),
     INTEGRATION_DIRECT_URL: directUrl.toString(),
     REDIS_URL: redisUrl.toString(),
+    SOCIAL_TOKEN_ACTIVE_KEY_ID: 'test1',
+    SOCIAL_TOKEN_KEY_TEST1: randomBytes(32).toString('hex'),
   };
 
   run(process.execPath, [
