@@ -7,6 +7,11 @@ import { prisma } from '../lib/prisma';
  * Rastreia rotas da API (/v1/) mas não assets estáticos ou arquivos.
  */
 export const trackPageView = (req: Request, _res: Response, next: NextFunction): void => {
+  // Preserve the legacy /v1/health endpoint without generating PageView writes.
+  if (req.path === '/v1/health') {
+    next();
+    return;
+  }
   // OAuth callbacks must reach the security boundary before any Prisma write.
   if (/^\/v1\/(?:auth\/social\/callback(?:\/|$)|integrations\/[^/]+\/callback(?:\/|$))/i.test(req.path)) {
     next();

@@ -1,4 +1,5 @@
 const { spawnSync } = require('child_process');
+const { randomBytes } = require('crypto');
 const path = require('path');
 const dotenv = require('dotenv');
 
@@ -24,6 +25,24 @@ function assertSafeTestDatabaseUrl(name) {
   return url;
 }
 
+function assertSafeRedisTestUrl() {
+  const value = process.env.REDIS_TEST_URL;
+  if (!value) {
+    throw new Error('REDIS_TEST_URL is required for PostgreSQL HTTP integration tests.');
+  }
+
+  const url = new URL(value);
+  const isRedis = url.protocol === 'redis:';
+  const isLocalHost = ['127.0.0.1', 'localhost', '::1'].includes(url.hostname);
+  const isTestPort = (url.port || '6379') === '6380';
+
+  if (!isRedis || !isLocalHost || !isTestPort) {
+    throw new Error('PostgreSQL HTTP integration tests require local Redis on port 6380.');
+  }
+
+  return url;
+}
+
 function run(command, args, environment) {
   const result = spawnSync(command, args, {
     cwd: process.cwd(),
@@ -39,6 +58,7 @@ function run(command, args, environment) {
 try {
   const databaseUrl = assertSafeTestDatabaseUrl('TEST_DATABASE_URL');
   const directUrl = assertSafeTestDatabaseUrl('TEST_DIRECT_URL');
+  const redisUrl = assertSafeRedisTestUrl();
 
   if (databaseUrl.pathname !== directUrl.pathname) {
     throw new Error('TEST_DATABASE_URL and TEST_DIRECT_URL must target the same database.');
@@ -51,6 +71,11 @@ try {
     DIRECT_URL: directUrl.toString(),
     INTEGRATION_DATABASE_URL: databaseUrl.toString(),
     INTEGRATION_DIRECT_URL: directUrl.toString(),
+    REDIS_TEST_URL: redisUrl.toString(),
+    REDIS_URL: redisUrl.toString(),
+    JWT_SECRET: randomBytes(32).toString('hex'),
+    ALLOWED_ORIGINS: '',
+    FRONTEND_URL: 'https://frontend.example.test',
   };
 
   run(process.execPath, [
@@ -65,6 +90,7 @@ try {
     '--runTestsByPath',
     path.join('tests', 'integration', 'http.integration.test.ts'),
     path.join('tests', 'integration', 'lifecycle.integration.test.ts'),
+    path.join('tests', 'integration', 'readiness.integration.test.ts'),
   ], testEnvironment);
 } catch (error) {
   console.error('[http-integration-test-harness] blocked:', error instanceof Error ? error.message : 'unknown error');

@@ -8,6 +8,7 @@ import { trackPageView } from './middlewares/analytics.middleware';
 import { helmetSecurity, globalRateLimiter, responseHardening } from './middlewares/security-hardening.middleware';
 import { getAllowedOrigins } from './lib/origins';
 import { protectCookieSessionFromCsrf } from './middlewares/csrf.middleware';
+import { getLivenessPayload, getRuntimeReadiness } from './runtime/readiness';
 
 dotenv.config();
 
@@ -20,6 +21,27 @@ export function createApp(): express.Express {
 
   app.use(helmetSecurity);
   app.use(responseHardening);
+
+  const sendLiveness = (_req: express.Request, res: express.Response) => {
+    res.status(200).json(getLivenessPayload());
+  };
+
+  // Health probes must remain independent from rate limiting, analytics, and
+  // application dependencies so they accurately represent process liveness.
+  app.get('/health', sendLiveness);
+  app.get('/api/health', sendLiveness);
+  app.get('/ready', async (_req, res) => {
+    try {
+      const readiness = await getRuntimeReadiness();
+      res.status(readiness.status === 'ok' ? 200 : 503).json(readiness);
+    } catch {
+      res.status(503).json({
+        status: 'failed',
+        checks: { config: 'failed', database: 'failed', redis: 'failed' },
+      });
+    }
+  });
+
   app.use(globalRateLimiter);
 
   const allowedOrigins = getAllowedOrigins();
@@ -57,10 +79,6 @@ export function createApp(): express.Express {
   app.get('/', (_req, res) => {
     res.setHeader('Content-Type', 'text/plain');
     res.status(200).send('🚀 API ONLINE');
-  });
-
-  app.get('/health', (_req, res) => {
-    res.status(200).json({ status: 'online', timestamp: new Date().toISOString() });
   });
 
   app.use(trackPageView);

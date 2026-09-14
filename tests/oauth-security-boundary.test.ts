@@ -396,11 +396,11 @@ describe('STEP 1F-C — OAuth security boundary', () => {
     noEffects();
   });
 
-  it('preserves analytics outside OAuth callback paths', async () => {
+  it('preserves analytics for ordinary routes while excluding health probes', async () => {
     const server = express();
     server.use(trackPageView);
-    server.get('/v1/health', (_req, res) => res.json({ status: 'OK' }));
-    expect((await request(server).get('/v1/health')).status).toBe(200);
+    server.get('/v1/analytics-check', (_req, res) => res.json({ status: 'OK' }));
+    expect((await request(server).get('/v1/analytics-check')).status).toBe(200);
     expect(mockPrisma.pageView.create).toHaveBeenCalledTimes(1);
   });
 

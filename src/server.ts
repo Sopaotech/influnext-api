@@ -56,7 +56,7 @@ export async function startHttpServer() {
     });
   } catch (error: any) {
     console.error('❌ FALHA CRÍTICA NO STARTUP:', error);
-    // Preserve the legacy HTTP availability behavior while readiness remains future work.
+    // Preserve legacy HTTP availability while /ready reports unavailable dependencies.
     return app.listen(port, () => {
       console.log(`⚠️ Servidor subiu com ERROS (Port ${port}). Verifique os logs.`);
     });
