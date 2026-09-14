@@ -1,36 +1,84 @@
-version: '3.8'
+name: influnext-local
+
+x-app-environment: &app-environment
+  NODE_ENV: development
+  DATABASE_URL: postgresql://influnext_app:${POSTGRES_PASSWORD:-influnext_local_only}@postgres:5432/influnext_local?schema=public
+  # DIRECT_URL is reserved for controlled, manual migration commands only.
+  DIRECT_URL: postgresql://influnext_app:${POSTGRES_PASSWORD:-influnext_local_only}@postgres:5432/influnext_local?schema=public
+  REDIS_URL: redis://redis:6379
+  JWT_SECRET: ${JWT_SECRET:-local-development-jwt-not-for-production}
+  ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
+  FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+  SOCIAL_TOKEN_ACTIVE_KEY_ID: ${SOCIAL_TOKEN_ACTIVE_KEY_ID:-}
+  SOCIAL_TOKEN_KEY_V1: ${SOCIAL_TOKEN_KEY_V1:-}
+  ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+
+x-app-common: &app-common
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: influnext-api:local
+  environment: *app-environment
+
 services:
   api:
-    build: .
+    <<: *app-common
+    command: ["npm", "start"]
     ports:
-      - "4000:4000"
-    environment:
-      - PORT=4000
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/influnext?schema=public
-      - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=${JWT_SECRET}
+      - "127.0.0.1:4000:4000"
     depends_on:
-      - db
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4000/health >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
 
-  db:
-    image: postgres:15-alpine
+  worker:
+    <<: *app-common
+    command: ["npm", "run", "start:worker"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  scheduler:
+    <<: *app-common
+    command: ["npm", "run", "start:scheduler"]
+    depends_on:
+      redis:
+        condition: service_healthy
+    # Keep exactly one local scheduler; do not scale this service.
+
+  postgres:
+    image: postgres:17-alpine
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=influnext
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: influnext_app
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-influnext_local_only}
+      POSTGRES_DB: influnext_local
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - influnext_local_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U influnext_app -d influnext_local"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
   redis:
-    image: redis:alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
+    image: redis:8-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
 volumes:
-  postgres_data:
-  redis_data:
+  influnext_local_postgres_data:
+
+# Migrations are deliberately excluded from all service commands. Apply
+# `prisma migrate deploy` manually and only as a controlled local operation.

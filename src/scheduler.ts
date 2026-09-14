@@ -14,6 +14,38 @@ function assertSchedulerRuntimeConfiguration(): void {
   }
 }
 
+async function waitForSchedulerRedisReady(): Promise<void> {
+  if (redisConnection.status === 'wait') {
+    await redisConnection.connect();
+  }
+
+  if (redisConnection.status === 'ready') {
+    return;
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const onReady = () => {
+      cleanup();
+      resolve();
+    };
+    const onError = (error: Error) => {
+      cleanup();
+      reject(error);
+    };
+    const cleanup = () => {
+      redisConnection.removeListener('ready', onReady);
+      redisConnection.removeListener('error', onError);
+    };
+
+    redisConnection.once('ready', onReady);
+    redisConnection.once('error', onError);
+
+    if (redisConnection.status === 'ready') {
+      onReady();
+    }
+  });
+}
+
 async function closeSchedulerResources(): Promise<void> {
   await closeApplicationScheduleQueues();
 
@@ -32,13 +64,7 @@ export async function startSchedulerProcess(): Promise<SchedulerProcessRuntime> 
   assertSchedulerRuntimeConfiguration();
 
   try {
-    if (redisConnection.status === 'wait') {
-      await redisConnection.connect();
-    }
-
-    if (redisConnection.status !== 'ready') {
-      throw new Error('Redis is not ready for scheduler registration.');
-    }
+    await waitForSchedulerRedisReady();
 
     await registerApplicationSchedules();
 
