@@ -46,7 +46,7 @@ export function createNotificationWorker(options: ControlledWorkerOptions = {}):
 }
 
 // Runtime entrypoints opt in explicitly so importing this module remains safe.
-// The legacy HTTP runtime calls startNotificationWorker() to preserve its current behavior.
+// The dedicated worker runtime calls startNotificationWorker().
 export let notificationWorker: Worker | undefined;
 
 export function startNotificationWorker(): Worker {

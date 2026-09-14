@@ -20,24 +20,9 @@ function registerRuntimeProcessHandlers(): void {
 }
 
 /**
- * Temporary compatibility path: direct HTTP startup still owns workers and
- * schedules until their dedicated runtime entrypoints are introduced.
+ * Starts the HTTP runtime only. Background workers and recurring schedules
+ * must be started by their dedicated process entrypoints.
  */
-function startLegacyBackgroundRuntime(): void {
-  console.log('🔄 Inicializando workers e crons de background em paralelo...');
-  void Promise.all([
-    import('./workers/notification.worker').then(module => module.startNotificationWorker()),
-    import('./workers/cleanup.worker').then(module => module.startCleanupWorker()),
-    import('./workers/token-renewal.worker'),
-    import('./workers/post-analyzer.worker'),
-    import('./queues/scheduler').then(module => module.registerApplicationSchedules()),
-  ]).then(() => {
-    console.log('✅ Workers e crons de background ativos.');
-  }).catch((workerError: any) => {
-    console.warn('⚠️ Falha ao inicializar workers em background (Redis offline?):', workerError.message || workerError);
-  });
-}
-
 export async function startHttpServer() {
   const port = Number(process.env.PORT) || 4000;
   registerRuntimeProcessHandlers();
@@ -47,8 +32,6 @@ export async function startHttpServer() {
     const { prisma } = await import('./lib/prisma');
     await prisma.$connect();
     console.log('✅ Banco de dados conectado!');
-
-    startLegacyBackgroundRuntime();
 
     return app.listen(port, () => {
       console.log(`🚀 INFLUNEXT ONLINE: Port ${port}`);

@@ -23,7 +23,7 @@ export function createCleanupWorker(options: ControlledWorkerOptions = {}): Work
 }
 
 // Runtime entrypoints opt in explicitly so importing this module remains safe.
-// The legacy HTTP runtime calls startCleanupWorker() to preserve its current behavior.
+// The dedicated worker runtime calls startCleanupWorker().
 export let cleanupWorker: Worker | undefined;
 
 export function startCleanupWorker(): Worker {
