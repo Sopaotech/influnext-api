@@ -161,7 +161,17 @@ describe('STEP 1H-B1 — Social token exposure containment', () => {
     await getPublicProfile({ params: { handle: 'creator' } } as any, res);
 
     const query = mockPrisma.influencerProfile.findUnique.mock.calls[0][0];
-    expect(query.select.platforms.select).toEqual({ platformName: true, platformId: true, isActive: true });
+    expect(query.select.platforms.select).toEqual({
+      platformName: true,
+      platformId: true,
+      isActive: true,
+      lastSyncAttemptAt: true,
+      lastSyncSuccessAt: true,
+      lastSyncFailureAt: true,
+      lastSyncStatus: true,
+      syncFailureCount: true,
+      nextSyncRetryAt: true,
+    });
     expect(JSON.stringify(res.json.mock.calls[0][0])).not.toMatch(/accessToken|refreshToken/);
   });
 

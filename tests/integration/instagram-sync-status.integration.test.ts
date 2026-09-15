@@ -98,8 +98,14 @@ describe('Instagram sync status boundary with local PostgreSQL', () => {
     expect(response.body.instagramSync).toEqual({
       instagramConnectionStatus: 'not_connected',
       instagramSyncStatus: 'not_connected',
+      instagramOperationalSyncStatus: 'not_connected',
       hasVerifiedSnapshot: false,
       lastSnapshotAt: null,
+      lastSyncAttemptAt: null,
+      lastSyncSuccessAt: null,
+      lastSyncFailureAt: null,
+      syncFailureCount: 0,
+      nextSyncRetryAt: null,
       metricsSource: 'unavailable',
       syncWarning: 'Instagram não conectado.',
     });
@@ -121,8 +127,10 @@ describe('Instagram sync status boundary with local PostgreSQL', () => {
     expect(dashboard.body.instagramSync).toMatchObject({
       instagramConnectionStatus: 'connected',
       instagramSyncStatus: 'connected_without_snapshot',
+      instagramOperationalSyncStatus: 'never_synced',
       hasVerifiedSnapshot: false,
       lastSnapshotAt: null,
+      syncFailureCount: 0,
       metricsSource: 'unavailable',
     });
     expect(dashboard.body.profile.verifiedMetrics).toBe(false);
@@ -131,6 +139,7 @@ describe('Instagram sync status boundary with local PostgreSQL', () => {
     expect(publicProfile.body.verifiedMetrics).toBe(false);
     expect(publicProfile.body.instagramSync).toMatchObject({
       instagramSyncStatus: 'connected_without_snapshot',
+      instagramOperationalSyncStatus: 'never_synced',
       hasVerifiedSnapshot: false,
       metricsSource: 'unavailable',
     });
@@ -161,6 +170,7 @@ describe('Instagram sync status boundary with local PostgreSQL', () => {
       .expect(200);
     expect(dashboard.body.instagramSync).toMatchObject({
       instagramSyncStatus: 'connected_with_snapshot',
+      instagramOperationalSyncStatus: 'never_synced',
       hasVerifiedSnapshot: true,
       metricsSource: 'snapshot',
       syncWarning: null,

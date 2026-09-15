@@ -10,6 +10,18 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum SocialSyncStatus {
+  NEVER_SYNCED
+  SYNC_PENDING
+  SYNCING
+  SYNCED
+  PARTIAL
+  NO_RECENT_MEDIA
+  FAILED_RETRYABLE
+  FAILED_RECONNECT_REQUIRED
+  DISABLED
+}
+
 // Nota: SQLite não suporta Enums. Usaremos String com validação em nível de aplicação.
 // As roles serão: "INFLUENCER", "COMPANY", "ADMIN"
 // Os status serão: "DRAFT", "PENDING_PAYMENT", "IN_PROGRESS", "UNDER_REVIEW", "COMPLETED", "DISPUTE"
@@ -191,17 +203,25 @@ model MarketingAnalysis {
 }
 
 model SocialPlatform {
-  id             String    @id @default(uuid())
-  influencerId   String
-  platformName   String // "INSTAGRAM" | "TIKTOK" | "YOUTUBE"
-  platformId     String
-  username       String?
-  profilePicture String?
-  followersCount Int       @default(0)
-  accessToken    String
-  refreshToken   String?
-  expiresAt      DateTime?
-  isActive       Boolean   @default(true)
+  id                 String           @id @default(uuid())
+  influencerId       String
+  platformName       String // "INSTAGRAM" | "TIKTOK" | "YOUTUBE"
+  platformId         String
+  username           String?
+  profilePicture     String?
+  followersCount     Int              @default(0)
+  accessToken        String
+  refreshToken       String?
+  expiresAt          DateTime?
+  isActive           Boolean          @default(true)
+  lastSyncAttemptAt  DateTime?
+  lastSyncSuccessAt  DateTime?
+  lastSyncFailureAt  DateTime?
+  lastSyncStatus     SocialSyncStatus @default(NEVER_SYNCED)
+  lastSyncErrorCode  String?
+  syncFailureCount   Int              @default(0)
+  nextSyncRetryAt    DateTime?
+  syncLeaseExpiresAt DateTime?
 
   influencer InfluencerProfile @relation(fields: [influencerId], references: [id])
 

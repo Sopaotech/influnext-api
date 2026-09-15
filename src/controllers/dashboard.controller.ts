@@ -21,6 +21,12 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
             followersCount: true,
             expiresAt: true,
             isActive: true,
+            lastSyncAttemptAt: true,
+            lastSyncSuccessAt: true,
+            lastSyncFailureAt: true,
+            lastSyncStatus: true,
+            syncFailureCount: true,
+            nextSyncRetryAt: true,
           }
         },
         contracts: {

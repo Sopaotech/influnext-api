@@ -57,7 +57,17 @@ export const getPublicProfile = async (req: Request, res: Response): Promise<voi
         },
         // Buscamos as redes conectadas para mostrar os ícones, sem vazar AccessTokens
         platforms: {
-          select: { platformName: true, platformId: true, isActive: true }
+          select: {
+            platformName: true,
+            platformId: true,
+            isActive: true,
+            lastSyncAttemptAt: true,
+            lastSyncSuccessAt: true,
+            lastSyncFailureAt: true,
+            lastSyncStatus: true,
+            syncFailureCount: true,
+            nextSyncRetryAt: true,
+          }
         },
         // Buscamos as provas de ROI (Tasks da IA concluídas com performance medida)
         tasks: {
