@@ -268,18 +268,15 @@ export class SocialAuthController {
         return;
       }
 
-      // Atualizar handle do perfil se for a primeira conexão
-      if (!profile.handle || profile.handle.startsWith('user_')) {
-        await prisma.influencerProfile.update({
-          where: { id: profile.id },
-          data: { handle: username, verifiedMetrics: true }
-        });
-      } else {
-        await prisma.influencerProfile.update({
-          where: { id: profile.id },
-          data: { verifiedMetrics: true }
-        });
-      }
+      // A conexão Instagram só se torna verificável depois da criação de um snapshot.
+      // Mantemos o handle já escolhido pelo creator; apenas placeholders podem ser preenchidos.
+      await prisma.influencerProfile.update({
+        where: { id: profile.id },
+        data: {
+          ...((!profile.handle || profile.handle.startsWith('user_')) ? { handle: username } : {}),
+          verifiedMetrics: platformName === 'INSTAGRAM' ? false : true,
+        },
+      });
 
       const encryptedAccessToken = encryptSocialToken(accessToken, {
         influencerId: profile.id,

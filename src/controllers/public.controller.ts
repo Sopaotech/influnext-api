@@ -5,6 +5,7 @@ import { calcContractFees } from '../lib/fees';
 import { QuickAlertService } from '../services/quick-alert.service';
 import crypto from 'crypto';
 import { getInstagramSyncStatus } from '../utils/instagram-sync-status';
+import { getInstagramMetricCollection } from '../utils/instagram-metric-collection';
 
 const getFrontendUrl = () => {
   const url = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
@@ -25,6 +26,7 @@ export const getPublicProfile = async (req: Request, res: Response): Promise<voi
         influScore: true,
         scoreClass: true,
         verifiedMetrics: true,
+        insights: true,
         niche: true,
         // Hiper-Localismo: exibido no perfil público
         city: true,
@@ -103,7 +105,11 @@ export const getPublicProfile = async (req: Request, res: Response): Promise<voi
       : 1.0;
 
     const instagramSync = getInstagramSyncStatus(profile.platforms, profile.metricsHistory[0]);
-    const { platforms, metricsHistory, verifiedMetrics: _legacyVerifiedMetrics, ...publicProfile } = profile;
+    const instagramMetricCollection = getInstagramMetricCollection(
+      profile.insights,
+      instagramSync.hasVerifiedSnapshot,
+    );
+    const { platforms, metricsHistory, verifiedMetrics: _legacyVerifiedMetrics, insights: _insights, ...publicProfile } = profile;
 
     res.status(200).json({
       ...publicProfile,
@@ -111,6 +117,7 @@ export const getPublicProfile = async (req: Request, res: Response): Promise<voi
       metricsHistory,
       platforms: platforms.map(({ platformName, platformId }) => ({ platformName, platformId })),
       instagramSync,
+      instagramMetricCollection,
       avgROI: Number(avgROI.toFixed(2))
     });
   } catch (error) {

@@ -20,7 +20,8 @@ jest.mock('../src/lib/prisma', () => ({
     socialPlatform: {
       update: jest.fn().mockResolvedValue({ id: 'sp-1' }),
       upsert: jest.fn().mockResolvedValue({ id: 'sp-1' }),
-      findMany: jest.fn().mockResolvedValue([])
+      findMany: jest.fn().mockResolvedValue([]),
+      findUnique: jest.fn().mockResolvedValue({ isActive: true })
     }
   }
 }));
@@ -46,6 +47,7 @@ describe('Integrações de Redes Sociais Reais (Instagram & TikTok API)', () => 
       Promise.resolve({ id: 'snap-1', ...args.data })
     );
     (prisma.influencerProfile.update as jest.Mock).mockResolvedValue({ id: 'inf-123', handle: 'test_creator' });
+    (prisma.socialPlatform.findUnique as jest.Mock).mockResolvedValue({ isActive: true });
     (prisma.influencerProfile.findUnique as jest.Mock).mockResolvedValue({ id: 'inf-123', handle: 'test_creator' });
     (ScoringService.calculateAndPersist as jest.Mock).mockResolvedValue({ influScore: 85, scoreClass: 'A' });
 
@@ -148,7 +150,7 @@ describe('Integrações de Redes Sociais Reais (Instagram & TikTok API)', () => 
               permalink: 'https://instagram.com/p/1',
               like_count: 2500,
               comments_count: 150,
-              timestamp: '2026-08-01T10:00:00Z'
+              timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
             }
           ]
         }

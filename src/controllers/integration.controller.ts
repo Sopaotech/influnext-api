@@ -133,7 +133,8 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
       
       await prisma.influencerProfile.update({
         where: { id: influencer.id },
-        data: { verifiedMetrics: true }
+        // A conexão não prova métricas por si só; o sync marca este legado após criar snapshot.
+        data: { verifiedMetrics: false }
       });
 
       // Sempre dispara a sincronização de métricas para contas Creator e Business

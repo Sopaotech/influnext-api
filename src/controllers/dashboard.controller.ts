@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { getInstagramSyncStatus } from '../utils/instagram-sync-status';
+import { getInstagramMetricCollection } from '../utils/instagram-metric-collection';
 
 export const getInfluencerDashboard = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -27,7 +28,11 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
           select: { id: true, title: true, budget: true, netAmount: true, escrowStatus: true, createdAt: true, company: { select: { companyName: true } } },
           orderBy: { createdAt: 'desc' }
         },
-        metricsHistory: { take: 30, orderBy: { capturedAt: 'desc' } },
+        metricsHistory: {
+          where: { provider: 'INSTAGRAM' },
+          take: 30,
+          orderBy: { capturedAt: 'desc' },
+        },
         tasks: { where: { isDone: false }, orderBy: { scheduledDate: 'asc' } },
         trendVault: { where: { expiresAt: { gte: new Date() } }, orderBy: { createdAt: 'desc' } },
         aiAnalyses: { take: 1, orderBy: { generatedAt: 'desc' } },
@@ -73,6 +78,10 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
       select: { capturedAt: true },
     });
     const instagramSync = getInstagramSyncStatus(profile.platforms, latestInstagramSnapshot);
+    const instagramMetricCollection = getInstagramMetricCollection(
+      profile.insights,
+      instagramSync.hasVerifiedSnapshot,
+    );
 
     // Cálculo de Progresso de Perfil (Fase 1 do Roadmap)
     let progress = 0;
@@ -143,6 +152,7 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
       trendVault: profile.trendVault,
       metricsHistory: profile.metricsHistory,
       instagramSync,
+      instagramMetricCollection,
       analysis: profile.aiAnalyses[0] || null,
       rateCard: profile.rateCards,
     });

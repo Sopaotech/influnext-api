@@ -152,6 +152,17 @@ export class InstagramService {
     console.log(`[INSTAGRAM_SYNC] Iniciando sincronização para influenciador: ${influencerId}, IG User ID: ${igUserId}`);
 
     try {
+      const connectedPlatform = await prisma.socialPlatform.findUnique({
+        where: {
+          influencerId_platformName: { influencerId, platformName: 'INSTAGRAM' },
+        },
+        select: { isActive: true },
+      });
+
+      if (!connectedPlatform?.isActive) {
+        throw new Error('A conta Instagram não está conectada ou ativa.');
+      }
+
       // 1. Buscar informações básicas do perfil do criador via Instagram API
       const profileRes = await axios.get(`${this.IG_API_BASE}/${igUserId}`, {
         params: {
@@ -161,9 +172,21 @@ export class InstagramService {
       });
 
       const profileData = profileRes.data;
-      const followers = profileData.followers_count || 0;
+      if (!profileData?.id || String(profileData.id) !== String(igUserId)) {
+        throw new Error('O perfil retornado pelo Instagram não corresponde à conta conectada.');
+      }
+
+      const username = typeof profileData.username === 'string' ? profileData.username.trim() : '';
+      if (!username) {
+        throw new Error('O Instagram não retornou um username válido para a conta conectada.');
+      }
+
+      if (!Number.isFinite(profileData.followers_count) || profileData.followers_count < 0) {
+        throw new Error('O Instagram não retornou uma contagem de seguidores válida.');
+      }
+
+      const followers = Math.trunc(profileData.followers_count);
       const profilePicture = profileData.profile_picture_url || null;
-      const username = profileData.username || 'instagram_user';
 
       // 2. Buscar as últimas 15 mídias do usuário
       const mediaRes = await axios.get(`${this.IG_API_BASE}/${igUserId}/media`, {
@@ -174,7 +197,43 @@ export class InstagramService {
         },
       });
 
-      const mediaList = mediaRes.data.data || [];
+      const retrievedMedia = Array.isArray(mediaRes.data?.data) ? mediaRes.data.data : [];
+      const collectedAt = new Date();
+      const thirtyDaysAgo = new Date(collectedAt.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const mediaList = retrievedMedia.filter((media: any) => {
+        const timestamp = new Date(media.timestamp);
+        return Number.isFinite(timestamp.getTime()) && timestamp >= thirtyDaysAgo && timestamp <= collectedAt;
+      });
+
+      await prisma.socialPlatform.update({
+        where: {
+          influencerId_platformName: { influencerId, platformName: 'INSTAGRAM' },
+        },
+        data: {
+          username,
+          profilePicture,
+          followersCount: followers,
+        },
+      });
+
+      if (mediaList.length === 0) {
+        await prisma.influencerProfile.update({
+          where: { id: influencerId },
+          data: {
+            profileImageUrl: profilePicture,
+            verifiedMetrics: false,
+          },
+        });
+
+        return {
+          success: true,
+          snapshotCreated: false,
+          reason: 'no_recent_media',
+          username,
+          followers,
+        };
+      }
+
       const postsWithInsights = [];
 
       let totalPlays = 0;
@@ -186,6 +245,9 @@ export class InstagramService {
 
       let sumLikes = 0;
       let sumComments = 0;
+      let primaryInsightCount = 0;
+      let fallbackInsightCount = 0;
+      let unavailableInsightCount = 0;
 
       // 3. Iterar e obter insights de engajamento por publicação
       for (const media of mediaList) {
@@ -197,6 +259,7 @@ export class InstagramService {
         let reach = 0;
         let saved = 0;
         let shares = 0;
+        let insightStatus: 'complete' | 'fallback' | 'unavailable' = 'complete';
 
         try {
           let metricsQuery = '';
@@ -215,6 +278,10 @@ export class InstagramService {
 
           const insightsData = insightsRes.data.data || [];
 
+          if (insightsData.length === 0) {
+            throw new Error('O Instagram não retornou insights para a mídia.');
+          }
+
           insightsData.forEach((item: any) => {
             const val = item.values?.[0]?.value || item.value || 0;
             if (item.name === 'plays') plays = val;
@@ -223,10 +290,11 @@ export class InstagramService {
             if (item.name === 'saved') saved = val;
             if (item.name === 'shares') shares = val;
           });
+          primaryInsightCount++;
 
-        } catch (insightErr: any) {
-          // Fallback silencioso — posts recentes ou com pouca interação podem não ter insights ainda
-          console.warn(`[INSTAGRAM_SYNC] Fallback sem insights para post ${media.id}:`, sanitizeProviderError(insightErr));
+        } catch {
+          console.warn('[INSTAGRAM_SYNC] Insights indisponíveis para uma mídia; o snapshot será marcado como parcial.');
+          insightStatus = 'fallback';
 
           if (media.media_type === 'VIDEO' || media.media_type === 'REELS') {
             try {
@@ -236,12 +304,23 @@ export class InstagramService {
                   access_token: accessToken,
                 },
               });
-              fallbackRes.data.data?.forEach((item: any) => {
+              const fallbackInsights = fallbackRes.data.data || [];
+              if (fallbackInsights.length === 0) {
+                throw new Error('O fallback de insights não retornou dados.');
+              }
+              fallbackInsights.forEach((item: any) => {
                 const val = item.values?.[0]?.value || item.value || 0;
                 if (item.name === 'reach') reach = val;
                 if (item.name === 'saved') saved = val;
               });
-            } catch (_) {}
+              fallbackInsightCount++;
+            } catch (_) {
+              insightStatus = 'unavailable';
+              unavailableInsightCount++;
+            }
+          } else {
+            insightStatus = 'unavailable';
+            unavailableInsightCount++;
           }
         }
 
@@ -269,6 +348,7 @@ export class InstagramService {
           reach,
           saved,
           shares,
+          insightStatus,
           timestamp: media.timestamp,
         });
       }
@@ -287,6 +367,21 @@ export class InstagramService {
       }
 
       const engagementRate = Math.min(Math.round(avgEngagementPerPost * 100) / 100, 100);
+      const isPartial = fallbackInsightCount > 0 || unavailableInsightCount > 0;
+      const collection = {
+        schemaVersion: 'instagram_recent_media_snapshot_v1',
+        scope: 'recent_media_sample_30d',
+        mediaLimit: 15,
+        mediaRetrieved: retrievedMedia.length,
+        sampledMediaCount: mediaList.length,
+        skippedOutsideWindowCount: retrievedMedia.length - mediaList.length,
+        primaryInsightCount,
+        fallbackInsightCount,
+        unavailableInsightCount,
+        isPartial,
+        reachDefinition: 'sum_of_available_media_reach_for_sampled_posts_within_30_days',
+        collectedAt: collectedAt.toISOString(),
+      };
 
       const insightsJson = {
         followers,
@@ -297,29 +392,34 @@ export class InstagramService {
         avgComments: Math.round(sumComments / postCount),
         avgShares: Math.round(totalShares / postCount),
         avgSaves: Math.round(totalSaved / postCount),
-        updatedAt: new Date().toISOString(),
+        updatedAt: collectedAt.toISOString(),
         // Registra a versão da API usada para auditoria futura
         apiVersion: 'instagram_api_with_instagram_login_v1',
+        instagramMetricCollection: collection,
       };
 
       // 5. Persistir no banco de dados
       await prisma.influencerProfile.update({
         where: { id: influencerId },
         data: {
-          handle: username,
           profileImageUrl: profilePicture,
-          verifiedMetrics: true,
+          verifiedMetrics: false,
           insights: insightsJson as any,
           topPosts: postsWithInsights as any,
         },
       });
 
       // 6. Registrar snapshot de auditoria e recalcular InfluScore
-      await AuditorService.syncMetrics(influencerId, 'INSTAGRAM', {
+      const snapshot = await AuditorService.syncMetrics(influencerId, 'INSTAGRAM', {
         followers,
         engagementRate,
         reachLast30Days,
         avgViews,
+      });
+
+      await prisma.influencerProfile.update({
+        where: { id: influencerId },
+        data: { verifiedMetrics: true },
       });
 
       // 7. Disparar geração de análise semanal pela IA (assíncrono — não bloqueia a resposta)
@@ -338,10 +438,13 @@ export class InstagramService {
 
       return {
         success: true,
+        snapshotCreated: true,
         username,
         followers,
         engagementRate,
         avgViews,
+        collection,
+        snapshotId: snapshot.id,
       };
     } catch (err: any) {
       console.error('[INSTAGRAM_SYNC] ❌ Erro na sincronização:', sanitizeProviderError(err));
