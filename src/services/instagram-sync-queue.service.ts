@@ -5,6 +5,7 @@ import {
   InstagramSyncJobData,
   InstagramSyncReason,
 } from '../queues/instagram-sync.queue';
+import { instagramSyncRetryAt } from '../utils/instagram-sync-retry-policy';
 
 export interface InstagramSyncEnqueueRequest {
   socialPlatformId: string;
@@ -18,7 +19,9 @@ export interface InstagramSyncEnqueueResult {
   status: 'sync_pending' | 'syncing' | 'failed_retryable';
 }
 
-const RETRY_AFTER_QUEUE_FAILURE_MS = 5 * 60 * 1000;
+export interface InstagramSyncEnqueueDependencies {
+  enqueueJob?: typeof addInstagramSyncJob;
+}
 
 /**
  * Persists a truthful pending state before handing the work to BullMQ. This is
@@ -27,6 +30,7 @@ const RETRY_AFTER_QUEUE_FAILURE_MS = 5 * 60 * 1000;
  */
 export async function enqueueInstagramSync(
   request: InstagramSyncEnqueueRequest,
+  dependencies: InstagramSyncEnqueueDependencies = {},
 ): Promise<InstagramSyncEnqueueResult> {
   const platform = await prisma.socialPlatform.findUnique({
     where: { id: request.socialPlatformId },
@@ -74,7 +78,7 @@ export async function enqueueInstagramSync(
   };
 
   try {
-    await addInstagramSyncJob(payload);
+    await (dependencies.enqueueJob || addInstagramSyncJob)(payload);
     return { accepted: true, status: 'sync_pending' };
   } catch {
     const failedAt = new Date();
@@ -85,7 +89,7 @@ export async function enqueueInstagramSync(
         lastSyncFailureAt: failedAt,
         lastSyncErrorCode: 'QUEUE_UNAVAILABLE',
         syncFailureCount: { increment: 1 },
-        nextSyncRetryAt: new Date(failedAt.getTime() + RETRY_AFTER_QUEUE_FAILURE_MS),
+        nextSyncRetryAt: instagramSyncRetryAt(failedAt, platform.syncFailureCount + 1),
         syncLeaseExpiresAt: null,
       },
     });

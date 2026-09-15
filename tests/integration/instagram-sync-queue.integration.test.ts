@@ -21,11 +21,18 @@ import {
   integrationPrisma,
 } from '../helpers/postgres-integration';
 import { enqueueInstagramSync } from '../../src/services/instagram-sync-queue.service';
+import { enqueueEligibleInstagramSyncRetries } from '../../src/services/instagram-sync-retry.service';
+import {
+  InstagramSyncJobData,
+  INSTAGRAM_SYNC_RETRY_JOB_NAME,
+  instagramSyncJobId,
+} from '../../src/queues/instagram-sync.queue';
 import { encryptSocialToken } from '../../src/utils/social-token-crypto';
 import {
   createInstagramSyncWorker,
   instagramSyncWorker,
   processInstagramSync,
+  processInstagramSyncWithDependencies,
 } from '../../src/workers/instagram-sync.worker';
 import { prisma } from '../../src/lib/prisma';
 
@@ -128,6 +135,23 @@ afterAll(async () => {
 describe('Instagram sync queue with local PostgreSQL and Redis', () => {
   it('does not start the Instagram consumer merely by importing its factory module', () => {
     expect(instagramSyncWorker).toBeUndefined();
+  });
+
+  it('runs the scheduled retry job as a token-free sweep without calling the provider', async () => {
+    const retrySweep = jest.fn().mockResolvedValue({ eligible: 2, enqueued: 1, skipped: 1 });
+    harness = await createRedisBullMqIntegrationHarness(
+      job => processInstagramSyncWithDependencies(job, { retrySweep }),
+      { queueName: 'instagram-sync' },
+    );
+    const job = await harness.queue.add(INSTAGRAM_SYNC_RETRY_JOB_NAME, {});
+
+    await expect(job.waitUntilFinished(harness.events, 5_000)).resolves.toEqual({
+      status: 'retry_scan_completed',
+      enqueued: 1,
+    });
+    expect(job.data).toEqual({});
+    expect(retrySweep).toHaveBeenCalledTimes(1);
+    expect(mockedAxios.get).not.toHaveBeenCalled();
   });
 
   it('processes a token-free job into an Instagram snapshot and SYNCED operational state', async () => {
@@ -267,5 +291,195 @@ describe('Instagram sync queue with local PostgreSQL and Redis', () => {
       reason: 'manual_retry',
       requestedByUserId: creator.user.id,
     })).resolves.toEqual({ accepted: false, status: 'syncing' });
+  });
+
+  it('enqueues an expired retryable sync once, keeps its job token-free, and marks it pending', async () => {
+    const creator = await createConnectedCreator();
+    await integrationPrisma.socialPlatform.update({
+      where: { id: creator.platform.id },
+      data: {
+        lastSyncStatus: 'FAILED_RETRYABLE',
+        syncFailureCount: 1,
+        nextSyncRetryAt: new Date(Date.now() - 1_000),
+      },
+    });
+    const redis = await startHarness();
+    await redis.queue.pause();
+
+    try {
+      const result = await enqueueEligibleInstagramSyncRetries({
+        enqueue: request => enqueueInstagramSync(request, {
+          enqueueJob: data => redis.queue.add('sync-instagram', data, {
+            jobId: instagramSyncJobId(data.socialPlatformId),
+            removeOnComplete: true,
+            removeOnFail: true,
+          }),
+        }),
+      });
+
+      expect(result).toEqual({ eligible: 1, enqueued: 1, skipped: 0 });
+      const jobs = await redis.queue.getWaiting();
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0].data).toMatchObject({
+        socialPlatformId: creator.platform.id,
+        influencerId: creator.profile.id,
+        reason: 'scheduled',
+      });
+      expect(JSON.stringify(jobs[0].data)).not.toContain('fake-instagram-token-not-in-job');
+      await expect(integrationPrisma.socialPlatform.findUniqueOrThrow({ where: { id: creator.platform.id } }))
+        .resolves.toMatchObject({
+          lastSyncStatus: 'SYNC_PENDING',
+          syncFailureCount: 1,
+          nextSyncRetryAt: null,
+        });
+    } finally {
+      await redis.queue.resume();
+    }
+  });
+
+  it('excludes reconnect-required connections from automatic retry', async () => {
+    const creator = await createConnectedCreator();
+    await integrationPrisma.socialPlatform.update({
+      where: { id: creator.platform.id },
+      data: {
+        lastSyncStatus: 'FAILED_RECONNECT_REQUIRED',
+        syncFailureCount: 1,
+        nextSyncRetryAt: new Date(Date.now() - 1_000),
+      },
+    });
+    const enqueue = jest.fn();
+
+    await expect(enqueueEligibleInstagramSyncRetries({ enqueue })).resolves.toEqual({
+      eligible: 0,
+      enqueued: 0,
+      skipped: 0,
+    });
+    expect(enqueue).not.toHaveBeenCalled();
+  });
+
+  it('excludes active leases and retry counts at the automatic cap', async () => {
+    const leased = await createConnectedCreator();
+    const capped = await createConnectedCreator();
+    await Promise.all([
+      integrationPrisma.socialPlatform.update({
+        where: { id: leased.platform.id },
+        data: {
+          lastSyncStatus: 'SYNCING',
+          syncFailureCount: 1,
+          nextSyncRetryAt: new Date(Date.now() - 1_000),
+          syncLeaseExpiresAt: new Date(Date.now() + 60_000),
+        },
+      }),
+      integrationPrisma.socialPlatform.update({
+        where: { id: capped.platform.id },
+        data: {
+          lastSyncStatus: 'FAILED_RETRYABLE',
+          syncFailureCount: 3,
+          nextSyncRetryAt: new Date(Date.now() - 1_000),
+        },
+      }),
+    ]);
+    const enqueue = jest.fn();
+
+    await expect(enqueueEligibleInstagramSyncRetries({ enqueue })).resolves.toEqual({
+      eligible: 0,
+      enqueued: 0,
+      skipped: 0,
+    });
+    expect(enqueue).not.toHaveBeenCalled();
+  });
+
+  it('deduplicates concurrent enqueue attempts for one Instagram platform', async () => {
+    const creator = await createConnectedCreator();
+    const redis = await startHarness();
+    await redis.queue.pause();
+
+    try {
+      const enqueueJob = (data: InstagramSyncJobData) => redis.queue.add('sync-instagram', data, {
+        jobId: instagramSyncJobId(data.socialPlatformId),
+        removeOnComplete: true,
+        removeOnFail: true,
+      });
+      await Promise.all([
+        enqueueInstagramSync({
+          socialPlatformId: creator.platform.id,
+          influencerId: creator.profile.id,
+          reason: 'manual_retry',
+        }, { enqueueJob }),
+        enqueueInstagramSync({
+          socialPlatformId: creator.platform.id,
+          influencerId: creator.profile.id,
+          reason: 'scheduled',
+        }, { enqueueJob }),
+      ]);
+
+      await expect(redis.queue.getWaiting()).resolves.toHaveLength(1);
+    } finally {
+      await redis.queue.resume();
+    }
+  });
+
+  it('stops scheduling automatic retries after the third recoverable failure', async () => {
+    const creator = await createConnectedCreator();
+    await integrationPrisma.socialPlatform.update({
+      where: { id: creator.platform.id },
+      data: { syncFailureCount: 2 },
+    });
+    mockedAxios.get.mockRejectedValueOnce(Object.assign(new Error('provider unavailable'), {
+      response: { status: 503 },
+    }));
+    const log = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const redis = await startHarness();
+    const job = await redis.queue.add('sync-instagram', {
+      socialPlatformId: creator.platform.id,
+      influencerId: creator.profile.id,
+      reason: 'scheduled',
+    });
+
+    try {
+      await expect(job.waitUntilFinished(redis.events, 5_000)).rejects.toThrow('Instagram sync job failed.');
+      await expect(integrationPrisma.socialPlatform.findUniqueOrThrow({ where: { id: creator.platform.id } }))
+        .resolves.toMatchObject({
+          lastSyncStatus: 'FAILED_RETRYABLE',
+          syncFailureCount: 3,
+          nextSyncRetryAt: null,
+        });
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it('processes a scheduled retry into a verified snapshot and resets the failure count', async () => {
+    const creator = await createConnectedCreator();
+    await integrationPrisma.socialPlatform.update({
+      where: { id: creator.platform.id },
+      data: {
+        lastSyncStatus: 'FAILED_RETRYABLE',
+        syncFailureCount: 2,
+        nextSyncRetryAt: new Date(Date.now() - 1_000),
+      },
+    });
+    mockedAxios.get
+      .mockResolvedValueOnce(profileResponse(creator.platform.platformId))
+      .mockResolvedValueOnce({ data: { data: [recentImage('scheduled-retry-success')] } })
+      .mockResolvedValueOnce({
+        data: {
+          data: [{ name: 'reach', values: [{ value: 500 }] }],
+        },
+      });
+    const redis = await startHarness();
+    const job = await redis.queue.add('sync-instagram', {
+      socialPlatformId: creator.platform.id,
+      influencerId: creator.profile.id,
+      reason: 'scheduled',
+    });
+
+    await expect(job.waitUntilFinished(redis.events, 5_000)).resolves.toEqual({ status: 'synced' });
+    await expect(integrationPrisma.socialPlatform.findUniqueOrThrow({ where: { id: creator.platform.id } }))
+      .resolves.toMatchObject({
+        lastSyncStatus: 'SYNCED',
+        syncFailureCount: 0,
+        nextSyncRetryAt: null,
+      });
   });
 });

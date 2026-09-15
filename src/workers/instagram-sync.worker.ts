@@ -2,31 +2,46 @@ import { ConnectionOptions, Job, Worker, WorkerOptions } from 'bullmq';
 import { SocialSyncStatus } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { redisConnection } from '../lib/redis';
-import { InstagramSyncJobData, INSTAGRAM_SYNC_QUEUE_NAME } from '../queues/instagram-sync.queue';
+import {
+  InstagramSyncJobData,
+  InstagramSyncQueueJobData,
+  INSTAGRAM_SYNC_QUEUE_NAME,
+  INSTAGRAM_SYNC_RETRY_JOB_NAME,
+} from '../queues/instagram-sync.queue';
 import { InstagramService } from '../services/instagram.service';
+import { enqueueEligibleInstagramSyncRetries } from '../services/instagram-sync-retry.service';
 import { classifyInstagramSyncFailure, InstagramSyncOperationalError } from '../utils/instagram-sync-error';
+import { instagramSyncRetryAt } from '../utils/instagram-sync-retry-policy';
 import { decryptSocialToken } from '../utils/social-token-crypto';
 
 const SYNC_LEASE_MS = 10 * 60 * 1000;
-const INITIAL_RETRY_DELAY_MS = 5 * 60 * 1000;
-const MAX_RETRY_DELAY_MS = 60 * 60 * 1000;
 
-function retryAt(now: Date, failureCount: number): Date {
-  const delay = Math.min(INITIAL_RETRY_DELAY_MS * (2 ** Math.max(failureCount - 1, 0)), MAX_RETRY_DELAY_MS);
-  return new Date(now.getTime() + delay);
-}
+type InstagramSyncWorkerDependencies = {
+  retrySweep?: typeof enqueueEligibleInstagramSyncRetries;
+};
 
 function isPartialCollection(result: any): boolean {
   return Boolean(result?.collection?.isPartial);
 }
 
-export async function processInstagramSync(job: Job<InstagramSyncJobData>): Promise<{
-  status: 'synced' | 'partial' | 'no_recent_media' | 'skipped';
+export async function processInstagramSyncWithDependencies(
+  job: Job<InstagramSyncQueueJobData>,
+  dependencies: InstagramSyncWorkerDependencies,
+): Promise<{
+  status: 'synced' | 'partial' | 'no_recent_media' | 'retry_scan_completed' | 'skipped';
+  enqueued?: number;
 }> {
+  if (job.name === INSTAGRAM_SYNC_RETRY_JOB_NAME) {
+    const result = await (dependencies.retrySweep || enqueueEligibleInstagramSyncRetries)();
+    return { status: 'retry_scan_completed', enqueued: result.enqueued };
+  }
+
   if (job.name !== 'sync-instagram') return { status: 'skipped' };
 
+  const data = job.data as InstagramSyncJobData;
+
   const platform = await prisma.socialPlatform.findUnique({
-    where: { id: job.data.socialPlatformId },
+    where: { id: data.socialPlatformId },
     select: {
       id: true,
       influencerId: true,
@@ -41,7 +56,7 @@ export async function processInstagramSync(job: Job<InstagramSyncJobData>): Prom
   });
 
   if (!platform
-    || platform.influencerId !== job.data.influencerId
+    || platform.influencerId !== data.influencerId
     || platform.platformName !== 'INSTAGRAM'
     || !platform.isActive) {
     return { status: 'skipped' };
@@ -123,7 +138,7 @@ export async function processInstagramSync(job: Job<InstagramSyncJobData>): Prom
         lastSyncFailureAt: failedAt,
         lastSyncErrorCode: failure.code,
         syncFailureCount: failureCount,
-        nextSyncRetryAt: failure.reconnectRequired ? null : retryAt(failedAt, failureCount),
+        nextSyncRetryAt: failure.reconnectRequired ? null : instagramSyncRetryAt(failedAt, failureCount),
         syncLeaseExpiresAt: null,
       },
     });
@@ -134,6 +149,15 @@ export async function processInstagramSync(job: Job<InstagramSyncJobData>): Prom
   }
 }
 
+export async function processInstagramSync(
+  job: Job<InstagramSyncQueueJobData>,
+): Promise<{
+  status: 'synced' | 'partial' | 'no_recent_media' | 'retry_scan_completed' | 'skipped';
+  enqueued?: number;
+}> {
+  return processInstagramSyncWithDependencies(job, {});
+}
+
 export type ControlledInstagramSyncWorkerOptions = Pick<WorkerOptions, 'prefix'> & {
   connection?: ConnectionOptions;
 };
@@ -141,16 +165,16 @@ export type ControlledInstagramSyncWorkerOptions = Pick<WorkerOptions, 'prefix'>
 /** Creates the consumer only; importing it never starts Redis work. */
 export function createInstagramSyncWorker(
   options: ControlledInstagramSyncWorkerOptions = {},
-): Worker<InstagramSyncJobData> {
+): Worker<InstagramSyncQueueJobData> {
   return new Worker(INSTAGRAM_SYNC_QUEUE_NAME, processInstagramSync, {
     connection: options.connection || redisConnection,
     prefix: options.prefix,
   });
 }
 
-export let instagramSyncWorker: Worker<InstagramSyncJobData> | undefined;
+export let instagramSyncWorker: Worker<InstagramSyncQueueJobData> | undefined;
 
-export function startInstagramSyncWorker(): Worker<InstagramSyncJobData> {
+export function startInstagramSyncWorker(): Worker<InstagramSyncQueueJobData> {
   instagramSyncWorker ||= createInstagramSyncWorker();
   return instagramSyncWorker;
 }

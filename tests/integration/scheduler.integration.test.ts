@@ -4,14 +4,18 @@ import { Queue } from 'bullmq';
 import {
   DAILY_CLEANUP_PATTERN,
   DAILY_TOKEN_RENEWAL_PATTERN,
+  INSTAGRAM_SYNC_RETRY_PATTERN,
   registerDailyCleanupSchedule,
   registerDailyTokenRenewalSchedule,
+  registerInstagramSyncRetrySchedule,
 } from '../../src/queues/schedule-registration';
+import { INSTAGRAM_SYNC_RETRY_JOB_NAME } from '../../src/queues/instagram-sync.queue';
 import { assertSafeRedisTestUrl } from '../helpers/redis-bullmq-integration';
 
 let commandConnection: IORedis;
 let cleanupQueue: Queue;
 let tokenRenewalQueue: Queue;
+let instagramSyncQueue: Queue;
 let prefix: string;
 let resourcesClosed = false;
 
@@ -19,19 +23,22 @@ async function closeSchedulerTestResources(): Promise<string[]> {
   if (resourcesClosed) return [];
   resourcesClosed = true;
 
-  const [cleanupSchedules, tokenRenewalSchedules] = await Promise.all([
+  const [cleanupSchedules, tokenRenewalSchedules, instagramSyncSchedules] = await Promise.all([
     cleanupQueue.getRepeatableJobs(),
     tokenRenewalQueue.getRepeatableJobs(),
+    instagramSyncQueue.getRepeatableJobs(),
   ]);
   await Promise.all([
     ...cleanupSchedules.map(schedule => cleanupQueue.removeRepeatableByKey(schedule.key)),
     ...tokenRenewalSchedules.map(schedule => tokenRenewalQueue.removeRepeatableByKey(schedule.key)),
+    ...instagramSyncSchedules.map(schedule => instagramSyncQueue.removeRepeatableByKey(schedule.key)),
   ]);
   await Promise.all([
     cleanupQueue.obliterate({ force: true }),
     tokenRenewalQueue.obliterate({ force: true }),
+    instagramSyncQueue.obliterate({ force: true }),
   ]);
-  await Promise.all([cleanupQueue.close(), tokenRenewalQueue.close()]);
+  await Promise.all([cleanupQueue.close(), tokenRenewalQueue.close(), instagramSyncQueue.close()]);
 
   const keys = await commandConnection.keys(`${prefix}:*`);
   if (keys.length > 0) {
@@ -55,7 +62,12 @@ beforeEach(async () => {
 
   cleanupQueue = new Queue('cleanup-tasks', { connection: commandConnection, prefix });
   tokenRenewalQueue = new Queue('token-renewal-tasks', { connection: commandConnection, prefix });
-  await Promise.all([cleanupQueue.waitUntilReady(), tokenRenewalQueue.waitUntilReady()]);
+  instagramSyncQueue = new Queue('instagram-sync', { connection: commandConnection, prefix });
+  await Promise.all([
+    cleanupQueue.waitUntilReady(),
+    tokenRenewalQueue.waitUntilReady(),
+    instagramSyncQueue.waitUntilReady(),
+  ]);
 });
 
 afterEach(async () => {
@@ -100,6 +112,21 @@ describe('local BullMQ scheduler registration', () => {
     expect(tokenRenewalSchedules).toHaveLength(1);
     expect(cleanupSchedules[0].key).toBe(firstCleanupSchedule.key);
     expect(tokenRenewalSchedules[0].key).toBe(firstTokenRenewalSchedule.key);
+  });
+
+  it('registers one deterministic Instagram retry schedule without processing a provider', async () => {
+    await registerInstagramSyncRetrySchedule(instagramSyncQueue);
+    const [first] = await instagramSyncQueue.getRepeatableJobs();
+
+    await registerInstagramSyncRetrySchedule(instagramSyncQueue);
+
+    await expect(instagramSyncQueue.getRepeatableJobs()).resolves.toEqual([
+      expect.objectContaining({
+        name: INSTAGRAM_SYNC_RETRY_JOB_NAME,
+        pattern: INSTAGRAM_SYNC_RETRY_PATTERN,
+        key: first.key,
+      }),
+    ]);
   });
 
   it('removes repeatable metadata and all test-prefix keys during cleanup', async () => {

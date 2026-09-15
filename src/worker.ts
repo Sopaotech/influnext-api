@@ -23,23 +23,35 @@ function assertWorkerRuntimeConfiguration(): void {
 }
 
 async function ensureWorkerRedisReady(): Promise<void> {
-  const redisStatus = (): string => redisConnection.status;
-
-  if (redisStatus() === 'wait') {
+  if (redisConnection.status === 'wait') {
     await redisConnection.connect();
   }
 
-  if (redisStatus() === 'ready') return;
+  if (redisConnection.status === 'ready') return;
 
-  if (redisStatus() === 'connecting' || redisStatus() === 'reconnecting') {
-    // ioredis can emit `ready` between an import and a listener registration.
-    // A command waits for the existing connection rather than racing that event.
-    await redisConnection.ping();
-  }
+  // `connect` means the TCP socket exists but commands remain unavailable with
+  // enableOfflineQueue=false. Wait for ioredis' usable `ready` state instead.
+  await new Promise<void>((resolve, reject) => {
+    const onReady = () => {
+      cleanup();
+      resolve();
+    };
+    const onError = (error: Error) => {
+      cleanup();
+      reject(error);
+    };
+    const cleanup = () => {
+      redisConnection.removeListener('ready', onReady);
+      redisConnection.removeListener('error', onError);
+    };
 
-  if (redisStatus() !== 'ready') {
-    throw new Error('Redis is not ready for application workers.');
-  }
+    redisConnection.once('ready', onReady);
+    redisConnection.once('error', onError);
+
+    if (redisConnection.status === 'ready') {
+      onReady();
+    }
+  });
 }
 
 async function closeWorkerResources(workers: Worker[]): Promise<void> {
