@@ -10,6 +10,7 @@ import axios from 'axios';
 import { createOAuthState, consumeOAuthState, getOAuthFrontendUrl, oauthBoundaryFailure, assertOAuthIdentity } from '../lib/oauth-state';
 import { sanitizeProviderError } from '../utils/provider-error';
 import { assertSocialTokenEncryptionConfigured, decryptSocialToken, encryptSocialToken } from '../utils/social-token-crypto';
+import { enqueueInstagramSync } from '../services/instagram-sync-queue.service';
 
 
 /**
@@ -73,6 +74,7 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
     let instagramFollowers = 0;
     let instagramProfilePicture = null;
     let expiresAt: Date | null = null;
+    let instagramSyncStatus: 'sync_pending' | 'syncing' | 'failed_retryable' | null = null;
 
     // Instagram API with Instagram Login — fluxo unificado (Creator/Business)
     // Não usa mais isBusiness — todas as contas profissionais usam o mesmo fluxo
@@ -102,7 +104,7 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
         platformName: 'INSTAGRAM',
         field: 'accessToken',
       });
-      await prisma.socialPlatform.upsert({
+      const savedPlatform = await prisma.socialPlatform.upsert({
         where: {
           influencerId_platformName: {
             influencerId: influencer.id,
@@ -137,15 +139,19 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
         data: { verifiedMetrics: false }
       });
 
-      // Sempre dispara a sincronização de métricas para contas Creator e Business
-      InstagramService.syncInstagramData(influencer.id, accessToken, instagramBusinessId).catch(err => {
-        console.error('[INSTAGRAM] Falha na sincronização de dados pós-callback:', sanitizeProviderError(err));
+      const enqueueResult = await enqueueInstagramSync({
+        socialPlatformId: savedPlatform.id,
+        influencerId: influencer.id,
+        reason: 'post_oauth',
+        requestedByUserId: userId,
       });
+      instagramSyncStatus = enqueueResult.status;
     }
     
+    const syncQuery = instagramSyncStatus ? `&sync=${instagramSyncStatus}` : '';
     const redirectUrl = isFromOnboarding
-      ? `${decodedState.frontendUrl}/onboarding?status=success&platform=instagram`
-      : `${decodedState.frontendUrl}/dashboard/settings?status=success&platform=instagram`;
+      ? `${decodedState.frontendUrl}/onboarding?status=success&platform=instagram${syncQuery}`
+      : `${decodedState.frontendUrl}/dashboard/settings?status=success&platform=instagram${syncQuery}`;
     res.redirect(redirectUrl);
   } catch (error: any) {
     console.error('[INSTAGRAM] Erro no callback:', sanitizeProviderError(error));
@@ -495,7 +501,12 @@ export const syncPlatformMetrics = async (req: Request, res: Response): Promise<
       include: {
         platforms: {
           where: { isActive: true },
-          select: { platformName: true, platformId: true, accessToken: true }
+          select: {
+            id: true,
+            platformName: true,
+            platformId: true,
+            accessToken: true,
+          }
         }
       }
     });
@@ -506,17 +517,18 @@ export const syncPlatformMetrics = async (req: Request, res: Response): Promise<
     }
 
     const results: Record<string, string> = {};
+    let completedSynchronously = false;
 
     for (const platform of influencer.platforms) {
       try {
-        if (platform.platformName === 'INSTAGRAM' && platform.accessToken && platform.platformId) {
-          const accessToken = decryptSocialToken(platform.accessToken, {
+        if (platform.platformName === 'INSTAGRAM') {
+          const enqueueResult = await enqueueInstagramSync({
+            socialPlatformId: platform.id,
             influencerId: influencer.id,
-            platformName: platform.platformName,
-            field: 'accessToken',
-          }).value;
-          await InstagramService.syncInstagramData(influencer.id, accessToken, platform.platformId);
-          results['INSTAGRAM'] = 'synced';
+            reason: 'manual_retry',
+            requestedByUserId: userId,
+          });
+          results['INSTAGRAM'] = enqueueResult.status;
         }
 
         if (platform.platformName === 'TIKTOK' && platform.accessToken && platform.platformId) {
@@ -527,6 +539,7 @@ export const syncPlatformMetrics = async (req: Request, res: Response): Promise<
           }).value;
           await TikTokService.syncTikTokData(influencer.id, accessToken, platform.platformId);
           results['TIKTOK'] = 'synced';
+          completedSynchronously = true;
         }
       } catch (err) {
         console.warn(`[SYNC] Falha ao sincronizar ${platform.platformName}:`, sanitizeProviderError(err));
@@ -534,9 +547,19 @@ export const syncPlatformMetrics = async (req: Request, res: Response): Promise<
       }
     }
 
-    await ScoringService.calculateAndPersist(influencer.id);
+    if (completedSynchronously) {
+      await ScoringService.calculateAndPersist(influencer.id);
+    }
 
-    res.json({ synced: true, results });
+    if (results.INSTAGRAM === 'failed_retryable' && !completedSynchronously) {
+      res.status(503).json({ accepted: false, results });
+      return;
+    }
+
+    res.status(results.INSTAGRAM ? 202 : 200).json({
+      accepted: results.INSTAGRAM !== 'failed_retryable',
+      results,
+    });
   } catch (error) {
     console.error('[SYNC] Erro geral ao sincronizar métricas:', sanitizeProviderError(error));
     res.status(500).json({ error: 'Erro ao sincronizar métricas.' });

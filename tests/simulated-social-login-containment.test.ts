@@ -24,6 +24,7 @@ const mockAxiosPost = jest.fn();
 const mockAxiosGet = jest.fn();
 const mockScore = jest.fn();
 const mockAnalysis = jest.fn();
+const mockEnqueueInstagramSync = jest.fn();
 
 jest.mock('../src/lib/prisma', () => ({ prisma: mockPrisma }));
 // Keep these tests independent of TOTP/QR generation and external providers.
@@ -39,6 +40,9 @@ jest.mock('../src/services/instagram.service', () => ({
 }));
 jest.mock('../src/services/tiktok.service', () => ({
   TikTokService: { syncTikTokData: mockTikTokSync },
+}));
+jest.mock('../src/services/instagram-sync-queue.service', () => ({
+  enqueueInstagramSync: mockEnqueueInstagramSync,
 }));
 jest.mock('../src/services/scoring.service', () => ({ ScoringService: { calculateAndPersist: mockScore } }));
 jest.mock('../src/services/ai.service', () => ({ AIService: { generateWeeklyAnalysis: mockAnalysis } }));

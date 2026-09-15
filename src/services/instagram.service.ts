@@ -2,6 +2,7 @@ import axios from 'axios';
 import { prisma } from '../lib/prisma';
 import { AuditorService } from './auditor.service';
 import { sanitizeProviderError } from '../utils/provider-error';
+import { classifyInstagramSyncFailure, InstagramSyncOperationalError } from '../utils/instagram-sync-error';
 
 /**
  * InstagramService — Integração com Instagram API with Instagram Login
@@ -448,7 +449,7 @@ export class InstagramService {
       };
     } catch (err: any) {
       console.error('[INSTAGRAM_SYNC] ❌ Erro na sincronização:', sanitizeProviderError(err));
-      throw new Error('Falha ao sincronizar métricas do Instagram.');
+      throw new InstagramSyncOperationalError(classifyInstagramSyncFailure(err));
     }
   }
 }

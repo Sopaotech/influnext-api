@@ -12,6 +12,7 @@ import { createTwoFactorChallenge } from '../lib/two-factor-challenge';
 import { establishSession } from '../lib/session-cookie';
 import { sanitizeProviderError, sanitizeProviderMessage } from '../utils/provider-error';
 import { assertSocialTokenEncryptionConfigured, encryptSocialToken } from '../utils/social-token-crypto';
+import { enqueueInstagramSync } from '../services/instagram-sync-queue.service';
 
 export class SocialAuthController {
   static async getAuthUrls(req: Request, res: Response) {
@@ -291,7 +292,7 @@ export class SocialAuthController {
           })
         : null;
 
-      await prisma.socialPlatform.upsert({
+      const savedPlatform = await prisma.socialPlatform.upsert({
         where: {
           influencerId_platformName: {
             influencerId: profile.id,
@@ -322,12 +323,16 @@ export class SocialAuthController {
         }
       });
 
-      if (platformName === 'INSTAGRAM') {
-        // Executar sincronização real em background
-        InstagramService.syncInstagramData(profile.id, accessToken, platformId).catch(err => {
-          console.error('[INSTAGRAM] Falha na sincronização de dados reais:', sanitizeProviderError(err));
-        });
-      } else if (platformName === 'TIKTOK') {
+      const instagramSync = platformName === 'INSTAGRAM'
+        ? await enqueueInstagramSync({
+            socialPlatformId: savedPlatform.id,
+            influencerId: profile.id,
+            reason: 'post_oauth',
+            requestedByUserId: userId || undefined,
+          })
+        : null;
+
+      if (platformName === 'TIKTOK') {
         // Executar sincronização real do TikTok em background
         TikTokService.syncTikTokData(profile.id, accessToken, platformId).catch(err => {
           console.error('[TIKTOK] Falha na sincronização de dados reais:', sanitizeProviderError(err));
@@ -346,12 +351,19 @@ export class SocialAuthController {
             onboardingCompleted: user!.onboardingCompleted
           },
           platform,
-          username
+          username,
+          ...(instagramSync ? { instagramSyncStatus: instagramSync.status } : {}),
         });
         return;
       }
 
-      res.json({ success: true, platform, username, from: oauthState.from });
+      res.json({
+        success: true,
+        platform,
+        username,
+        from: oauthState.from,
+        ...(instagramSync ? { instagramSyncStatus: instagramSync.status } : {}),
+      });
     } catch (error: any) {
       const sanitizedError = sanitizeProviderError(error, 'Falha no callback do provedor social.');
       console.error(`[SOCIAL_AUTH] Erro no callback ${platform}:`, sanitizedError);

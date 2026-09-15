@@ -8,10 +8,12 @@ const mockNotificationClose = jest.fn();
 const mockCleanupClose = jest.fn();
 const mockTokenRenewalClose = jest.fn();
 const mockPostAnalyzerClose = jest.fn();
+const mockInstagramSyncClose = jest.fn();
 const mockNotificationReady = jest.fn();
 const mockCleanupReady = jest.fn();
 const mockTokenRenewalReady = jest.fn();
 const mockPostAnalyzerReady = jest.fn();
+const mockInstagramSyncReady = jest.fn();
 const mockStartNotificationWorker = jest.fn(() => ({
   close: mockNotificationClose,
   waitUntilReady: mockNotificationReady,
@@ -27,6 +29,10 @@ const mockStartTokenRenewalWorker = jest.fn(() => ({
 const mockStartPostAnalyzerWorker = jest.fn(() => ({
   close: mockPostAnalyzerClose,
   waitUntilReady: mockPostAnalyzerReady,
+}));
+const mockStartInstagramSyncWorker = jest.fn(() => ({
+  close: mockInstagramSyncClose,
+  waitUntilReady: mockInstagramSyncReady,
 }));
 const mockSchedulerImport = jest.fn();
 const mockPushDelivery = jest.fn();
@@ -72,6 +78,10 @@ jest.mock('../../src/workers/post-analyzer.worker', () => {
   return { startPostAnalyzerWorker: mockStartPostAnalyzerWorker };
 });
 
+jest.mock('../../src/workers/instagram-sync.worker', () => ({
+  startInstagramSyncWorker: mockStartInstagramSyncWorker,
+}));
+
 jest.mock('../../src/services/push-notification.service', () => ({
   sendPushNotification: mockPushDelivery,
 }));
@@ -115,6 +125,10 @@ describe('worker process entrypoint integration', () => {
       close: mockPostAnalyzerClose,
       waitUntilReady: mockPostAnalyzerReady,
     });
+    mockStartInstagramSyncWorker.mockReturnValue({
+      close: mockInstagramSyncClose,
+      waitUntilReady: mockInstagramSyncReady,
+    });
     mockRedisConnect.mockImplementation(async () => {
       mockedRedisConnection.status = 'ready';
     });
@@ -133,6 +147,7 @@ describe('worker process entrypoint integration', () => {
     expect(mockSchedulerImport).not.toHaveBeenCalled();
     expect(mockStartTokenRenewalWorker).not.toHaveBeenCalled();
     expect(mockStartPostAnalyzerWorker).not.toHaveBeenCalled();
+    expect(mockStartInstagramSyncWorker).not.toHaveBeenCalled();
     expect(mockPushDelivery).not.toHaveBeenCalled();
   });
 
@@ -153,10 +168,12 @@ describe('worker process entrypoint integration', () => {
     expect(mockStartCleanupWorker).toHaveBeenCalledTimes(1);
     expect(mockStartTokenRenewalWorker).toHaveBeenCalledTimes(1);
     expect(mockStartPostAnalyzerWorker).toHaveBeenCalledTimes(1);
+    expect(mockStartInstagramSyncWorker).toHaveBeenCalledTimes(1);
     expect(mockNotificationReady).toHaveBeenCalledTimes(1);
     expect(mockCleanupReady).toHaveBeenCalledTimes(1);
     expect(mockTokenRenewalReady).toHaveBeenCalledTimes(1);
     expect(mockPostAnalyzerReady).toHaveBeenCalledTimes(1);
+    expect(mockInstagramSyncReady).toHaveBeenCalledTimes(1);
     expect(listenSpy).not.toHaveBeenCalled();
     expect(mockSchedulerImport).not.toHaveBeenCalled();
     expect(mockPushDelivery).not.toHaveBeenCalled();
@@ -167,6 +184,7 @@ describe('worker process entrypoint integration', () => {
     expect(mockCleanupClose).toHaveBeenCalledTimes(1);
     expect(mockTokenRenewalClose).toHaveBeenCalledTimes(1);
     expect(mockPostAnalyzerClose).toHaveBeenCalledTimes(1);
+    expect(mockInstagramSyncClose).toHaveBeenCalledTimes(1);
     expect(mockRedisQuit).toHaveBeenCalledTimes(1);
     expect(mockPrismaDisconnect).toHaveBeenCalledTimes(1);
   });

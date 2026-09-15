@@ -13,6 +13,7 @@ import {
 const mockSendPushNotification = jest.fn();
 const mockTikTokRefresh = jest.fn();
 const mockInstagramRefresh = jest.fn();
+const mockInstagramSync = jest.fn();
 const mockCalculateAndPersist = jest.fn();
 
 jest.mock('../../src/services/push-notification.service', () => ({
@@ -22,7 +23,10 @@ jest.mock('../../src/services/tiktok.service', () => ({
   TikTokService: { refreshAccessToken: mockTikTokRefresh },
 }));
 jest.mock('../../src/services/instagram.service', () => ({
-  InstagramService: { refreshLongLivedToken: mockInstagramRefresh },
+  InstagramService: {
+    refreshLongLivedToken: mockInstagramRefresh,
+    syncInstagramData: mockInstagramSync,
+  },
 }));
 jest.mock('../../src/services/scoring.service', () => ({
   ScoringService: { calculateAndPersist: mockCalculateAndPersist },
@@ -48,6 +52,7 @@ import {
   postAnalyzerWorker,
   processPostAnalysis,
 } from '../../src/workers/post-analyzer.worker';
+import { instagramSyncWorker } from '../../src/workers/instagram-sync.worker';
 import { prisma } from '../../src/lib/prisma';
 import { decryptSocialToken, encryptSocialToken, isEncryptedSocialToken } from '../../src/utils/social-token-crypto';
 
@@ -90,6 +95,7 @@ describe('controlled application worker integration', () => {
     expect(cleanupWorker).toBeUndefined();
     expect(tokenRenewalWorker).toBeUndefined();
     expect(postAnalyzerWorker).toBeUndefined();
+    expect(instagramSyncWorker).toBeUndefined();
   });
 
   it('processes a notification job with the real worker against local PostgreSQL and mocked push delivery', async () => {

@@ -87,6 +87,7 @@ try {
     '--runInBand',
     '--runTestsByPath',
     path.join('tests', 'integration', 'application-workers.integration.test.ts'),
+    path.join('tests', 'integration', 'instagram-sync-queue.integration.test.ts'),
     path.join('tests', 'integration', 'worker-entrypoint.integration.test.ts'),
     path.join('tests', 'integration', 'worker-entrypoint.runtime.integration.test.ts'),
   ], testEnvironment);

@@ -20,6 +20,7 @@ const mockGet = jest.fn();
 const mockSync = jest.fn();
 const mockScore = jest.fn();
 const mockVerifyTOTP = jest.fn();
+const mockEnqueueInstagramSync = jest.fn();
 jest.mock('../src/lib/redis', () => require('./helpers/oauth-redis'));
 jest.mock('../src/lib/prisma', () => ({ prisma: mockPrisma }));
 jest.mock('axios', () => ({ __esModule: true, default: { post: mockPost, get: mockGet } }));
@@ -27,6 +28,9 @@ jest.mock('../src/services/instagram.service', () => ({ InstagramService: {
   exchangeCodeForToken: mockExchange, fetchProfileData: mockProfile, syncInstagramData: mockSync,
 } }));
 jest.mock('../src/services/tiktok.service', () => ({ TikTokService: { syncTikTokData: mockSync } }));
+jest.mock('../src/services/instagram-sync-queue.service', () => ({
+  enqueueInstagramSync: mockEnqueueInstagramSync,
+}));
 jest.mock('../src/services/scoring.service', () => ({ ScoringService: { calculateAndPersist: mockScore } }));
 jest.mock('../src/services/ai.service', () => ({ AIService: {} }));
 jest.mock('../src/services/trend-scanner.service', () => ({ TrendScannerService: {} }));
@@ -72,7 +76,8 @@ describe('STEP 1F-C — OAuth security boundary', () => {
     mockPrisma.influencerProfile.findUnique.mockResolvedValue(profile);
     mockPrisma.influencerProfile.update.mockResolvedValue(profile);
     mockPrisma.socialPlatform.findFirst.mockResolvedValue({ influencer: profile });
-    mockPrisma.socialPlatform.upsert.mockResolvedValue({});
+    mockPrisma.socialPlatform.upsert.mockResolvedValue({ id: 'social-1' });
+    mockEnqueueInstagramSync.mockResolvedValue({ accepted: true, status: 'sync_pending' });
     mockExchange.mockResolvedValue({ accessToken: 'provider-token', platformId: 'provider-id', expiresIn: 3600 });
     mockProfile.mockResolvedValue({ username: 'real_user', followers_count: 42 });
     mockPost.mockResolvedValue({ data: {
@@ -292,7 +297,10 @@ describe('STEP 1F-C — OAuth security boundary', () => {
     const linked = await start(platform, '/v1/integrations/urls?from=onboarding');
     const response = await callback(platform, linked, route);
     expect(response.status).toBe(302);
-    expect(response.headers.location).toBe(`https://frontend.example/onboarding?status=success&platform=${platform}`);
+    const expectedLocation = platform === 'instagram'
+      ? `https://frontend.example/onboarding?status=success&platform=${platform}&sync=sync_pending`
+      : `https://frontend.example/onboarding?status=success&platform=${platform}`;
+    expect(response.headers.location).toBe(expectedLocation);
     expect(mockPrisma.socialPlatform.upsert).toHaveBeenCalledTimes(1);
     expect(signSpy).not.toHaveBeenCalled();
     expect((await callback(platform, linked, route)).status).toBe(400);

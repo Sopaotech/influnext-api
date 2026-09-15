@@ -4,6 +4,7 @@ import { redisConnection } from './lib/redis';
 import { startCleanupWorker } from './workers/cleanup.worker';
 import { startNotificationWorker } from './workers/notification.worker';
 import { startPostAnalyzerWorker } from './workers/post-analyzer.worker';
+import { startInstagramSyncWorker } from './workers/instagram-sync.worker';
 import { startTokenRenewalWorker } from './workers/token-renewal.worker';
 
 export interface WorkerProcessRuntime {
@@ -18,6 +19,26 @@ function assertWorkerRuntimeConfiguration(): void {
 
   if (!process.env.REDIS_URL) {
     throw new Error('REDIS_URL is required to start application workers.');
+  }
+}
+
+async function ensureWorkerRedisReady(): Promise<void> {
+  const redisStatus = (): string => redisConnection.status;
+
+  if (redisStatus() === 'wait') {
+    await redisConnection.connect();
+  }
+
+  if (redisStatus() === 'ready') return;
+
+  if (redisStatus() === 'connecting' || redisStatus() === 'reconnecting') {
+    // ioredis can emit `ready` between an import and a listener registration.
+    // A command waits for the existing connection rather than racing that event.
+    await redisConnection.ping();
+  }
+
+  if (redisStatus() !== 'ready') {
+    throw new Error('Redis is not ready for application workers.');
   }
 }
 
@@ -43,19 +64,14 @@ export async function startWorkerProcess(): Promise<WorkerProcessRuntime> {
   try {
     await prisma.$connect();
 
-    if (redisConnection.status === 'wait') {
-      await redisConnection.connect();
-    }
-
-    if (redisConnection.status !== 'ready') {
-      throw new Error('Redis is not ready for application workers.');
-    }
+    await ensureWorkerRedisReady();
 
     workers.push(
       startNotificationWorker(),
       startCleanupWorker(),
       startTokenRenewalWorker(),
       startPostAnalyzerWorker(),
+      startInstagramSyncWorker(),
     );
     await Promise.all(workers.map(worker => worker.waitUntilReady()));
 

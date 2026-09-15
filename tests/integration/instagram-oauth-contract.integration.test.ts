@@ -30,7 +30,8 @@ import { app } from '../../src/app';
 import { getJwtSecret } from '../../src/lib/jwt-secret';
 import { prisma } from '../../src/lib/prisma';
 import { redisConnection } from '../../src/lib/redis';
-import { decryptSocialToken, isEncryptedSocialToken } from '../../src/utils/social-token-crypto';
+import { instagramSyncJobId, instagramSyncQueue } from '../../src/queues/instagram-sync.queue';
+import { decryptSocialToken, encryptSocialToken, isEncryptedSocialToken } from '../../src/utils/social-token-crypto';
 import {
   clearIntegrationDatabase,
   disconnectIntegrationPrisma,
@@ -87,8 +88,18 @@ async function startInstagramLink(creator: CreatorFixture) {
   return { response, url, state, cookie: cookieValue(response) };
 }
 
+async function clearInstagramSyncQueue(): Promise<void> {
+  await instagramSyncQueue.obliterate({ force: true });
+  const prefix = process.env.INSTAGRAM_SYNC_QUEUE_PREFIX || 'bull';
+  const keys = await redisConnection.keys(`${prefix}:instagram-sync:*`);
+  if (keys.length > 0) {
+    await redisConnection.del(...keys);
+  }
+}
+
 beforeEach(async () => {
   await clearIntegrationDatabase();
+  await clearInstagramSyncQueue();
   jest.clearAllMocks();
   mockExchangeCodeForToken.mockResolvedValue({
     accessToken: 'mock-long-lived-instagram-token',
@@ -106,6 +117,8 @@ beforeEach(async () => {
 
 afterAll(async () => {
   await clearIntegrationDatabase();
+  await clearInstagramSyncQueue();
+  await instagramSyncQueue.close();
   await Promise.all([
     prisma.$disconnect(),
     redisConnection.quit(),
@@ -144,18 +157,20 @@ describe('Instagram OAuth contract with local PostgreSQL and Redis', () => {
       .query({ code: 'mock-authorization-code', state: attempt.state })
       .expect(200);
 
-    expect(callback.body).toEqual({ success: true, platform: 'instagram', username: 'verified_creator', from: '' });
+    expect(callback.body).toEqual({
+      success: true,
+      platform: 'instagram',
+      username: 'verified_creator',
+      from: '',
+      instagramSyncStatus: 'sync_pending',
+    });
     expect(JSON.stringify(callback.body)).not.toContain('mock-long-lived-instagram-token');
     expect(mockExchangeCodeForToken).toHaveBeenCalledWith(
       'mock-authorization-code',
       'https://frontend.example.test/auth/callback/instagram',
     );
     expect(mockFetchProfileData).toHaveBeenCalledWith('mock-long-lived-instagram-token');
-    expect(mockSyncInstagramData).toHaveBeenCalledWith(
-      creator.profile.id,
-      'mock-long-lived-instagram-token',
-      'instagram-provider-id',
-    );
+    expect(mockSyncInstagramData).not.toHaveBeenCalled();
 
     const stored = await integrationPrisma.socialPlatform.findUnique({
       where: { influencerId_platformName: { influencerId: creator.profile.id, platformName: 'INSTAGRAM' } },
@@ -176,6 +191,16 @@ describe('Instagram OAuth contract with local PostgreSQL and Redis', () => {
       platformName: 'INSTAGRAM',
       field: 'accessToken',
     }).value).toBe('mock-long-lived-instagram-token');
+    expect(stored).toMatchObject({ lastSyncStatus: 'SYNC_PENDING' });
+
+    const syncJob = await instagramSyncQueue.getJob(instagramSyncJobId(stored!.id));
+    expect(syncJob?.data).toEqual({
+      socialPlatformId: stored!.id,
+      influencerId: creator.profile.id,
+      reason: 'post_oauth',
+      requestedByUserId: creator.user.id,
+    });
+    expect(JSON.stringify(syncJob?.data)).not.toContain('mock-long-lived-instagram-token');
 
     await request(app)
       .get('/v1/auth/social/callback/instagram')
@@ -185,40 +210,99 @@ describe('Instagram OAuth contract with local PostgreSQL and Redis', () => {
     await expect(integrationPrisma.socialPlatform.count()).resolves.toBe(1);
   });
 
-  it('keeps the callback successful when its asynchronous sync fails without leaking the token', async () => {
+  it('keeps the callback successful and visibly pending while the queued sync has not created a snapshot', async () => {
     const creator = await createCreator();
     const attempt = await startInstagramLink(creator);
-    const providerToken = 'mock-long-lived-instagram-token';
-    mockSyncInstagramData.mockRejectedValueOnce(new Error(`sync rejected for ${providerToken}`));
-    const log = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const callback = await request(app)
+      .get('/v1/auth/social/callback/instagram')
+      .set('Cookie', attempt.cookie)
+      .query({ code: 'mock-authorization-code', state: attempt.state })
+      .expect(200);
 
-    try {
-      const callback = await request(app)
-        .get('/v1/auth/social/callback/instagram')
-        .set('Cookie', attempt.cookie)
-        .query({ code: 'mock-authorization-code', state: attempt.state })
-        .expect(200);
+    expect(callback.body).toEqual(expect.objectContaining({
+      success: true,
+      platform: 'instagram',
+      instagramSyncStatus: 'sync_pending',
+    }));
+    expect(JSON.stringify(callback.body)).not.toContain('mock-long-lived-instagram-token');
+    expect(await integrationPrisma.socialPlatform.count()).toBe(1);
+    expect(await integrationPrisma.metricSnapshot.count()).toBe(0);
+    expect(mockSyncInstagramData).not.toHaveBeenCalled();
 
-      await new Promise(resolve => setImmediate(resolve));
-      expect(callback.body).toEqual(expect.objectContaining({ success: true, platform: 'instagram' }));
-      expect(JSON.stringify(callback.body)).not.toContain(providerToken);
-      expect(await integrationPrisma.socialPlatform.count()).toBe(1);
-      expect(await integrationPrisma.metricSnapshot.count()).toBe(0);
-      expect(log.mock.calls.flat().join(' ')).not.toContain(providerToken);
+    const dashboard = await request(app)
+      .get('/v1/dashboard/influencer')
+      .set(sessionHeader(creator.user))
+      .expect(200);
+    expect(dashboard.body.instagramSync).toMatchObject({
+      instagramSyncStatus: 'connected_without_snapshot',
+      instagramOperationalSyncStatus: 'sync_pending',
+      hasVerifiedSnapshot: false,
+      lastSnapshotAt: null,
+      metricsSource: 'unavailable',
+    });
+  });
 
-      const dashboard = await request(app)
-        .get('/v1/dashboard/influencer')
-        .set(sessionHeader(creator.user))
-        .expect(200);
-      expect(dashboard.body.instagramSync).toMatchObject({
-        instagramSyncStatus: 'connected_without_snapshot',
-        hasVerifiedSnapshot: false,
-        lastSnapshotAt: null,
-        metricsSource: 'unavailable',
-      });
-    } finally {
-      log.mockRestore();
-    }
+  it('queues a manual Instagram sync with a 202 response and never hands the token to HTTP provider code', async () => {
+    const creator = await createCreator();
+    const platform = await integrationPrisma.socialPlatform.create({
+      data: {
+        influencerId: creator.profile.id,
+        platformName: 'INSTAGRAM',
+        platformId: 'manual-sync-provider-id',
+        username: 'manual_sync_creator',
+        accessToken: encryptSocialToken('manual-sync-token-not-for-http', {
+          influencerId: creator.profile.id,
+          platformName: 'INSTAGRAM',
+          field: 'accessToken',
+        }),
+        isActive: true,
+      },
+    });
+
+    const response = await request(app)
+      .post('/v1/integrations/sync-metrics')
+      .set(sessionHeader(creator.user))
+      .expect(202);
+
+    expect(response.body).toEqual({ accepted: true, results: { INSTAGRAM: 'sync_pending' } });
+    expect(mockSyncInstagramData).not.toHaveBeenCalled();
+    const job = await instagramSyncQueue.getJob(instagramSyncJobId(platform.id));
+    expect(job?.data).toEqual({
+      socialPlatformId: platform.id,
+      influencerId: creator.profile.id,
+      reason: 'manual_retry',
+      requestedByUserId: creator.user.id,
+    });
+    expect(JSON.stringify(job?.data)).not.toContain('manual-sync-token-not-for-http');
+  });
+
+  it('returns an honest waiting result without enqueueing while a manual sync lease is still valid', async () => {
+    const creator = await createCreator();
+    const platform = await integrationPrisma.socialPlatform.create({
+      data: {
+        influencerId: creator.profile.id,
+        platformName: 'INSTAGRAM',
+        platformId: 'manual-lease-provider-id',
+        username: 'manual_lease_creator',
+        accessToken: encryptSocialToken('manual-lease-token', {
+          influencerId: creator.profile.id,
+          platformName: 'INSTAGRAM',
+          field: 'accessToken',
+        }),
+        lastSyncStatus: 'SYNCING',
+        syncLeaseExpiresAt: new Date(Date.now() + 60_000),
+        isActive: true,
+      },
+    });
+
+    const response = await request(app)
+      .post('/v1/integrations/sync-metrics')
+      .set(sessionHeader(creator.user))
+      .expect(202);
+
+    expect(response.body).toEqual({ accepted: true, results: { INSTAGRAM: 'syncing' } });
+    await expect(instagramSyncQueue.getJob(instagramSyncJobId(platform.id))).resolves.toBeUndefined();
+    expect(mockSyncInstagramData).not.toHaveBeenCalled();
   });
 
   it('fails a provider exchange without persisting an active social account', async () => {

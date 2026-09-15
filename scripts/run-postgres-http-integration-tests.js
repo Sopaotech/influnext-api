@@ -73,6 +73,7 @@ try {
     INTEGRATION_DIRECT_URL: directUrl.toString(),
     REDIS_TEST_URL: redisUrl.toString(),
     REDIS_URL: redisUrl.toString(),
+    INSTAGRAM_SYNC_QUEUE_PREFIX: 'influnext-test-http',
     JWT_SECRET: randomBytes(32).toString('hex'),
     ALLOWED_ORIGINS: '',
     FRONTEND_URL: 'https://frontend.example.test',
@@ -96,11 +97,28 @@ try {
     path.join('tests', 'integration', 'http-runtime.integration.test.ts'),
     path.join('tests', 'integration', 'lifecycle.integration.test.ts'),
     path.join('tests', 'integration', 'readiness.integration.test.ts'),
-    path.join('tests', 'integration', 'instagram-oauth-contract.integration.test.ts'),
     path.join('tests', 'integration', 'instagram-sync-status.integration.test.ts'),
     path.join('tests', 'integration', 'instagram-sync-state.integration.test.ts'),
     path.join('tests', 'integration', 'instagram-snapshot-collection.integration.test.ts'),
+    path.join('tests', 'integration', 'instagram-oauth-contract.integration.test.ts'),
   ], testEnvironment);
+
+  // Queue imports can recreate BullMQ metadata after an individual test's
+  // teardown. Remove only this runner's isolated prefix once every suite has
+  // passed, leaving no jobs or keys in the local Redis test namespace.
+  run(process.execPath, ['-e', `
+    const Redis = require('ioredis');
+    const redis = new Redis(process.env.REDIS_URL, { lazyConnect: true });
+    (async () => {
+      await redis.connect();
+      const keys = await redis.keys('influnext-test-http:instagram-sync:*');
+      if (keys.length) await redis.del(...keys);
+      await redis.quit();
+    })().catch(async () => {
+      try { await redis.quit(); } catch {}
+      process.exitCode = 1;
+    });
+  `], testEnvironment);
 } catch (error) {
   console.error('[http-integration-test-harness] blocked:', error instanceof Error ? error.message : 'unknown error');
   process.exit(1);

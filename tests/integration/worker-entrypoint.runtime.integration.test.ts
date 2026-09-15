@@ -48,7 +48,7 @@ describe('worker process local runtime smoke', () => {
 
     const runtime = await startWorkerProcess();
 
-    expect(runtime.workers).toHaveLength(4);
+    expect(runtime.workers).toHaveLength(5);
     expect(listenSpy).not.toHaveBeenCalled();
     expect(mockSchedulerImport).not.toHaveBeenCalled();
     expect(mockPushDelivery).not.toHaveBeenCalled();

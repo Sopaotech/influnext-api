@@ -7,6 +7,7 @@ const mockCalendarInsert = jest.fn();
 const mockSetCredentials = jest.fn();
 const mockGoogleOAuth2 = jest.fn();
 const mockGoogleCalendar = jest.fn();
+const mockEnqueueInstagramSync = jest.fn();
 
 const mockPrisma = {
   influencerProfile: { findUnique: jest.fn(), update: jest.fn() },
@@ -23,6 +24,9 @@ jest.mock('../src/services/scoring.service', () => ({
 }));
 jest.mock('../src/services/ai.service', () => ({
   AIService: { generateWeeklyAnalysis: mockGenerateWeeklyAnalysis },
+}));
+jest.mock('../src/services/instagram-sync-queue.service', () => ({
+  enqueueInstagramSync: mockEnqueueInstagramSync,
 }));
 jest.mock('../src/services/trend-scanner.service', () => ({
   TrendScannerService: { scanRealTimeTrends: jest.fn() },
@@ -95,6 +99,7 @@ describe('STEP 1H-B1 — Social token exposure containment', () => {
     mockGenerateWeeklyAnalysis.mockResolvedValue({});
     mockGoogleOAuth2.mockImplementation(() => ({ setCredentials: mockSetCredentials }));
     mockGoogleCalendar.mockImplementation(() => ({ events: { insert: mockCalendarInsert } }));
+    mockEnqueueInstagramSync.mockResolvedValue({ accepted: true, status: 'sync_pending' });
   });
 
   afterAll(() => { process.env = originalEnv; });
@@ -197,21 +202,27 @@ describe('STEP 1H-B1 — Social token exposure containment', () => {
     }).value).toBe('simulated_access_token_instagram');
   });
 
-  it('sync metrics decrypts an encrypted access token before the provider call', async () => {
+  it('sync metrics enqueues Instagram by identifiers only and never decrypts its access token in HTTP', async () => {
     const encryptedToken = encryptSocialToken('sync-access-secret', {
       influencerId: 'profile-1', platformName: 'INSTAGRAM', field: 'accessToken',
     });
     mockPrisma.influencerProfile.findUnique.mockResolvedValue({
       id: 'profile-1',
-      platforms: [{ platformName: 'INSTAGRAM', platformId: 'provider-1', accessToken: encryptedToken }],
+      platforms: [{ id: 'platform-1', platformName: 'INSTAGRAM', platformId: 'provider-1', accessToken: encryptedToken }],
     });
-    const sync = jest.spyOn(InstagramService, 'syncInstagramData').mockResolvedValue({} as any);
     const res = responseMock();
 
     await syncPlatformMetrics({ user: { id: 'user-1' } } as any, res);
 
-    expect(sync).toHaveBeenCalledWith('profile-1', 'sync-access-secret', 'provider-1');
-    expect(res.json).toHaveBeenCalledWith({ synced: true, results: { INSTAGRAM: 'synced' } });
+    expect(mockEnqueueInstagramSync).toHaveBeenCalledWith({
+      socialPlatformId: 'platform-1',
+      influencerId: 'profile-1',
+      reason: 'manual_retry',
+      requestedByUserId: 'user-1',
+    });
+    expect(mockEnqueueInstagramSync.mock.calls.flat().join(' ')).not.toContain('sync-access-secret');
+    expect(res.status).toHaveBeenCalledWith(202);
+    expect(res.json).toHaveBeenCalledWith({ accepted: true, results: { INSTAGRAM: 'sync_pending' } });
   });
 
   it('admin renewal debug response and log do not expose an error token', async () => {
