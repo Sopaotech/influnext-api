@@ -24,6 +24,15 @@ function isPartialCollection(result: any): boolean {
   return Boolean(result?.collection?.isPartial);
 }
 
+/**
+ * Only direct user-initiated connection and manual refreshes may opt in to the
+ * legacy post-snapshot AI analysis. Retry and scheduled jobs collect metrics
+ * only, so a periodic dispatcher cannot create an uncontrolled AI fan-out.
+ */
+function shouldTriggerPostSnapshotAI(reason: InstagramSyncJobData['reason']): boolean {
+  return reason === 'post_oauth' || reason === 'manual_retry';
+}
+
 export async function processInstagramSyncWithDependencies(
   job: Job<InstagramSyncQueueJobData>,
   dependencies: InstagramSyncWorkerDependencies,
@@ -89,6 +98,7 @@ export async function processInstagramSyncWithDependencies(
       platform.influencerId,
       accessToken,
       platform.platformId,
+      { triggerAIAnalysis: shouldTriggerPostSnapshotAI(data.reason) },
     );
     const finishedAt = new Date();
 

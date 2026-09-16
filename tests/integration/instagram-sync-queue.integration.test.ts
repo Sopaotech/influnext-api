@@ -34,6 +34,7 @@ import {
   processInstagramSync,
   processInstagramSyncWithDependencies,
 } from '../../src/workers/instagram-sync.worker';
+import { AIService } from '../../src/services/ai.service';
 import { prisma } from '../../src/lib/prisma';
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
@@ -194,6 +195,95 @@ describe('Instagram sync queue with local PostgreSQL and Redis', () => {
     expect(platform.lastSyncSuccessAt).toBeInstanceOf(Date);
     expect(snapshot).toMatchObject({ followers: 1200, reachLast30Days: 700 });
     expect(JSON.stringify(job.data)).not.toContain('fake-instagram-token-not-in-job');
+    expect(AIService.generateWeeklyAnalysis).toHaveBeenCalledWith(creator.profile.id);
+  });
+
+  it('creates a scheduled snapshot without triggering AI', async () => {
+    const creator = await createConnectedCreator();
+    mockedAxios.get
+      .mockResolvedValueOnce(profileResponse(creator.platform.platformId))
+      .mockResolvedValueOnce({ data: { data: [recentImage('scheduled-no-ai')] } })
+      .mockResolvedValueOnce({
+        data: {
+          data: [
+            { name: 'impressions', values: [{ value: 900 }] },
+            { name: 'reach', values: [{ value: 700 }] },
+            { name: 'saved', values: [{ value: 30 }] },
+          ],
+        },
+      });
+    const redis = await startHarness();
+    const job = await redis.queue.add('sync-instagram', {
+      socialPlatformId: creator.platform.id,
+      influencerId: creator.profile.id,
+      reason: 'scheduled',
+    });
+
+    await expect(job.waitUntilFinished(redis.events, 5_000)).resolves.toEqual({ status: 'synced' });
+    await expect(integrationPrisma.metricSnapshot.count({ where: { influencerId: creator.profile.id } }))
+      .resolves.toBe(1);
+    expect(AIService.generateWeeklyAnalysis).not.toHaveBeenCalled();
+  });
+
+  it('keeps post-snapshot AI explicit for a successful manual sync', async () => {
+    const creator = await createConnectedCreator();
+    mockedAxios.get
+      .mockResolvedValueOnce(profileResponse(creator.platform.platformId))
+      .mockResolvedValueOnce({ data: { data: [recentImage('manual-ai')] } })
+      .mockResolvedValueOnce({
+        data: {
+          data: [
+            { name: 'impressions', values: [{ value: 900 }] },
+            { name: 'reach', values: [{ value: 700 }] },
+            { name: 'saved', values: [{ value: 30 }] },
+          ],
+        },
+      });
+    const redis = await startHarness();
+    const job = await redis.queue.add('sync-instagram', {
+      socialPlatformId: creator.platform.id,
+      influencerId: creator.profile.id,
+      reason: 'manual_retry',
+      requestedByUserId: creator.user.id,
+    });
+
+    await expect(job.waitUntilFinished(redis.events, 5_000)).resolves.toEqual({ status: 'synced' });
+    expect(AIService.generateWeeklyAnalysis).toHaveBeenCalledWith(creator.profile.id);
+  });
+
+  it('does not let an opted-in AI failure revert a post-OAuth snapshot', async () => {
+    const creator = await createConnectedCreator();
+    (AIService.generateWeeklyAnalysis as jest.Mock).mockRejectedValueOnce(new Error('mock-ai-failure'));
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    mockedAxios.get
+      .mockResolvedValueOnce(profileResponse(creator.platform.platformId))
+      .mockResolvedValueOnce({ data: { data: [recentImage('post-oauth-ai-failure')] } })
+      .mockResolvedValueOnce({
+        data: {
+          data: [
+            { name: 'impressions', values: [{ value: 900 }] },
+            { name: 'reach', values: [{ value: 700 }] },
+            { name: 'saved', values: [{ value: 30 }] },
+          ],
+        },
+      });
+    const redis = await startHarness();
+    const job = await redis.queue.add('sync-instagram', {
+      socialPlatformId: creator.platform.id,
+      influencerId: creator.profile.id,
+      reason: 'post_oauth',
+    });
+
+    try {
+      await expect(job.waitUntilFinished(redis.events, 5_000)).resolves.toEqual({ status: 'synced' });
+      await expect(integrationPrisma.metricSnapshot.count({ where: { influencerId: creator.profile.id } }))
+        .resolves.toBe(1);
+      await expect(integrationPrisma.socialPlatform.findUniqueOrThrow({ where: { id: creator.platform.id } }))
+        .resolves.toMatchObject({ lastSyncStatus: 'SYNCED', syncFailureCount: 0 });
+      expect(AIService.generateWeeklyAnalysis).toHaveBeenCalledWith(creator.profile.id);
+    } finally {
+      errorSpy.mockRestore();
+    }
   });
 
   it('records NO_RECENT_MEDIA without manufacturing a snapshot', async () => {
@@ -449,7 +539,7 @@ describe('Instagram sync queue with local PostgreSQL and Redis', () => {
     }
   });
 
-  it('processes a scheduled retry into a verified snapshot and resets the failure count', async () => {
+  it('processes an automatic retry into a verified snapshot without triggering AI', async () => {
     const creator = await createConnectedCreator();
     await integrationPrisma.socialPlatform.update({
       where: { id: creator.platform.id },
@@ -481,5 +571,6 @@ describe('Instagram sync queue with local PostgreSQL and Redis', () => {
         syncFailureCount: 0,
         nextSyncRetryAt: null,
       });
+    expect(AIService.generateWeeklyAnalysis).not.toHaveBeenCalled();
   });
 });

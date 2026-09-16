@@ -148,8 +148,14 @@ export class InstagramService {
    * @param influencerId — ID do influenciador no banco de dados (InfluencerProfile.id)
    * @param accessToken  — Long-Lived Token do Instagram do criador
    * @param igUserId     — ID do usuário no Instagram (retornado no exchangeCodeForToken)
+   * @param options      — Efeitos opcionais após um snapshot; a coleta nunca depende deles.
    */
-  static async syncInstagramData(influencerId: string, accessToken: string, igUserId: string) {
+  static async syncInstagramData(
+    influencerId: string,
+    accessToken: string,
+    igUserId: string,
+    options: { triggerAIAnalysis?: boolean } = {},
+  ) {
     console.log(`[INSTAGRAM_SYNC] Iniciando sincronização para influenciador: ${influencerId}, IG User ID: ${igUserId}`);
 
     try {
@@ -423,16 +429,19 @@ export class InstagramService {
         data: { verifiedMetrics: true },
       });
 
-      // 7. Disparar geração de análise semanal pela IA (assíncrono — não bloqueia a resposta)
-      try {
-        const { AIService } = require('./ai.service');
-        if (AIService?.generateWeeklyAnalysis) {
-          Promise.resolve(AIService.generateWeeklyAnalysis(influencerId)).catch((err: any) => {
-            console.error('[INSTAGRAM_SYNC] Erro ao disparar análise pós-sync:', err);
-          });
+      // AI is deliberately opt-in. Snapshot collection must stay safe for retries
+      // and future periodic dispatches, which must not fan out into provider calls.
+      if (options.triggerAIAnalysis === true) {
+        try {
+          const { AIService } = require('./ai.service');
+          if (AIService?.generateWeeklyAnalysis) {
+            Promise.resolve(AIService.generateWeeklyAnalysis(influencerId)).catch((err: any) => {
+              console.error('[INSTAGRAM_SYNC] Erro ao disparar análise pós-sync:', sanitizeProviderError(err));
+            });
+          }
+        } catch (requireErr) {
+          console.error('[INSTAGRAM_SYNC] Erro ao carregar AIService dinamicamente:', sanitizeProviderError(requireErr));
         }
-      } catch (requireErr) {
-        console.error('[INSTAGRAM_SYNC] Erro ao carregar AIService dinamicamente:', requireErr);
       }
 
       console.log(`[INSTAGRAM_SYNC] ✅ Sincronização de @${username} finalizada! Seguidores: ${followers}, Engajamento: ${engagementRate}%, Views médias: ${avgViews}`);
