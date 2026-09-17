@@ -59,12 +59,13 @@ async function createInstagramPlatform(
   creator: CreatorFixture,
   data: Partial<{
     isActive: boolean;
-    lastSyncStatus: 'NEVER_SYNCED' | 'SYNCED' | 'PARTIAL' | 'FAILED_RETRYABLE' | 'FAILED_RECONNECT_REQUIRED' | 'DISABLED';
+    lastSyncStatus: 'NEVER_SYNCED' | 'SYNC_PENDING' | 'SYNCING' | 'SYNCED' | 'PARTIAL' | 'FAILED_RETRYABLE' | 'FAILED_RECONNECT_REQUIRED' | 'DISABLED';
     lastSyncAttemptAt: Date;
     lastSyncSuccessAt: Date;
     lastSyncFailureAt: Date;
     syncFailureCount: number;
     nextSyncRetryAt: Date;
+    syncLeaseExpiresAt: Date;
   }> = {},
 ) {
   return integrationPrisma.socialPlatform.create({
@@ -113,7 +114,7 @@ describe('Instagram SocialPlatform sync state with local PostgreSQL', () => {
   it('keeps snapshot verification false when a persisted operational status has no Instagram snapshot', async () => {
     const creator = await createCreator();
     const failedAt = new Date('2026-09-15T12:00:00.000Z');
-    const retryAt = new Date('2026-09-15T12:30:00.000Z');
+    const retryAt = new Date(Date.now() + 30 * 60 * 1000);
     await createInstagramPlatform(creator, {
       lastSyncStatus: 'FAILED_RETRYABLE',
       lastSyncAttemptAt: failedAt,
@@ -215,6 +216,26 @@ describe('Instagram SocialPlatform sync state with local PostgreSQL', () => {
       metricsSource: 'unavailable',
       syncAction: 'connect',
       syncMessageKey: 'instagram.not_connected',
+    });
+  });
+
+  it('reports syncing only while the Instagram worker lease remains valid', async () => {
+    const creator = await createCreator();
+    await createInstagramPlatform(creator, {
+      lastSyncStatus: 'SYNCING',
+      syncLeaseExpiresAt: new Date(Date.now() + 60_000),
+    });
+
+    const dashboard = await request(app)
+      .get('/v1/dashboard/influencer')
+      .set(sessionHeader(creator.user))
+      .expect(200);
+
+    expect(dashboard.body.instagramFreshness).toMatchObject({
+      status: 'syncing',
+      isVerifiedSnapshot: false,
+      syncAction: 'wait',
+      syncMessageKey: 'instagram.syncing',
     });
   });
 });

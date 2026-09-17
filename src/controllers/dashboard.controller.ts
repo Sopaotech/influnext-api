@@ -28,6 +28,7 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
             lastSyncStatus: true,
             syncFailureCount: true,
             nextSyncRetryAt: true,
+            syncLeaseExpiresAt: true,
           }
         },
         contracts: {
@@ -89,7 +90,12 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
       profile.insights,
       instagramSync.hasVerifiedSnapshot,
     );
-    const instagramFreshness = getInstagramFreshness(instagramSync, instagramMetricCollection);
+    const instagramSyncLeaseExpiresAt = profile.platforms.find(
+      platform => platform.platformName === 'INSTAGRAM',
+    )?.syncLeaseExpiresAt || null;
+    const instagramFreshness = getInstagramFreshness(instagramSync, instagramMetricCollection, {
+      syncLeaseExpiresAt: instagramSyncLeaseExpiresAt,
+    });
 
     // Cálculo de Progresso de Perfil (Fase 1 do Roadmap)
     let progress = 0;

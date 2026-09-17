@@ -223,6 +223,8 @@ describe('Instagram sync status boundary with local PostgreSQL', () => {
       isVerifiedSnapshot: true,
       metricsSource: 'instagram_api_snapshot',
     });
+    expect(Object.keys(publicProfile.body.instagramFreshness).sort())
+      .toEqual(Object.keys(dashboard.body.instagramFreshness).sort());
     expect(publicProfile.body.metricsHistory[0]).toMatchObject({ followers: 9876, integrityHash: 'instagram-sync-status-test-hash' });
     expect(JSON.stringify(publicProfile.body)).not.toMatch(/accessToken|refreshToken|fake-instagram-token/);
   });

@@ -36,6 +36,15 @@ export interface InstagramFreshnessContract {
   syncMessageKey: string;
 }
 
+export interface InstagramFreshnessOptions {
+  now?: Date;
+  /**
+   * Internal worker lease used only to determine whether `syncing` remains
+   * current. The lease itself is deliberately not exposed in this contract.
+   */
+  syncLeaseExpiresAt?: Date | null;
+}
+
 function collectionWindowDays(collection: InstagramMetricCollectionContract): number | null {
   return collection.scope === 'recent_media_sample_30d' ? 30 : null;
 }
@@ -65,33 +74,9 @@ function baseContract(
   };
 }
 
-export function getInstagramFreshness(
-  sync: InstagramSyncStatusContract,
-  collection: InstagramMetricCollectionContract,
-  options: { now?: Date } = {},
+function snapshotFreshness(
+  base: Omit<InstagramFreshnessContract, 'status' | 'syncAction' | 'syncMessageKey'>,
 ): InstagramFreshnessContract {
-  const now = options.now || new Date();
-  const base = baseContract(sync, collection, now);
-
-  if (sync.instagramConnectionStatus === 'not_connected' || sync.instagramOperationalSyncStatus === 'disabled') {
-    return { ...base, status: 'unavailable', syncAction: 'connect', syncMessageKey: 'instagram.not_connected' };
-  }
-
-  switch (sync.instagramOperationalSyncStatus) {
-    case 'sync_pending':
-      return { ...base, status: 'pending', syncAction: 'wait', syncMessageKey: 'instagram.sync_pending' };
-    case 'syncing':
-      return { ...base, status: 'syncing', syncAction: 'wait', syncMessageKey: 'instagram.syncing' };
-    case 'failed_retryable':
-      return { ...base, status: 'retry_scheduled', syncAction: 'retry_later', syncMessageKey: 'instagram.retry_scheduled' };
-    case 'failed_reconnect_required':
-      return { ...base, status: 'reconnect_required', syncAction: 'reconnect', syncMessageKey: 'instagram.reconnect_required' };
-    case 'no_recent_media':
-      return { ...base, status: 'unavailable', syncAction: 'none', syncMessageKey: 'instagram.no_recent_media' };
-    default:
-      break;
-  }
-
   if (!base.isVerifiedSnapshot) {
     return { ...base, status: 'unavailable', syncAction: 'none', syncMessageKey: 'instagram.snapshot_unavailable' };
   }
@@ -101,4 +86,43 @@ export function getInstagramFreshness(
   }
 
   return { ...base, status: 'fresh', syncAction: 'none', syncMessageKey: 'instagram.snapshot_fresh' };
+}
+
+export function getInstagramFreshness(
+  sync: InstagramSyncStatusContract,
+  collection: InstagramMetricCollectionContract,
+  options: InstagramFreshnessOptions = {},
+): InstagramFreshnessContract {
+  const now = options.now || new Date();
+  const base = baseContract(sync, collection, now);
+  const hasActiveSyncLease = Boolean(
+    options.syncLeaseExpiresAt && options.syncLeaseExpiresAt.getTime() > now.getTime(),
+  );
+
+  if (sync.instagramConnectionStatus === 'not_connected' || sync.instagramOperationalSyncStatus === 'disabled') {
+    return { ...base, status: 'unavailable', syncAction: 'connect', syncMessageKey: 'instagram.not_connected' };
+  }
+
+  switch (sync.instagramOperationalSyncStatus) {
+    case 'sync_pending':
+      return { ...base, status: 'pending', syncAction: 'wait', syncMessageKey: 'instagram.sync_pending' };
+    case 'syncing':
+      if (hasActiveSyncLease) {
+        return { ...base, status: 'syncing', syncAction: 'wait', syncMessageKey: 'instagram.syncing' };
+      }
+      return { ...snapshotFreshness(base), syncMessageKey: 'instagram.sync_lease_expired' };
+    case 'failed_retryable':
+      if (sync.nextSyncRetryAt && sync.nextSyncRetryAt.getTime() > now.getTime()) {
+        return { ...base, status: 'retry_scheduled', syncAction: 'retry_later', syncMessageKey: 'instagram.retry_scheduled' };
+      }
+      return { ...snapshotFreshness(base), syncMessageKey: 'instagram.retry_unavailable' };
+    case 'failed_reconnect_required':
+      return { ...base, status: 'reconnect_required', syncAction: 'reconnect', syncMessageKey: 'instagram.reconnect_required' };
+    case 'no_recent_media':
+      return { ...snapshotFreshness(base), syncMessageKey: 'instagram.no_recent_media' };
+    default:
+      break;
+  }
+
+  return snapshotFreshness(base);
 }

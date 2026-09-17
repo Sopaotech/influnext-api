@@ -60,7 +60,7 @@ describe('Instagram freshness contract', () => {
     });
   });
 
-  it('prioritizes pending and active sync state over the age of a previous snapshot', () => {
+  it('prioritizes pending and a valid worker lease over the age of a previous snapshot', () => {
     const snapshotAt = new Date('2026-09-16T10:00:00.000Z');
 
     expect(getInstagramFreshness(
@@ -71,8 +71,17 @@ describe('Instagram freshness contract', () => {
     expect(getInstagramFreshness(
       connectedSync('SYNCING', snapshotAt),
       completeCollection,
-      { now },
+      { now, syncLeaseExpiresAt: new Date('2026-09-17T15:01:00.000Z') },
     )).toMatchObject({ status: 'syncing', isStale: true, syncAction: 'wait' });
+    expect(getInstagramFreshness(
+      connectedSync('SYNCING', snapshotAt),
+      completeCollection,
+      { now, syncLeaseExpiresAt: new Date('2026-09-17T14:59:59.999Z') },
+    )).toMatchObject({
+      status: 'stale',
+      syncAction: 'none',
+      syncMessageKey: 'instagram.sync_lease_expired',
+    });
   });
 
   it('maps retry and reconnect state to sanitized actions without exposing an error payload', () => {
@@ -96,6 +105,27 @@ describe('Instagram freshness contract', () => {
       status: 'reconnect_required',
       syncAction: 'reconnect',
       syncMessageKey: 'instagram.reconnect_required',
+    });
+    expect(getInstagramFreshness(
+      connectedSync('FAILED_RETRYABLE', null),
+      unavailableCollection,
+      { now },
+    )).toMatchObject({
+      status: 'unavailable',
+      syncAction: 'none',
+      syncMessageKey: 'instagram.retry_unavailable',
+    });
+  });
+
+  it('keeps an existing snapshot truthful when a later collection finds no recent media', () => {
+    const sync = connectedSync('NO_RECENT_MEDIA', new Date('2026-09-17T14:00:00.000Z'));
+
+    expect(getInstagramFreshness(sync, completeCollection, { now })).toMatchObject({
+      status: 'fresh',
+      isVerifiedSnapshot: true,
+      metricsSource: 'instagram_api_snapshot',
+      syncAction: 'none',
+      syncMessageKey: 'instagram.no_recent_media',
     });
   });
 

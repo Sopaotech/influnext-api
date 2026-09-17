@@ -68,6 +68,7 @@ export const getPublicProfile = async (req: Request, res: Response): Promise<voi
             lastSyncStatus: true,
             syncFailureCount: true,
             nextSyncRetryAt: true,
+            syncLeaseExpiresAt: true,
           }
         },
         // Buscamos as provas de ROI (Tasks da IA concluídas com performance medida)
@@ -120,7 +121,12 @@ export const getPublicProfile = async (req: Request, res: Response): Promise<voi
       profile.insights,
       instagramSync.hasVerifiedSnapshot,
     );
-    const instagramFreshness = getInstagramFreshness(instagramSync, instagramMetricCollection);
+    const instagramSyncLeaseExpiresAt = profile.platforms.find(
+      platform => platform.platformName === 'INSTAGRAM',
+    )?.syncLeaseExpiresAt || null;
+    const instagramFreshness = getInstagramFreshness(instagramSync, instagramMetricCollection, {
+      syncLeaseExpiresAt: instagramSyncLeaseExpiresAt,
+    });
     const { platforms, metricsHistory, verifiedMetrics: _legacyVerifiedMetrics, insights: _insights, ...publicProfile } = profile;
 
     res.status(200).json({

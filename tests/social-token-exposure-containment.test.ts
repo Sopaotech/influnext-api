@@ -176,6 +176,7 @@ describe('STEP 1H-B1 — Social token exposure containment', () => {
       lastSyncStatus: true,
       syncFailureCount: true,
       nextSyncRetryAt: true,
+      syncLeaseExpiresAt: true,
     });
     expect(JSON.stringify(res.json.mock.calls[0][0])).not.toMatch(/accessToken|refreshToken/);
   });
