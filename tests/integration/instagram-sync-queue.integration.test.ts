@@ -23,7 +23,12 @@ import {
 import { enqueueInstagramSync } from '../../src/services/instagram-sync-queue.service';
 import { enqueueEligibleInstagramSyncRetries } from '../../src/services/instagram-sync-retry.service';
 import {
+  dispatchEligibleScheduledInstagramSyncs,
+  INSTAGRAM_SCHEDULED_SYNC_BATCH_SIZE,
+} from '../../src/services/instagram-scheduled-sync.service';
+import {
   InstagramSyncJobData,
+  INSTAGRAM_SCHEDULED_SYNC_DISPATCH_JOB_NAME,
   INSTAGRAM_SYNC_RETRY_JOB_NAME,
   instagramSyncJobId,
 } from '../../src/queues/instagram-sync.queue';
@@ -118,6 +123,52 @@ async function startHarness(): Promise<RedisBullMqIntegrationHarness> {
   return harness;
 }
 
+async function createInstagramSnapshot(
+  creator: CreatorFixture,
+  capturedAt: Date,
+): Promise<void> {
+  await integrationPrisma.metricSnapshot.create({
+    data: {
+      influencerId: creator.profile.id,
+      provider: 'INSTAGRAM',
+      followers: 1200,
+      engagementRate: 4.2,
+      reachLast30Days: 700,
+      avgViews: 900,
+      capturedAt,
+      integrityHash: randomUUID().replace(/-/g, ''),
+    },
+  });
+}
+
+async function markEligibleForScheduledSync(
+  creator: CreatorFixture,
+  status: 'SYNCED' | 'PARTIAL' = 'SYNCED',
+  now = new Date(),
+): Promise<void> {
+  const staleAt = new Date(now.getTime() - (24 * 60 * 60 * 1000) - 60_000);
+  await Promise.all([
+    createInstagramSnapshot(creator, staleAt),
+    integrationPrisma.socialPlatform.update({
+      where: { id: creator.platform.id },
+      data: {
+        lastSyncStatus: status,
+        lastSyncSuccessAt: staleAt,
+        nextSyncRetryAt: null,
+        syncLeaseExpiresAt: null,
+      },
+    }),
+  ]);
+}
+
+function enqueueJobInHarness(redis: RedisBullMqIntegrationHarness) {
+  return (data: InstagramSyncJobData) => redis.queue.add('sync-instagram', data, {
+    jobId: instagramSyncJobId(data.socialPlatformId),
+    removeOnComplete: true,
+    removeOnFail: true,
+  });
+}
+
 beforeEach(async () => {
   await closeHarness();
   await clearIntegrationDatabase();
@@ -153,6 +204,30 @@ describe('Instagram sync queue with local PostgreSQL and Redis', () => {
     expect(job.data).toEqual({});
     expect(retrySweep).toHaveBeenCalledTimes(1);
     expect(mockedAxios.get).not.toHaveBeenCalled();
+  });
+
+  it('runs the scheduled dispatch job as a token-free database sweep without calling a provider', async () => {
+    const scheduledSyncDispatch = jest.fn().mockResolvedValue({
+      scanned: 2,
+      eligible: 2,
+      enqueued: 1,
+      skipped: 1,
+      failed: 0,
+    });
+    harness = await createRedisBullMqIntegrationHarness(
+      job => processInstagramSyncWithDependencies(job, { scheduledSyncDispatch }),
+      { queueName: 'instagram-sync' },
+    );
+    const job = await harness.queue.add(INSTAGRAM_SCHEDULED_SYNC_DISPATCH_JOB_NAME, {});
+
+    await expect(job.waitUntilFinished(harness.events, 5_000)).resolves.toEqual({
+      status: 'scheduled_sync_dispatch_completed',
+      enqueued: 1,
+    });
+    expect(job.data).toEqual({});
+    expect(scheduledSyncDispatch).toHaveBeenCalledTimes(1);
+    expect(mockedAxios.get).not.toHaveBeenCalled();
+    expect(AIService.generateWeeklyAnalysis).not.toHaveBeenCalled();
   });
 
   it('processes a token-free job into an Instagram snapshot and SYNCED operational state', async () => {
@@ -423,8 +498,157 @@ describe('Instagram sync queue with local PostgreSQL and Redis', () => {
           nextSyncRetryAt: null,
         });
     } finally {
-      await redis.queue.resume();
+      await closeHarness();
     }
+  });
+
+  it('dispatches stale SYNCED and PARTIAL connections in token-free scheduled jobs', async () => {
+    const now = new Date();
+    const synced = await createConnectedCreator();
+    const partial = await createConnectedCreator();
+    await markEligibleForScheduledSync(synced, 'SYNCED', now);
+    await markEligibleForScheduledSync(partial, 'PARTIAL', now);
+    const redis = await startHarness();
+    await redis.queue.pause();
+
+    try {
+      const result = await dispatchEligibleScheduledInstagramSyncs({
+        now,
+        enqueue: request => enqueueInstagramSync(request, {
+          enqueueJob: enqueueJobInHarness(redis),
+        }),
+      });
+
+      expect(result).toEqual({ scanned: 2, eligible: 2, enqueued: 2, skipped: 0, failed: 0 });
+      const jobs = await redis.queue.getWaiting();
+      expect(jobs).toHaveLength(2);
+      expect(jobs.map(job => job.data)).toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          socialPlatformId: synced.platform.id,
+          influencerId: synced.profile.id,
+          reason: 'scheduled',
+        }),
+        expect.objectContaining({
+          socialPlatformId: partial.platform.id,
+          influencerId: partial.profile.id,
+          reason: 'scheduled',
+        }),
+      ]));
+      for (const job of jobs) {
+        expect(Object.keys(job.data).sort()).toEqual([
+          'influencerId',
+          'reason',
+          'socialPlatformId',
+        ]);
+      }
+      expect(JSON.stringify(jobs.map(job => job.data))).not.toContain('fake-instagram-token-not-in-job');
+      await expect(integrationPrisma.socialPlatform.findUniqueOrThrow({ where: { id: synced.platform.id } }))
+        .resolves.toMatchObject({ lastSyncStatus: 'SYNC_PENDING', nextSyncRetryAt: null });
+    } finally {
+      await closeHarness();
+    }
+  });
+
+  it('does not dispatch fresh connections, blocked statuses, or a valid lease', async () => {
+    const now = new Date();
+    const fresh = await createConnectedCreator();
+    await createInstagramSnapshot(fresh, new Date(now.getTime() - (23 * 60 * 60 * 1000)));
+    await integrationPrisma.socialPlatform.update({
+      where: { id: fresh.platform.id },
+      data: { lastSyncStatus: 'SYNCED', lastSyncSuccessAt: new Date(now.getTime() - (23 * 60 * 60 * 1000)) },
+    });
+
+    const lease = await createConnectedCreator();
+    await markEligibleForScheduledSync(lease, 'SYNCED', now);
+    await integrationPrisma.socialPlatform.update({
+      where: { id: lease.platform.id },
+      data: { syncLeaseExpiresAt: new Date(now.getTime() + 60_000) },
+    });
+
+    for (const status of [
+      'FAILED_RETRYABLE',
+      'FAILED_RECONNECT_REQUIRED',
+      'DISABLED',
+      'SYNC_PENDING',
+      'SYNCING',
+      'NEVER_SYNCED',
+      'NO_RECENT_MEDIA',
+    ] as const) {
+      const creator = await createConnectedCreator();
+      await integrationPrisma.socialPlatform.update({
+        where: { id: creator.platform.id },
+        data: {
+          lastSyncStatus: status,
+          lastSyncSuccessAt: new Date(now.getTime() - (25 * 60 * 60 * 1000)),
+          ...(status === 'FAILED_RETRYABLE' ? { nextSyncRetryAt: new Date(now.getTime() + 60_000) } : {}),
+        },
+      });
+    }
+
+    const enqueue = jest.fn();
+    await expect(dispatchEligibleScheduledInstagramSyncs({ now, enqueue })).resolves.toEqual({
+      scanned: 0,
+      eligible: 0,
+      enqueued: 0,
+      skipped: 0,
+      failed: 0,
+    });
+    expect(enqueue).not.toHaveBeenCalled();
+  });
+
+  it('continues a scheduled batch when an individual enqueue fails', async () => {
+    const now = new Date();
+    await markEligibleForScheduledSync(await createConnectedCreator(), 'SYNCED', now);
+    await markEligibleForScheduledSync(await createConnectedCreator(), 'PARTIAL', now);
+    const enqueue = jest.fn()
+      .mockRejectedValueOnce(new Error('controlled queue failure'))
+      .mockResolvedValueOnce({ accepted: true, status: 'sync_pending' });
+
+    await expect(dispatchEligibleScheduledInstagramSyncs({ now, enqueue })).resolves.toEqual({
+      scanned: 2,
+      eligible: 2,
+      enqueued: 1,
+      skipped: 0,
+      failed: 1,
+    });
+    expect(enqueue).toHaveBeenCalledTimes(2);
+  });
+
+  it('deduplicates repeated scheduled dispatches and limits a batch to 25 accounts', async () => {
+    const now = new Date();
+    const deduped = await createConnectedCreator();
+    await markEligibleForScheduledSync(deduped, 'SYNCED', now);
+    const redis = await startHarness();
+    await redis.queue.pause();
+
+    try {
+      const enqueue = (request: Parameters<typeof enqueueInstagramSync>[0]) => enqueueInstagramSync(request, {
+        enqueueJob: enqueueJobInHarness(redis),
+      });
+      await expect(dispatchEligibleScheduledInstagramSyncs({ now, enqueue }))
+        .resolves.toMatchObject({ enqueued: 1 });
+      await expect(dispatchEligibleScheduledInstagramSyncs({ now, enqueue }))
+        .resolves.toEqual({ scanned: 0, eligible: 0, enqueued: 0, skipped: 0, failed: 0 });
+      await expect(redis.queue.getWaiting()).resolves.toHaveLength(1);
+    } finally {
+      await closeHarness();
+    }
+
+    await clearIntegrationDatabase();
+    for (let index = 0; index < INSTAGRAM_SCHEDULED_SYNC_BATCH_SIZE + 1; index += 1) {
+      const creator = await createConnectedCreator();
+      await markEligibleForScheduledSync(creator, 'SYNCED', now);
+    }
+
+    const enqueue = jest.fn().mockResolvedValue({ accepted: true, status: 'sync_pending' });
+    await expect(dispatchEligibleScheduledInstagramSyncs({ now, enqueue })).resolves.toEqual({
+      scanned: INSTAGRAM_SCHEDULED_SYNC_BATCH_SIZE,
+      eligible: INSTAGRAM_SCHEDULED_SYNC_BATCH_SIZE,
+      enqueued: INSTAGRAM_SCHEDULED_SYNC_BATCH_SIZE,
+      skipped: 0,
+      failed: 0,
+    });
+    expect(enqueue).toHaveBeenCalledTimes(INSTAGRAM_SCHEDULED_SYNC_BATCH_SIZE);
   });
 
   it('excludes reconnect-required connections from automatic retry', async () => {

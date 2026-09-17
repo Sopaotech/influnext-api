@@ -5,11 +5,13 @@ import { redisConnection } from '../lib/redis';
 import {
   InstagramSyncJobData,
   InstagramSyncQueueJobData,
+  INSTAGRAM_SCHEDULED_SYNC_DISPATCH_JOB_NAME,
   INSTAGRAM_SYNC_QUEUE_NAME,
   INSTAGRAM_SYNC_RETRY_JOB_NAME,
 } from '../queues/instagram-sync.queue';
 import { InstagramService } from '../services/instagram.service';
 import { enqueueEligibleInstagramSyncRetries } from '../services/instagram-sync-retry.service';
+import { dispatchEligibleScheduledInstagramSyncs } from '../services/instagram-scheduled-sync.service';
 import { classifyInstagramSyncFailure, InstagramSyncOperationalError } from '../utils/instagram-sync-error';
 import { instagramSyncRetryAt } from '../utils/instagram-sync-retry-policy';
 import { decryptSocialToken } from '../utils/social-token-crypto';
@@ -18,6 +20,7 @@ const SYNC_LEASE_MS = 10 * 60 * 1000;
 
 type InstagramSyncWorkerDependencies = {
   retrySweep?: typeof enqueueEligibleInstagramSyncRetries;
+  scheduledSyncDispatch?: typeof dispatchEligibleScheduledInstagramSyncs;
 };
 
 function isPartialCollection(result: any): boolean {
@@ -37,12 +40,17 @@ export async function processInstagramSyncWithDependencies(
   job: Job<InstagramSyncQueueJobData>,
   dependencies: InstagramSyncWorkerDependencies,
 ): Promise<{
-  status: 'synced' | 'partial' | 'no_recent_media' | 'retry_scan_completed' | 'skipped';
+  status: 'synced' | 'partial' | 'no_recent_media' | 'retry_scan_completed' | 'scheduled_sync_dispatch_completed' | 'skipped';
   enqueued?: number;
 }> {
   if (job.name === INSTAGRAM_SYNC_RETRY_JOB_NAME) {
     const result = await (dependencies.retrySweep || enqueueEligibleInstagramSyncRetries)();
     return { status: 'retry_scan_completed', enqueued: result.enqueued };
+  }
+
+  if (job.name === INSTAGRAM_SCHEDULED_SYNC_DISPATCH_JOB_NAME) {
+    const result = await (dependencies.scheduledSyncDispatch || dispatchEligibleScheduledInstagramSyncs)();
+    return { status: 'scheduled_sync_dispatch_completed', enqueued: result.enqueued };
   }
 
   if (job.name !== 'sync-instagram') return { status: 'skipped' };
@@ -162,7 +170,7 @@ export async function processInstagramSyncWithDependencies(
 export async function processInstagramSync(
   job: Job<InstagramSyncQueueJobData>,
 ): Promise<{
-  status: 'synced' | 'partial' | 'no_recent_media' | 'retry_scan_completed' | 'skipped';
+  status: 'synced' | 'partial' | 'no_recent_media' | 'retry_scan_completed' | 'scheduled_sync_dispatch_completed' | 'skipped';
   enqueued?: number;
 }> {
   return processInstagramSyncWithDependencies(job, {});

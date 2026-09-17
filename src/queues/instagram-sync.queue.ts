@@ -3,6 +3,7 @@ import { redisConnection } from '../lib/redis';
 
 export const INSTAGRAM_SYNC_QUEUE_NAME = 'instagram-sync';
 export const INSTAGRAM_SYNC_RETRY_JOB_NAME = 'retry-instagram-sync';
+export const INSTAGRAM_SCHEDULED_SYNC_DISPATCH_JOB_NAME = 'instagram-scheduled-sync-dispatch';
 
 export type InstagramSyncReason = 'post_oauth' | 'manual_retry' | 'scheduled';
 
@@ -20,7 +21,12 @@ export interface InstagramSyncJobData {
 /** Scheduler jobs carry no account or credential data; the worker performs a safe DB sweep. */
 export interface InstagramSyncRetryJobData {}
 
-export type InstagramSyncQueueJobData = InstagramSyncJobData | InstagramSyncRetryJobData;
+/** Scheduler jobs carry no account or credential data; the worker performs a safe DB sweep. */
+export interface InstagramScheduledSyncDispatchJobData {}
+
+export type InstagramSyncQueueJobData = InstagramSyncJobData
+  | InstagramSyncRetryJobData
+  | InstagramScheduledSyncDispatchJobData;
 
 const instagramSyncQueuePrefix = process.env.INSTAGRAM_SYNC_QUEUE_PREFIX?.trim() || undefined;
 

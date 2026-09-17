@@ -4,12 +4,17 @@ import { Queue } from 'bullmq';
 import {
   DAILY_CLEANUP_PATTERN,
   DAILY_TOKEN_RENEWAL_PATTERN,
+  INSTAGRAM_SCHEDULED_SYNC_DISPATCH_PATTERN,
   INSTAGRAM_SYNC_RETRY_PATTERN,
   registerDailyCleanupSchedule,
   registerDailyTokenRenewalSchedule,
+  registerInstagramScheduledSyncDispatchSchedule,
   registerInstagramSyncRetrySchedule,
 } from '../../src/queues/schedule-registration';
-import { INSTAGRAM_SYNC_RETRY_JOB_NAME } from '../../src/queues/instagram-sync.queue';
+import {
+  INSTAGRAM_SCHEDULED_SYNC_DISPATCH_JOB_NAME,
+  INSTAGRAM_SYNC_RETRY_JOB_NAME,
+} from '../../src/queues/instagram-sync.queue';
 import { assertSafeRedisTestUrl } from '../helpers/redis-bullmq-integration';
 
 let commandConnection: IORedis;
@@ -114,19 +119,30 @@ describe('local BullMQ scheduler registration', () => {
     expect(tokenRenewalSchedules[0].key).toBe(firstTokenRenewalSchedule.key);
   });
 
-  it('registers one deterministic Instagram retry schedule without processing a provider', async () => {
+  it('registers deterministic retry and scheduled-dispatch metadata without processing a provider', async () => {
     await registerInstagramSyncRetrySchedule(instagramSyncQueue);
-    const [first] = await instagramSyncQueue.getRepeatableJobs();
+    await registerInstagramScheduledSyncDispatchSchedule(instagramSyncQueue);
+    const firstSchedules = await instagramSyncQueue.getRepeatableJobs();
 
     await registerInstagramSyncRetrySchedule(instagramSyncQueue);
+    await registerInstagramScheduledSyncDispatchSchedule(instagramSyncQueue);
 
-    await expect(instagramSyncQueue.getRepeatableJobs()).resolves.toEqual([
+    await expect(instagramSyncQueue.getRepeatableJobs()).resolves.toEqual(expect.arrayContaining([
       expect.objectContaining({
         name: INSTAGRAM_SYNC_RETRY_JOB_NAME,
         pattern: INSTAGRAM_SYNC_RETRY_PATTERN,
-        key: first.key,
       }),
-    ]);
+      expect.objectContaining({
+        name: INSTAGRAM_SCHEDULED_SYNC_DISPATCH_JOB_NAME,
+        pattern: INSTAGRAM_SCHEDULED_SYNC_DISPATCH_PATTERN,
+      }),
+    ]));
+
+    const schedules = await instagramSyncQueue.getRepeatableJobs();
+    expect(schedules).toHaveLength(2);
+    for (const schedule of schedules) {
+      expect(firstSchedules.some(first => first.key === schedule.key)).toBe(true);
+    }
   });
 
   it('removes repeatable metadata and all test-prefix keys during cleanup', async () => {

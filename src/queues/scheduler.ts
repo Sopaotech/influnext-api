@@ -1,7 +1,10 @@
 import { cleanupQueue, addDailyCleanupJob } from './cleanup.queue';
 import { tokenRenewalQueue, addDailyTokenRenewalJob } from './token-renewal.queue';
 import { instagramSyncQueue } from './instagram-sync.queue';
-import { registerInstagramSyncRetrySchedule } from './schedule-registration';
+import {
+  registerInstagramScheduledSyncDispatchSchedule,
+  registerInstagramSyncRetrySchedule,
+} from './schedule-registration';
 
 /** Registers only recurring job metadata; it never starts workers or jobs directly. */
 export async function registerApplicationSchedules(): Promise<void> {
@@ -15,6 +18,7 @@ export async function registerApplicationSchedules(): Promise<void> {
     addDailyCleanupJob(),
     addDailyTokenRenewalJob(),
     registerInstagramSyncRetrySchedule(instagramSyncQueue),
+    registerInstagramScheduledSyncDispatchSchedule(instagramSyncQueue),
   ]);
 }
 
