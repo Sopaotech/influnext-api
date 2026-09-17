@@ -110,6 +110,15 @@ describe('Instagram sync status boundary with local PostgreSQL', () => {
       syncWarning: 'Instagram não conectado.',
     });
     expect(response.body.profile.verifiedMetrics).toBe(false);
+    expect(response.body.instagramFreshness).toMatchObject({
+      status: 'unavailable',
+      isVerifiedSnapshot: false,
+      isStale: false,
+      staleAfterHours: 24,
+      metricsSource: 'unavailable',
+      syncAction: 'connect',
+      syncMessageKey: 'instagram.not_connected',
+    });
   });
 
   it('reports a connected account without an Instagram snapshot as unavailable in dashboard and public profile', async () => {
@@ -134,6 +143,14 @@ describe('Instagram sync status boundary with local PostgreSQL', () => {
       metricsSource: 'unavailable',
     });
     expect(dashboard.body.profile.verifiedMetrics).toBe(false);
+    expect(dashboard.body.instagramFreshness).toMatchObject({
+      status: 'unavailable',
+      isVerifiedSnapshot: false,
+      isStale: false,
+      metricsSource: 'unavailable',
+      syncAction: 'none',
+      syncMessageKey: 'instagram.snapshot_unavailable',
+    });
 
     const publicProfile = await request(app).get(`/v1/p/${creator.profile.handle}`).expect(200);
     expect(publicProfile.body.verifiedMetrics).toBe(false);
@@ -144,13 +161,18 @@ describe('Instagram sync status boundary with local PostgreSQL', () => {
       metricsSource: 'unavailable',
     });
     expect(publicProfile.body.metricsHistory).toEqual([]);
+    expect(publicProfile.body.instagramFreshness).toMatchObject({
+      status: 'unavailable',
+      isVerifiedSnapshot: false,
+      syncAction: 'none',
+    });
     expect(JSON.stringify(publicProfile.body)).not.toContain('fake-instagram-token');
   });
 
   it('marks metrics as verified only when an Instagram snapshot exists and returns that snapshot', async () => {
     const creator = await createCreator();
     await connectInstagram(creator);
-    const capturedAt = new Date('2026-09-14T12:00:00.000Z');
+    const capturedAt = new Date();
     await integrationPrisma.metricSnapshot.create({
       data: {
         influencerId: creator.profile.id,
@@ -178,6 +200,15 @@ describe('Instagram sync status boundary with local PostgreSQL', () => {
     expect(new Date(dashboard.body.instagramSync.lastSnapshotAt).toISOString()).toBe(capturedAt.toISOString());
     expect(dashboard.body.profile.verifiedMetrics).toBe(true);
     expect(dashboard.body.kpis).toMatchObject({ latestFollowers: 9876, latestEngagement: 4.2 });
+    expect(dashboard.body.instagramFreshness).toMatchObject({
+      status: 'fresh',
+      isVerifiedSnapshot: true,
+      isStale: false,
+      staleAfterHours: 24,
+      metricsSource: 'instagram_api_snapshot',
+      syncAction: 'none',
+      syncMessageKey: 'instagram.snapshot_fresh',
+    });
 
     const publicProfile = await request(app).get(`/v1/p/${creator.profile.handle}`).expect(200);
     expect(publicProfile.body.verifiedMetrics).toBe(true);
@@ -187,6 +218,11 @@ describe('Instagram sync status boundary with local PostgreSQL', () => {
       metricsSource: 'snapshot',
     });
     expect(publicProfile.body.metricsHistory).toHaveLength(1);
+    expect(publicProfile.body.instagramFreshness).toMatchObject({
+      status: 'fresh',
+      isVerifiedSnapshot: true,
+      metricsSource: 'instagram_api_snapshot',
+    });
     expect(publicProfile.body.metricsHistory[0]).toMatchObject({ followers: 9876, integrityHash: 'instagram-sync-status-test-hash' });
     expect(JSON.stringify(publicProfile.body)).not.toMatch(/accessToken|refreshToken|fake-instagram-token/);
   });

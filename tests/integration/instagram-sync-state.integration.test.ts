@@ -136,6 +136,15 @@ describe('Instagram SocialPlatform sync state with local PostgreSQL', () => {
     });
     expect(new Date(dashboard.body.instagramSync.lastSyncFailureAt).toISOString()).toBe(failedAt.toISOString());
     expect(new Date(dashboard.body.instagramSync.nextSyncRetryAt).toISOString()).toBe(retryAt.toISOString());
+    expect(dashboard.body.instagramFreshness).toMatchObject({
+      status: 'retry_scheduled',
+      isVerifiedSnapshot: false,
+      isStale: false,
+      metricsSource: 'unavailable',
+      syncAction: 'retry_later',
+      syncMessageKey: 'instagram.retry_scheduled',
+    });
+    expect(new Date(dashboard.body.instagramFreshness.nextSyncRetryAt).toISOString()).toBe(retryAt.toISOString());
     expect(JSON.stringify(dashboard.body)).not.toContain('fake-instagram-token');
   });
 
@@ -171,6 +180,14 @@ describe('Instagram SocialPlatform sync state with local PostgreSQL', () => {
       hasVerifiedSnapshot: true,
       syncWarning: 'O snapshot do Instagram possui métricas parciais.',
     });
+    expect(dashboard.body.instagramFreshness).toMatchObject({
+      status: 'stale',
+      isVerifiedSnapshot: true,
+      isStale: true,
+      metricsSource: 'instagram_api_snapshot',
+      syncAction: 'none',
+      syncMessageKey: 'instagram.snapshot_stale',
+    });
   });
 
   it('keeps an inactive platform disabled and outside the verified connection boundary', async () => {
@@ -191,6 +208,13 @@ describe('Instagram SocialPlatform sync state with local PostgreSQL', () => {
       instagramConnectionStatus: 'not_connected',
       instagramOperationalSyncStatus: 'disabled',
       hasVerifiedSnapshot: false,
+    });
+    expect(dashboard.body.instagramFreshness).toMatchObject({
+      status: 'unavailable',
+      isVerifiedSnapshot: false,
+      metricsSource: 'unavailable',
+      syncAction: 'connect',
+      syncMessageKey: 'instagram.not_connected',
     });
   });
 });

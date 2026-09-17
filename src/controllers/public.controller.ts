@@ -6,6 +6,7 @@ import { QuickAlertService } from '../services/quick-alert.service';
 import crypto from 'crypto';
 import { getInstagramSyncStatus } from '../utils/instagram-sync-status';
 import { getInstagramMetricCollection } from '../utils/instagram-metric-collection';
+import { getInstagramFreshness } from '../utils/instagram-freshness';
 
 const getFrontendUrl = () => {
   const url = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://influnext.com.br';
@@ -119,6 +120,7 @@ export const getPublicProfile = async (req: Request, res: Response): Promise<voi
       profile.insights,
       instagramSync.hasVerifiedSnapshot,
     );
+    const instagramFreshness = getInstagramFreshness(instagramSync, instagramMetricCollection);
     const { platforms, metricsHistory, verifiedMetrics: _legacyVerifiedMetrics, insights: _insights, ...publicProfile } = profile;
 
     res.status(200).json({
@@ -128,6 +130,7 @@ export const getPublicProfile = async (req: Request, res: Response): Promise<voi
       platforms: platforms.map(({ platformName, platformId }) => ({ platformName, platformId })),
       instagramSync,
       instagramMetricCollection,
+      instagramFreshness,
       avgROI: Number(avgROI.toFixed(2))
     });
   } catch (error) {

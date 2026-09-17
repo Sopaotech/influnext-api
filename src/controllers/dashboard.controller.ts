@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { getInstagramSyncStatus } from '../utils/instagram-sync-status';
 import { getInstagramMetricCollection } from '../utils/instagram-metric-collection';
+import { getInstagramFreshness } from '../utils/instagram-freshness';
 
 export const getInfluencerDashboard = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -88,6 +89,7 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
       profile.insights,
       instagramSync.hasVerifiedSnapshot,
     );
+    const instagramFreshness = getInstagramFreshness(instagramSync, instagramMetricCollection);
 
     // Cálculo de Progresso de Perfil (Fase 1 do Roadmap)
     let progress = 0;
@@ -159,6 +161,7 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
       metricsHistory: profile.metricsHistory,
       instagramSync,
       instagramMetricCollection,
+      instagramFreshness,
       analysis: profile.aiAnalyses[0] || null,
       rateCard: profile.rateCards,
     });
