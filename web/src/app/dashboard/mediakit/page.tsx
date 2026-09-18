@@ -31,6 +31,7 @@ import {
 import { toast } from 'sonner';
 import Cookies from 'js-cookie';
 import Link from 'next/link';
+import type { InstagramDataContracts } from '@/lib/api';
 
 interface PlatformItem {
   platform?: string;
@@ -46,7 +47,7 @@ interface RateCardItem {
   description?: string;
 }
 
-interface MediaKitData {
+interface MediaKitData extends Partial<InstagramDataContracts> {
   profile?: {
     handle?: string;
     companyName?: string;

@@ -1,6 +1,7 @@
 import { Metadata, Viewport } from 'next';
 import { notFound } from 'next/navigation';
 import { PublicProfileView } from './PublicProfileView';
+import type { PublicProfileResponse } from '@/lib/api';
 
 export const viewport: Viewport = {
   themeColor: '#131110',
@@ -10,14 +11,14 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-async function getProfileData(handle: string) {
+async function getProfileData(handle: string): Promise<PublicProfileResponse | null> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/v1';
   try {
     const res = await fetch(`${apiUrl}/p/${handle}`, {
       cache: 'no-store'
     });
     if (!res.ok) return null;
-    return res.json();
+    return res.json() as Promise<PublicProfileResponse>;
   } catch (err) {
     return null;
   }
@@ -52,4 +53,3 @@ export default async function PublicProfile(props: { params: Promise<{ handle: s
 
   return <PublicProfileView profile={profile} checkoutStatus={checkoutStatus} />;
 }
-

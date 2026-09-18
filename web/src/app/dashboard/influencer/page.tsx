@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { ContractLegalModal, ContractLegalData } from '@/components/ContractLegalModal';
+import type { InfluencerDashboardResponse } from '@/lib/api';
 
 interface Task {
   id: string;
@@ -55,7 +56,7 @@ interface ContractSummary extends ContractLegalData {
   company?: { companyName: string; user?: { email?: string } };
 }
 
-interface InfluencerDashboardData {
+interface InfluencerDashboardData extends Partial<Omit<InfluencerDashboardResponse, 'profile' | 'kpis'>> {
   profile?: {
     id?: string;
     handle?: string;

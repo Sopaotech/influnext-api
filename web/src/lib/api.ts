@@ -91,17 +91,119 @@ export interface MetricSnapshot {
   engagementRate: number;
   reachLast30Days: number;
   avgViews: number;
+  capturedAt?: string;
+  integrityHash?: string;
 }
 
-export interface DashboardData {
+export type InstagramFreshnessStatus =
+  | 'fresh'
+  | 'stale'
+  | 'unavailable'
+  | 'pending'
+  | 'syncing'
+  | 'retry_scheduled'
+  | 'reconnect_required';
+
+export type InstagramSyncAction = 'none' | 'wait' | 'retry_later' | 'reconnect' | 'connect';
+
+export interface InstagramFreshness {
+  status: InstagramFreshnessStatus;
+  lastSnapshotAt: string | null;
+  lastSyncSuccessAt: string | null;
+  lastSyncAttemptAt: string | null;
+  nextSyncRetryAt: string | null;
+  isVerifiedSnapshot: boolean;
+  isStale: boolean;
+  staleAfterHours: number;
+  collectionWindowDays: number | null;
+  sampleSize: number | null;
+  metricsSource: 'instagram_api_snapshot' | 'unavailable';
+  syncAction: InstagramSyncAction;
+  syncMessageKey: string;
+}
+
+export interface InstagramSync {
+  instagramConnectionStatus: 'connected' | 'not_connected';
+  instagramSyncStatus: 'connected_with_snapshot' | 'connected_without_snapshot' | 'not_connected';
+  instagramOperationalSyncStatus:
+    | 'not_connected'
+    | 'never_synced'
+    | 'sync_pending'
+    | 'syncing'
+    | 'synced'
+    | 'partial'
+    | 'no_recent_media'
+    | 'failed_retryable'
+    | 'failed_reconnect_required'
+    | 'disabled';
+  hasVerifiedSnapshot: boolean;
+  lastSnapshotAt: string | null;
+  lastSyncAttemptAt: string | null;
+  lastSyncSuccessAt: string | null;
+  lastSyncFailureAt: string | null;
+  syncFailureCount: number;
+  nextSyncRetryAt: string | null;
+  metricsSource: 'snapshot' | 'unavailable';
+  syncWarning: string | null;
+}
+
+export interface InstagramMetricCollection {
+  scope: 'recent_media_sample_30d' | 'unknown' | 'unavailable';
+  isPartial: boolean | null;
+  sampledMediaCount: number | null;
+  unavailableInsightCount: number | null;
+  reachDefinition: string | null;
+  warning: string | null;
+}
+
+export interface InstagramDataContracts {
+  instagramFreshness: InstagramFreshness;
+  instagramSync: InstagramSync;
+  instagramMetricCollection: InstagramMetricCollection;
+}
+
+export interface InfluencerDashboardResponse extends InstagramDataContracts {
+  profile: {
+    id: string;
+    handle: string;
+    niche: string | null;
+    profileImageUrl: string | null;
+    influScore: number;
+    scoreClass: string;
+    verifiedMetrics: boolean;
+  };
+  kpis: {
+    latestFollowers: number | null;
+    latestEngagement: number | null;
+    latestReach: number;
+    avgViews: number;
+  };
+  metricsHistory: MetricSnapshot[];
+}
+
+export interface PublicProfileResponse extends InstagramDataContracts {
   id: string;
-  userId: string;
   handle: string;
+  profileImageUrl: string | null;
   influScore: number;
   scoreClass: string;
+  verifiedMetrics: boolean;
+  niche: string | null;
+  city: string | null;
+  state: string | null;
+  bio: string | null;
+  rateCards: Array<{
+    id: string;
+    serviceName: string;
+    price: number;
+    description: string | null;
+  }>;
   metricsHistory: MetricSnapshot[];
-  tasks: Array<{ id: string; title: string; dueDate: string }>;
-  contracts: Array<{ id: string; title: string; budget: number; escrowStatus: string }>;
+  platforms: Array<{
+    platformName: string;
+    platformId: string;
+  }>;
+  avgROI: number;
 }
 
 export interface CompanyDashboardResponse {
