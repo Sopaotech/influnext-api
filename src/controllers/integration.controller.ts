@@ -8,6 +8,7 @@ import { AIService } from '../services/ai.service';
 import { TrendScannerService } from '../services/trend-scanner.service';
 import axios from 'axios';
 import { createOAuthState, consumeOAuthState, getOAuthFrontendUrl, oauthBoundaryFailure, assertOAuthIdentity } from '../lib/oauth-state';
+import { INSTAGRAM_METRICS_OAUTH_SCOPE } from '../lib/instagram-oauth';
 import { sanitizeProviderError } from '../utils/provider-error';
 import { assertSocialTokenEncryptionConfigured, decryptSocialToken, encryptSocialToken } from '../utils/social-token-crypto';
 import { enqueueInstagramSync } from '../services/instagram-sync-queue.service';
@@ -32,10 +33,10 @@ export const getAuthUrls = async (req: Request, res: Response): Promise<void> =>
     const stateTiktok = await createOAuthState(req, res, 'tiktok', 'link');
 
     // Instagram API with Instagram Login
-    // Escopo: instagram_business_basic (leitura de perfil + mídia)
+    // Escopos mínimos V1: leitura de perfil/mídia e insights.
     const frontendUrl = getOAuthFrontendUrl(req);
     const instagramRedirectUri = `${frontendUrl}/auth/callback/instagram`;
-    const instagramUrl = `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=instagram_business_basic&response_type=code&state=${stateInstagram}`;
+    const instagramUrl = `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=${INSTAGRAM_METRICS_OAUTH_SCOPE}&response_type=code&state=${stateInstagram}`;
 
     const tiktokUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list,video.stats&response_type=code&redirect_uri=${frontendUrl}/auth/callback/tiktok&state=${stateTiktok}`;
 

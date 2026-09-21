@@ -8,6 +8,7 @@ import { TikTokService } from '../services/tiktok.service';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { createOAuthState, consumeOAuthState, getOAuthFrontendUrl, isOAuthPlatform, oauthBoundaryFailure, assertOAuthIdentity } from '../lib/oauth-state';
+import { INSTAGRAM_METRICS_OAUTH_SCOPE } from '../lib/instagram-oauth';
 import { createTwoFactorChallenge } from '../lib/two-factor-challenge';
 import { establishSession } from '../lib/session-cookie';
 import { sanitizeProviderError, sanitizeProviderMessage } from '../utils/provider-error';
@@ -28,8 +29,8 @@ export class SocialAuthController {
     const isGoogleConfigured = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_ID !== 'seu_google_client_id');
 
     const urls = {
-      instagram: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=instagram_business_basic&response_type=code&state=${stateIg}`,
-      authUrl: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=instagram_business_basic&response_type=code&state=${stateIg}`,
+      instagram: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=${INSTAGRAM_METRICS_OAUTH_SCOPE}&response_type=code&state=${stateIg}`,
+      authUrl: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=${INSTAGRAM_METRICS_OAUTH_SCOPE}&response_type=code&state=${stateIg}`,
       tiktok: `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${frontendUrl}/auth/callback/tiktok&state=${stateTiktok}`,
       youtube: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/youtube&response_type=code&scope=https://www.googleapis.com/auth/youtube.readonly&state=${stateYoutube}&access_type=offline&prompt=consent`,
       configured: {
@@ -57,8 +58,8 @@ export class SocialAuthController {
     const isGoogleConfigured = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_ID !== 'seu_google_client_id');
 
     const urls = {
-      instagram: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=instagram_business_basic&response_type=code&state=${stateInstagram}`,
-      authUrl: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=instagram_business_basic&response_type=code&state=${stateInstagram}`,
+      instagram: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=${INSTAGRAM_METRICS_OAUTH_SCOPE}&response_type=code&state=${stateInstagram}`,
+      authUrl: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=${INSTAGRAM_METRICS_OAUTH_SCOPE}&response_type=code&state=${stateInstagram}`,
       tiktok: `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${frontendUrl}/auth/callback/tiktok&state=${stateTiktok}`,
       google: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/google&response_type=code&scope=openid%20email%20profile&state=${stateGoogle}`,
       youtube: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/youtube&response_type=code&scope=https://www.googleapis.com/auth/youtube.readonly&state=${stateYoutube}&access_type=offline&prompt=consent`,

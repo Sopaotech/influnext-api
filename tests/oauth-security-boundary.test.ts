@@ -42,6 +42,7 @@ import integrationRoutes from '../src/routes/integration.routes';
 import { createTwoFactorChallenge } from '../src/lib/two-factor-challenge';
 import { trackPageView } from '../src/middlewares/analytics.middleware';
 import { decryptSocialToken, isEncryptedSocialToken } from '../src/utils/social-token-crypto';
+import { INSTAGRAM_METRICS_OAUTH_SCOPE } from '../src/lib/instagram-oauth';
 
 const app = express();
 app.use(express.json());
@@ -105,6 +106,15 @@ describe('STEP 1F-C — OAuth security boundary', () => {
     signSpy.mockClear();
     return { state, cookies, response };
   }
+  it.each([
+    '/v1/auth/social/public-urls',
+    '/v1/auth/social/urls',
+    '/v1/integrations/urls',
+    '/v1/integrations/instagram/auth-url',
+  ])('uses the minimal Instagram metrics scopes at %s', async route => {
+    const attempt = await start('instagram', route);
+    expect(new URL(attempt.response.body.instagram).searchParams.get('scope')).toBe(INSTAGRAM_METRICS_OAUTH_SCOPE);
+  });
   function callback(platform: string, attempt: { state: string; cookies: string[] }, route?: string) {
     return request(app).get(route || `/v1/auth/social/callback/${platform}`)
       .set('Cookie', attempt.cookies).query({ state: attempt.state, code: 'provider-code' });

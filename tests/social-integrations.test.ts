@@ -4,6 +4,7 @@ import { TikTokService } from '../src/services/tiktok.service';
 import { AuditorService } from '../src/services/auditor.service';
 import { prisma } from '../src/lib/prisma';
 import { ScoringService } from '../src/services/scoring.service';
+import { INSTAGRAM_METRICS_OAUTH_SCOPE } from '../src/lib/instagram-oauth';
 
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
@@ -71,7 +72,7 @@ describe('Integrações de Redes Sociais Reais (Instagram & TikTok API)', () => 
 
       expect(url).toContain('https://www.instagram.com/oauth/authorize');
       expect(url).toContain('client_id=mock_ig_client_id');
-      expect(url).toContain('scope=instagram_business_basic');
+      expect(new URL(url).searchParams.get('scope')).toBe(INSTAGRAM_METRICS_OAUTH_SCOPE);
       expect(url).toContain(encodeURIComponent(redirectUri));
     });
 

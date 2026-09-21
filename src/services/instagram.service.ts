@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import { AuditorService } from './auditor.service';
 import { sanitizeProviderError } from '../utils/provider-error';
 import { classifyInstagramSyncFailure, InstagramSyncOperationalError } from '../utils/instagram-sync-error';
+import { INSTAGRAM_METRICS_OAUTH_SCOPE } from '../lib/instagram-oauth';
 
 /**
  * InstagramService — Integração com Instagram API with Instagram Login
@@ -12,7 +13,7 @@ import { classifyInstagramSyncFailure, InstagramSyncOperationalError } from '../
  * que permite autenticação direta via conta Instagram Profissional (Creator ou Business).
  *
  * ❌ NÃO usamos mais: Meta Graph API com /me/accounts (Páginas do Facebook vinculadas)
- * ✅ USAMOS AGORA: API direta com escopos instagram_business_basic
+ * ✅ USAMOS AGORA: API direta com escopos mínimos de perfil e insights
  *
  * Pré-requisito para o usuário: conta Instagram do tipo Creator ou Business.
  * O onboarding inclui um tutorial em 3 passos para a conversão (via InstagramOnboardingModal.tsx).
@@ -42,7 +43,7 @@ export class InstagramService {
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri,
-      scope: 'instagram_business_basic,instagram_business_manage_messages',
+      scope: INSTAGRAM_METRICS_OAUTH_SCOPE,
       response_type: 'code',
     });
 
@@ -123,7 +124,7 @@ export class InstagramService {
 
   /**
    * Busca dados básicos do perfil usando o token de acesso.
-   * Utiliza o escopo instagram_business_basic (sem necessidade de Página do Facebook).
+   * Utiliza o escopo mínimo de perfil e insights, sem Página do Facebook.
    * Retorna: ID, username, nome, foto de perfil, contagem de seguidores e publicações.
    */
   static async fetchProfileData(accessToken: string) {

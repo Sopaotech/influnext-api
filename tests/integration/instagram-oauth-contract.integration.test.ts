@@ -32,6 +32,7 @@ import { prisma } from '../../src/lib/prisma';
 import { redisConnection } from '../../src/lib/redis';
 import { instagramSyncJobId, instagramSyncQueue } from '../../src/queues/instagram-sync.queue';
 import { decryptSocialToken, encryptSocialToken, isEncryptedSocialToken } from '../../src/utils/social-token-crypto';
+import { INSTAGRAM_METRICS_OAUTH_SCOPE } from '../../src/lib/instagram-oauth';
 import {
   clearIntegrationDatabase,
   disconnectIntegrationPrisma,
@@ -135,7 +136,7 @@ describe('Instagram OAuth contract with local PostgreSQL and Redis', () => {
     expect(url.pathname).toBe('/oauth/authorize');
     expect(url.searchParams.get('client_id')).toBe('test-instagram-client');
     expect(url.searchParams.get('redirect_uri')).toBe('https://frontend.example.test/auth/callback/instagram');
-    expect(url.searchParams.get('scope')).toBe('instagram_business_basic');
+    expect(url.searchParams.get('scope')).toBe(INSTAGRAM_METRICS_OAUTH_SCOPE);
     expect(url.searchParams.get('response_type')).toBe('code');
     expect(state).not.toContain('mock-long-lived-instagram-token');
     expect(JSON.stringify(response.body)).not.toMatch(/accessToken|refreshToken/i);
