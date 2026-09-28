@@ -81,7 +81,10 @@ export function TikTokOnboardingModal({ isOpen, onClose, onConfirm }: TikTokOnbo
     setSyncStep(0);
 
     try {
-      const { data } = await api.get<{ tiktok?: string; configured?: { tiktok?: boolean } }>('/integrations/urls');
+      const { data } = await api.get<{ tiktok?: string; configured?: { tiktok?: boolean } }>(
+        '/integrations/urls',
+        { params: { from: 'onboarding' } },
+      );
       const authUrl: string = data.tiktok || '';
 
       if (!authUrl || authUrl === '#' || authUrl.includes('mock_tt_client_key') || (data.configured && data.configured.tiktok === false)) {
@@ -117,7 +120,7 @@ export function TikTokOnboardingModal({ isOpen, onClose, onConfirm }: TikTokOnbo
       await new Promise((resolve) => setTimeout(resolve, 800));
       onConfirm('simulate', sandboxUsername, sandboxRange);
       onClose();
-    } catch (err: unknown) {
+    } catch {
       setError('Erro ao iniciar simulação do TikTok.');
     } finally {
       setIsSimulating(false);

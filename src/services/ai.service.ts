@@ -57,42 +57,38 @@ export class AIService {
       const genAI = new GoogleGenerativeAI(apiKey);
 
       let interviewContext = '';
-      let gender = 'masculino';
-      let mentorName = 'Vincenzo';
-      let pronounGuidelines = 'Trate o influenciador como "sócio" (no masculino) e aja como um estrategista homem (Vincenzo).';
+      let mentorName = 'Estrategista InfluNext';
+      let pronounGuidelines = 'Use linguagem inclusiva, trate a pessoa pelo nome de identificação e mantenha uma abordagem clara e respeitosa.';
       let isDarkAccount = false;
-
-      const isUserAlexsandro = influencer.handle && 
-        (influencer.handle.toLowerCase().includes('alexsandro') || 
-         influencer.handle.toLowerCase().includes('teste'));
 
       if (influencer.aiInterview) {
         try {
           const interviewObj = typeof influencer.aiInterview === 'string' 
             ? JSON.parse(influencer.aiInterview) 
             : (influencer.aiInterview as any);
-          if (isUserAlexsandro) {
-            mentorName = 'Vincenzo';
-            pronounGuidelines = 'Trate o criador diretamente pelo nome Alexsandro, aja como seu mentor virtual e estrategista homem de negócios de sucesso (Vincenzo).';
-          } else if (interviewObj.gender === 'feminino') {
-            gender = 'feminino';
-            mentorName = 'Valentina';
-            pronounGuidelines = 'Trate a influenciadora como "sócia" (no feminino), use termos direcionados ao público feminino (preparada, campeã) e aja como uma estrategista mulher de negócios de sucesso (Valentina).';
+          const assistantPreference = interviewObj.assistantPreference || interviewObj.assistantStyle;
+          if (assistantPreference === 'direta' || assistantPreference === 'direct') {
+            pronounGuidelines = 'Seja direto, objetivo e respeitoso; trate a pessoa pelo nome de identificação.';
+          } else if (assistantPreference === 'didatica' || assistantPreference === 'didactic') {
+            pronounGuidelines = 'Explique o raciocínio de forma didática, com passos práticos, e trate a pessoa pelo nome de identificação.';
+          } else if (assistantPreference === 'motivadora' || assistantPreference === 'motivational') {
+            pronounGuidelines = 'Mantenha um tom motivador e prático, sem promessas irreais, e trate a pessoa pelo nome de identificação.';
           }
           if (interviewObj.isDarkAccount || interviewObj.contentType === 'dark' || interviewObj.contentType === 'faceless') {
             isDarkAccount = true;
           }
           interviewContext = `
-      SONHOS E METAS DO CRIADOR (ENTREVISTA IA):
-      - Gênero / Identificação: ${interviewObj.gender || 'Não especificado'}
-      - Sonho principal: ${interviewObj.dream || 'Não especificado'}
+      CONTEXTO ESTRATÉGICO DO CRIADOR (ENTREVISTA):
+      - Objetivo principal: ${interviewObj.careerGoal || interviewObj.dream || 'Não especificado'}
       - Meta de seguidores em 1 ano: ${interviewObj.followersGoal || 'Não especificada'}
-      - Fonte de renda desejada: ${interviewObj.incomeTarget || 'Não especificada'}
-      - Maior desafio atual: ${interviewObj.difficulty || 'Não especificado'}
-      - Tempo de experiência: ${interviewObj.experience || 'Não especificado'}
+      - Monetização atual: ${interviewObj.currentMonetization || interviewObj.incomeTarget || 'Não especificada'}
+      - Monetização desejada: ${interviewObj.desiredMonetization || 'Não especificada'}
+      - Público-alvo: ${interviewObj.audienceTarget || 'Não especificado'}
+      - Formato e capacidade de conteúdo: ${interviewObj.primaryFormats || interviewObj.contentFrequency || interviewObj.frequency || 'Não especificado'}
+      - Maior desafio atual: ${interviewObj.primaryChallenge || interviewObj.difficulty || 'Não especificado'}
+      - Experiência com marcas: ${interviewObj.brandExperience || interviewObj.experience || 'Não especificada'}
       - Horários disponíveis de criação: ${interviewObj.availability || 'Não especificado'}
-      - Frequência de postagem: ${interviewObj.frequency || 'Não especificada'}
-      - Histórico de compra de seguidores: ${interviewObj.boughtFollowers || 'Não especificado'}
+      - Histórico de crescimento não orgânico: ${interviewObj.growthHistory || interviewObj.boughtFollowers || 'Não informado'}
           `;
         } catch (_) {}
       }
@@ -140,7 +136,7 @@ export class AIService {
 
       const prompt = `Você é o/a ${mentorName}, Estrategista-Chefe de Monetização e mentor(a) de negócios do INFLUNEXT. 
       Seu objetivo é lucro, geração de receita e escala profissional do(a) criador(a) de conteúdo. Lembre-se: "recebidos não pagam boletos". Seja direto, focado em metas reais de caixa e fale de igual para igual como um(a) sócio(a) de negócios confiável.
-      DIRETRIZ DE GÊNERO E ABORDAGEM: ${pronounGuidelines} e chame o criador de conteúdo diretamente pelo seu nome de identificação (${capitalizedName}) em vez de usar o termo genérico 'Sócio' ou 'Sócia'.
+      DIRETRIZ DE ABORDAGEM: ${pronounGuidelines} Chame o criador de conteúdo diretamente pelo seu nome de identificação (${capitalizedName}), sem termos genéricos de tratamento.
       Evite elogios vazios. Se o score está baixo, cobre resultados. Se está alto, cobre escala. Aja como um(a) parceiro(a) exigente e orientador(a) para que ele(a) aja como uma empresa independente (como uma banda que toca sozinha).
       
       ${darkAccountGuidelines}
@@ -454,27 +450,22 @@ export class AIService {
 
       if (!influencer) throw new Error('Influenciador não encontrado.');
 
-      let gender = 'masculino';
-      let mentorName = 'Vincenzo';
-      let pronounGuidelines = 'Trate o influenciador como "sócio" (no masculino) e aja como um estrategista homem (Vincenzo).';
+      let mentorName = 'Estrategista InfluNext';
+      let pronounGuidelines = 'Use linguagem inclusiva, trate a pessoa pelo nome de identificação e mantenha uma abordagem clara e respeitosa.';
       let isDarkAccount = false;
-
-      const isUserAlexsandro = influencer.handle && 
-        (influencer.handle.toLowerCase().includes('alexsandro') || 
-         influencer.handle.toLowerCase().includes('teste'));
 
       if (influencer.aiInterview) {
         try {
           const parsed = typeof influencer.aiInterview === 'string' 
             ? JSON.parse(influencer.aiInterview) 
             : (influencer.aiInterview as any);
-          if (isUserAlexsandro) {
-            mentorName = 'Vincenzo';
-            pronounGuidelines = 'Trate o criador diretamente pelo nome Alexsandro, aja como seu mentor virtual e estrategista homem de negócios de sucesso (Vincenzo).';
-          } else if (parsed.gender === 'feminino') {
-            gender = 'feminino';
-            mentorName = 'Valentina';
-            pronounGuidelines = 'Trate a influenciadora como "sócia" (no feminino), use termos direcionados ao público feminino (preparada, campeã) e aja como uma estrategista mulher de negócios de sucesso (Valentina).';
+          const assistantPreference = parsed.assistantPreference || parsed.assistantStyle;
+          if (assistantPreference === 'direta' || assistantPreference === 'direct') {
+            pronounGuidelines = 'Seja direto, objetivo e respeitoso; trate a pessoa pelo nome de identificação.';
+          } else if (assistantPreference === 'didatica' || assistantPreference === 'didactic') {
+            pronounGuidelines = 'Explique o raciocínio de forma didática, com passos práticos, e trate a pessoa pelo nome de identificação.';
+          } else if (assistantPreference === 'motivadora' || assistantPreference === 'motivational') {
+            pronounGuidelines = 'Mantenha um tom motivador e prático, sem promessas irreais, e trate a pessoa pelo nome de identificação.';
           }
           if (parsed.isDarkAccount || parsed.contentType === 'dark' || parsed.contentType === 'faceless') {
             isDarkAccount = true;
@@ -520,8 +511,8 @@ O usuário @${influencer.handle} (nome de identificação: ${capitalizedName}) a
 A mensagem do criador: "${message}".
 
 REGRAS DE OURO (SISTEMA):
-1. SEU NOME É ${mentorName.toUpperCase()}. Apresente-se e aja sempre sob este nome de forma confiante, direta e humana. Você é o(a) gestor(a) de carreira parceiro(a) (o/a "sócio(a) de negócios") do(a) criador(a). Fale de igual para igual ("vamos vencer juntos", "nosso plano"). Chame-o diretamente pelo seu nome de identificação (${capitalizedName}) em vez de usar o termo genérico 'Sócio' ou 'Sócia'.
-2. DIRETRIZ DE GÊNERO E ABORDAGEM: ${pronounGuidelines}
+1. SEU NOME É ${mentorName.toUpperCase()}. Apresente-se e aja sempre sob este nome de forma confiante, direta e humana. Você é a pessoa parceira de estratégia de carreira do criador. Fale de igual para igual ("vamos vencer juntos", "nosso plano") e chame a pessoa diretamente pelo nome de identificação (${capitalizedName}).
+2. DIRETRIZ DE ABORDAGEM: ${pronounGuidelines}
 3. NUNCA revele ou admita que você é uma Inteligência Artificial, um modelo de linguagem, robô, agente virtual ou bot. Se o usuário perguntar se você é uma IA, brinque ou desconverse com firmeza corporativa: "Eu sou o/a ${mentorName}, seu/sua estrategista de carreira na InfluNext. O resto é detalhe de engenharia. O que importa é o nosso plano de escala. Vamos focar no que dá lucro."
 4. FILOSOFIA INFLUNEXT: Lembre-se sempre de que "recebidos não pagam boletos". O objetivo central do criador é o lucro e a monetização de sua imagem, agindo como uma empresa profissional e independente (como uma banda que toca sozinha). Direcione toda resposta para vendas, contratos de patrocínio reais e escala financeira, e não apenas métricas de vaidade ou curtidas.
 5. ENTREGUE TRABALHO PRONTO: Se o usuário pedir ideia de conteúdo (inclusive ideias para TikTok ou Reels), NÃO DÊ apenas a sugestão vaga. ESCREVA o ROTEIRO COMPLETO (com Hook matador de 3 segundos, direção visual e Call to Action).

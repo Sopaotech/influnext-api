@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { api } from '@/lib/api';
@@ -9,15 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
   Sparkles, 
-  Palette, 
-  User, 
   ArrowRight, 
   CheckCircle2, 
   Moon, 
   Sun,
-  Layout,
   Rocket,
-  Camera as InstagramIcon,
   Globe,
   Zap,
   Target,
@@ -25,6 +21,17 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
+import {
+  buildAiInterviewPayload,
+  clearCreatorOnboardingDraft,
+  clearLegacyCreatorOnboardingDraft,
+  createEmptyCreatorOnboardingDraft,
+  deriveCareerObjective,
+  getCreatorOnboardingDraftStorageKey,
+  loadCreatorOnboardingDraft,
+  saveCreatorOnboardingDraft,
+  type CreatorOnboardingDraft,
+} from '@/lib/onboarding-draft';
 
 const InstagramOnboardingModal = dynamic(
   () => import('@/components/InstagramOnboardingModal').then(mod => mod.InstagramOnboardingModal),
@@ -48,9 +55,11 @@ export default function OnboardingPage() {
   const [accentColor, setAccentColor] = useState('#a855f7');
   const [handle, setHandle] = useState('');
   const [niche, setNiche] = useState('');
-  const [authUrls, setAuthUrls] = useState<{ instagram?: string; tiktok?: string } | null>(null);
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
-  const [careerObjective, setCareerObjective] = useState('');
+  const [audienceTarget, setAudienceTarget] = useState('');
+  const [desiredMonetization, setDesiredMonetization] = useState('');
+  const [draftStorageKey, setDraftStorageKey] = useState<string | null>(null);
+  const [isDraftHydrated, setIsDraftHydrated] = useState(false);
 
   // States da Entrevista com a IA
   const [interviewStep, setInterviewStep] = useState(1);
@@ -62,27 +71,7 @@ export default function OnboardingPage() {
   const [availability, setAvailability] = useState('');
   const [frequency, setFrequency] = useState('');
   const [boughtFollowers, setBoughtFollowers] = useState('');
-  const [gender, setGender] = useState('');
-
-  const getDerivedObjective = () => {
-    if (dream === 'Trabalhar com grandes marcas' || dream === 'Viver de publis/parcerias') {
-      return 'CONTRACTS';
-    }
-    if (dream === 'Ser a maior referência do meu nicho') {
-      return 'AUTHORITY';
-    }
-    if (dream === 'Alcançar independência financeira') {
-      return 'SALES';
-    }
-    return 'FAME';
-  };
-
-  const objectives = [
-    { id: 'SALES', name: 'Vendas & Consultas', description: 'Foco em converter seguidores em clientes reais.', icon: Zap },
-    { id: 'FAME', name: 'Fama & Engajamento', description: 'Foco em crescimento explosivo e reconhecimento.', icon: Sparkles },
-    { id: 'CONTRACTS', name: 'Contratos & Marcas', description: 'Foco em atrair marcas para parcerias pagas.', icon: Target },
-    { id: 'AUTHORITY', name: 'Autoridade & Nicho', description: 'Foco em ser a maior referência no seu tema.', icon: User }
-  ];
+  const [assistantStyle, setAssistantStyle] = useState('');
 
   const colors = [
     { name: 'Laranja Cobre', value: '#d96b27' },
@@ -92,24 +81,101 @@ export default function OnboardingPage() {
     { name: 'Âmbar Criativo', value: '#f59e0b' }
   ];
 
-  useEffect(() => {
-     if (step === 5) {
-        fetchIntegrations();
-     }
-  }, [step]);
+  const buildCurrentDraft = useCallback((): CreatorOnboardingDraft => ({
+    ...createEmptyCreatorOnboardingDraft(),
+    step,
+    interviewStep,
+    accentColor,
+    handle,
+    niche,
+    audienceTarget,
+    answers: {
+      careerGoal: dream,
+      currentMonetization: incomeTarget,
+      desiredMonetization,
+      followersGoal,
+      primaryFormats: frequency,
+      availability,
+      difficulty,
+      brandExperience: experience,
+      growthHistory: boughtFollowers,
+      assistantStyle,
+    },
+  }), [accentColor, assistantStyle, audienceTarget, boughtFollowers, desiredMonetization, difficulty, dream, experience, followersGoal, frequency, handle, incomeTarget, interviewStep, niche, step, availability]);
 
-  const fetchIntegrations = async () => {
+  useEffect(() => {
+    let isMounted = true;
+
+    const restoreDraft = async () => {
+      try {
+        const { data } = await api.get<{ id?: string }>('/auth/me');
+        const userId = typeof data.id === 'string' ? data.id : '';
+        const storageKey = getCreatorOnboardingDraftStorageKey(userId);
+
+        // Never migrate an unscoped legacy draft: it may belong to a prior user of this browser tab.
+        clearLegacyCreatorOnboardingDraft(window.sessionStorage);
+        const restored = loadCreatorOnboardingDraft(window.sessionStorage, storageKey);
+        if (!isMounted) return;
+
+        setStep(restored.step);
+        setInterviewStep(restored.interviewStep);
+        setAccentColor(restored.accentColor);
+        setHandle(restored.handle);
+        setNiche(restored.niche);
+        setAudienceTarget(restored.audienceTarget);
+        setDream(restored.answers.careerGoal);
+        setFollowersGoal(restored.answers.followersGoal);
+        setIncomeTarget(restored.answers.currentMonetization);
+        setDesiredMonetization(restored.answers.desiredMonetization);
+        setDifficulty(restored.answers.difficulty);
+        setExperience(restored.answers.brandExperience);
+        setAvailability(restored.answers.availability);
+        setFrequency(restored.answers.primaryFormats);
+        setBoughtFollowers(restored.answers.growthHistory);
+        setAssistantStyle(restored.answers.assistantStyle);
+        setDraftStorageKey(storageKey);
+      } catch (error) {
+        if (!isMounted) return;
+        console.warn('Não foi possível restaurar o rascunho do onboarding:', error);
+      } finally {
+        if (isMounted) setIsDraftHydrated(true);
+      }
+    };
+
+    void restoreDraft();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isDraftHydrated || !draftStorageKey) return;
     try {
-      const [connRes, urlsRes] = await Promise.all([
-        api.get('/integrations/connected'),
-        api.get('/integrations/urls')
-      ]);
-      setConnectedPlatforms(connRes.data.platforms || []);
-      setAuthUrls(urlsRes.data);
+      // Only creator-entered draft answers are stored here; sessions and OAuth tokens remain out of browser storage.
+      saveCreatorOnboardingDraft(window.sessionStorage, draftStorageKey, buildCurrentDraft());
+    } catch (error) {
+      console.warn('Não foi possível salvar o rascunho do onboarding:', error);
+    }
+  }, [buildCurrentDraft, draftStorageKey, isDraftHydrated]);
+
+  async function fetchIntegrations() {
+    try {
+      const connRes = await api.get<{ platforms?: string[] }>('/integrations/connected');
+      setConnectedPlatforms(Array.isArray(connRes.data.platforms)
+        ? connRes.data.platforms.map((platform) => String(platform).toUpperCase())
+        : []);
     } catch (err) {
       console.error('Erro ao buscar integrações:', err);
     }
-  };
+  }
+
+  useEffect(() => {
+     if (step !== 5) return;
+     const fetchTimer = window.setTimeout(() => {
+       void fetchIntegrations();
+     }, 0);
+     return () => window.clearTimeout(fetchTimer);
+  }, [step]);
 
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
@@ -131,10 +197,12 @@ export default function OnboardingPage() {
     
     if (status === 'success' && platform === 'instagram') {
       toast.success('✦ Instagram conectado com sucesso (Real)!');
-      fetchIntegrations();
+      window.setTimeout(() => void fetchIntegrations(), 0);
+      window.history.replaceState({}, '', window.location.pathname);
     } else if (status === 'success' && platform === 'tiktok') {
       toast.success('✦ TikTok conectado com sucesso!');
-      fetchIntegrations();
+      window.setTimeout(() => void fetchIntegrations(), 0);
+      window.history.replaceState({}, '', window.location.pathname);
     } else if (status === 'error') {
       const errorType = params.get('error');
       const isAccountTypeError = errorType === 'no_business_account' || errorType === 'no_creator_account';
@@ -142,6 +210,7 @@ export default function OnboardingPage() {
         ? 'Sua conta do Instagram é Pessoal. A Meta exige uma conta do tipo Criador de Conteúdo ou Comercial para conectar à API.'
         : 'Erro ao conectar com a rede social.';
       toast.error(errorMsg);
+      window.history.replaceState({}, '', window.location.pathname);
     }
 
     return () => {
@@ -152,18 +221,9 @@ export default function OnboardingPage() {
   const handleComplete = async () => {
     try {
       setIsSaving(true);
-      const derivedObj = getDerivedObjective();
-      const interviewPayload = JSON.stringify({
-        dream,
-        followersGoal,
-        incomeTarget,
-        difficulty,
-        experience,
-        availability,
-        frequency,
-        boughtFollowers,
-        gender
-      });
+      const draft = buildCurrentDraft();
+      const derivedObj = deriveCareerObjective(draft.answers.careerGoal);
+      const interviewPayload = buildAiInterviewPayload(draft);
       await api.patch('/influencers/profile', {
         handle,
         niche,
@@ -174,6 +234,7 @@ export default function OnboardingPage() {
         onboardingCompleted: true
       });
       
+      if (draftStorageKey) clearCreatorOnboardingDraft(window.sessionStorage, draftStorageKey);
       Cookies.set('influnext_onboarding', 'true', { expires: 7 });
       toast.success('✦ Sistema Configurado! Bem-vindo à nova elite digital.');
       router.push('/dashboard/influencer');
@@ -185,26 +246,6 @@ export default function OnboardingPage() {
     }
   };
 
-  const openPopup = (url: string) => {
-    const width = 600;
-    const height = 750;
-    const left = window.screen.width / 2 - width / 2;
-    const top = window.screen.height / 2 - height / 2;
-    window.open(
-      url,
-      'ConnectSocial',
-      `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,status=yes`
-    );
-  };
-
-  const handleConnect = (url?: string) => {
-    if (!url || url === '#') {
-      toast.error('Configuração de API pendente no servidor.');
-      return;
-    }
-    openPopup(url);
-  };
-
   const handleConnectSimulate = async (platform: string = 'INSTAGRAM', username?: string, followersRange?: string) => {
     try {
       setIsSaving(true);
@@ -212,18 +253,9 @@ export default function OnboardingPage() {
       Cookies.set('influnext_onboarding', 'true', { expires: 7 });
       toast.success(`✦ ${platform === 'INSTAGRAM' ? 'Instagram' : 'TikTok'} conectado com sucesso (Simulado)!`);
       
-      const derivedObj = getDerivedObjective();
-      const interviewPayload = JSON.stringify({
-        dream,
-        followersGoal,
-        incomeTarget,
-        difficulty,
-        experience,
-        availability,
-        frequency,
-        boughtFollowers,
-        gender
-      });
+      const draft = buildCurrentDraft();
+      const derivedObj = deriveCareerObjective(draft.answers.careerGoal);
+      const interviewPayload = buildAiInterviewPayload(draft);
       await api.patch('/influencers/profile', {
         handle: handle || username,
         niche: niche || 'Lifestyle',
@@ -234,6 +266,7 @@ export default function OnboardingPage() {
         onboardingCompleted: true
       });
       
+      if (draftStorageKey) clearCreatorOnboardingDraft(window.sessionStorage, draftStorageKey);
       router.push('/dashboard/influencer');
     } catch (err: unknown) {
       const errorObj = err as { response?: { data?: { error?: string } } };
@@ -244,6 +277,14 @@ export default function OnboardingPage() {
       setIsTtModalOpen(false);
     }
   };
+
+  if (!isDraftHydrated) {
+    return (
+      <div className="min-h-screen bg-[#050508] text-white flex items-center justify-center p-6">
+        <p className="text-xs font-black uppercase tracking-[0.25em] text-zinc-400">Retomando seu onboarding…</p>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen transition-colors duration-700 ${theme === 'light' ? 'bg-slate-50 text-slate-900' : 'bg-[#050508] text-white'} flex flex-col items-center justify-center p-6 overflow-hidden`}>
@@ -362,16 +403,34 @@ export default function OnboardingPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <label className={`text-[10px] font-black uppercase ${theme === 'light' ? 'text-slate-400' : 'text-zinc-500'} tracking-[0.2em]`}>Nicho de Domínio</label>
+                <label className={`text-[10px] font-black uppercase ${theme === 'light' ? 'text-slate-400' : 'text-zinc-500'} tracking-[0.2em]`}>Nicho e Subnicho</label>
                 <div className="relative">
                    <Input 
                      value={niche}
                      onChange={(e) => setNiche(e.target.value)}
-                     placeholder="Games, Lifestyle, Tech..."
+                      placeholder="Games, Lifestyle, Tech..."
                      className={`h-16 ${theme === 'light' ? 'bg-white border-slate-200 text-slate-900' : 'bg-zinc-900/50 border-zinc-800'} rounded-2xl focus:border-orange-500 transition-all font-black text-lg pl-12`}
                    />
                    <Target className={`absolute left-4 top-5 w-6 h-6 ${theme === 'light' ? 'text-slate-300' : 'text-zinc-700'}`} />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <label className={`text-[10px] font-black uppercase ${theme === 'light' ? 'text-slate-400' : 'text-zinc-500'} tracking-[0.2em]`}>Para Quem Você Cria?</label>
+                <Input
+                  value={audienceTarget}
+                  onChange={(e) => setAudienceTarget(e.target.value)}
+                  placeholder="Ex.: empreendedoras iniciantes interessadas em moda acessível"
+                  className={`h-16 ${theme === 'light' ? 'bg-white border-slate-200 text-slate-900' : 'bg-zinc-900/50 border-zinc-800'} rounded-2xl focus:border-orange-500 transition-all font-bold text-base px-5`}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className={`text-[10px] font-black uppercase ${theme === 'light' ? 'text-slate-400' : 'text-zinc-500'} tracking-[0.2em]`}>Monetização Que Quer Priorizar</label>
+                <Input
+                  value={desiredMonetization}
+                  onChange={(e) => setDesiredMonetization(e.target.value)}
+                  placeholder="Ex.: publis, mentoria, afiliados ou produtos próprios"
+                  className={`h-16 ${theme === 'light' ? 'bg-white border-slate-200 text-slate-900' : 'bg-zinc-900/50 border-zinc-800'} rounded-2xl focus:border-orange-500 transition-all font-bold text-base px-5`}
+                />
               </div>
             </div>
 
@@ -379,8 +438,8 @@ export default function OnboardingPage() {
               <Button onClick={() => setStep(2)} variant="outline" className={`h-14 px-10 rounded-2xl ${theme === 'light' ? 'border-slate-200 bg-white text-slate-400' : 'border-white/[0.05] bg-white/[0.02] text-zinc-500'} font-black tracking-widest uppercase text-[10px]`}>Voltar</Button>
               <Button 
                 onClick={() => {
-                   if (!handle || !niche) {
-                      toast.error('Preencha os campos para prosseguir.');
+                    if (!handle || !niche || !audienceTarget || !desiredMonetization) {
+                       toast.error('Preencha perfil, nicho, público e monetização desejada para prosseguir.');
                       return;
                    }
                    setStep(4);
@@ -404,26 +463,26 @@ export default function OnboardingPage() {
                 </span>
               </div>
               <h2 className="text-2xl md:text-3xl font-black tracking-tight uppercase">
-                {interviewStep === 1 && "Qual o seu maior sonho?"}
+                {interviewStep === 1 && "Qual é seu objetivo principal nos próximos 12 meses?"}
                 {interviewStep === 2 && "Sua meta de seguidores"}
-                {interviewStep === 3 && "Sua fonte de renda principal"}
+                {interviewStep === 3 && "Como você monetiza hoje?"}
                 {interviewStep === 4 && "Seu maior desafio hoje"}
-                {interviewStep === 5 && "Tempo atuando como influenciador?"}
+                {interviewStep === 5 && "Qual sua experiência com publis e marcas?"}
                 {interviewStep === 6 && "Seus horários mais disponíveis?"}
-                {interviewStep === 7 && "Frequência de produção de conteúdo?"}
-                {interviewStep === 8 && "Já realizou compra de seguidores?"}
-                {interviewStep === 9 && "Como você se identifica / Gênero?"}
+                {interviewStep === 7 && "Qual formato e ritmo você consegue sustentar?"}
+                {interviewStep === 8 && "Você usou estratégia de crescimento não orgânico?"}
+                {interviewStep === 9 && "Como prefere receber orientação?"}
               </h2>
               <p className={`${theme === 'light' ? 'text-slate-400' : 'text-zinc-500'} text-xs font-bold uppercase tracking-widest`}>
-                {interviewStep === 1 && "Defina o norte do seu posicionamento estratégico"}
+                {interviewStep === 1 && "Isso orienta o foco estratégico do seu plano"}
                 {interviewStep === 2 && "Onde você planeja estar em 12 meses?"}
-                {interviewStep === 3 && "Qual modelo de monetização você quer priorizar?"}
-                {interviewStep === 4 && "Onde a IA deve agir com mais intensidade?"}
-                {interviewStep === 5 && "Seu nível de maturidade e experiência no mercado"}
+                {interviewStep === 3 && "Este é seu ponto de partida, separado da meta de monetização"}
+                {interviewStep === 4 && "Vamos concentrar as primeiras recomendações aqui"}
+                {interviewStep === 5 && "Isso ajuda a sugerir o suporte comercial adequado ao seu momento"}
                 {interviewStep === 6 && "Qual o melhor momento para sua rotina de criação?"}
-                {interviewStep === 7 && "Constância e ritmo de postagem desejados"}
-                {interviewStep === 8 && "Seja sincero. A IA usará isso para reajustar o alcance real."}
-                {interviewStep === 9 && "O estrategista de IA adaptará o nome (Vincenzo/Valentina) e pronomes de tratamento"}
+                {interviewStep === 7 && "Prefira uma capacidade sustentável a uma promessa impossível"}
+                {interviewStep === 8 && "Opcional. A resposta só dá contexto e não altera score, alcance ou prioridade automaticamente"}
+                {interviewStep === 9 && "Opcional e separado da sua análise estratégica"}
               </p>
             </div>
 
@@ -432,10 +491,10 @@ export default function OnboardingPage() {
               {interviewStep === 1 && (
                 <div className="grid grid-cols-1 gap-3">
                   {[
-                    "Viver de publis/parcerias",
-                    "Trabalhar com grandes marcas",
-                    "Alcançar independência financeira",
-                    "Ser a maior referência do meu nicho"
+                    "Parcerias pagas com marcas",
+                    "Vender produtos, serviços ou consultorias",
+                    "Crescer audiência e alcance",
+                    "Ser referência no meu nicho"
                   ].map((option) => (
                     <button
                       key={option}
@@ -484,10 +543,10 @@ export default function OnboardingPage() {
               {interviewStep === 3 && (
                 <div className="grid grid-cols-1 gap-3">
                   {[
-                    "Publis/Parcerias",
-                    "Infoprodutos / Mentorias",
-                    "AdSense / Visualizações",
-                    "Afiliados / Vendas"
+                    "Ainda não monetizo meu conteúdo",
+                    "Publis e parcerias com marcas",
+                    "Produtos, serviços ou mentorias",
+                    "Afiliados, anúncios ou comissões"
                   ].map((option) => (
                     <button
                       key={option}
@@ -536,9 +595,10 @@ export default function OnboardingPage() {
               {interviewStep === 5 && (
                 <div className="grid grid-cols-1 gap-3">
                   {[
-                    "Menos de 6 meses",
-                    "De 6 meses a 2 anos",
-                    "Mais de 2 anos"
+                    "Ainda não fechei parceria paga",
+                    "Já fiz propostas, mas sem fechar",
+                    "Já fechei algumas campanhas",
+                    "Tenho parcerias recorrentes"
                   ].map((option) => (
                     <button
                       key={option}
@@ -587,9 +647,10 @@ export default function OnboardingPage() {
               {interviewStep === 7 && (
                 <div className="grid grid-cols-1 gap-3">
                   {[
-                    "Diariamente (várias vezes)",
-                    "3 vezes por semana",
-                    "Uma vez por semana"
+                    "Reels e vídeos curtos — 3x ou mais por semana",
+                    "Stories e bastidores — quase diariamente",
+                    "Feed e carrosséis — semanalmente",
+                    "Ainda estou estruturando a rotina"
                   ].map((option) => (
                     <button
                       key={option}
@@ -612,8 +673,8 @@ export default function OnboardingPage() {
               {interviewStep === 8 && (
                 <div className="grid grid-cols-1 gap-3">
                   {[
-                    "Não, todo o crescimento foi orgânico",
-                    "Sim, já comprei seguidores no passado",
+                    "Não, meu crescimento foi orgânico",
+                    "Sim, já usei no passado",
                     "Prefiro não responder"
                   ].map((option) => (
                     <button
@@ -637,14 +698,16 @@ export default function OnboardingPage() {
               {interviewStep === 9 && (
                 <div className="grid grid-cols-1 gap-3">
                   {[
-                    { value: "masculino", label: "Masculino (Seu Estrategista será Vincenzo)" },
-                    { value: "feminino", label: "Feminino (Sua Estrategista será Valentina)" }
+                    { value: "direta", label: "Direta e objetiva" },
+                    { value: "didatica", label: "Estratégica e didática" },
+                    { value: "motivadora", label: "Motivadora e prática" },
+                    { value: "sem-preferencia", label: "Sem preferência" }
                   ].map((option) => (
                     <button
                       key={option.value}
-                      onClick={() => setGender(option.value)}
+                      onClick={() => setAssistantStyle(option.value)}
                       className={`p-5 rounded-[1.2rem] border-2 text-left flex items-center justify-between transition-all ${
-                        gender === option.value
+                        assistantStyle === option.value
                           ? 'border-emerald-500 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400'
                           : theme === 'light'
                           ? 'border-slate-200 bg-white hover:border-slate-300'
@@ -652,7 +715,7 @@ export default function OnboardingPage() {
                       }`}
                     >
                       <span className="font-bold text-xs md:text-sm uppercase tracking-wide">{option.label}</span>
-                      {gender === option.value && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+                      {assistantStyle === option.value && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
                     </button>
                   ))}
                 </div>
@@ -682,7 +745,7 @@ export default function OnboardingPage() {
               <Button
                 onClick={() => {
                   if (interviewStep === 1 && !dream) {
-                    toast.error('Por favor, selecione seu sonho.');
+                    toast.error('Por favor, selecione seu objetivo principal.');
                     return;
                   }
                   if (interviewStep === 2 && !followersGoal) {
@@ -690,7 +753,7 @@ export default function OnboardingPage() {
                     return;
                   }
                   if (interviewStep === 3 && !incomeTarget) {
-                    toast.error('Por favor, selecione sua fonte de renda.');
+                    toast.error('Por favor, selecione sua monetização atual.');
                     return;
                   }
                   if (interviewStep === 4 && !difficulty) {
@@ -698,7 +761,7 @@ export default function OnboardingPage() {
                     return;
                   }
                   if (interviewStep === 5 && !experience) {
-                    toast.error('Por favor, selecione seu tempo de atuação.');
+                    toast.error('Por favor, selecione sua experiência com marcas.');
                     return;
                   }
                   if (interviewStep === 6 && !availability) {
@@ -706,15 +769,7 @@ export default function OnboardingPage() {
                     return;
                   }
                   if (interviewStep === 7 && !frequency) {
-                    toast.error('Por favor, selecione sua frequência de posts.');
-                    return;
-                  }
-                  if (interviewStep === 8 && !boughtFollowers) {
-                    toast.error('Por favor, responda sobre compra de seguidores.');
-                    return;
-                  }
-                  if (interviewStep === 9 && !gender) {
-                    toast.error('Por favor, selecione como se identifica.');
+                    toast.error('Por favor, selecione um formato e ritmo de conteúdo.');
                     return;
                   }
 
@@ -726,7 +781,7 @@ export default function OnboardingPage() {
                 }}
                 className="h-14 flex-1 rounded-[1.5rem] bg-slate-900 hover:bg-emerald-600 hover:text-white dark:bg-white dark:text-black font-black transition-all text-[10px] tracking-widest uppercase"
               >
-                {interviewStep < 8 ? "Avançar" : "Configurar IA"}
+                {interviewStep < 9 ? "Avançar" : "Ir para conexões"}
               </Button>
             </div>
           </div>
@@ -738,16 +793,16 @@ export default function OnboardingPage() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 mb-2">
                  <Zap className="w-5 h-5 text-emerald-500 animate-pulse" />
-                 <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em]">InfluScore_Boost</span>
+                 <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em]">Conexões</span>
               </div>
               <h2 className="text-3xl font-black tracking-tight uppercase">Conexões_Neurais</h2>
-              <p className={`${theme === 'light' ? 'text-slate-400' : 'text-zinc-500'} text-sm font-bold uppercase tracking-widest`}>Sincronize suas contas reais para maximizar seu score</p>
+               <p className={`${theme === 'light' ? 'text-slate-400' : 'text-zinc-500'} text-sm font-bold uppercase tracking-widest`}>Conecte dados reais quando fizer sentido para seu planejamento</p>
             </div>
 
             <div className="space-y-4">
                {/* Instagram Button */}
                <button 
-                 onClick={() => setIsIgModalOpen(true)}
+                  onClick={() => connectedPlatforms.includes('INSTAGRAM') ? toast.message('Instagram já está conectado a esta conta.') : setIsIgModalOpen(true)}
                  className={`w-full p-6 rounded-[2rem] border-2 flex items-center justify-between transition-all group ${connectedPlatforms.includes('INSTAGRAM') ? 'border-emerald-500 bg-emerald-500/5' : theme === 'light' ? 'border-slate-200 bg-white hover:border-rose-200' : 'border-rose-500/20 bg-rose-500/5 hover:border-rose-500/50'}`}
                >
                   <div className="flex items-center gap-6">
@@ -759,8 +814,8 @@ export default function OnboardingPage() {
                         </svg>
                      </div>
                      <div className="text-left">
-                        <p className="font-black text-sm uppercase tracking-widest text-blue-600 dark:text-blue-400">Conectar Instagram</p>
-                        <p className={`text-[10px] ${theme === 'light' ? 'text-slate-500' : 'text-zinc-400'} font-bold uppercase`}>Sincronizar conta e métricas</p>
+                         <p className="font-black text-sm uppercase tracking-widest text-blue-600 dark:text-blue-400">{connectedPlatforms.includes('INSTAGRAM') ? 'Instagram conectado' : 'Conectar Instagram'}</p>
+                         <p className={`text-[10px] ${theme === 'light' ? 'text-slate-500' : 'text-zinc-400'} font-bold uppercase`}>{connectedPlatforms.includes('INSTAGRAM') ? 'Conta já reconhecida' : 'Sincronizar conta e métricas'}</p>
                      </div>
                   </div>
                   {connectedPlatforms.includes('INSTAGRAM') ? (
@@ -774,7 +829,7 @@ export default function OnboardingPage() {
 
                {/* TikTok Button */}
                <button 
-                 onClick={() => setIsTtModalOpen(true)}
+                  onClick={() => connectedPlatforms.includes('TIKTOK') ? toast.message('TikTok já está conectado a esta conta.') : setIsTtModalOpen(true)}
                  className={`w-full p-6 rounded-[2rem] border-2 flex items-center justify-between transition-all group ${connectedPlatforms.includes('TIKTOK') ? 'border-emerald-500 bg-emerald-500/5' : theme === 'light' ? 'border-slate-200 bg-white hover:border-slate-400' : 'border-white/10 bg-white/5 hover:border-white/20'}`}
                >
                   <div className="flex items-center gap-6">
@@ -782,8 +837,8 @@ export default function OnboardingPage() {
                         <Globe size={24} />
                      </div>
                      <div className="text-left">
-                        <p className="font-black text-sm uppercase tracking-widest">TikTok Engine</p>
-                        <p className={`text-[10px] ${theme === 'light' ? 'text-slate-400' : 'text-zinc-500'} font-bold uppercase`}>Sincronizar Trends & Performance</p>
+                         <p className="font-black text-sm uppercase tracking-widest">{connectedPlatforms.includes('TIKTOK') ? 'TikTok conectado' : 'Conectar TikTok'}</p>
+                         <p className={`text-[10px] ${theme === 'light' ? 'text-slate-400' : 'text-zinc-500'} font-bold uppercase`}>{connectedPlatforms.includes('TIKTOK') ? 'Conta já reconhecida' : 'Sincronizar tendências e performance'}</p>
                      </div>
                   </div>
                   {connectedPlatforms.includes('TIKTOK') ? (
@@ -798,7 +853,7 @@ export default function OnboardingPage() {
 
             <div className={`p-5 ${theme === 'light' ? 'bg-emerald-50 border-emerald-100' : 'bg-emerald-500/5 border-emerald-500/10'} border rounded-2xl flex items-center gap-4`}>
                <Zap className="w-6 h-6 text-emerald-500" />
-               <p className={`text-[11px] font-bold ${theme === 'light' ? 'text-emerald-700' : 'text-emerald-300'} leading-relaxed uppercase`}>Contas conectadas garantem prioridade no marketplace e InfluScore +40%.</p>
+                <p className={`text-[11px] font-bold ${theme === 'light' ? 'text-emerald-700' : 'text-emerald-300'} leading-relaxed uppercase`}>A conexão adiciona dados da conta quando disponíveis. Ela não cria bônus automático de score ou prioridade no marketplace.</p>
             </div>
 
             <div className="flex gap-4 pt-4">
@@ -845,4 +900,3 @@ export default function OnboardingPage() {
     </div>
   );
 }
-

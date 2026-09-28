@@ -86,7 +86,10 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
 
     try {
       // Busca a URL de autorização no backend
-      const { data } = await api.get<{ authUrl?: string; instagram?: string; configured?: { instagram?: boolean } }>('/integrations/instagram/auth-url');
+      const { data } = await api.get<{ authUrl?: string; instagram?: string; configured?: { instagram?: boolean } }>(
+        '/integrations/instagram/auth-url',
+        { params: { from: 'onboarding' } },
+      );
       const authUrl: string = data.authUrl || data.instagram || '';
 
       if (!authUrl || authUrl === '#' || authUrl.includes('seu_instagram_app_client_id') || (data.configured && data.configured.instagram === false)) {
@@ -126,7 +129,7 @@ export function InstagramOnboardingModal({ isOpen, onClose, onConfirm }: Instagr
       await new Promise((resolve) => setTimeout(resolve, 1000));
       onConfirm('simulate', sandboxUsername, sandboxRange);
       onClose();
-    } catch (err: unknown) {
+    } catch {
       setError('Erro ao iniciar simulação.');
     } finally {
       setIsSimulating(false);
