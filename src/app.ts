@@ -26,11 +26,7 @@ export function createApp(): express.Express {
     res.status(200).json(getLivenessPayload());
   };
 
-  // Health probes must remain independent from rate limiting, analytics, and
-  // application dependencies so they accurately represent process liveness.
-  app.get('/health', sendLiveness);
-  app.get('/api/health', sendLiveness);
-  app.get('/ready', async (_req, res) => {
+  const sendReadiness = async (_req: express.Request, res: express.Response) => {
     try {
       const readiness = await getRuntimeReadiness();
       res.status(readiness.status === 'ok' ? 200 : 503).json(readiness);
@@ -40,7 +36,14 @@ export function createApp(): express.Express {
         checks: { config: 'failed', database: 'failed', redis: 'failed' },
       });
     }
-  });
+  };
+
+  // Health probes must remain independent from rate limiting, analytics, and
+  // application dependencies so they accurately represent process liveness.
+  app.get('/health', sendLiveness);
+  app.get('/api/health', sendLiveness);
+  app.get('/ready', sendReadiness);
+  app.get('/v1/ready', sendReadiness);
 
   app.use(globalRateLimiter);
 

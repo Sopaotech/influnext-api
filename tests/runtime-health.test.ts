@@ -111,28 +111,38 @@ describe('runtime health and readiness', () => {
     expect(mockPageViewCreate).not.toHaveBeenCalled();
   });
 
-  it('reports readiness only when configuration, PostgreSQL, and Redis are healthy', async () => {
-    const response = await request(app).get('/ready').expect(200);
+  it('serves the same successful readiness contract at /ready and /v1/ready', async () => {
+    const [rootResponse, versionedResponse] = await Promise.all([
+      request(app).get('/ready').expect(200),
+      request(app).get('/v1/ready').expect(200),
+    ]);
 
-    expect(response.body).toEqual({
+    expect(rootResponse.body).toEqual({
       status: 'ok',
       checks: { config: 'ok', database: 'ok', redis: 'ok' },
     });
-    expect(mockPrismaQueryRaw).toHaveBeenCalledTimes(1);
-    expect(mockRedisPing).toHaveBeenCalledTimes(1);
+    expect(versionedResponse.status).toBe(rootResponse.status);
+    expect(versionedResponse.body).toEqual(rootResponse.body);
+    expect(mockPrismaQueryRaw).toHaveBeenCalledTimes(2);
+    expect(mockRedisPing).toHaveBeenCalledTimes(2);
   });
 
-  it('returns a sanitized 503 when PostgreSQL fails', async () => {
+  it('serves the same sanitized 503 readiness contract at /ready and /v1/ready when PostgreSQL fails', async () => {
     mockPrismaQueryRaw.mockRejectedValue(new Error(`database failure ${fakeDatabaseUrl} ${fakeJwtSecret}`));
 
-    const response = await request(app).get('/ready').expect(503);
+    const [rootResponse, versionedResponse] = await Promise.all([
+      request(app).get('/ready').expect(503),
+      request(app).get('/v1/ready').expect(503),
+    ]);
 
-    expect(response.body).toEqual({
+    expect(rootResponse.body).toEqual({
       status: 'failed',
       checks: { config: 'ok', database: 'failed', redis: 'ok' },
     });
-    expect(JSON.stringify(response.body)).not.toContain(fakeDatabaseUrl);
-    expect(JSON.stringify(response.body)).not.toContain(fakeJwtSecret);
+    expect(versionedResponse.status).toBe(rootResponse.status);
+    expect(versionedResponse.body).toEqual(rootResponse.body);
+    expect(JSON.stringify(rootResponse.body)).not.toContain(fakeDatabaseUrl);
+    expect(JSON.stringify(rootResponse.body)).not.toContain(fakeJwtSecret);
   });
 
   it('returns a sanitized 503 when Redis fails', async () => {
