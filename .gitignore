@@ -29,6 +29,7 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 .env*.local
+.env.instagram-test
 
 # vercel
 .vercel
@@ -42,4 +43,3 @@ web/eslint-report.json
 *.db
 *.db-journal
 *.sqlite
-

@@ -2,6 +2,7 @@ import { Metadata, Viewport } from 'next';
 import { notFound } from 'next/navigation';
 import { PublicProfileView } from './PublicProfileView';
 import type { PublicProfileResponse } from '@/lib/api';
+import { resolveApiBaseUrl } from '@/lib/api-base-url';
 
 export const viewport: Viewport = {
   themeColor: '#131110',
@@ -12,7 +13,11 @@ export const viewport: Viewport = {
 };
 
 async function getProfileData(handle: string): Promise<PublicProfileResponse | null> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/v1';
+  const apiUrl = resolveApiBaseUrl(
+    process.env.NEXT_PUBLIC_API_URL,
+    undefined,
+    process.env.NEXT_PUBLIC_ISOLATED_TEST === 'true',
+  );
   try {
     const res = await fetch(`${apiUrl}/p/${handle}`, {
       cache: 'no-store'

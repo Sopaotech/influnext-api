@@ -1,5 +1,8 @@
 import type { NextConfig } from "next";
 import withPWAInit from "@ducanh2912/next-pwa";
+import { isolatedTestApiRewrites } from "./src/lib/api-base-url";
+
+const isolatedInstagramTestMode = process.env.NEXT_PUBLIC_ISOLATED_TEST === 'true';
 
 const withPWA = withPWAInit({
   dest: "public",
@@ -16,6 +19,12 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
+  async rewrites() {
+    return isolatedTestApiRewrites(
+      isolatedInstagramTestMode,
+      process.env.INFLUNEXT_TEST_API_ORIGIN,
+    );
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [

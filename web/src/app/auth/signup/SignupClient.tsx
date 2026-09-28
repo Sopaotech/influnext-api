@@ -181,8 +181,7 @@ export default function SignupClient() {
       if (!msg && errObj.response?.data?.errors) {
         msg = Object.values(errObj.response.data.errors).flat().join(' | ');
       }
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://influnext-api-production.up.railway.app/v1';
-      setError(`${msg || errObj.message || 'Erro de conexão'} (URL: ${apiUrl})`);
+      setError(msg || errObj.message || 'Erro de conexão');
     } finally {
       setIsLoading(false);
     }
@@ -224,8 +223,7 @@ export default function SignupClient() {
       if (!msg && errObj.response?.data?.errors) {
         msg = Object.values(errObj.response.data.errors).flat().join(' | ');
       }
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://influnext-api-production.up.railway.app/v1';
-      setError(`${msg || errObj.message || 'Erro de conexão'} (URL: ${apiUrl})`);
+      setError(msg || errObj.message || 'Erro de conexão');
     } finally {
       setIsLoading(false);
     }

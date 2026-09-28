@@ -1,31 +1,13 @@
 import axios from 'axios';
 import { clearBrowserAuthState } from './auth-browser';
+import { resolveApiBaseUrl } from './api-base-url';
 
-// Centralização da URL da API com Auto-Detecção
-const envApiUrl = process.env.NEXT_PUBLIC_API_URL;
-let baseApiUrl = envApiUrl;
-
-if (typeof window !== 'undefined') {
-  const hostname = window.location.hostname;
-  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '10.0.2.2';
-  
-  if (!isLocalhost) {
-    // Se não for localhost (ex: cloudflare pages preview, etc), usa a API de produção
-    baseApiUrl = envApiUrl || 'https://api.influnext.com.br/v1';
-  } else if (!baseApiUrl) {
-    // Se for local e não houver env, usa o padrão local correspondente ao host (se for emulador Android usa 10.0.2.2)
-    baseApiUrl = hostname === '10.0.2.2' ? 'http://10.0.2.2:4000/v1' : 'http://localhost:4000/v1';
-  }
-} else if (!baseApiUrl) {
-  baseApiUrl = 'http://localhost:4000/v1';
-}
-
-// Garantir que a URL termine com /v1
-if (baseApiUrl && !baseApiUrl.endsWith('/v1')) {
-  baseApiUrl = baseApiUrl.endsWith('/') ? `${baseApiUrl}v1` : `${baseApiUrl}/v1`;
-}
-
-const API_URL = baseApiUrl;
+const API_URL = resolveApiBaseUrl(
+  process.env.NEXT_PUBLIC_API_URL,
+  typeof window === 'undefined' ? undefined : window.location.hostname,
+  process.env.NEXT_PUBLIC_ISOLATED_TEST === 'true',
+  typeof window === 'undefined' ? undefined : window.location.origin,
+);
 
 export const api = axios.create({
   baseURL: API_URL,

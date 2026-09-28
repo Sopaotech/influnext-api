@@ -23,7 +23,10 @@
     "test:integration:http": "node scripts/run-postgres-http-integration-tests.js",
     "test:integration:redis": "node scripts/run-redis-bullmq-integration-tests.js",
     "test:integration:workers": "node scripts/run-application-worker-integration-tests.js",
-    "test:integration:scheduler": "node scripts/run-scheduler-integration-tests.js"
+    "test:integration:scheduler": "node scripts/run-scheduler-integration-tests.js",
+    "check:instagram-test-env": "node scripts/validate-instagram-test-env.js",
+    "instagram-test:compose": "node scripts/run-instagram-test-compose.js",
+    "dev:instagram-test:web": "node scripts/start-instagram-test-frontend.js"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",

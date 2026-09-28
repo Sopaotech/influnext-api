@@ -1,0 +1,34 @@
+x-instagram-test-api-environment: &instagram-test-api-environment
+  NODE_ENV: ${NODE_ENV:?Set NODE_ENV in .env.instagram-test}
+  DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env.instagram-test}
+  DIRECT_URL: ${DIRECT_URL:?Set DIRECT_URL in .env.instagram-test}
+  REDIS_URL: ${REDIS_URL:?Set REDIS_URL in .env.instagram-test}
+  JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env.instagram-test}
+  FRONTEND_URL: ${FRONTEND_URL:?Set FRONTEND_URL in .env.instagram-test}
+  ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:?Set ALLOWED_ORIGINS in .env.instagram-test}
+  SOCIAL_TOKEN_ACTIVE_KEY_ID: ${SOCIAL_TOKEN_ACTIVE_KEY_ID:?Set SOCIAL_TOKEN_ACTIVE_KEY_ID in .env.instagram-test}
+  SOCIAL_TOKEN_KEY_V1: ${SOCIAL_TOKEN_KEY_V1:?Set SOCIAL_TOKEN_KEY_V1 in .env.instagram-test}
+  ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Set ENCRYPTION_KEY in .env.instagram-test}
+  INSTAGRAM_CLIENT_ID: ${INSTAGRAM_CLIENT_ID:?Set INSTAGRAM_CLIENT_ID in .env.instagram-test}
+  INSTAGRAM_CLIENT_SECRET: ${INSTAGRAM_CLIENT_SECRET:?Set INSTAGRAM_CLIENT_SECRET in .env.instagram-test}
+  INSTAGRAM_POST_SYNC_AI_ENABLED: ${INSTAGRAM_POST_SYNC_AI_ENABLED:?Set INSTAGRAM_POST_SYNC_AI_ENABLED in .env.instagram-test}
+
+services:
+  api:
+    environment: *instagram-test-api-environment
+
+  worker:
+    environment: *instagram-test-api-environment
+
+  postgres:
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env.instagram-test}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.instagram-test}
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env.instagram-test}
+    volumes:
+      - instagram_test_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:?Set POSTGRES_USER in .env.instagram-test} -d ${POSTGRES_DB:?Set POSTGRES_DB in .env.instagram-test}"]
+
+volumes:
+  instagram_test_postgres_data:

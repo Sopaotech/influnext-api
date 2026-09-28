@@ -15,6 +15,7 @@ import { dispatchEligibleScheduledInstagramSyncs } from '../services/instagram-s
 import { classifyInstagramSyncFailure, InstagramSyncOperationalError } from '../utils/instagram-sync-error';
 import { instagramSyncRetryAt } from '../utils/instagram-sync-retry-policy';
 import { decryptSocialToken } from '../utils/social-token-crypto';
+import { shouldTriggerInstagramPostSyncAI } from '../utils/instagram-post-sync-ai-policy';
 
 const SYNC_LEASE_MS = 10 * 60 * 1000;
 
@@ -32,10 +33,6 @@ function isPartialCollection(result: any): boolean {
  * legacy post-snapshot AI analysis. Retry and scheduled jobs collect metrics
  * only, so a periodic dispatcher cannot create an uncontrolled AI fan-out.
  */
-function shouldTriggerPostSnapshotAI(reason: InstagramSyncJobData['reason']): boolean {
-  return reason === 'post_oauth' || reason === 'manual_retry';
-}
-
 export async function processInstagramSyncWithDependencies(
   job: Job<InstagramSyncQueueJobData>,
   dependencies: InstagramSyncWorkerDependencies,
@@ -106,7 +103,7 @@ export async function processInstagramSyncWithDependencies(
       platform.influencerId,
       accessToken,
       platform.platformId,
-      { triggerAIAnalysis: shouldTriggerPostSnapshotAI(data.reason) },
+      { triggerAIAnalysis: shouldTriggerInstagramPostSyncAI(data.reason) },
     );
     const finishedAt = new Date();
 

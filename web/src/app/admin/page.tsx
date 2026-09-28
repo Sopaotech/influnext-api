@@ -1,12 +1,16 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
+import { resolveApiBaseUrl } from '@/lib/api-base-url';
 
 async function getAdminStats() {
   try {
     const session = (await cookies()).get('influnext_token')?.value;
     if (!session) return null;
-    const configuredApiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/v1').replace(/\/$/, '');
-    const apiUrl = configuredApiUrl.endsWith('/v1') ? configuredApiUrl : `${configuredApiUrl}/v1`;
+    const apiUrl = resolveApiBaseUrl(
+      process.env.NEXT_PUBLIC_API_URL,
+      undefined,
+      process.env.NEXT_PUBLIC_ISOLATED_TEST === 'true',
+    );
     const res = await fetch(`${apiUrl}/admin/stats`, {
       headers: {
         'Cache-Control': 'no-store',
