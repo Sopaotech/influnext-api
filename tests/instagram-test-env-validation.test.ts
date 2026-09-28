@@ -1,6 +1,8 @@
+const fs = require('node:fs');
+const path = require('node:path');
 const { validateInstagramTestEnv } = require('../scripts/validate-instagram-test-env');
 const { projectPattern, safeProcessEnvironment, validateComposeAction } = require('../scripts/run-instagram-test-compose');
-const { buildFrontendEnvironment } = require('../scripts/start-instagram-test-frontend');
+const { buildFrontendEnvironment, frontendCommands } = require('../scripts/start-instagram-test-frontend');
 
 function validConfig() {
   const testKey = 'a'.repeat(64);
@@ -93,8 +95,23 @@ describe('Instagram isolated test environment validation', () => {
     const env = buildFrontendEnvironment(validConfig(), inherited);
     expect(env.NEXT_PUBLIC_API_URL).toBe('https://ig-test-host-123.test/v1');
     expect(env.NEXT_PUBLIC_COOKIE_DOMAIN).toBe('');
+    expect(env.NODE_ENV).toBe('production');
     for (const name of ['DATABASE_URL', 'REDIS_URL', 'INSTAGRAM_CLIENT_SECRET', 'GEMINI_API_KEY']) {
       expect(env).not.toHaveProperty(name);
     }
+  });
+
+  it('uses a stable production build and loopback-only start command for the isolated frontend', () => {
+    expect(frontendCommands).toEqual({
+      build: ['run', 'build:web'],
+      start: ['run', 'start:web'],
+    });
+
+    const packageJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../package.json'), 'utf8'));
+    expect(packageJson.scripts['start:web']).toContain('--hostname 127.0.0.1 --port 3000');
+
+    const nextConfig = fs.readFileSync(path.resolve(__dirname, '../web/next.config.ts'), 'utf8');
+    expect(nextConfig).toContain("process.env.NODE_ENV !== \"production\" || isolatedInstagramTestMode");
+    expect(nextConfig).toContain('register: !isolatedInstagramTestMode');
   });
 });

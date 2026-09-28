@@ -4,7 +4,7 @@ This is a preparation guide for a future, separately authorized Instagram OAuth 
 
 ## Components and isolation
 
-- Frontend: `npm run dev:web`; the guarded wrapper is `npm run dev:instagram-test:web`.
+- Frontend: the guarded wrapper `npm run start:instagram-test:web` builds and starts Next.js in production mode on loopback port 3000. The legacy `dev:instagram-test:web` alias uses the same stable wrapper.
 - API: the Compose API service runs the existing `npm start` command.
 - Worker: the Compose worker service runs `npm run start:worker`.
 - PostgreSQL and Redis: private Compose services with no published host ports.
@@ -15,7 +15,7 @@ The versioned `.env.instagram-test.example` contains placeholders only. Copy it 
 
 All documented Compose commands go through `scripts/run-instagram-test-compose.js`. It removes shell-provided database, Redis, Compose, and Docker endpoint overrides, validates only the dedicated test file, requires a local named-pipe/Unix Docker context, and requires a timestamped test project. Its `preflight` checks the project is empty and its isolated PostgreSQL volume does not already exist before recording a short local marker. It rejects the scheduler and rejects `prisma db push`; the only allowed one-shot database command is `prisma migrate deploy` against the Compose API service.
 
-The configuration requires a manually approved HTTPS test hostname, but no domain is assumed to exist. The frontend API URL must use that same origin with `/v1`. In isolated mode, missing API configuration fails closed, production API hosts are rejected, and the Next.js rewrite accepts only `http://127.0.0.1:4000` or `http://localhost:4000` as its local destination. Requests for `/v1/*` are proxied by the frontend dev server to the loopback-only API; the eventual HTTPS tunnel should target frontend port 3000. This keeps the browser callback and API under one site.
+The configuration requires a manually approved HTTPS test hostname, but no domain is assumed to exist. The frontend API URL must use that same origin with `/v1`. In isolated mode, missing API configuration fails closed, production API hosts are rejected, and the Next.js rewrite accepts only `http://127.0.0.1:4000` or `http://localhost:4000` as its local destination. Requests for `/v1/*` are proxied by the frontend server to the loopback-only API; the HTTPS tunnel targets frontend loopback port 3000. This keeps the browser callback and API under one site.
 
 ## Manual setup for a later approved run
 
@@ -37,12 +37,12 @@ npm run instagram-test:compose -- $project run --rm api npx prisma migrate deplo
 npm run instagram-test:compose -- $project up -d api worker
 Invoke-WebRequest http://127.0.0.1:4000/health -UseBasicParsing | Select-Object -ExpandProperty StatusCode
 Invoke-WebRequest http://127.0.0.1:4000/ready -UseBasicParsing | Select-Object -ExpandProperty StatusCode
-npm run dev:instagram-test:web
+npm run start:instagram-test:web
 ```
 
 Use the generated project name for every Compose command in that run. It gives PostgreSQL a separate, newly named volume. The `preflight` must pass before any other command; it checks that no matching volume or project containers already exist. If it fails, choose a new project suffix. Do not use `down -v`. The migration command above is a future instruction and must only be run after the preflight succeeds and the empty, uniquely named test project has been confirmed. It applies only the versioned migrations to the new local PostgreSQL container; `db push` is never part of this procedure.
 
-The API binds to `127.0.0.1:4000`; Next.js dev uses port 3000. Check that both ports are available before starting. The API `/health` and `/ready` endpoints are local checks. Neither command starts a scheduler or calls an external provider.
+The API binds to `127.0.0.1:4000`; the isolated Next.js production server binds to `127.0.0.1:3000`. Check that both ports are available before starting. The API `/health` and `/ready` endpoints are local checks. Neither command starts a scheduler or calls an external provider.
 
 ## Callback, cookies, and Meta configuration
 

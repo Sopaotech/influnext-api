@@ -6,8 +6,8 @@ const isolatedInstagramTestMode = process.env.NEXT_PUBLIC_ISOLATED_TEST === 'tru
 
 const withPWA = withPWAInit({
   dest: "public",
-  disable: process.env.NODE_ENV !== "production",
-  register: true,
+  disable: process.env.NODE_ENV !== "production" || isolatedInstagramTestMode,
+  register: !isolatedInstagramTestMode,
 });
 
 const nextConfig: NextConfig = {
