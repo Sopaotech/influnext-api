@@ -1,30 +1,44 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { X } from 'lucide-react';
+import { shouldShowAppStandbyNotice } from '@/lib/app-standby-notice';
 
 export function AppStandbyNotice() {
+  const pathname = usePathname();
+  const isAllowedOnRoute = shouldShowAppStandbyNotice(pathname);
   const [showNotice, setShowNotice] = useState(false);
 
   useEffect(() => {
-    // Check if dismissed
-    const isDismissed = localStorage.getItem('influnext_app_standby_dismissed');
-    if (isDismissed) return;
+    if (!isAllowedOnRoute) {
+      setShowNotice(false);
+      return;
+    }
 
-    // Show after 1.5 seconds
+    try {
+      if (localStorage.getItem('influnext_app_standby_dismissed')) return;
+    } catch {
+      // Storage may be unavailable; the notice remains dismissible in memory.
+    }
+
     const timer = setTimeout(() => {
       setShowNotice(true);
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [isAllowedOnRoute]);
 
   const handleDismiss = () => {
-    localStorage.setItem('influnext_app_standby_dismissed', 'true');
     setShowNotice(false);
+    try {
+      localStorage.setItem('influnext_app_standby_dismissed', 'true');
+    } catch {
+      // Dismissing the notice must not depend on persistent storage.
+    }
   };
 
-  if (!showNotice) return null;
+  if (!isAllowedOnRoute || !showNotice) return null;
 
   return (
     <div className="fixed bottom-6 right-6 z-50 w-[calc(100%-2rem)] max-w-sm sm:w-96 animate-in fade-in slide-in-from-bottom-5 duration-300 md:right-6 md:bottom-6 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0">
