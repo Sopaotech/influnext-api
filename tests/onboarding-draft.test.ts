@@ -73,7 +73,7 @@ describe('creator onboarding draft', () => {
     expect(loadCreatorOnboardingDraft(storage, storageKey)).toEqual(createEmptyCreatorOnboardingDraft());
 
     const incompatibleDraft = createEmptyCreatorOnboardingDraft();
-    incompatibleDraft.version = ONBOARDING_DRAFT_VERSION - 1;
+    incompatibleDraft.version = 1;
     storage.setItem(storageKey, JSON.stringify(incompatibleDraft));
     expect(loadCreatorOnboardingDraft(storage, storageKey)).toEqual(createEmptyCreatorOnboardingDraft());
 
@@ -96,6 +96,26 @@ describe('creator onboarding draft', () => {
     clearLegacyCreatorOnboardingDraft(storage);
     expect(storage.getItem(LEGACY_ONBOARDING_DRAFT_STORAGE_KEY)).toBeNull();
     expect(loadCreatorOnboardingDraft(storage, userAKey).handle).toBe('creator-a-handle');
+  });
+
+  it('restores version 2 drafts with removed visual preferences without losing creator progress', () => {
+    const storage = memoryStorage();
+    const storageKey = getCreatorOnboardingDraftStorageKey('creator-a');
+    const legacyDraft = {
+      ...createEmptyCreatorOnboardingDraft(),
+      version: 2,
+      step: 5,
+      accentColor: '#d96b27',
+      answers: { ...createEmptyCreatorOnboardingDraft().answers, careerGoal: 'brands' },
+    };
+    storage.setItem(storageKey, JSON.stringify(legacyDraft));
+
+    expect(loadCreatorOnboardingDraft(storage, storageKey)).toMatchObject({
+      version: ONBOARDING_DRAFT_VERSION,
+      step: 4,
+      answers: { careerGoal: 'brands' },
+    });
+    expect(loadCreatorOnboardingDraft(storage, storageKey)).not.toHaveProperty('accentColor');
   });
 
   it('keeps the nine-question model aligned with the versioned payload contract', () => {
@@ -153,5 +173,9 @@ describe('creator onboarding draft', () => {
     expect(onboardingSource).not.toContain('loadCreatorOnboardingDraft(window.sessionStorage)');
     expect(instagramModalSource).toContain("params: { from: 'onboarding' }");
     expect(tiktokModalSource).toContain("params: { from: 'onboarding' }");
+    expect(onboardingSource).not.toContain('Visual_Sistema');
+    expect(onboardingSource).not.toContain('accentColor');
+    expect(onboardingSource).toContain('{step === 4 && (');
+    expect(onboardingSource).toContain('setStep(4);');
   });
 });

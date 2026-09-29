@@ -1,6 +1,6 @@
 export const LEGACY_ONBOARDING_DRAFT_STORAGE_KEY = 'influnext.creator-onboarding.draft.v1';
 export const ONBOARDING_DRAFT_STORAGE_PREFIX = 'influnext.creator-onboarding.draft.v2';
-export const ONBOARDING_DRAFT_VERSION = 2;
+export const ONBOARDING_DRAFT_VERSION = 3;
 export const ONBOARDING_INTERVIEW_STEP_COUNT = 9;
 
 const MAX_DRAFT_TEXT_LENGTH = 180;
@@ -23,7 +23,6 @@ export type CreatorOnboardingDraft = {
   version: number;
   step: number;
   interviewStep: number;
-  accentColor: string;
   handle: string;
   niche: string;
   audienceTarget: string;
@@ -155,7 +154,6 @@ export function createEmptyCreatorOnboardingDraft(): CreatorOnboardingDraft {
     version: ONBOARDING_DRAFT_VERSION,
     step: 1,
     interviewStep: 1,
-    accentColor: '#a855f7',
     handle: '',
     niche: '',
     audienceTarget: '',
@@ -184,12 +182,20 @@ function readStep(value: unknown, max: number): number {
     : 1;
 }
 
+function readOnboardingStep(value: unknown, version: number): number {
+  if (version === 2) {
+    const legacyStep = readStep(value, 5);
+    return legacyStep >= 4 ? legacyStep - 1 : legacyStep;
+  }
+  return readStep(value, 4);
+}
+
 export function parseCreatorOnboardingDraft(raw: string | null): CreatorOnboardingDraft | null {
   if (!raw) return null;
 
   try {
     const parsed = JSON.parse(raw) as Partial<CreatorOnboardingDraft>;
-    if (parsed.version !== ONBOARDING_DRAFT_VERSION || !parsed.answers || typeof parsed.answers !== 'object') {
+    if ((parsed.version !== 2 && parsed.version !== ONBOARDING_DRAFT_VERSION) || !parsed.answers || typeof parsed.answers !== 'object') {
       return null;
     }
 
@@ -197,9 +203,8 @@ export function parseCreatorOnboardingDraft(raw: string | null): CreatorOnboardi
     const answers = parsed.answers as Partial<InterviewAnswers>;
     return {
       version: ONBOARDING_DRAFT_VERSION,
-      step: readStep(parsed.step, 5),
+      step: readOnboardingStep(parsed.step, parsed.version),
       interviewStep: readStep(parsed.interviewStep, ONBOARDING_INTERVIEW_STEP_COUNT),
-      accentColor: readText(parsed.accentColor, 32) || empty.accentColor,
       handle: readText(parsed.handle),
       niche: readText(parsed.niche),
       audienceTarget: readText(parsed.audienceTarget),

@@ -61,6 +61,7 @@ export const getPublicProfile = async (req: Request, res: Response): Promise<voi
           select: {
             platformName: true,
             platformId: true,
+            followersCount: true,
             isActive: true,
             lastSyncAttemptAt: true,
             lastSyncSuccessAt: true,
@@ -111,10 +112,13 @@ export const getPublicProfile = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    // Calcula a média de ROI
-    const avgROI = profile.tasks.length > 0
-      ? profile.tasks.reduce((acc, t) => acc + (t.performanceMultiplier || 1), 0) / profile.tasks.length
-      : 1.0;
+    // Only completed, eligible tasks with a measured multiplier are selected above.
+    const performanceSamples = profile.tasks
+      .map(task => task.performanceMultiplier)
+      .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
+    const avgROI = performanceSamples.length > 0
+      ? performanceSamples.reduce((sum, value) => sum + value, 0) / performanceSamples.length
+      : null;
 
     const instagramSync = getInstagramSyncStatus(profile.platforms, profile.metricsHistory[0]);
     const instagramMetricCollection = getInstagramMetricCollection(
@@ -127,17 +131,20 @@ export const getPublicProfile = async (req: Request, res: Response): Promise<voi
     const instagramFreshness = getInstagramFreshness(instagramSync, instagramMetricCollection, {
       syncLeaseExpiresAt: instagramSyncLeaseExpiresAt,
     });
-    const { platforms, metricsHistory, verifiedMetrics: _legacyVerifiedMetrics, insights: _insights, ...publicProfile } = profile;
+    const { platforms, metricsHistory, verifiedMetrics: _legacyVerifiedMetrics, insights: _insights, scoreClass: _defaultableScoreClass, ...publicProfile } = profile;
 
     res.status(200).json({
       ...publicProfile,
+      scoreClass: instagramSync.hasVerifiedSnapshot && profile.influScore > 0 ? profile.scoreClass : null,
       verifiedMetrics: instagramSync.hasVerifiedSnapshot,
       metricsHistory,
       platforms: platforms.map(({ platformName, platformId }) => ({ platformName, platformId })),
       instagramSync,
       instagramMetricCollection,
       instagramFreshness,
-      avgROI: Number(avgROI.toFixed(2))
+      instagramFollowers: platforms.find(platform => platform.platformName === 'INSTAGRAM' && platform.isActive)?.followersCount ?? null,
+      avgROI: avgROI === null ? null : Number(avgROI.toFixed(2)),
+      performanceSampleCount: performanceSamples.length,
     });
   } catch (error) {
     console.error('[PUBLIC] Erro ao carregar Media Kit:', error);

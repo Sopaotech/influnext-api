@@ -58,13 +58,13 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
             handle: 'Admin InfluNext',
             niche: 'SaaS Platform',
             profileImageUrl: user.profileImageUrl,
-            influScore: 100,
-            scoreClass: 'DIAMOND',
+            influScore: null,
+            scoreClass: null,
             dailyMission: 'Gerenciar Ecossistema',
             missionCompleted: false,
             profileProgress: 100,
           },
-          kpis: { influScore: 100, scoreClass: 'DIAMOND', escrowBalance: 0, activeContractsCount: 0, pendingMissionsCount: 0, latestFollowers: 0, latestEngagement: 0, totalEarned: 0, latestReach: 0, avgViews: 0 },
+          kpis: { influScore: null, scoreClass: null, escrowBalance: null, activeContractsCount: 0, pendingMissionsCount: 0, latestFollowers: null, latestEngagement: null, totalEarned: null, latestReach: null, avgViews: null },
           userState: user,
           contracts: [],
           tasks: [],
@@ -96,6 +96,8 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
     const instagramFreshness = getInstagramFreshness(instagramSync, instagramMetricCollection, {
       syncLeaseExpiresAt: instagramSyncLeaseExpiresAt,
     });
+    const instagramPlatform = profile.platforms.find(platform => platform.platformName === 'INSTAGRAM' && platform.isActive);
+    const latestInstagramMetricSnapshot = profile.metricsHistory?.[0] ?? null;
 
     // Cálculo de Progresso de Perfil (Fase 1 do Roadmap)
     let progress = 0;
@@ -145,10 +147,11 @@ export const getInfluencerDashboard = async (req: Request, res: Response): Promi
         totalEarned,
         activeContractsCount,
         pendingMissionsCount,
-        latestFollowers: profile.metricsHistory?.[0]?.followers ?? null,
+        latestFollowers: profile.metricsHistory?.[0]?.followers ?? instagramPlatform?.followersCount ?? null,
         latestEngagement: profile.metricsHistory?.[0]?.engagementRate ?? null,
-        latestReach: profile.metricsHistory?.[0]?.reachLast30Days ?? 0,
-        avgViews: profile.metricsHistory?.[0]?.avgViews ?? 0,
+        latestReach: profile.metricsHistory?.[0]?.reachLast30Days ?? null,
+        // A numeric zero is preserved only when a persisted snapshot contains it.
+        avgViews: latestInstagramMetricSnapshot?.avgViews ?? null,
       },
       userState: profile.user,
       contracts: profile.contracts,

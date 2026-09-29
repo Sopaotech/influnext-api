@@ -150,15 +150,15 @@ export interface InfluencerDashboardResponse extends InstagramDataContracts {
     handle: string;
     niche: string | null;
     profileImageUrl: string | null;
-    influScore: number;
-    scoreClass: string;
+    influScore: number | null;
+    scoreClass: string | null;
     verifiedMetrics: boolean;
   };
   kpis: {
     latestFollowers: number | null;
     latestEngagement: number | null;
-    latestReach: number;
-    avgViews: number;
+    latestReach: number | null;
+    avgViews: number | null;
   };
   metricsHistory: MetricSnapshot[];
 }
@@ -167,8 +167,8 @@ export interface PublicProfileResponse extends InstagramDataContracts {
   id: string;
   handle: string;
   profileImageUrl: string | null;
-  influScore: number;
-  scoreClass: string;
+  influScore: number | null;
+  scoreClass: string | null;
   verifiedMetrics: boolean;
   niche: string | null;
   city: string | null;
@@ -185,7 +185,9 @@ export interface PublicProfileResponse extends InstagramDataContracts {
     platformName: string;
     platformId: string;
   }>;
-  avgROI: number;
+  instagramFollowers?: number | null;
+  avgROI: number | null;
+  performanceSampleCount: number;
 }
 
 export interface CompanyDashboardResponse {

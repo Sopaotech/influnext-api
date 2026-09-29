@@ -31,7 +31,8 @@ import {
 import { toast } from 'sonner';
 import Cookies from 'js-cookie';
 import Link from 'next/link';
-import type { InstagramDataContracts } from '@/lib/api';
+import type { InstagramDataContracts, MetricSnapshot } from '@/lib/api';
+import { formatAvailableCount, getInstagramNoDataMessage, getMeasuredAvgViews, hasPersistedScore, NO_DATA_LABEL } from '@/lib/creator-dashboard-truth';
 
 interface PlatformItem {
   platform?: string;
@@ -48,6 +49,7 @@ interface RateCardItem {
 }
 
 interface MediaKitData extends Partial<InstagramDataContracts> {
+  metricsHistory?: MetricSnapshot[];
   profile?: {
     handle?: string;
     companyName?: string;
@@ -105,7 +107,8 @@ export default function MediaKitPage() {
   };
 
   const handleCopyBioLink = () => {
-    const handle = data?.profile?.handle || 'demo.influencer';
+    const handle = data?.profile?.handle;
+    if (!handle) return;
     const cleanHandle = handle.replace('@', '');
     const url = `${window.location.origin}/p/${cleanHandle}`;
     navigator.clipboard.writeText(url);
@@ -142,19 +145,19 @@ export default function MediaKitPage() {
 
   const profile = data?.profile;
   const kpis = data?.kpis;
-  const rawScore = profile?.influScore ?? 845;
-  const influScore = rawScore > 0 ? rawScore : 845;
-  const scoreClass = profile?.scoreClass || 'Ouro';
-  const creatorHandle = profile?.handle ? (profile.handle.startsWith('@') ? profile.handle : `@${profile.handle}`) : '@demo.influencer';
-  const cleanHandle = creatorHandle.replace('@', '');
-  const publicUrl = typeof window !== 'undefined' ? `${window.location.origin}/p/${cleanHandle}` : `https://influnext.com.br/p/${cleanHandle}`;
+  const influScore = hasPersistedScore(profile?.influScore) ? profile.influScore : null;
+  const scoreClass = influScore ? profile?.scoreClass : null;
+  const measuredAvgViews = getMeasuredAvgViews(data?.metricsHistory);
+  const creatorHandle = profile?.handle ? (profile.handle.startsWith('@') ? profile.handle : `@${profile.handle}`) : null;
+  const cleanHandle = creatorHandle?.replace('@', '') || '';
+  const publicUrl = creatorHandle && typeof window !== 'undefined' ? `${window.location.origin}/p/${cleanHandle}` : null;
 
   // Rate Cards
-  const rateCards = data?.rateCard && data.rateCard.length > 0 ? data.rateCard : [
-    { serviceName: 'Combo Fashion Post (1x Reels + 3x Stories)', price: 1500, description: 'Combo ideal para lançamento de coleções com link rastreável e cupom.' },
-    { serviceName: '1x Reels de Provador', price: 900, description: 'Gravação de Reels dinâmico com até 4 looks e áudio em alta.' },
-    { serviceName: 'Sequência de Stories Patrocinados (3 Telas)', price: 500, description: 'Inserção de links diretos, stickers de interação e CTA direto.' }
-  ];
+  const rateCards = data?.rateCard || [];
+  const instagramNoDataMessage = getInstagramNoDataMessage(
+    data?.instagramSync?.instagramConnectionStatus,
+    data?.instagramSync?.instagramOperationalSyncStatus,
+  );
 
   return (
     <div className="w-full space-y-8 text-slate-900 bg-[#FAFAFA] min-h-screen pb-32">
@@ -176,9 +179,6 @@ export default function MediaKitPage() {
                 </div>
               )}
             </div>
-            <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white p-1 rounded-full border-2 border-white shadow-sm" title="Mídia Kit Auditado SHA-256">
-              <Check className="w-3.5 h-3.5 stroke-[3]" />
-            </div>
           </div>
 
           <div className="space-y-1.5">
@@ -187,14 +187,11 @@ export default function MediaKitPage() {
                 {creatorHandle}
               </h1>
               <span className="px-3 py-1 rounded-full text-xs font-black bg-orange-50 text-orange-600 border border-orange-200 shadow-sm">
-                {profile?.niche || 'Fashion & Lifestyle'}
-              </span>
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Perfil Verificado
+                {profile?.niche}
               </span>
             </div>
             <p className="text-xs md:text-sm text-slate-500 font-medium">
-              Mídia Kit Comercial Oficial com métricas auditadas por inteligência artificial e conformidade SafePay.
+              Mídia Kit com dados disponíveis no perfil e nas integrações conectadas.
             </p>
           </div>
         </div>
@@ -223,6 +220,8 @@ export default function MediaKitPage() {
       {/* ══════════════════════════════════════════════════════════════════════
           2. BANNER DO LINK DA BIO DO INSTAGRAM (LIMPO & ELEGANTE)
       ══════════════════════════════════════════════════════════════════════ */}
+      {instagramNoDataMessage && <p className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">{instagramNoDataMessage}</p>}
+
       <section className="p-6 md:p-8 rounded-[2.5rem] bg-white border border-slate-200/80 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-6">
         
         <div className="space-y-2">
@@ -231,7 +230,7 @@ export default function MediaKitPage() {
               <LinkIcon className="w-3.5 h-3.5 text-orange-600" /> Link Direto para a Bio do Instagram
             </span>
             <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> SHA-256 Auditado
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Registro de integridade
             </span>
           </div>
 
@@ -240,7 +239,7 @@ export default function MediaKitPage() {
           </h2>
           
           <p className="text-xs md:text-sm text-slate-500 font-medium max-w-xl">
-            Cole este link na bio do seu Instagram. Marcas clicam, analisam suas métricas em tempo real e contratam com custódia SafePay em 1 clique.
+            Compartilhe este link para apresentar os dados disponíveis no seu perfil.
           </p>
 
           <div className="flex items-center gap-3 pt-2">
@@ -289,9 +288,7 @@ export default function MediaKitPage() {
               <span className="text-[10px] font-black uppercase tracking-widest text-orange-600 flex items-center gap-1.5">
                 <Trophy className="w-4 h-4 text-orange-600" /> Autoridade Digital
               </span>
-              <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-900 border border-amber-300">
-                Nível {scoreClass}
-              </span>
+              {scoreClass && <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-900 border border-amber-300">Nível {scoreClass}</span>}
             </div>
             
             <h3 className="text-2xl font-black text-slate-950 tracking-tight">
@@ -302,7 +299,7 @@ export default function MediaKitPage() {
           <div className="space-y-2">
             <div className="flex items-baseline gap-2">
               <span className="text-7xl font-black text-slate-950 tracking-tighter leading-none">
-                {influScore}
+                {influScore ?? NO_DATA_LABEL}
               </span>
               <span className="text-sm font-bold text-slate-400">/ 1000 pts</span>
             </div>
@@ -310,16 +307,13 @@ export default function MediaKitPage() {
             <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
               <div 
                 className="bg-gradient-to-r from-orange-500 via-amber-500 to-orange-400 h-full rounded-full transition-all duration-1000"
-                style={{ width: `${Math.min(100, (influScore / 1000) * 100)}%` }}
+                style={{ width: `${influScore ? Math.min(100, (influScore / 1000) * 100) : 0}%` }}
               />
             </div>
           </div>
 
           <div className="pt-4 border-t border-orange-100 flex items-center justify-between text-xs">
-            <span className="text-slate-600 font-medium">Classificação no Top 5%</span>
-            <span className="text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-              Alta Conversão
-            </span>
+            <span className="text-slate-600 font-medium">{influScore ? 'Pontuação disponível' : 'Ainda sem dados suficientes'}</span>
           </div>
         </div>
 
@@ -332,9 +326,7 @@ export default function MediaKitPage() {
               <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-black">
                 <Users className="w-6 h-6" />
               </div>
-              <span className="text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 flex items-center gap-1">
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-600" /> +15.2% MoM
-              </span>
+              <span className="text-xs font-medium text-slate-500">Dado disponível</span>
             </div>
 
             <div>
@@ -342,7 +334,7 @@ export default function MediaKitPage() {
                 Audiência Total
               </span>
               <div className="text-3xl font-black text-slate-950 tracking-tight">
-                {kpis?.latestFollowers ? kpis.latestFollowers.toLocaleString('pt-BR') : '370.000'}
+                {formatAvailableCount(kpis?.latestFollowers)}
               </div>
             </div>
           </div>
@@ -353,9 +345,7 @@ export default function MediaKitPage() {
               <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-black">
                 <Target className="w-6 h-6" />
               </div>
-              <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
-                Média do Varejo: 1.8%
-              </span>
+              <span className="text-xs font-medium text-slate-500">Snapshot do perfil</span>
             </div>
 
             <div>
@@ -363,8 +353,8 @@ export default function MediaKitPage() {
                 Engajamento Orgânico
               </span>
               <div className="text-3xl font-black text-emerald-600 tracking-tight flex items-baseline gap-1">
-                {kpis?.latestEngagement ? `${kpis.latestEngagement}%` : '4.8%'}
-                <span className="text-xs font-bold text-slate-400">(Alta retenção)</span>
+                {kpis?.latestEngagement == null ? NO_DATA_LABEL : `${kpis.latestEngagement}%`}
+                <span className="text-xs font-bold text-slate-400">(snapshot)</span>
               </div>
             </div>
           </div>
@@ -375,9 +365,7 @@ export default function MediaKitPage() {
               <div className="w-12 h-12 rounded-2xl bg-orange-500/10 text-orange-600 flex items-center justify-center font-black">
                 <Globe className="w-6 h-6" />
               </div>
-              <span className="text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                +28.4% Alcance
-              </span>
+              <span className="text-xs font-medium text-slate-500">Snapshot do perfil</span>
             </div>
 
             <div>
@@ -385,7 +373,7 @@ export default function MediaKitPage() {
                 Alcance Mensal da Marca
               </span>
               <div className="text-3xl font-black text-slate-950 tracking-tight">
-                {kpis?.latestReach ? formatNumber(kpis.latestReach) : '1.2M'}
+                {kpis?.latestReach == null ? NO_DATA_LABEL : formatNumber(kpis.latestReach)}
               </div>
             </div>
           </div>
@@ -396,9 +384,7 @@ export default function MediaKitPage() {
               <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-black">
                 <BarChart3 className="w-6 h-6" />
               </div>
-              <span className="text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                Auditado
-              </span>
+              <span className="text-xs font-medium text-slate-500">Snapshot do perfil</span>
             </div>
 
             <div>
@@ -406,7 +392,7 @@ export default function MediaKitPage() {
                 Visualizações Médias por Post
               </span>
               <div className="text-3xl font-black text-slate-950 tracking-tight">
-                {kpis?.avgViews ? kpis.avgViews.toLocaleString('pt-BR') : '45.000'}
+                {formatAvailableCount(measuredAvgViews)}
               </div>
             </div>
           </div>
@@ -475,73 +461,17 @@ export default function MediaKitPage() {
             <div className="flex items-center gap-2">
               <PieChart className="w-5 h-5 text-orange-600" />
               <h3 className="text-lg font-black text-slate-950">
-                Demografia & Perfil de Público Auditado
+                Demografia do público
               </h3>
             </div>
             <p className="text-xs text-slate-400 font-medium">
-              Dados consolidados via API oficial das redes sociais.
+              Sem dados suficientes para exibir demografia da audiência.
             </p>
           </div>
 
-          <span className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-600">
-            Atualizado em tempo real
-          </span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          {/* Cidades */}
-          <div className="space-y-4">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">Principais Cidades</h4>
-            <div className="space-y-3">
-              {[
-                { name: 'São Paulo, SP', p: 48, color: 'bg-orange-600' },
-                { name: 'Rio de Janeiro, RJ', p: 22, color: 'bg-amber-500' },
-                { name: 'Belo Horizonte, MG', p: 15, color: 'bg-amber-400' },
-                { name: 'Curitiba, PR', p: 10, color: 'bg-slate-400' }
-              ].map(c => (
-                <div key={c.name} className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-bold text-slate-700">
-                    <span>{c.name}</span>
-                    <span className="text-slate-950 font-black">{c.p}%</span>
-                  </div>
-                  <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                    <div className={`${c.color} h-full rounded-full`} style={{ width: `${c.p}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Faixa Etária e Gênero */}
-          <div className="space-y-4">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">Gênero & Faixa Etária</h4>
-            <div className="flex items-center gap-6">
-              <div className="w-24 h-24 rounded-2xl bg-orange-50 border border-orange-200 flex flex-col items-center justify-center">
-                <span className="text-2xl font-black text-orange-600">68%</span>
-                <span className="text-[10px] font-bold text-slate-500 uppercase">Feminino</span>
-              </div>
-
-              <div className="flex-1 space-y-2.5">
-                {[
-                  { age: '18 - 24 anos', p: 35 },
-                  { age: '25 - 34 anos', p: 48 },
-                  { age: '35 - 44 anos', p: 12 },
-                  { age: '45+ anos', p: 5 }
-                ].map(a => (
-                  <div key={a.age} className="space-y-1">
-                    <div className="flex justify-between text-[11px] font-bold text-slate-600">
-                      <span>{a.age}</span>
-                      <span className="text-slate-950 font-black">{a.p}%</span>
-                    </div>
-                    <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-slate-900 h-full rounded-full" style={{ width: `${a.p}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        <p className="py-8 text-center text-sm text-slate-500">Sem dados suficientes para exibir demografia da audiência.</p>
       </section>
 
     </div>

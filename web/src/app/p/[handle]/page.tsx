@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { PublicProfileView } from './PublicProfileView';
 import type { PublicProfileResponse } from '@/lib/api';
 import { resolveApiBaseUrl } from '@/lib/api-base-url';
+import { getPerformancePercentage, getPublicProfileTitleSegment, getVerifiedScoreClass } from '@/lib/creator-dashboard-truth';
 
 export const viewport: Viewport = {
   themeColor: '#131110',
@@ -34,14 +35,19 @@ export async function generateMetadata(props: { params: Promise<{ handle: string
   const profile = await getProfileData(params.handle);
   if (!profile) return { title: 'Perfil Não Encontrado' };
 
-  const scoreLabel = profile.scoreClass || 'BRONZE';
-  
+  const scoreLabel = getVerifiedScoreClass(profile.influScore, profile.scoreClass, profile.verifiedMetrics);
+  const performancePercentage = getPerformancePercentage(profile.avgROI, profile.performanceSampleCount);
+  // The root layout applies the "%s | InfluNext" title template.
+  const title = getPublicProfileTitleSegment(profile.handle, scoreLabel);
+
   return {
-    title: `${profile.handle} | InfluNext [${scoreLabel}]`,
-    description: `Métricas auditadas e ROI comprovado de @${profile.handle}. InfluScore: ${profile.influScore}.`,
+    title,
+    description: `Perfil público de @${profile.handle} na InfluNext.`,
     openGraph: {
-      title: `${profile.handle} | InfluNext Media Kit`,
-      description: `ROI Médio: +${((profile.avgROI - 1) * 100).toFixed(0)}% acima do mercado.`,
+      title: `${title} | InfluNext`,
+      description: performancePercentage === null
+        ? `Conheça o perfil público de @${profile.handle} na InfluNext.`
+        : `Retorno observado em ${profile.performanceSampleCount} amostras: ${performancePercentage > 0 ? '+' : ''}${performancePercentage}%.`,
       images: [profile.profileImageUrl || '/og-default.png'],
     },
   };

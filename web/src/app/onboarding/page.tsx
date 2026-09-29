@@ -11,8 +11,6 @@ import {
   Sparkles, 
   ArrowRight, 
   CheckCircle2, 
-  Moon, 
-  Sun,
   Rocket,
   Globe,
   Zap,
@@ -45,14 +43,13 @@ const TikTokOnboardingModal = dynamic(
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
   const [isIgModalOpen, setIsIgModalOpen] = useState(false);
   const [isTtModalOpen, setIsTtModalOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   
   // States do Onboarding
-  const [accentColor, setAccentColor] = useState('#a855f7');
   const [handle, setHandle] = useState('');
   const [niche, setNiche] = useState('');
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
@@ -73,19 +70,10 @@ export default function OnboardingPage() {
   const [boughtFollowers, setBoughtFollowers] = useState('');
   const [assistantStyle, setAssistantStyle] = useState('');
 
-  const colors = [
-    { name: 'Laranja Cobre', value: '#d96b27' },
-    { name: 'Azul Tech', value: '#3b82f6' },
-    { name: 'Verde ROI', value: '#10b981' },
-    { name: 'Vermelho Fogo', value: '#ef4444' },
-    { name: 'Âmbar Criativo', value: '#f59e0b' }
-  ];
-
   const buildCurrentDraft = useCallback((): CreatorOnboardingDraft => ({
     ...createEmptyCreatorOnboardingDraft(),
     step,
     interviewStep,
-    accentColor,
     handle,
     niche,
     audienceTarget,
@@ -101,7 +89,7 @@ export default function OnboardingPage() {
       growthHistory: boughtFollowers,
       assistantStyle,
     },
-  }), [accentColor, assistantStyle, audienceTarget, boughtFollowers, desiredMonetization, difficulty, dream, experience, followersGoal, frequency, handle, incomeTarget, interviewStep, niche, step, availability]);
+  }), [assistantStyle, audienceTarget, boughtFollowers, desiredMonetization, difficulty, dream, experience, followersGoal, frequency, handle, incomeTarget, interviewStep, niche, step, availability]);
 
   useEffect(() => {
     let isMounted = true;
@@ -119,7 +107,6 @@ export default function OnboardingPage() {
 
         setStep(restored.step);
         setInterviewStep(restored.interviewStep);
-        setAccentColor(restored.accentColor);
         setHandle(restored.handle);
         setNiche(restored.niche);
         setAudienceTarget(restored.audienceTarget);
@@ -229,8 +216,6 @@ export default function OnboardingPage() {
         niche,
         careerObjective: derivedObj,
         aiInterview: interviewPayload,
-        theme,
-        accentColor,
         onboardingCompleted: true
       });
       
@@ -261,8 +246,6 @@ export default function OnboardingPage() {
         niche: niche || 'Lifestyle',
         careerObjective: derivedObj,
         aiInterview: interviewPayload,
-        theme,
-        accentColor,
         onboardingCompleted: true
       });
       
@@ -297,7 +280,7 @@ export default function OnboardingPage() {
       <div className="w-full max-w-xl relative">
         {/* Progress Bar */}
         <div className="flex gap-2 mb-12">
-          {[1, 2, 3, 4, 5].map((s) => (
+          {[1, 2, 3, 4].map((s) => (
             <div 
               key={s}
               className={`h-1 flex-1 rounded-full transition-all duration-700 ${s <= step ? 'bg-orange-500 shadow-[0_0_15px_rgba(217,107,39,0.6)]' : theme === 'light' ? 'bg-slate-200' : 'bg-zinc-800'}`}
@@ -329,60 +312,8 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* STEP 2: IDENTITY */}
+        {/* STEP 2: PROFILE */}
         {step === 2 && (
-          <div className="space-y-10 animate-in fade-in slide-in-from-right-8 duration-700">
-            <div className="space-y-2">
-              <h2 className="text-3xl font-black tracking-tight uppercase">Visual_Sistema</h2>
-              <p className={`${theme === 'light' ? 'text-slate-400' : 'text-zinc-500'} text-sm font-bold uppercase tracking-widest`}>Tema e Identidade de Cor</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button 
-                onClick={() => setTheme('dark')}
-                className={`p-6 rounded-[2rem] border-2 text-left space-y-4 transition-all ${theme === 'dark' ? 'border-orange-500 bg-orange-500/5' : theme === 'light' ? 'border-slate-200 bg-white opacity-60 hover:opacity-100' : 'border-zinc-800 bg-transparent opacity-40 hover:opacity-100'}`}
-              >
-                <div className={`w-12 h-12 ${theme === 'light' ? 'bg-slate-900' : 'bg-zinc-900'} rounded-xl flex items-center justify-center border border-white/5`}><Moon className="w-6 h-6 text-orange-400" /></div>
-                <div>
-                  <p className="font-black text-sm uppercase tracking-widest">Dark Mode</p>
-                  <p className={`text-[10px] ${theme === 'light' ? 'text-slate-400' : 'text-zinc-500'} font-bold`}>Foco total em performance.</p>
-                </div>
-              </button>
-              <button 
-                onClick={() => setTheme('light')}
-                className={`p-6 rounded-[2rem] border-2 text-left space-y-4 transition-all ${theme === 'light' ? 'border-orange-500 bg-white' : 'border-zinc-800 bg-transparent opacity-40 hover:opacity-100'}`}
-              >
-                <div className={`w-12 h-12 ${theme === 'light' ? 'bg-white' : 'bg-zinc-100'} rounded-xl flex items-center justify-center border border-zinc-200 shadow-sm`}><Sun className="w-6 h-6 text-orange-600" /></div>
-                <div>
-                  <p className="font-black text-sm uppercase tracking-widest">Clean Mode</p>
-                  <p className={`text-[10px] ${theme === 'light' ? 'text-slate-400' : 'text-zinc-500'} font-bold`}>Clareza e precisão analítica.</p>
-                </div>
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <p className={`text-[10px] font-black uppercase ${theme === 'light' ? 'text-slate-400' : 'text-zinc-500'} tracking-[0.3em]`}>Cromatismo de Destaque</p>
-              <div className="flex flex-wrap gap-5 justify-between px-4">
-                {colors.map((c) => (
-                  <button 
-                    key={c.value}
-                    onClick={() => setAccentColor(c.value)}
-                    style={{ backgroundColor: c.value }}
-                    className={`w-10 h-10 rounded-full border-4 transition-all duration-300 ${accentColor === c.value ? theme === 'light' ? 'border-slate-900 scale-125 shadow-lg' : 'border-white scale-125 shadow-[0_0_25px_rgba(255,255,255,0.3)]' : 'border-transparent opacity-40'}`}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="flex gap-4 pt-4">
-              <Button onClick={() => setStep(1)} variant="outline" className={`h-14 px-10 rounded-2xl ${theme === 'light' ? 'border-slate-200 bg-white text-slate-400' : 'border-white/[0.05] bg-white/[0.02] text-zinc-500'} font-black tracking-widest uppercase text-[10px] hover:text-orange-500 transition-colors`}>Voltar</Button>
-              <Button onClick={() => setStep(3)} className="h-14 flex-1 rounded-[1.5rem] bg-orange-600 hover:bg-orange-500 font-black shadow-[0_15px_30px_rgba(124,58,237,0.3)] transition-all">PRÓXIMO PASSO</Button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 3: PROFILE */}
-        {step === 3 && (
           <div className="space-y-10 animate-in fade-in slide-in-from-right-8 duration-700">
             <div className="space-y-2">
               <h2 className="text-3xl font-black tracking-tight uppercase">Identidade_Pública</h2>
@@ -435,14 +366,14 @@ export default function OnboardingPage() {
             </div>
 
             <div className="flex gap-4 pt-4">
-              <Button onClick={() => setStep(2)} variant="outline" className={`h-14 px-10 rounded-2xl ${theme === 'light' ? 'border-slate-200 bg-white text-slate-400' : 'border-white/[0.05] bg-white/[0.02] text-zinc-500'} font-black tracking-widest uppercase text-[10px]`}>Voltar</Button>
+              <Button onClick={() => setStep(1)} variant="outline" className={`h-14 px-10 rounded-2xl ${theme === 'light' ? 'border-slate-200 bg-white text-slate-400' : 'border-white/[0.05] bg-white/[0.02] text-zinc-500'} font-black tracking-widest uppercase text-[10px]`}>Voltar</Button>
               <Button 
                 onClick={() => {
                     if (!handle || !niche || !audienceTarget || !desiredMonetization) {
                        toast.error('Preencha perfil, nicho, público e monetização desejada para prosseguir.');
                       return;
                    }
-                   setStep(4);
+                    setStep(3);
                 }} 
                 className="h-14 flex-1 rounded-[1.5rem] bg-orange-600 hover:bg-orange-500 font-black shadow-[0_15px_30px_rgba(124,58,237,0.3)] transition-all"
               >
@@ -452,8 +383,8 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* STEP 4: CAREER INTERVIEW */}
-        {step === 4 && (
+        {/* STEP 3: CAREER INTERVIEW */}
+        {step === 3 && (
           <div className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-700">
             <div className="space-y-2">
               <div className="flex items-center gap-2 mb-1">
@@ -729,7 +660,7 @@ export default function OnboardingPage() {
                   if (interviewStep > 1) {
                     setInterviewStep(interviewStep - 1);
                   } else {
-                    setStep(3);
+                    setStep(2);
                   }
                 }}
                 variant="outline"
@@ -776,7 +707,7 @@ export default function OnboardingPage() {
                   if (interviewStep < 9) {
                     setInterviewStep(interviewStep + 1);
                   } else {
-                    setStep(5);
+                    setStep(4);
                   }
                 }}
                 className="h-14 flex-1 rounded-[1.5rem] bg-slate-900 hover:bg-emerald-600 hover:text-white dark:bg-white dark:text-black font-black transition-all text-[10px] tracking-widest uppercase"
@@ -787,8 +718,8 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* STEP 5: SOCIAL CONNECTIONS */}
-        {step === 5 && (
+        {/* STEP 4: SOCIAL CONNECTIONS */}
+        {step === 4 && (
           <div className="space-y-10 animate-in fade-in slide-in-from-right-8 duration-700">
             <div className="space-y-2">
               <div className="flex items-center gap-2 mb-2">
@@ -858,7 +789,7 @@ export default function OnboardingPage() {
             </div>
 
             <div className="flex gap-4 pt-4">
-              <Button onClick={() => setStep(4)} variant="outline" className={`h-14 px-10 rounded-2xl ${theme === 'light' ? 'border-slate-200 bg-white text-slate-400' : 'border-white/[0.05] bg-white/[0.02] text-zinc-500'} font-black tracking-widest uppercase text-[10px]`}>Voltar</Button>
+              <Button onClick={() => setStep(3)} variant="outline" className={`h-14 px-10 rounded-2xl ${theme === 'light' ? 'border-slate-200 bg-white text-slate-400' : 'border-white/[0.05] bg-white/[0.02] text-zinc-500'} font-black tracking-widest uppercase text-[10px]`}>Voltar</Button>
               <Button 
                 onClick={handleComplete} 
                 disabled={isSaving}

@@ -8,6 +8,7 @@ import { Users, Target, Activity, Eye, ShieldCheck, ArrowRight, Zap, Trophy, Lin
 import { SHA256AuditModal } from '@/components/SHA256AuditModal';
 import { InstantCheckoutModal } from '@/components/InstantCheckoutModal';
 import { toast } from 'sonner';
+import { getPerformancePercentage } from '@/lib/creator-dashboard-truth';
 
 interface PublicProfileViewProps {
   profile: any;
@@ -19,16 +20,11 @@ export function PublicProfileView({ profile, checkoutStatus }: PublicProfileView
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [selectedRateCard, setSelectedRateCard] = useState<any | null>(null);
 
-  const latestMetrics = profile.metricsHistory?.[0] || {
-    followers: 0,
-    engagementRate: 0,
-    reachLast30Days: 0,
-    avgViews: 0,
-    integrityHash: undefined,
-    capturedAt: undefined,
-  };
-
-  const roiPercentage = ((profile.avgROI - 1) * 100).toFixed(0);
+  const latestMetrics = profile.metricsHistory?.[0] || null;
+  const followers = latestMetrics?.followers ?? profile.instagramFollowers ?? null;
+  const noRecentMedia = profile.instagramSync?.instagramConnectionStatus === 'connected'
+    && profile.instagramSync?.instagramOperationalSyncStatus === 'no_recent_media';
+  const roiPercentage = getPerformancePercentage(profile.avgROI, profile.performanceSampleCount);
 
   React.useEffect(() => {
     if (checkoutStatus === 'success') {
@@ -67,17 +63,17 @@ export function PublicProfileView({ profile, checkoutStatus }: PublicProfileView
                  <img src={profile.profileImageUrl} alt={profile.handle} className="w-full h-full rounded-full object-cover" />
                ) : (
                  <div className="w-full h-full rounded-full bg-slate-950 flex items-center justify-center text-4xl font-black text-white">
-                    {profile.handle.charAt(0).toUpperCase()}
+                    {(profile.handle || '').charAt(0).toUpperCase()}
                  </div>
                )}
             </div>
-            <button
+            {latestMetrics?.integrityHash && <button
               onClick={() => setIsAuditModalOpen(true)}
               className="absolute -bottom-1 -right-1 bg-white hover:bg-slate-50 rounded-full p-1.5 border border-slate-200 z-20 shadow-md transition-transform hover:scale-110"
-              title="Clique para abrir auditoria criptográfica SHA-256"
+              title="Abrir registro de integridade"
             >
                <ShieldCheck className="w-5 h-5 text-emerald-600" />
-            </button>
+            </button>}
             {/* Background Soft Glow */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-44 h-44 bg-orange-500/10 blur-[50px] rounded-full" />
           </div>
@@ -85,17 +81,9 @@ export function PublicProfileView({ profile, checkoutStatus }: PublicProfileView
           <div className="space-y-1.5">
              <div className="flex items-center justify-center gap-2">
                 <h1 className="text-3xl font-black tracking-tight text-slate-950">@{profile.handle}</h1>
-                {profile.verifiedMetrics && (
-                  <button 
-                    onClick={() => setIsAuditModalOpen(true)}
-                    className="hover:opacity-80 transition-opacity"
-                  >
-                    <ShieldCheck className="w-5 h-5 text-orange-600" />
-                  </button>
-                )}
              </div>
              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-orange-600 bg-orange-50 px-3 py-1 rounded-full border border-orange-200 w-fit mx-auto">
-               Mídia Kit Oficial Auditado
+               Perfil público
              </p>
           </div>
 
@@ -123,8 +111,8 @@ export function PublicProfileView({ profile, checkoutStatus }: PublicProfileView
           )}
         </header>
 
-        {/* SHA-256 Audit Badge Banner */}
-        <div 
+        {/* Registro de integridade, quando disponível */}
+        {latestMetrics?.integrityHash && <div
           onClick={() => setIsAuditModalOpen(true)}
           className="p-4 bg-white border border-slate-200/90 shadow-sm rounded-2xl flex items-center justify-between cursor-pointer hover:border-orange-300 hover:shadow-md transition-all group"
         >
@@ -134,53 +122,56 @@ export function PublicProfileView({ profile, checkoutStatus }: PublicProfileView
             </div>
             <div>
               <p className="text-[10px] font-black text-slate-800 uppercase tracking-wider flex items-center gap-1">
-                Autenticado SHA-256 <Sparkles className="w-3.5 h-3.5 text-orange-500 fill-orange-500" />
+                Registro de integridade
               </p>
-              <p className="text-[10px] text-slate-400 font-medium">Métricas validadas criptograficamente.</p>
+              <p className="text-[10px] text-slate-400 font-medium">Hash de integridade dos dados capturados.</p>
             </div>
           </div>
           <span className="text-xs font-bold text-orange-600 group-hover:text-orange-700 transition-colors">
             Verificar →
           </span>
-        </div>
+        </div>}
 
         {/* Link na Bio Card (Branco e Laranja Oficial) */}
         <BioLinkNotificationCard handle={profile.handle} />
 
         {/* Authority Section */}
         <div className="animate-in fade-in zoom-in-95 duration-700 delay-200">
-           <InfluScoreCard score={profile.influScore} />
+           {typeof profile.influScore === 'number' && profile.influScore > 0
+             ? <InfluScoreCard score={profile.influScore} />
+             : <p className="text-center text-sm text-slate-500">Ainda sem dados suficientes para calcular uma pontuação.</p>}
         </div>
 
         {/* ROI Impact Card */}
-        <section className="bg-white border border-slate-200/90 p-6 rounded-[2.5rem] relative overflow-hidden group shadow-sm animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
+        {roiPercentage !== null && <section className="bg-white border border-slate-200/90 p-6 rounded-[2.5rem] relative overflow-hidden group shadow-sm animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
               <Zap className="w-12 h-12 text-orange-600" />
            </div>
            <div className="space-y-3 relative z-10">
               <div className="flex items-center justify-between">
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Impacto Estimado nas Vendas</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Retorno registrado em campanhas</h3>
                 <span className="text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                  Alta Conversão
+            Desempenho registrado
                 </span>
               </div>
               <div className="flex items-baseline gap-2">
-                 <span className="text-4xl font-black text-orange-600 tracking-tight">+{roiPercentage}%</span>
-                 <span className="text-xs font-bold text-slate-500">ROI acima da média do nicho</span>
+                 <span className="text-4xl font-black text-orange-600 tracking-tight">{roiPercentage > 0 ? '+' : ''}{roiPercentage}%</span>
+                 <span className="text-xs font-bold text-slate-500">sobre campanhas concluídas</span>
               </div>
               <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                 Desempenho superando a média do mercado com base nas campanhas auditadas via SafePay.
+                 Indicador calculado a partir de campanhas concluídas registradas na plataforma.
               </p>
            </div>
-        </section>
+        </section>}
 
         {/* Core Metrics Grid */}
         <main className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400">
-           <MetricCard title="Seguidores" value={latestMetrics.followers.toLocaleString('pt-BR')} icon={Users} isDark={false} />
-           <MetricCard title="Engajamento" value={`${latestMetrics.engagementRate}%`} icon={Activity} isDark={false} />
-           <MetricCard title="Alcance" value={latestMetrics.reachLast30Days.toLocaleString('pt-BR')} icon={Target} isDark={false} />
-           <MetricCard title="Views Médias" value={latestMetrics.avgViews.toLocaleString('pt-BR')} icon={Eye} isDark={false} />
+           <MetricCard title="Seguidores" value={followers == null ? 'Ainda sem dados' : followers.toLocaleString('pt-BR')} icon={Users} isDark={false} />
+           <MetricCard title="Engajamento" value={latestMetrics?.engagementRate == null ? 'Ainda sem dados' : `${latestMetrics.engagementRate}%`} icon={Activity} isDark={false} />
+           <MetricCard title="Alcance" value={latestMetrics?.reachLast30Days == null ? 'Ainda sem dados' : latestMetrics.reachLast30Days.toLocaleString('pt-BR')} icon={Target} isDark={false} />
+           <MetricCard title="Views Médias" value={latestMetrics?.avgViews == null ? 'Ainda sem dados' : latestMetrics.avgViews.toLocaleString('pt-BR')} icon={Eye} isDark={false} />
         </main>
+        {noRecentMedia && <p className="text-center text-sm text-slate-600">Instagram conectado. Nenhuma publicação recente disponível para calcular estas métricas.</p>}
 
         {/* Rate Card Section */}
         {profile.rateCards && profile.rateCards.length > 0 && (
@@ -197,7 +188,7 @@ export function PublicProfileView({ profile, checkoutStatus }: PublicProfileView
                     >
                        <div className="space-y-1 max-w-[65%]">
                           <p className="text-sm font-black text-slate-950 uppercase tracking-tight">{rate.serviceName}</p>
-                          <p className="text-xs text-slate-500 font-medium">{rate.description || 'Execução ponta-a-ponta com garantia SafePay'}</p>
+                          {rate.description && <p className="text-xs text-slate-500 font-medium">{rate.description}</p>}
                        </div>
                        <div className="text-right space-y-2">
                           <p className="text-base font-black text-slate-950">R$ {rate.price.toLocaleString('pt-BR')}</p>
@@ -227,7 +218,7 @@ export function PublicProfileView({ profile, checkoutStatus }: PublicProfileView
             Contratar Publi (SafePay 🛡️)
           </button>
           <p className="text-center text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">
-             Garantia de Entrega ou 100% de Reembolso
+            Consulte os termos do contrato
           </p>
         </div>
       </footer>
@@ -237,8 +228,8 @@ export function PublicProfileView({ profile, checkoutStatus }: PublicProfileView
         isOpen={isAuditModalOpen}
         onClose={() => setIsAuditModalOpen(false)}
         handle={profile.handle}
-        integrityHash={latestMetrics.integrityHash}
-        capturedAt={latestMetrics.capturedAt}
+        integrityHash={latestMetrics?.integrityHash}
+        capturedAt={latestMetrics?.capturedAt}
       />
 
       <InstantCheckoutModal
@@ -290,7 +281,7 @@ function BioLinkNotificationCard({ handle }: { handle: string }) {
       </div>
 
       <p className="text-xs text-slate-600 font-medium leading-relaxed">
-        Adicione este link no perfil do Instagram/TikTok. Marcas analisam suas métricas e contratam seus pacotes com garantia total via SafePay.
+        Adicione este link ao seu perfil para compartilhar os dados disponíveis e os pacotes cadastrados.
       </p>
 
       <div className="pt-1 flex items-center gap-2">

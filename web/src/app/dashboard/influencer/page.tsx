@@ -33,6 +33,7 @@ import {
 import Link from 'next/link';
 import { ContractLegalModal, ContractLegalData } from '@/components/ContractLegalModal';
 import type { InfluencerDashboardResponse } from '@/lib/api';
+import { formatAvailableCount, getInstagramNoDataMessage, hasPersistedScore, NO_DATA_LABEL } from '@/lib/creator-dashboard-truth';
 
 interface Task {
   id: string;
@@ -48,8 +49,6 @@ interface RateCardItem {
   price: number;
   serviceName: string;
   description?: string;
-  avgEngagement?: string;
-  conversionRate?: string;
 }
 
 interface ContractSummary extends ContractLegalData {
@@ -62,23 +61,23 @@ interface InfluencerDashboardData extends Partial<Omit<InfluencerDashboardRespon
     handle?: string;
     niche?: string;
     profileImageUrl?: string;
-    influScore?: number;
-    scoreClass?: string;
+    influScore?: number | null;
+    scoreClass?: string | null;
     dailyMission?: string;
     missionCompleted?: boolean;
     profileProgress?: number;
   };
   kpis?: {
-    influScore?: number;
-    scoreClass?: string;
-    escrowBalance?: number;
-    totalEarned?: number;
+    influScore?: number | null;
+    scoreClass?: string | null;
+    escrowBalance?: number | null;
+    totalEarned?: number | null;
     activeContractsCount?: number;
     pendingMissionsCount?: number;
     latestFollowers?: number | null;
     latestEngagement?: number | null;
-    latestReach?: number;
-    avgViews?: number;
+    latestReach?: number | null;
+    avgViews?: number | null;
   };
   contracts?: ContractSummary[];
   tasks?: Task[];
@@ -90,11 +89,7 @@ export default function InfluencerDashboard() {
   const [data, setData] = useState<InfluencerDashboardData | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const streakCount = 17;
   
-  // Modo de visualização do gráfico interativo
-  const [chartMode, setChartMode] = useState<'REVENUE' | 'CLICKS' | 'REACH'>('REVENUE');
-  const [hoveredPoint, setHoveredPoint] = useState<number | null>(5); // Default selecionado no mês atual
 
   // Estado para a Minuta Jurídica Oficial
   const [selectedLegalContract, setSelectedLegalContract] = useState<ContractLegalData | null>(null);
@@ -103,10 +98,9 @@ export default function InfluencerDashboard() {
   const fetchDashboardData = async () => {
     try {
       setIsLoading(true);
-      const [dashRes, tasksRes, insightRes, rateRes] = await Promise.all([
+      const [dashRes, tasksRes, rateRes] = await Promise.all([
         api.get<InfluencerDashboardData>('/dashboard/influencer').catch(() => ({ data: {} })),
         api.get<Task[]>('/influencers/tasks').catch(() => ({ data: [] })),
-        api.get<{ insight: string }>('/influencers/daily-insight').catch(() => ({ data: { insight: '' } })),
         api.get<RateCardItem[]>('/influencers/rate-card').catch(() => ({ data: [] }))
       ]);
 
@@ -114,24 +108,11 @@ export default function InfluencerDashboard() {
 
       setData({
         ...dashboardData,
-        tasks: tasksRes.data.length > 0 ? tasksRes.data : dashboardData.tasks,
-        rateCard: rateRes.data.length > 0 ? rateRes.data : dashboardData.rateCard,
-        analysis: insightRes.data.insight ? { insight: insightRes.data.insight } : dashboardData.analysis
+        tasks: tasksRes.data.length > 0 ? tasksRes.data : dashboardData.tasks || [],
+        rateCard: rateRes.data.length > 0 ? rateRes.data : dashboardData.rateCard || []
       });
 
-      if (tasksRes.data.length > 0) {
-        setTasks(tasksRes.data);
-      } else if (dashboardData.tasks && dashboardData.tasks.length > 0) {
-        setTasks(dashboardData.tasks);
-      } else {
-        // Tarefas padrão com gamificação e remuneração
-        setTasks([
-          { id: '1', title: 'Gravar Reels 60s com Demonstração do Produto', description: 'Samsung ANC • Hook inicial de 3 segundos', isDone: false, scheduledDate: 'Hoje', rewardXP: 15, contractValue: 2975 },
-          { id: '2', title: 'Publicar Combo 4x Stories com Cupom Oficial #publi', description: 'Aura Beauty • Inserir link rastreável na figurinha', isDone: true, scheduledDate: 'Hoje', rewardXP: 10, contractValue: 1200 },
-          { id: '3', title: 'Revisar e Assinar Proposta de Contrato em Escrow', description: 'Nubank PJ • Aprovar minuta jurídica com SHA-256', isDone: false, scheduledDate: 'Hoje', rewardXP: 25, contractValue: 4800 },
-          { id: '4', title: 'Sincronizar Métricas com a Rede Neural da InfluNext', description: 'Auditoria de engajamento do Instagram', isDone: false, scheduledDate: 'Esta semana', rewardXP: 15, contractValue: 0 }
-        ]);
-      }
+      setTasks(tasksRes.data.length > 0 ? tasksRes.data : dashboardData.tasks || []);
     } catch (err: unknown) {
       console.error(err);
       toast.error('Erro ao carregar dados do dashboard.');
@@ -145,11 +126,12 @@ export default function InfluencerDashboard() {
   }, []);
 
   const handleCopyMediaKit = () => {
-    const handle = data?.profile?.handle || 'thiago';
+    const handle = data?.profile?.handle;
+    if (!handle) return;
     const cleanHandle = handle.replace('@', '');
     const url = `${window.location.origin}/p/${cleanHandle}`;
     navigator.clipboard.writeText(url);
-    toast.success('🔗 Link do Mídia Kit Auditado copiado!', {
+    toast.success('Link do Mídia Kit copiado!', {
       description: 'Pronto para enviar às marcas ou colar na bio do Instagram.'
     });
   };
@@ -200,103 +182,43 @@ export default function InfluencerDashboard() {
   }
 
   // KPIs
-  const escrowBalance = data?.kpis?.escrowBalance ?? 9500;
-  const influScore = data?.kpis?.influScore && data.kpis.influScore > 0 ? data.kpis.influScore : 845;
-  const scoreClass = data?.kpis?.scoreClass || 'Ouro';
-  const activeContractsCount = data?.contracts?.length || 4;
-  const mediaKitViews = 1840;
-  const creatorHandle = data?.profile?.handle ? (data.profile.handle.startsWith('@') ? data.profile.handle : `@${data.profile.handle}`) : '@demo.influencer';
+  const escrowBalance = data?.kpis?.escrowBalance ?? null;
+  const influScore = hasPersistedScore(data?.kpis?.influScore) ? data.kpis.influScore : null;
+  const scoreClass = influScore ? data?.kpis?.scoreClass : null;
+  const activeContractsCount = data?.contracts?.length ?? 0;
+  const creatorHandle = data?.profile?.handle ? (data.profile.handle.startsWith('@') ? data.profile.handle : `@${data.profile.handle}`) : null;
 
   // Propostas de contratos
-  const rawContracts = data?.contracts || [];
-  const incomingProposals = rawContracts.length > 0 ? rawContracts : [
-    {
-      id: 'demo-1',
-      title: 'Contratação Direta: Reels Patrocinado (@alexsandro.tech)',
-      budget: 1312.94,
-      netAmount: 1116.00,
-      escrowStatus: 'DRAFT',
-      createdAt: new Date().toISOString(),
-      company: { companyName: 'Visitante Express' },
-      contractType: 'SPOT',
-      exclusivityDays: 15,
-      usageRightsDays: 90,
-      allowPaidMedia: true,
-      deliverables: [{ type: 'REEL', title: '1x Reels com Demonstração do App' }]
-    },
-    {
-      id: 'demo-2',
-      title: 'Parceria Inverno 2026',
-      budget: 4500,
-      netAmount: 3825.00,
-      escrowStatus: 'DRAFT',
-      createdAt: new Date().toISOString(),
-      company: { companyName: 'Marca Premium LTDA' },
-      contractType: 'SPOT',
-      exclusivityDays: 30,
-      usageRightsDays: 180,
-      allowPaidMedia: false,
-      deliverables: [{ type: 'STORY', title: 'Combo 4x Stories com Link' }]
-    }
-  ];
-
-  // Rate Cards
-  const rateCards = data?.rateCard && data.rateCard.length > 0 ? data.rateCard : [
-    { serviceName: 'Combo Fashion Post (1x Reels + 3x Stories)', price: 1500, description: 'Combo ideal para lançamento de coleções. Inclui Reels completo mostrando os produtos no corpo e 3 sequências de Stories para engajamento e CTA direto de vendas.', avgEngagement: '5.4%', conversionRate: '15% conv.' },
-    { serviceName: '1x Reels de Provador', price: 900, description: 'Gravação de Reels dinâmico com transições ágeis exibindo até 4 looks selecionados da marca com áudio viral em alta.', avgEngagement: '5.4%', conversionRate: '15% conv.' },
-    { serviceName: 'Sequência de Stories Patrocinados (3 Telas)', price: 500, description: 'Inserção de links diretos para o e-commerce, stickers de interação e cupom de desconto exclusivo.', avgEngagement: '5.4%', conversionRate: '15% conv.' }
-  ];
+  const incomingProposals = data?.contracts || [];
+  // Rate cards are rendered only when returned by the API.
+  const rateCards = data?.rateCard || [];
 
   const completedTasksCount = tasks.filter(t => t.isDone).length;
+  const metricsHistory = data?.metricsHistory || [];
+  const maxReach = Math.max(...metricsHistory.map((snapshot) => snapshot.reachLast30Days || 0), 0);
+  const instagramNoDataMessage = getInstagramNoDataMessage(
+    data?.instagramSync?.instagramConnectionStatus,
+    data?.instagramSync?.instagramOperationalSyncStatus,
+  );
 
-  // Datasets para o gráfico interativo Pro Analytics
-  const chartDatasets = {
-    REVENUE: {
-      title: 'Evolução de Ganhos & Faturamento (SafePay Escrow)',
-      totalBadge: 'R$ 48.200,00',
-      growthBadge: '+38.5% este semestre',
-      description: 'Histórico de pagamentos liberados via custódia e projeção mensal de publis.',
-      points: [
-        { month: 'Out', value: 8400, display: 'R$ 8.400', heightPercent: 42, campaigns: 3, clicks: '4.2k' },
-        { month: 'Nov', value: 11200, display: 'R$ 11.200', heightPercent: 56, campaigns: 4, clicks: '6.8k' },
-        { month: 'Dez', value: 18500, display: 'R$ 18.500', heightPercent: 92, campaigns: 6, clicks: '11.5k' },
-        { month: 'Jan', value: 9800, display: 'R$ 9.800', heightPercent: 49, campaigns: 3, clicks: '5.1k' },
-        { month: 'Fev', value: 13400, display: 'R$ 13.400', heightPercent: 67, campaigns: 4, clicks: '8.4k' },
-        { month: 'Mar (Atual)', value: 14850, display: 'R$ 14.850', heightPercent: 74, campaigns: 4, clicks: '9.2k', isCurrent: true }
-      ]
-    },
-    CLICKS: {
-      title: 'Cliques em Links de Stories, Bio & Cupons',
-      totalBadge: '45.2k cliques',
-      growthBadge: '+24.8% taxa de CTR',
-      description: 'Volume de tráfego gerado diretamente para os e-commerces e apps das marcas parceiras.',
-      points: [
-        { month: 'Out', value: 4200, display: '4.2k cliques', heightPercent: 40, campaigns: 3, clicks: '4.2k' },
-        { month: 'Nov', value: 6800, display: '6.8k cliques', heightPercent: 60, campaigns: 4, clicks: '6.8k' },
-        { month: 'Dez', value: 11500, display: '11.5k cliques', heightPercent: 95, campaigns: 6, clicks: '11.5k' },
-        { month: 'Jan', value: 5100, display: '5.1k cliques', heightPercent: 45, campaigns: 3, clicks: '5.1k' },
-        { month: 'Fev', value: 8400, display: '8.4k cliques', heightPercent: 75, campaigns: 4, clicks: '8.4k' },
-        { month: 'Mar (Atual)', value: 9200, display: '9.2k cliques', heightPercent: 82, campaigns: 4, clicks: '9.2k', isCurrent: true }
-      ]
-    },
-    REACH: {
-      title: 'Alcance & Impressões Auditadas (Instagram & TikTok)',
-      totalBadge: '840k contas alcançadas',
-      growthBadge: '+42.1% alcance orgânico',
-      description: 'Métricas consolidadas de visualizações e engajamento capturadas via API oficial.',
-      points: [
-        { month: 'Out', value: 95000, display: '95k alcance', heightPercent: 40, campaigns: 3, clicks: '4.2k' },
-        { month: 'Nov', value: 130000, display: '130k alcance', heightPercent: 55, campaigns: 4, clicks: '6.8k' },
-        { month: 'Dez', value: 240000, display: '240k alcance', heightPercent: 98, campaigns: 6, clicks: '11.5k' },
-        { month: 'Jan', value: 110000, display: '110k alcance', heightPercent: 46, campaigns: 3, clicks: '5.1k' },
-        { month: 'Fev', value: 165000, display: '165k alcance', heightPercent: 70, campaigns: 4, clicks: '8.4k' },
-        { month: 'Mar (Atual)', value: 190000, display: '190k alcance', heightPercent: 80, campaigns: 4, clicks: '9.2k', isCurrent: true }
-      ]
-    }
+  const activeDataset = {
+    title: 'Histórico de alcance',
+    description: 'Série temporal de snapshots reais disponíveis.',
+    totalBadge: metricsHistory.length ? formatAvailableCount(data?.kpis?.latestReach) : NO_DATA_LABEL,
+    points: metricsHistory
+      .filter((snapshot) => typeof snapshot.reachLast30Days === 'number')
+      .slice(0, 6)
+      .reverse()
+      .map((snapshot) => ({
+        month: new Date(snapshot.capturedAt).toLocaleDateString('pt-BR', { month: 'short' }),
+        value: snapshot.reachLast30Days || 0,
+        display: formatAvailableCount(snapshot.reachLast30Days),
+        heightPercent: maxReach ? Math.max(4, ((snapshot.reachLast30Days || 0) / maxReach) * 100) : 0,
+        campaigns: undefined,
+        isCurrent: false,
+      })),
   };
-
-  const activeDataset = chartDatasets[chartMode];
-  const activeHoveredData = hoveredPoint !== null ? activeDataset.points[hoveredPoint] : activeDataset.points[5];
+  const activeHoveredData = null;
 
   return (
     <div className="relative w-full space-y-8 text-slate-900 bg-[#FAFAFA] min-h-screen pb-32">
@@ -317,9 +239,6 @@ export default function InfluencerDashboard() {
                 {creatorHandle.replace('@', '').charAt(0).toUpperCase()}
               </div>
             </div>
-            <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white p-1 rounded-full border-2 border-white shadow-sm" title="Criador Auditado SHA-256">
-              <Check className="w-3.5 h-3.5 stroke-[3]" />
-            </div>
           </div>
 
           <div className="space-y-1.5">
@@ -327,12 +246,6 @@ export default function InfluencerDashboard() {
               <h1 className="text-2xl md:text-4xl font-black tracking-tight text-slate-950 flex items-center gap-2">
                 {creatorHandle}
               </h1>
-              <span className="px-3 py-1 rounded-full text-xs font-black bg-orange-50 text-orange-600 border border-orange-200 shadow-sm flex items-center gap-1.5">
-                <Flame className="w-3.5 h-3.5 fill-orange-500 text-orange-500 animate-pulse" /> {streakCount} Dias de Sequência 🔥
-              </span>
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Métricas Auditadas
-              </span>
             </div>
             <p className="text-xs md:text-sm text-slate-500 font-medium">
               Painel de Performance Financeira, Missões Neurais e Governança de Contratos SafePay.
@@ -363,6 +276,7 @@ export default function InfluencerDashboard() {
       {/* ══════════════════════════════════════════════════════════════════════
           2. OS 4 CARDS DE KPIS COM VERDE DE LUCRO & CAMPANHAS ATIVAS
       ══════════════════════════════════════════════════════════════════════ */}
+      {instagramNoDataMessage && <p className="relative z-10 rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">{instagramNoDataMessage}</p>}
       <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
         
         {/* Card 1: Saldo sob Custódia SafePay */}
@@ -372,7 +286,7 @@ export default function InfluencerDashboard() {
               <Lock className="w-6 h-6" />
             </div>
             <div className="flex items-center gap-1 text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-600" /> +32.4% este mês
+              Valor atual
             </div>
           </div>
           
@@ -381,13 +295,13 @@ export default function InfluencerDashboard() {
               Saldo sob Custódia SafePay
             </span>
             <div className="text-3xl font-black text-slate-950 tracking-tight">
-              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(escrowBalance)}
+              {escrowBalance == null ? NO_DATA_LABEL : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(escrowBalance)}
             </div>
           </div>
 
           <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
             <span className="text-slate-500 font-medium flex items-center gap-1">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" /> 0% Inadimplência
+              <ShieldCheck className="w-4 h-4 text-slate-400" /> Saldo calculado a partir de contratos ativos
             </span>
             <Link 
               href="/dashboard/influencer/wallet" 
@@ -405,7 +319,7 @@ export default function InfluencerDashboard() {
               <Trophy className="w-6 h-6" />
             </div>
             <div className="flex items-center gap-1 text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-600" /> +45 pts hoje
+              Pontuação persistida
             </div>
           </div>
 
@@ -414,22 +328,19 @@ export default function InfluencerDashboard() {
               InfluScore de Autoridade
             </span>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-slate-950 tracking-tight">{influScore}</span>
-              <span className="text-xs font-bold text-amber-600">Nível {scoreClass}</span>
+              <span className="text-3xl font-black text-slate-950 tracking-tight">{influScore ?? NO_DATA_LABEL}</span>
+              {scoreClass && <span className="text-xs font-bold text-amber-600">Nível {scoreClass}</span>}
             </div>
           </div>
 
           <div className="pt-3 border-t border-slate-100 space-y-1.5">
             <div className="flex justify-between text-[10px] font-bold text-slate-400">
-              <span>Rumo a Diamante</span>
-              <span className="text-slate-700 font-black">{influScore}/1000 pts</span>
+              <span>Pontuação registrada</span>
+              <span className="text-slate-700 font-black">{influScore == null ? NO_DATA_LABEL : `${influScore}/1000 pts`}</span>
             </div>
-            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-              <div 
-                className="bg-gradient-to-r from-orange-500 to-amber-400 h-full rounded-full transition-all duration-1000"
-                style={{ width: `${Math.min(100, (influScore / 1000) * 100)}%` }}
-              />
-            </div>
+            {influScore != null && <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+              <div className="bg-gradient-to-r from-orange-500 to-amber-400 h-full rounded-full" style={{ width: `${Math.min(100, (influScore / 1000) * 100)}%` }} />
+            </div>}
           </div>
         </div>
 
@@ -455,7 +366,7 @@ export default function InfluencerDashboard() {
 
           <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
             <span className="text-slate-500 font-medium flex items-center gap-1">
-              <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500" /> 2 entregas esta semana
+              Dados de contratos ativos
             </span>
             <Link 
               href="/dashboard/contracts" 
@@ -473,7 +384,7 @@ export default function InfluencerDashboard() {
               <Eye className="w-6 h-6" />
             </div>
             <div className="flex items-center gap-1 text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-600" /> 94.2% Match
+              Sem dados de visualizações
             </div>
           </div>
 
@@ -482,12 +393,12 @@ export default function InfluencerDashboard() {
               Visualizações do Mídia Kit
             </span>
             <div className="text-3xl font-black text-slate-950 tracking-tight">
-              +{mediaKitViews.toLocaleString('pt-BR')} <span className="text-xs font-bold text-slate-400">views</span>
+              {NO_DATA_LABEL}
             </div>
           </div>
 
           <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium">8 propostas este mês</span>
+            <span className="text-slate-500 font-medium">{incomingProposals.length} propostas</span>
             <button 
               onClick={handleCopyMediaKit} 
               className="px-3.5 py-1.5 rounded-xl text-xs font-black text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white border border-blue-200 shadow-sm active:scale-95 transition-all flex items-center gap-1.5"
@@ -562,31 +473,13 @@ export default function InfluencerDashboard() {
                     </span>
                   ) : null}
                   <span className="text-[11px] font-black text-orange-600 bg-orange-50 px-3 py-1 rounded-xl border border-orange-200 flex items-center gap-1">
-                    <Flame className="w-3.5 h-3.5 fill-orange-500 text-orange-500" /> +{task.rewardXP || 15} XP
+                    {task.rewardXP != null && <><Flame className="w-3.5 h-3.5 fill-orange-500 text-orange-500" /> +{task.rewardXP} XP</>}
                   </span>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Banner de Comando por Voz IA */}
-          <div className="p-5 rounded-2xl bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-transparent border border-orange-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-2xl bg-orange-600 text-white flex items-center justify-center shadow-md shadow-orange-500/20">
-                <Mic className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-sm font-black text-slate-900">Adicionar Tarefa via Comando de Voz</p>
-                <p className="text-xs text-slate-500 font-medium">Diga por voz: "Agendar Reels amanhã às 16h com Marca X"</p>
-              </div>
-            </div>
-            <button 
-              onClick={() => toast.info('🎙️ Microfone ativado! Fale a sua tarefa...')}
-              className="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-orange-600 bg-white hover:bg-orange-50 border border-orange-300 shadow-sm transition-all self-end sm:self-auto active:scale-95"
-            >
-              Falar Agora →
-            </button>
-          </div>
         </div>
 
         {/* Coluna Direita (5 cols): Propostas de Marcas & IA Career Manager */}
@@ -603,15 +496,16 @@ export default function InfluencerDashboard() {
                   </h3>
                 </div>
                 <p className="text-xs text-slate-400 font-medium">
-                  Convites oficiais com depósito Escrow garantido.
+                  Contratos e propostas registrados na plataforma.
                 </p>
               </div>
               <span className="px-3 py-1 rounded-full text-xs font-black bg-orange-50 text-orange-600 border border-orange-200">
-                {incomingProposals.length} Novas
+                {incomingProposals.length} Registros
               </span>
             </div>
 
             <div className="space-y-4">
+              {incomingProposals.length === 0 && <p className="py-8 text-center text-sm text-slate-500">Ainda não há contratos ou propostas.</p>}
               {incomingProposals.map(contract => (
                 <div 
                   key={contract.id}
@@ -624,7 +518,7 @@ export default function InfluencerDashboard() {
                       </div>
                       <div>
                         <span className="text-[10px] font-black uppercase tracking-wider text-orange-600 block">
-                          {contract.company?.companyName || 'Marca Patrocinadora'}
+                          {contract.company?.companyName || 'Empresa não identificada'}
                         </span>
                         <h4 className="text-sm font-black text-slate-900 leading-tight">
                           {contract.title}
@@ -633,9 +527,9 @@ export default function InfluencerDashboard() {
                     </div>
 
                     <div className="text-right shrink-0">
-                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Líquido</span>
+                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Valor do contrato</span>
                       <span className="text-base font-black text-emerald-600">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(contract.netAmount || (contract.budget * 0.85))}
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(contract.netAmount ?? contract.budget)}
                       </span>
                     </div>
                   </div>
@@ -682,7 +576,7 @@ export default function InfluencerDashboard() {
             </div>
 
             <p className="text-xs leading-relaxed text-slate-700 font-medium italic">
-              "{data?.analysis?.insight || 'Seus vídeos de Reels tiveram 38% mais retenção nas primeiras 3 segundos. Experimente abrir sua próxima publi com um hook visual direto para maximizar o CPM das marcas.'}"
+              {data?.analysis?.insight || 'Nenhuma análise disponível no momento.'}
             </p>
           </div>
 
@@ -709,51 +603,13 @@ export default function InfluencerDashboard() {
             </p>
           </div>
 
-          {/* Botões de Filtro de Métrica */}
-          <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-100 border border-slate-200 self-start lg:self-auto flex-wrap">
-            <button
-              onClick={() => setChartMode('REVENUE')}
-              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-                chartMode === 'REVENUE'
-                  ? 'bg-white text-orange-600 shadow-md shadow-slate-200'
-                  : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              <DollarSign className="w-3.5 h-3.5" />
-              Faturamento R$
-            </button>
-
-            <button
-              onClick={() => setChartMode('CLICKS')}
-              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-                chartMode === 'CLICKS'
-                  ? 'bg-white text-orange-600 shadow-md shadow-slate-200'
-                  : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              <MousePointerClick className="w-3.5 h-3.5" />
-              Cliques em Links
-            </button>
-
-            <button
-              onClick={() => setChartMode('REACH')}
-              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-                chartMode === 'REACH'
-                  ? 'bg-white text-orange-600 shadow-md shadow-slate-200'
-                  : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              <Eye className="w-3.5 h-3.5" />
-              Alcance & Views
-            </button>
-          </div>
         </div>
 
         {/* Top Summary Bar do Gráfico */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-emerald-50 via-orange-50/40 to-transparent border border-emerald-200/80">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/20 font-black text-lg">
-              {chartMode === 'REVENUE' ? 'R$' : chartMode === 'CLICKS' ? '🔗' : '👥'}
+              <Eye className="w-5 h-5" />
             </div>
             <div>
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Total Acumulado no Período</span>
@@ -761,15 +617,11 @@ export default function InfluencerDashboard() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="px-3.5 py-1.5 rounded-xl text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1.5">
-              <TrendingUp className="w-4 h-4 text-emerald-600" /> {activeDataset.growthBadge}
-            </span>
-          </div>
         </div>
 
         {/* Visual do Gráfico Interativo com Barras & Curva SVG */}
-        <div className="relative pt-8 pb-4">
+          {activeDataset.points.length === 0 && <p className="py-16 text-center text-sm text-slate-500">Ainda não há histórico suficiente.</p>}
+          <div className="relative pt-8 pb-4">
           
           {/* Eixo de Grid Horizontal */}
           <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-40">
@@ -782,13 +634,12 @@ export default function InfluencerDashboard() {
           {/* Gráfico de Colunas Interativas com Tooltips no Hover */}
           <div className="relative grid grid-cols-6 gap-3 md:gap-8 items-end h-64 z-10">
             {activeDataset.points.map((pt, idx) => {
-              const isHovered = hoveredPoint === idx;
+              const isHovered = false;
               const isCurrent = pt.isCurrent;
 
               return (
                 <div 
                   key={idx}
-                  onMouseEnter={() => setHoveredPoint(idx)}
                   className="flex flex-col items-center gap-3 h-full justify-end group cursor-pointer relative"
                 >
                   {/* Tooltip Dinâmico */}
@@ -799,7 +650,7 @@ export default function InfluencerDashboard() {
                       {pt.display}
                     </span>
                     <span className="text-[9px] font-bold text-slate-400 block mt-0.5">
-                      {pt.campaigns} publis
+                      Alcance registrado
                     </span>
                   </div>
 
@@ -829,39 +680,6 @@ export default function InfluencerDashboard() {
             })}
           </div>
 
-        </div>
-
-        {/* 3 Mini Cards de Insights Analíticos */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-slate-100">
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">CPM Médio por Campanha</span>
-              <p className="text-base font-black text-slate-900">R$ 38,50 <span className="text-xs font-bold text-emerald-600">(+15%)</span></p>
-            </div>
-            <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold">
-              <Zap className="w-4 h-4" />
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">CTR Médio dos Stories</span>
-              <p className="text-base font-black text-slate-900">5.2% <span className="text-xs font-bold text-emerald-600">(Alta Conversão)</span></p>
-            </div>
-            <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
-              <MousePointerClick className="w-4 h-4" />
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Tempo Médio SafePay</span>
-              <p className="text-base font-black text-emerald-700">48 horas <span className="text-xs font-bold text-slate-500">(Auto-Release)</span></p>
-            </div>
-            <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
-              <ShieldCheck className="w-4 h-4" />
-            </div>
-          </div>
         </div>
 
       </section>
@@ -916,12 +734,6 @@ export default function InfluencerDashboard() {
                 {rate.description}
               </p>
 
-              <div className="pt-3 border-t border-slate-200 flex items-center justify-between text-[11px]">
-                <span className="text-slate-400 font-bold">Engajamento: <strong className="text-slate-700">{rate.avgEngagement || '5.4%'}</strong></span>
-                <span className="text-emerald-700 font-black bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                  {rate.conversionRate || '15% conv.'}
-                </span>
-              </div>
             </div>
           ))}
         </div>

@@ -15,22 +15,23 @@ export function SHA256AuditModal({
   isOpen,
   onClose,
   handle,
-  integrityHash = '8f3a9e4b7c1d2e5f6a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f',
+  integrityHash,
   capturedAt,
 }: SHA256AuditModalProps) {
   const [copied, setCopied] = useState(false);
 
   if (!isOpen) return null;
 
-  const formattedHash = integrityHash || 'SHA256-PENDING-AUDIT';
-  const auditDate = capturedAt
+  const formattedHash = integrityHash || null;
+  const capturedDate = capturedAt
     ? new Date(capturedAt).toLocaleString('pt-BR', {
         dateStyle: 'long',
         timeStyle: 'short',
       })
-    : new Date().toLocaleString('pt-BR', { dateStyle: 'long', timeStyle: 'short' });
+    : null;
 
   const handleCopy = () => {
+    if (!formattedHash) return;
     navigator.clipboard.writeText(formattedHash);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -56,11 +57,11 @@ export function SHA256AuditModal({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[9px] sm:text-xs font-black tracking-widest text-emerald-400 uppercase bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                Auditado & Imutável
+                Registro de integridade
               </span>
             </div>
-            <h2 className="text-base sm:text-lg font-black tracking-tight mt-0.5 text-white">Selo SHA-256 Verified</h2>
-            <p className="text-[11px] text-zinc-400">Certificado de Autenticidade Telemétrica @{handle}</p>
+            <h2 className="text-base sm:text-lg font-black tracking-tight mt-0.5 text-white">Hash de integridade (SHA-256)</h2>
+            <p className="text-[11px] text-zinc-400">Registro associado ao perfil @{handle}</p>
           </div>
         </div>
 
@@ -69,12 +70,13 @@ export function SHA256AuditModal({
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1.5">
               <Lock className="w-3.5 h-3.5 text-orange-400" />
-              Hash Criptográfico SHA-256 (Audit Trail)
+              Hash de integridade SHA-256
             </label>
             <div className="flex items-center justify-between p-3.5 bg-black/60 border border-white/10 rounded-2xl font-mono text-xs text-orange-300 break-all group">
-              <span className="truncate mr-2 select-all text-[11px] sm:text-xs">{formattedHash}</span>
+              <span className="truncate mr-2 select-all text-[11px] sm:text-xs">{formattedHash || 'Sem registro de integridade disponível.'}</span>
               <button
                 onClick={handleCopy}
+                disabled={!formattedHash}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-orange-500 hover:text-black rounded-xl text-[10px] font-bold transition-all shrink-0 text-white"
               >
                 {copied ? (
@@ -96,28 +98,19 @@ export function SHA256AuditModal({
               <Cpu className="w-5 h-5 text-orange-400 shrink-0" />
               <div>
                 <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Fonte dos Dados</p>
-                <p className="text-xs font-bold text-white">API Oficial Meta / TikTok</p>
+                <p className="text-xs font-bold text-white">Dados capturados pela integração</p>
               </div>
             </div>
 
             <div className="p-3 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3">
               <Calendar className="w-5 h-5 text-emerald-400 shrink-0" />
               <div className="overflow-hidden">
-                <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Última Auditoria</p>
-                <p className="text-[11px] font-bold text-white truncate">{auditDate}</p>
+                <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Capturado em</p>
+                <p className="text-[11px] font-bold text-white truncate">{capturedDate || 'Data indisponível'}</p>
               </div>
             </div>
           </div>
 
-          <div className="p-4 bg-emerald-950/30 border border-emerald-500/30 rounded-2xl space-y-1">
-            <p className="text-xs font-bold text-emerald-300 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-              Garantia Anti-Fraude Photoshop
-            </p>
-            <p className="text-[10px] text-zinc-300 leading-relaxed">
-              Este hash é gerado no momento exato em que os servidores da Influnext efetuam handshake seguro com as APIs das redes sociais, impedindo qualquer manipulação manual.
-            </p>
-          </div>
         </div>
 
         {/* Footer CTA */}
@@ -126,7 +119,7 @@ export function SHA256AuditModal({
             onClick={onClose}
             className="w-full py-3 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-2xl transition-all"
           >
-            Fechar Auditoria
+            Fechar
           </button>
         </div>
 

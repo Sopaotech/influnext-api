@@ -114,6 +114,26 @@ describe('STEP 1H-B1 — Social token exposure containment', () => {
     expect(res.json.mock.calls[0][0].platforms[0].accessToken).toBeUndefined();
   });
 
+  it('dashboard returns unavailable average views without a snapshot but preserves measured zero', async () => {
+    const noRecentProfile: any = dashboardProfile();
+    noRecentProfile.platforms[0].lastSyncStatus = 'NO_RECENT_MEDIA';
+    noRecentProfile.metricsHistory = [];
+    mockPrisma.influencerProfile.findUnique.mockResolvedValue(noRecentProfile);
+    mockPrisma.metricSnapshot.findFirst.mockResolvedValue(null);
+    const noSnapshotResponse = responseMock();
+    await getInfluencerDashboard({ user: { id: 'user-1' } } as any, noSnapshotResponse);
+    expect(noSnapshotResponse.json.mock.calls[0][0].kpis.avgViews).toBeNull();
+
+    const zeroSnapshotProfile: any = dashboardProfile();
+    zeroSnapshotProfile.platforms[0].lastSyncStatus = 'NO_RECENT_MEDIA';
+    zeroSnapshotProfile.metricsHistory = [{ avgViews: 0 }];
+    mockPrisma.influencerProfile.findUnique.mockResolvedValue(zeroSnapshotProfile);
+    mockPrisma.metricSnapshot.findFirst.mockResolvedValue({ capturedAt: new Date() });
+    const zeroSnapshotResponse = responseMock();
+    await getInfluencerDashboard({ user: { id: 'user-1' } } as any, zeroSnapshotResponse);
+    expect(zeroSnapshotResponse.json.mock.calls[0][0].kpis.avgViews).toBe(0);
+  });
+
   it('dashboard never returns refreshToken and queries only safe platform fields', async () => {
     mockPrisma.influencerProfile.findUnique.mockResolvedValue(dashboardProfile());
     const res = responseMock();
@@ -169,6 +189,7 @@ describe('STEP 1H-B1 — Social token exposure containment', () => {
     expect(query.select.platforms.select).toEqual({
       platformName: true,
       platformId: true,
+      followersCount: true,
       isActive: true,
       lastSyncAttemptAt: true,
       lastSyncSuccessAt: true,
@@ -179,6 +200,36 @@ describe('STEP 1H-B1 — Social token exposure containment', () => {
       syncLeaseExpiresAt: true,
     });
     expect(JSON.stringify(res.json.mock.calls[0][0])).not.toMatch(/accessToken|refreshToken/);
+  });
+
+  it('public profile omits default score class and performance when no verified data or sample exists', async () => {
+    mockPrisma.influencerProfile.findUnique.mockResolvedValue({
+      id: 'profile-1', handle: 'creator', influScore: 0, scoreClass: 'BRONZE', verifiedMetrics: false,
+      platforms: [], metricsHistory: [], tasks: [],
+    });
+    const res = responseMock();
+
+    await getPublicProfile({ params: { handle: 'creator' } } as any, res);
+
+    expect(res.json.mock.calls[0][0]).toMatchObject({
+      influScore: 0,
+      scoreClass: null,
+      verifiedMetrics: false,
+      avgROI: null,
+      performanceSampleCount: 0,
+    });
+  });
+
+  it('public profile preserves measured zero performance when an eligible sample exists', async () => {
+    mockPrisma.influencerProfile.findUnique.mockResolvedValue({
+      id: 'profile-1', handle: 'creator', influScore: 0, scoreClass: 'BRONZE', verifiedMetrics: false,
+      platforms: [], metricsHistory: [], tasks: [{ performanceMultiplier: 1 }],
+    });
+    const res = responseMock();
+
+    await getPublicProfile({ params: { handle: 'creator' } } as any, res);
+
+    expect(res.json.mock.calls[0][0]).toMatchObject({ avgROI: 1, performanceSampleCount: 1 });
   });
 
   it('simulation endpoint returns no token even though it creates a simulated credential', async () => {
