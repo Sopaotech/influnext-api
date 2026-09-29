@@ -19,6 +19,7 @@ jest.mock('../src/lib/prisma', () => ({
       create: jest.fn().mockImplementation((args) => Promise.resolve({ id: 'snap-1', ...args.data }))
     },
     socialPlatform: {
+      findFirst: jest.fn().mockResolvedValue(null),
       update: jest.fn().mockResolvedValue({ id: 'sp-1' }),
       upsert: jest.fn().mockResolvedValue({ id: 'sp-1' }),
       findMany: jest.fn().mockResolvedValue([]),
@@ -88,7 +89,7 @@ describe('Integrações de Redes Sociais Reais (Instagram & TikTok API)', () => 
       const tokenResult = await InstagramService.exchangeCodeForToken('auth_code_123', 'https://influnext.com.br/callback');
 
       expect(tokenResult.accessToken).toBe('long_lived_token_60_days');
-      expect(tokenResult.platformId).toBe('123456789');
+      expect(tokenResult.tokenUserId).toBe('123456789');
       expect(tokenResult.expiresIn).toBe(5184000);
       expect(mockedAxios.post).toHaveBeenCalledWith(
         'https://api.instagram.com/oauth/access_token',
@@ -169,9 +170,11 @@ describe('Integrações de Redes Sociais Reais (Instagram & TikTok API)', () => 
         }
       });
 
-      const syncResult = await InstagramService.syncInstagramData('inf-123', 'access_token_123', 'ig-user-1');
+      const syncResult = await InstagramService.syncInstagramData('inf-123', 'access_token_123');
 
       expect(syncResult.success).toBe(true);
+      expect(mockedAxios.get).toHaveBeenNthCalledWith(1, 'https://graph.instagram.com/me', expect.any(Object));
+      expect(mockedAxios.get).toHaveBeenNthCalledWith(2, 'https://graph.instagram.com/me/media', expect.any(Object));
       expect(syncResult.username).toBe('creator_pro');
       expect(syncResult.followers).toBe(50000);
       expect(syncResult.avgViews).toBe(35000);
@@ -187,6 +190,19 @@ describe('Integrações de Redes Sociais Reais (Instagram & TikTok API)', () => 
           })
         })
       );
+    });
+
+    it('uses /me and /me/media and does not create a snapshot when there is no recent media', async () => {
+      mockedAxios.get
+        .mockResolvedValueOnce({ data: { id: 'canonical-id', username: 'creator_pro', followers_count: 50000 } })
+        .mockResolvedValueOnce({ data: { data: [] } });
+
+      const result = await InstagramService.syncInstagramData('inf-123', 'access_token_123');
+
+      expect(result).toMatchObject({ success: true, snapshotCreated: false, reason: 'no_recent_media' });
+      expect(mockedAxios.get).toHaveBeenNthCalledWith(1, 'https://graph.instagram.com/me', expect.any(Object));
+      expect(mockedAxios.get).toHaveBeenNthCalledWith(2, 'https://graph.instagram.com/me/media', expect.any(Object));
+      expect(prisma.metricSnapshot.create).not.toHaveBeenCalled();
     });
   });
 

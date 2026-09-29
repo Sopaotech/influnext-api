@@ -102,7 +102,6 @@ export async function processInstagramSyncWithDependencies(
     const result = await InstagramService.syncInstagramData(
       platform.influencerId,
       accessToken,
-      platform.platformId,
       { triggerAIAnalysis: shouldTriggerInstagramPostSyncAI(data.reason) },
     );
     const finishedAt = new Date();

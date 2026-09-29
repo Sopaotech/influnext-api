@@ -37,6 +37,7 @@ jest.mock('../src/services/instagram.service', () => ({
     fetchProfileData: mockFetchProfile,
     syncInstagramData: mockInstagramSync,
   },
+  reconcileInstagramPlatformIdentity: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock('../src/services/tiktok.service', () => ({
   TikTokService: { syncTikTokData: mockTikTokSync },
@@ -260,8 +261,8 @@ describe('STEP 1F-B — simulated social login containment', () => {
     const start = await request(app).get('/v1/auth/social/public-urls');
     const state = new URL(start.body[platform]).searchParams.get('state')!;
     const cookies = (start.headers['set-cookie'] as unknown as string[]).map(value => value.split(';')[0]);
-    mockExchangeCode.mockResolvedValue({ accessToken: 'provider-token', platformId: 'provider-user-1', expiresIn: 3600 });
-    mockFetchProfile.mockResolvedValue({ username: 'provider_user', followers_count: 17 });
+    mockExchangeCode.mockResolvedValue({ accessToken: 'provider-token', tokenUserId: 'provider-user-1', expiresIn: 3600 });
+    mockFetchProfile.mockResolvedValue({ id: 'provider-user-1', username: 'provider_user', followers_count: 17 });
     mockAxiosPost.mockResolvedValue({ data: { access_token: 'provider-token', open_id: 'provider-user-1', expires_in: 3600 } });
     mockAxiosGet.mockResolvedValue({ data: { data: { user: { username: 'provider_user', follower_count: 17 } } } });
     mockPrisma.socialPlatform.findFirst.mockResolvedValue({ influencer: { id: 'profile-1', userId: user.id, handle: 'provider_user', user } });

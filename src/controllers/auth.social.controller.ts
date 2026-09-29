@@ -6,7 +6,7 @@ import { ScoringService } from '../services/scoring.service';
 import { TikTokService } from '../services/tiktok.service';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { createOAuthState, consumeOAuthState, getOAuthFrontendUrl, isOAuthPlatform, oauthBoundaryFailure, assertOAuthIdentity } from '../lib/oauth-state';
+import { createOAuthState, consumeOAuthState, getOAuthFrontendUrl, isOAuthPlatform, oauthBoundaryFailure, assertOAuthIdentity, OAuthBoundaryError } from '../lib/oauth-state';
 import { createTwoFactorChallenge } from '../lib/two-factor-challenge';
 import { establishSession } from '../lib/session-cookie';
 import { sanitizeProviderError, sanitizeProviderMessage } from '../utils/provider-error';
@@ -349,7 +349,12 @@ export class SocialAuthController {
     } catch (error: any) {
       const sanitizedError = sanitizeProviderError(error, 'Falha no callback do provedor social.');
       console.error(`[SOCIAL_AUTH] Erro no callback ${platform}:`, sanitizedError);
-      
+
+      if (platform === 'instagram' && error instanceof OAuthBoundaryError && error.status === 409) {
+        res.status(409).json({ error: 'Conflito de identidade do Instagram.', errorType: 'identity_conflict' });
+        return;
+      }
+
       let clientMessage = 'Falha na autenticação social. Por favor, tente novamente.';
       let errorType = 'error';
       if (platform === 'instagram') {

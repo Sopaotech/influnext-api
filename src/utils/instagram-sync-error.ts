@@ -5,6 +5,7 @@ export type InstagramSyncErrorCode =
   | 'PERMISSION_DENIED'
   | 'RATE_LIMITED'
   | 'PROVIDER_UNAVAILABLE'
+  | 'IDENTITY_CONFLICT'
   | 'SYNC_UNAVAILABLE';
 
 export interface InstagramSyncFailure {

@@ -9,7 +9,7 @@ import { redisConnection, resetOAuthRedis } from './helpers/oauth-redis';
 const mockPrisma = {
   user: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
   influencerProfile: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
-  socialPlatform: { findFirst: jest.fn(), upsert: jest.fn(), create: jest.fn() },
+  socialPlatform: { findFirst: jest.fn(), findUnique: jest.fn(), update: jest.fn(), upsert: jest.fn(), create: jest.fn() },
   metricSnapshot: { create: jest.fn() },
   pageView: { create: jest.fn() },
 };
@@ -26,7 +26,7 @@ jest.mock('../src/lib/prisma', () => ({ prisma: mockPrisma }));
 jest.mock('axios', () => ({ __esModule: true, default: { post: mockPost, get: mockGet } }));
 jest.mock('../src/services/instagram.service', () => ({ InstagramService: {
   exchangeCodeForToken: mockExchange, fetchProfileData: mockProfile, syncInstagramData: mockSync,
-} }));
+}, reconcileInstagramPlatformIdentity: jest.fn().mockResolvedValue(undefined) }));
 jest.mock('../src/services/tiktok.service', () => ({ TikTokService: { syncTikTokData: mockSync } }));
 jest.mock('../src/services/instagram-sync-queue.service', () => ({
   enqueueInstagramSync: mockEnqueueInstagramSync,
@@ -77,10 +77,12 @@ describe('STEP 1F-C — OAuth security boundary', () => {
     mockPrisma.influencerProfile.findUnique.mockResolvedValue(profile);
     mockPrisma.influencerProfile.update.mockResolvedValue(profile);
     mockPrisma.socialPlatform.findFirst.mockResolvedValue({ influencer: profile });
+    mockPrisma.socialPlatform.findUnique.mockResolvedValue(null);
+    mockPrisma.socialPlatform.update.mockResolvedValue({ id: 'social-1' });
     mockPrisma.socialPlatform.upsert.mockResolvedValue({ id: 'social-1' });
     mockEnqueueInstagramSync.mockResolvedValue({ accepted: true, status: 'sync_pending' });
-    mockExchange.mockResolvedValue({ accessToken: 'provider-token', platformId: 'provider-id', expiresIn: 3600 });
-    mockProfile.mockResolvedValue({ username: 'real_user', followers_count: 42 });
+    mockExchange.mockResolvedValue({ accessToken: 'provider-token', tokenUserId: 'provider-id', expiresIn: 3600 });
+    mockProfile.mockResolvedValue({ id: 'provider-id', username: 'real_user', followers_count: 42 });
     mockPost.mockResolvedValue({ data: {
       access_token: 'provider-token', refresh_token: 'provider-refresh-token', open_id: 'provider-id', expires_in: 3600,
     } });
@@ -257,8 +259,27 @@ describe('STEP 1F-C — OAuth security boundary', () => {
     expect(mockPrisma.influencerProfile.create).not.toHaveBeenCalled();
   });
 
+  it('uses the authenticated /me ID and reuses a legacy token-ID owner without duplicate records', async () => {
+    mockExchange.mockResolvedValueOnce({ accessToken: 'provider-token', tokenUserId: 'legacy-token-id' });
+    mockProfile.mockResolvedValueOnce({ id: 'canonical-me-id', username: 'real_user', followers_count: 42 });
+    mockPrisma.socialPlatform.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ influencerId: profile.id, influencer: profile });
+    mockPrisma.socialPlatform.findUnique.mockResolvedValueOnce({ id: 'social-1', platformId: 'legacy-token-id' });
+
+    const response = await callback('instagram', await start('instagram'));
+
+    expect(response.status).toBe(200);
+    expect(jwt.verify(sessionFrom(response).token, secret)).toMatchObject({ id: user.id, purpose: 'session' });
+    expect(mockPrisma.user.create).not.toHaveBeenCalled();
+    expect(mockPrisma.influencerProfile.create).not.toHaveBeenCalled();
+    const write = mockPrisma.socialPlatform.upsert.mock.calls[0][0];
+    expect(write.create.platformId).toBe('canonical-me-id');
+    expect(write.update.platformId).toBe('canonical-me-id');
+  });
+
   it('does not persist Instagram when provider identity lacks a confirmed profile', async () => {
-    mockProfile.mockResolvedValueOnce({ followers_count: 7 });
+    mockProfile.mockResolvedValueOnce({ id: 'provider-id', followers_count: 7 });
     const response = await callback('instagram', await start('instagram'));
     expect(response.status).toBe(400);
     expect(mockPrisma.socialPlatform.upsert).not.toHaveBeenCalled();
@@ -274,7 +295,8 @@ describe('STEP 1F-C — OAuth security boundary', () => {
 
     const response = await callback('instagram', attempt);
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(409);
+    expect(response.body.errorType).toBe('identity_conflict');
     expect(mockPrisma.socialPlatform.upsert).not.toHaveBeenCalled();
     expect(mockPrisma.user.create).not.toHaveBeenCalled();
     expect(mockPrisma.influencerProfile.create).not.toHaveBeenCalled();

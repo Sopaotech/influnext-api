@@ -4,6 +4,33 @@ import { AuditorService } from './auditor.service';
 import { sanitizeProviderError } from '../utils/provider-error';
 import { classifyInstagramSyncFailure, InstagramSyncOperationalError } from '../utils/instagram-sync-error';
 import { buildInstagramAuthorizationUrl } from '../lib/instagram-oauth';
+import { InstagramIdentityConflictError } from '../utils/instagram-identity';
+
+/** Reconcile a legacy/token-scoped ID to the identity authenticated by GET /me. */
+export async function reconcileInstagramPlatformIdentity(influencerId: string, canonicalPlatformId: string): Promise<void> {
+  if (!canonicalPlatformId.trim()) throw new Error('Instagram identity was not confirmed.');
+
+  const foreignOwner = await prisma.socialPlatform.findFirst({
+    where: {
+      platformName: 'INSTAGRAM',
+      platformId: canonicalPlatformId,
+      influencerId: { not: influencerId },
+    },
+    select: { id: true },
+  });
+  if (foreignOwner?.id) throw new InstagramIdentityConflictError();
+
+  const current = await prisma.socialPlatform.findUnique({
+    where: { influencerId_platformName: { influencerId, platformName: 'INSTAGRAM' } },
+    select: { id: true, platformId: true },
+  });
+  if (current && current.platformId !== canonicalPlatformId) {
+    await prisma.socialPlatform.update({
+      where: { influencerId_platformName: { influencerId, platformName: 'INSTAGRAM' } },
+      data: { platformId: canonicalPlatformId },
+    });
+  }
+}
 
 /**
  * InstagramService — Integração com Instagram API with Instagram Login
@@ -80,7 +107,7 @@ export class InstagramService {
       return {
         accessToken: longTokenRes.data.access_token || shortToken,
         expiresIn: longTokenRes.data.expires_in || 5184000, // 60 dias em segundos
-        platformId: igUserId, // ID único do usuário no Instagram
+        tokenUserId: igUserId, // Legacy lookup hint only; canonical identity comes from authenticated /me.
       };
     } catch (error: any) {
       console.error('[INSTAGRAM SERVICE] Erro ao trocar código por token:', sanitizeProviderError(error));
@@ -136,16 +163,14 @@ export class InstagramService {
    *
    * @param influencerId — ID do influenciador no banco de dados (InfluencerProfile.id)
    * @param accessToken  — Long-Lived Token do Instagram do criador
-   * @param igUserId     — ID do usuário no Instagram (retornado no exchangeCodeForToken)
    * @param options      — Efeitos opcionais após um snapshot; a coleta nunca depende deles.
    */
   static async syncInstagramData(
     influencerId: string,
     accessToken: string,
-    igUserId: string,
     options: { triggerAIAnalysis?: boolean } = {},
   ) {
-    console.log(`[INSTAGRAM_SYNC] Iniciando sincronização para influenciador: ${influencerId}, IG User ID: ${igUserId}`);
+    console.log('[INSTAGRAM_SYNC] Iniciando sincronização do Instagram.');
 
     try {
       const connectedPlatform = await prisma.socialPlatform.findUnique({
@@ -160,7 +185,7 @@ export class InstagramService {
       }
 
       // 1. Buscar informações básicas do perfil do criador via Instagram API
-      const profileRes = await axios.get(`${this.IG_API_BASE}/${igUserId}`, {
+      const profileRes = await axios.get(`${this.IG_API_BASE}/me`, {
         params: {
           fields: 'id,username,name,profile_picture_url,followers_count,media_count,biography',
           access_token: accessToken,
@@ -168,9 +193,11 @@ export class InstagramService {
       });
 
       const profileData = profileRes.data;
-      if (!profileData?.id || String(profileData.id) !== String(igUserId)) {
-        throw new Error('O perfil retornado pelo Instagram não corresponde à conta conectada.');
-      }
+      const canonicalPlatformId = typeof profileData?.id === 'string' || typeof profileData?.id === 'number'
+        ? String(profileData.id).trim()
+        : '';
+      if (!canonicalPlatformId) throw new Error('Instagram did not return a canonical profile identity.');
+      await reconcileInstagramPlatformIdentity(influencerId, canonicalPlatformId);
 
       const username = typeof profileData.username === 'string' ? profileData.username.trim() : '';
       if (!username) {
@@ -185,7 +212,7 @@ export class InstagramService {
       const profilePicture = profileData.profile_picture_url || null;
 
       // 2. Buscar as últimas 15 mídias do usuário
-      const mediaRes = await axios.get(`${this.IG_API_BASE}/${igUserId}/media`, {
+      const mediaRes = await axios.get(`${this.IG_API_BASE}/me/media`, {
         params: {
           fields: 'id,caption,media_type,media_url,permalink,like_count,comments_count,timestamp',
           limit: 15,
@@ -206,6 +233,7 @@ export class InstagramService {
           influencerId_platformName: { influencerId, platformName: 'INSTAGRAM' },
         },
         data: {
+          platformId: canonicalPlatformId,
           username,
           profilePicture,
           followersCount: followers,
@@ -447,6 +475,9 @@ export class InstagramService {
       };
     } catch (err: any) {
       console.error('[INSTAGRAM_SYNC] ❌ Erro na sincronização:', sanitizeProviderError(err));
+      if (err instanceof InstagramIdentityConflictError) {
+        throw new InstagramSyncOperationalError({ code: 'IDENTITY_CONFLICT', reconnectRequired: true });
+      }
       throw new InstagramSyncOperationalError(classifyInstagramSyncFailure(err));
     }
   }

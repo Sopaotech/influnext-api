@@ -8,7 +8,9 @@ const mockFetchProfileData = jest.fn();
 const mockSyncInstagramData = jest.fn();
 
 jest.mock('../../src/services/instagram.service', () => ({
+  ...jest.requireActual('../../src/services/instagram.service'),
   InstagramService: {
+    ...jest.requireActual('../../src/services/instagram.service').InstagramService,
     exchangeCodeForToken: mockExchangeCodeForToken,
     fetchProfileData: mockFetchProfileData,
     syncInstagramData: mockSyncInstagramData,
@@ -89,6 +91,14 @@ async function startInstagramLink(creator: CreatorFixture) {
   return { response, url, state, cookie: cookieValue(response) };
 }
 
+async function startInstagramLogin() {
+  const response = await request(app).get('/v1/auth/social/public-urls').expect(200);
+  const url = new URL(response.body.instagram);
+  const state = url.searchParams.get('state');
+  if (!state) throw new Error('OAuth state was not returned.');
+  return { response, url, state, cookie: cookieValue(response) };
+}
+
 async function clearInstagramSyncQueue(): Promise<void> {
   await instagramSyncQueue.obliterate({ force: true });
   const prefix = process.env.INSTAGRAM_SYNC_QUEUE_PREFIX || 'bull';
@@ -105,7 +115,7 @@ beforeEach(async () => {
   mockExchangeCodeForToken.mockResolvedValue({
     accessToken: 'mock-long-lived-instagram-token',
     expiresIn: 3600,
-    platformId: 'instagram-provider-id',
+    tokenUserId: 'instagram-token-response-id',
   });
   mockFetchProfileData.mockResolvedValue({
     id: 'instagram-provider-id',
@@ -209,6 +219,101 @@ describe('Instagram OAuth contract with local PostgreSQL and Redis', () => {
       .query({ code: 'mock-authorization-code', state: attempt.state })
       .expect(400);
     await expect(integrationPrisma.socialPlatform.count()).resolves.toBe(1);
+  });
+
+  it('uses GET /me identity to repair a legacy OAuth ID without creating duplicate accounts', async () => {
+    const creator = await createCreator();
+    await integrationPrisma.socialPlatform.create({
+      data: {
+        influencerId: creator.profile.id,
+        platformName: 'INSTAGRAM',
+        platformId: 'instagram-token-response-id',
+        username: 'legacy_name',
+        accessToken: encryptSocialToken('old-encrypted-token', {
+          influencerId: creator.profile.id, platformName: 'INSTAGRAM', field: 'accessToken',
+        }),
+        isActive: true,
+      },
+    });
+    const attempt = await startInstagramLogin();
+
+    const response = await request(app)
+      .get('/v1/auth/social/callback/instagram')
+      .set('Cookie', attempt.cookie)
+      .query({ code: 'mock-authorization-code', state: attempt.state })
+      .expect(200);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.user.onboardingCompleted).toBe(false);
+    expect(response.headers['set-cookie']).toBeDefined();
+    const [users, profiles, platforms] = await Promise.all([
+      integrationPrisma.user.count(),
+      integrationPrisma.influencerProfile.count(),
+      integrationPrisma.socialPlatform.count({ where: { platformName: 'INSTAGRAM' } }),
+    ]);
+    expect({ users, profiles, platforms }).toEqual({ users: 1, profiles: 1, platforms: 1 });
+    const stored = await integrationPrisma.socialPlatform.findUniqueOrThrow({
+      where: { influencerId_platformName: { influencerId: creator.profile.id, platformName: 'INSTAGRAM' } },
+    });
+    expect(stored.platformId).toBe('instagram-provider-id');
+    expect(isEncryptedSocialToken(stored.accessToken)).toBe(true);
+    expect(JSON.stringify(response.body)).not.toMatch(/mock-long-lived-instagram-token|accessToken/i);
+  });
+
+  it('keeps a same-creator Instagram reconnect idempotent', async () => {
+    const creator = await createCreator();
+    const first = await startInstagramLink(creator);
+    await request(app)
+      .get('/v1/auth/social/callback/instagram')
+      .set('Cookie', first.cookie)
+      .query({ code: 'mock-authorization-code', state: first.state })
+      .expect(200);
+
+    const second = await startInstagramLink(creator);
+    await request(app)
+      .get('/v1/auth/social/callback/instagram')
+      .set('Cookie', second.cookie)
+      .query({ code: 'mock-authorization-code', state: second.state })
+      .expect(200);
+
+    expect(await integrationPrisma.user.count()).toBe(1);
+    expect(await integrationPrisma.influencerProfile.count()).toBe(1);
+    expect(await integrationPrisma.socialPlatform.count({ where: { platformName: 'INSTAGRAM' } })).toBe(1);
+    await expect(integrationPrisma.socialPlatform.findUniqueOrThrow({
+      where: { influencerId_platformName: { influencerId: creator.profile.id, platformName: 'INSTAGRAM' } },
+    })).resolves.toMatchObject({ platformId: 'instagram-provider-id', isActive: true });
+  });
+
+  it('rejects a canonical Instagram identity owned by another creator', async () => {
+    const current = await createCreator();
+    const foreign = await createCreator();
+    await integrationPrisma.socialPlatform.create({
+      data: {
+        influencerId: foreign.profile.id,
+        platformName: 'INSTAGRAM',
+        platformId: 'instagram-provider-id',
+        accessToken: encryptSocialToken('foreign-token', {
+          influencerId: foreign.profile.id, platformName: 'INSTAGRAM', field: 'accessToken',
+        }),
+        isActive: true,
+      },
+    });
+    const attempt = await startInstagramLink(current);
+    const response = await request(app)
+      .get('/v1/auth/social/callback/instagram')
+      .set('Cookie', attempt.cookie)
+      .query({ code: 'mock-authorization-code', state: attempt.state })
+      .expect(409);
+
+    expect(response.body).toEqual({ error: 'Conflito de identidade do Instagram.', errorType: 'identity_conflict' });
+    expect(await integrationPrisma.socialPlatform.count({ where: { platformName: 'INSTAGRAM' } })).toBe(1);
+    expect(JSON.stringify(response.body)).not.toMatch(/foreign-token|instagram-provider-id/i);
+    await expect(integrationPrisma.socialPlatform.findUniqueOrThrow({
+      where: { influencerId_platformName: { influencerId: foreign.profile.id, platformName: 'INSTAGRAM' } },
+    })).resolves.toMatchObject({ platformId: 'instagram-provider-id' });
+    await expect(integrationPrisma.socialPlatform.findUnique({
+      where: { influencerId_platformName: { influencerId: current.profile.id, platformName: 'INSTAGRAM' } },
+    })).resolves.toBeNull();
   });
 
   it('keeps the callback successful and visibly pending while the queued sync has not created a snapshot', async () => {

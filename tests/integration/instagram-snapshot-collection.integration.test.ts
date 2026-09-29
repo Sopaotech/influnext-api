@@ -99,10 +99,10 @@ function recentMedia(id: string, mediaType: 'IMAGE' | 'VIDEO' = 'IMAGE') {
   };
 }
 
-function profileResponse() {
+function profileResponse(id = instagramAccountId) {
   return {
     data: {
-      id: instagramAccountId,
+      id,
       username: 'instagram_creator',
       followers_count: 1200,
       profile_picture_url: 'https://images.example.test/new.jpg',
@@ -140,7 +140,6 @@ describe('Instagram snapshot collection contract with local PostgreSQL', () => {
     const result = await InstagramService.syncInstagramData(
       creator.profile.id,
       'fake-instagram-access-token',
-      instagramAccountId,
     );
 
     expect(result).toMatchObject({ success: true, snapshotCreated: true, followers: 1200 });
@@ -193,16 +192,20 @@ describe('Instagram snapshot collection contract with local PostgreSQL', () => {
   it('does not create a snapshot when the connected profile has no recent media', async () => {
     const creator = await createConnectedCreator();
     mockedAxios.get
-      .mockResolvedValueOnce(profileResponse())
+      .mockResolvedValueOnce(profileResponse('canonical-instagram-account'))
       .mockResolvedValueOnce({ data: { data: [] } });
 
     const result = await InstagramService.syncInstagramData(
       creator.profile.id,
       'fake-instagram-access-token',
-      instagramAccountId,
     );
 
     expect(result).toMatchObject({ success: true, snapshotCreated: false, reason: 'no_recent_media' });
+    expect(mockedAxios.get).toHaveBeenNthCalledWith(1, 'https://graph.instagram.com/me', expect.any(Object));
+    expect(mockedAxios.get).toHaveBeenNthCalledWith(2, 'https://graph.instagram.com/me/media', expect.any(Object));
+    await expect(integrationPrisma.socialPlatform.findUniqueOrThrow({
+      where: { influencerId_platformName: { influencerId: creator.profile.id, platformName: 'INSTAGRAM' } },
+    })).resolves.toMatchObject({ platformId: 'canonical-instagram-account', followersCount: 1200 });
     expect(await integrationPrisma.metricSnapshot.count({ where: { influencerId: creator.profile.id } })).toBe(0);
 
     const dashboard = await request(app)
@@ -214,6 +217,24 @@ describe('Instagram snapshot collection contract with local PostgreSQL', () => {
       hasVerifiedSnapshot: false,
     });
     expect(dashboard.body.instagramMetricCollection.scope).toBe('unavailable');
+  });
+
+  it('rejects canonical identity reconciliation when another creator owns it', async () => {
+    const current = await createConnectedCreator();
+    const foreign = await createConnectedCreator();
+    await integrationPrisma.socialPlatform.update({
+      where: { influencerId_platformName: { influencerId: foreign.profile.id, platformName: 'INSTAGRAM' } },
+      data: { platformId: 'canonical-instagram-account' },
+    });
+    mockedAxios.get.mockResolvedValueOnce(profileResponse('canonical-instagram-account'));
+
+    await expect(InstagramService.syncInstagramData(current.profile.id, 'fake-instagram-access-token'))
+      .rejects.toMatchObject({ code: 'IDENTITY_CONFLICT' });
+    expect(mockedAxios.get).toHaveBeenCalledTimes(1);
+    await expect(integrationPrisma.socialPlatform.findUniqueOrThrow({
+      where: { influencerId_platformName: { influencerId: current.profile.id, platformName: 'INSTAGRAM' } },
+    })).resolves.toMatchObject({ platformId: instagramAccountId });
+    await expect(integrationPrisma.metricSnapshot.count()).resolves.toBe(0);
   });
 
   it('marks a snapshot partial when a media insight and its fallback are unavailable', async () => {
@@ -238,7 +259,6 @@ describe('Instagram snapshot collection contract with local PostgreSQL', () => {
       const result = await InstagramService.syncInstagramData(
         creator.profile.id,
         'fake-instagram-access-token',
-        instagramAccountId,
       );
 
       expect(result).toMatchObject({ success: true, snapshotCreated: true });

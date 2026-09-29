@@ -7,7 +7,7 @@ import { TikTokService } from '../services/tiktok.service';
 import { AIService } from '../services/ai.service';
 import { TrendScannerService } from '../services/trend-scanner.service';
 import axios from 'axios';
-import { createOAuthState, consumeOAuthState, getOAuthFrontendUrl, oauthBoundaryFailure, assertOAuthIdentity } from '../lib/oauth-state';
+import { createOAuthState, consumeOAuthState, getOAuthFrontendUrl, oauthBoundaryFailure, assertOAuthIdentity, OAuthBoundaryError } from '../lib/oauth-state';
 import { sanitizeProviderError } from '../utils/provider-error';
 import { assertSocialTokenEncryptionConfigured, decryptSocialToken, encryptSocialToken } from '../utils/social-token-crypto';
 import { enqueueInstagramSync } from '../services/instagram-sync-queue.service';
@@ -80,7 +80,9 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
     console.error('[INSTAGRAM] Erro no callback:', sanitizeProviderError(error));
     
     let errorType = 'error';
-    if (error.message && (error.message.includes('Creator') || error.message.includes('Business') || error.message.includes('profissional'))) {
+    if (error instanceof OAuthBoundaryError && error.status === 409) {
+      errorType = 'identity_conflict';
+    } else if (error.message && (error.message.includes('Creator') || error.message.includes('Business') || error.message.includes('profissional'))) {
       errorType = 'no_creator_account';
     }
     
