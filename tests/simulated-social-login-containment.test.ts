@@ -81,7 +81,8 @@ describe('STEP 1F-B — simulated social login containment', () => {
     resetOAuthRedis();
     process.env = {
       ...originalEnv, NODE_ENV: 'production', JWT_SECRET: jwtSecret,
-      INSTAGRAM_CLIENT_ID: 'test-instagram-client', TIKTOK_CLIENT_KEY: 'test-tiktok-client',
+      INSTAGRAM_CLIENT_ID: 'test-instagram-client', INSTAGRAM_CLIENT_SECRET: 'test-only-instagram-client-secret',
+      TIKTOK_CLIENT_KEY: 'test-tiktok-client',
       GOOGLE_CLIENT_ID: 'test-google-client', FRONTEND_URL: 'https://frontend.example',
       SOCIAL_TOKEN_ACTIVE_KEY_ID: 'v1', SOCIAL_TOKEN_KEY_V1: '22'.repeat(32),
     };
@@ -209,6 +210,19 @@ describe('STEP 1F-B — simulated social login containment', () => {
     for (const [payload] of signSpy.mock.calls) expect(payload).toMatchObject({ purpose: 'oauth_state' });
     signSpy.mockClear();
     expectNoPrismaOrProviderCalls();
+  });
+
+  it('reports Instagram unconfigured without a client secret and makes no provider calls', async () => {
+    delete process.env.INSTAGRAM_CLIENT_SECRET;
+
+    const response = await request(app).get('/v1/auth/social/public-urls');
+
+    expect(response.status).toBe(200);
+    expect(response.body.configured.instagram).toBe(false);
+    expect(mockExchangeCode).not.toHaveBeenCalled();
+    expect(mockFetchProfile).not.toHaveBeenCalled();
+    expect(mockAxiosPost).not.toHaveBeenCalled();
+    expect(mockAxiosGet).not.toHaveBeenCalled();
   });
 
   it.each(['instagram', 'tiktok'])('OAuth %s requires code/state, not just username', async platform => {
