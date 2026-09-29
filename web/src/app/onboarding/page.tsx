@@ -246,7 +246,7 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleConnectSimulate = async (platform: string = 'INSTAGRAM', username?: string, followersRange?: string) => {
+  const handleConnectSimulate = async (platform: 'TIKTOK', username?: string, followersRange?: string) => {
     try {
       setIsSaving(true);
       await api.post('/integrations/simulate', { platform, username, followersRange });
@@ -802,7 +802,8 @@ export default function OnboardingPage() {
             <div className="space-y-4">
                {/* Instagram Button */}
                <button 
-                  onClick={() => connectedPlatforms.includes('INSTAGRAM') ? toast.message('Instagram já está conectado a esta conta.') : setIsIgModalOpen(true)}
+                  onClick={() => setIsIgModalOpen(true)}
+                  disabled={connectedPlatforms.includes('INSTAGRAM')}
                  className={`w-full p-6 rounded-[2rem] border-2 flex items-center justify-between transition-all group ${connectedPlatforms.includes('INSTAGRAM') ? 'border-emerald-500 bg-emerald-500/5' : theme === 'light' ? 'border-slate-200 bg-white hover:border-rose-200' : 'border-rose-500/20 bg-rose-500/5 hover:border-rose-500/50'}`}
                >
                   <div className="flex items-center gap-6">
@@ -879,12 +880,6 @@ export default function OnboardingPage() {
       <InstagramOnboardingModal 
         isOpen={isIgModalOpen}
         onClose={() => setIsIgModalOpen(false)}
-        onConfirm={(mode: 'oauth' | 'simulate', username?: string, followersRange?: string) => {
-          if (mode === 'simulate') {
-            handleConnectSimulate('INSTAGRAM', username, followersRange);
-          }
-          setIsIgModalOpen(false);
-        }}
       />
       <TikTokOnboardingModal 
         isOpen={isTtModalOpen}

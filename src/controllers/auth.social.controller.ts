@@ -3,17 +3,15 @@ import type { User } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import axios from 'axios';
 import { ScoringService } from '../services/scoring.service';
-import { InstagramService } from '../services/instagram.service';
 import { TikTokService } from '../services/tiktok.service';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { createOAuthState, consumeOAuthState, getOAuthFrontendUrl, isOAuthPlatform, oauthBoundaryFailure, assertOAuthIdentity } from '../lib/oauth-state';
-import { INSTAGRAM_METRICS_OAUTH_SCOPE } from '../lib/instagram-oauth';
 import { createTwoFactorChallenge } from '../lib/two-factor-challenge';
 import { establishSession } from '../lib/session-cookie';
 import { sanitizeProviderError, sanitizeProviderMessage } from '../utils/provider-error';
 import { assertSocialTokenEncryptionConfigured, encryptSocialToken } from '../utils/social-token-crypto';
-import { enqueueInstagramSync } from '../services/instagram-sync-queue.service';
+import { buildInstagramAuthorizationUrl, completeInstagramOAuth } from '../services/instagram-oauth-core.service';
 
 export class SocialAuthController {
   static async getAuthUrls(req: Request, res: Response) {
@@ -24,13 +22,13 @@ export class SocialAuthController {
     const stateYoutube = await createOAuthState(req, res, 'youtube', 'link');
     const instagramRedirectUri = `${frontendUrl}/auth/callback/instagram`;
 
-    const isInstagramConfigured = Boolean(process.env.INSTAGRAM_CLIENT_ID && process.env.INSTAGRAM_CLIENT_ID !== 'seu_instagram_app_client_id');
+    const isInstagramConfigured = Boolean(process.env.INSTAGRAM_CLIENT_ID && process.env.INSTAGRAM_CLIENT_SECRET && process.env.FRONTEND_URL && process.env.INSTAGRAM_CLIENT_ID !== 'seu_instagram_app_client_id');
     const isTikTokConfigured = Boolean(process.env.TIKTOK_CLIENT_KEY && process.env.TIKTOK_CLIENT_KEY !== 'seu_tiktok_client_key');
     const isGoogleConfigured = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_ID !== 'seu_google_client_id');
 
     const urls = {
-      instagram: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=${INSTAGRAM_METRICS_OAUTH_SCOPE}&response_type=code&state=${stateIg}`,
-      authUrl: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=${INSTAGRAM_METRICS_OAUTH_SCOPE}&response_type=code&state=${stateIg}`,
+      instagram: buildInstagramAuthorizationUrl(instagramRedirectUri, stateIg),
+      authUrl: buildInstagramAuthorizationUrl(instagramRedirectUri, stateIg),
       tiktok: `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${frontendUrl}/auth/callback/tiktok&state=${stateTiktok}`,
       youtube: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/youtube&response_type=code&scope=https://www.googleapis.com/auth/youtube.readonly&state=${stateYoutube}&access_type=offline&prompt=consent`,
       configured: {
@@ -53,13 +51,13 @@ export class SocialAuthController {
     const stateGoogle = await createOAuthState(req, res, 'google', 'login');
     const stateYoutube = await createOAuthState(req, res, 'youtube', 'login');
 
-    const isInstagramConfigured = Boolean(process.env.INSTAGRAM_CLIENT_ID && process.env.INSTAGRAM_CLIENT_ID !== 'seu_instagram_app_client_id');
+    const isInstagramConfigured = Boolean(process.env.INSTAGRAM_CLIENT_ID && process.env.INSTAGRAM_CLIENT_SECRET && process.env.FRONTEND_URL && process.env.INSTAGRAM_CLIENT_ID !== 'seu_instagram_app_client_id');
     const isTikTokConfigured = Boolean(process.env.TIKTOK_CLIENT_KEY && process.env.TIKTOK_CLIENT_KEY !== 'seu_tiktok_client_key');
     const isGoogleConfigured = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_ID !== 'seu_google_client_id');
 
     const urls = {
-      instagram: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=${INSTAGRAM_METRICS_OAUTH_SCOPE}&response_type=code&state=${stateInstagram}`,
-      authUrl: `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=${INSTAGRAM_METRICS_OAUTH_SCOPE}&response_type=code&state=${stateInstagram}`,
+      instagram: buildInstagramAuthorizationUrl(instagramRedirectUri, stateInstagram),
+      authUrl: buildInstagramAuthorizationUrl(instagramRedirectUri, stateInstagram),
       tiktok: `https://www.tiktok.com/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list&response_type=code&redirect_uri=${frontendUrl}/auth/callback/tiktok&state=${stateTiktok}`,
       google: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/google&response_type=code&scope=openid%20email%20profile&state=${stateGoogle}`,
       youtube: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${frontendUrl}/auth/callback/youtube&response_type=code&scope=https://www.googleapis.com/auth/youtube.readonly&state=${stateYoutube}&access_type=offline&prompt=consent`,
@@ -89,11 +87,28 @@ export class SocialAuthController {
 
     try {
       assertSocialTokenEncryptionConfigured();
+      if ((platform as string) === 'instagram') {
+        const result = await completeInstagramOAuth({ code: String(req.query.code || ''), state: oauthState });
+        if (oauthState.mode === 'login') {
+          if (result.user?.twoFactorEnabled) {
+            res.json({ success: true, status: 'PENDING_2FA', tempToken: createTwoFactorChallenge(result.user.id), message: 'Código de autenticação necessário.' });
+            return;
+          }
+          establishSession(res, result.user);
+          res.json({
+            success: true,
+            user: { id: result.user.id, email: result.user.email, role: result.user.role, onboardingCompleted: result.user.onboardingCompleted },
+            platform, username: result.username,
+            ...(result.sync ? { instagramSyncStatus: result.sync.status } : {}),
+          });
+          return;
+        }
+        res.json({ success: true, platform, username: result.username, from: oauthState.from, ...(result.sync ? { instagramSyncStatus: result.sync.status } : {}) });
+        return;
+      }
       let accessToken = '';
       let username = '';
       let platformId = '';
-      let instagramFollowers = 0;
-      let instagramProfilePicture: string | null = null;
       let tiktokFollowers = 0;
       let tiktokAvatar: string | null = null;
 
@@ -102,27 +117,7 @@ export class SocialAuthController {
       let refreshToken: string | null = null;
       let expiresAt: Date | null = null;
 
-      if (platform === 'instagram') {
-        // Instagram API with Instagram Login — fluxo unificado Creator/Business
-        // Não usa mais Facebook Dialog OAuth nem /me/accounts
-        const tokenResult = await InstagramService.exchangeCodeForToken(
-          req.query.code as string,
-          `${frontendUrl}/auth/callback/instagram`
-        );
-
-        accessToken = tokenResult.accessToken;
-        platformId = tokenResult.platformId;
-        const expiresIn = tokenResult.expiresIn || 5184000;
-        expiresAt = new Date(Date.now() + expiresIn * 1000);
-
-        // A connected account must be backed by a confirmed provider profile.
-        // Persisting an active connection after this lookup fails would leave the
-        // creator with a misleading "connected" status and no verified data.
-        const profileData = await InstagramService.fetchProfileData(accessToken);
-        username = profileData.username || `ig_user_${platformId}`;
-        instagramFollowers = profileData.followers_count || 0;
-        instagramProfilePicture = profileData.profile_picture_url || null;
-      } else if (platform === 'tiktok') {
+      if (platform === 'tiktok') {
         const tokenResponse = await axios.post('https://open.tiktokapis.com/v2/oauth/token/', new URLSearchParams({
           client_key: process.env.TIKTOK_CLIENT_KEY!,
           client_secret: process.env.TIKTOK_CLIENT_SECRET!,
@@ -186,10 +181,7 @@ export class SocialAuthController {
       let followersCount = 0;
       let profilePicture: string | null = null;
 
-      if (platformName === 'INSTAGRAM') {
-        followersCount = instagramFollowers;
-        profilePicture = instagramProfilePicture;
-      } else if (platformName === 'TIKTOK') {
+      if (platformName === 'TIKTOK') {
         followersCount = tiktokFollowers;
         profilePicture = tiktokAvatar;
       }
@@ -276,7 +268,7 @@ export class SocialAuthController {
         where: { id: profile.id },
         data: {
           ...((!profile.handle || profile.handle.startsWith('user_')) ? { handle: username } : {}),
-          verifiedMetrics: platformName === 'INSTAGRAM' ? false : true,
+          verifiedMetrics: true,
         },
       });
 
@@ -293,7 +285,7 @@ export class SocialAuthController {
           })
         : null;
 
-      const savedPlatform = await prisma.socialPlatform.upsert({
+      await prisma.socialPlatform.upsert({
         where: {
           influencerId_platformName: {
             influencerId: profile.id,
@@ -324,15 +316,6 @@ export class SocialAuthController {
         }
       });
 
-      const instagramSync = platformName === 'INSTAGRAM'
-        ? await enqueueInstagramSync({
-            socialPlatformId: savedPlatform.id,
-            influencerId: profile.id,
-            reason: 'post_oauth',
-            requestedByUserId: userId || undefined,
-          })
-        : null;
-
       if (platformName === 'TIKTOK') {
         // Executar sincronização real do TikTok em background
         TikTokService.syncTikTokData(profile.id, accessToken, platformId).catch(err => {
@@ -353,7 +336,6 @@ export class SocialAuthController {
           },
           platform,
           username,
-          ...(instagramSync ? { instagramSyncStatus: instagramSync.status } : {}),
         });
         return;
       }
@@ -363,7 +345,6 @@ export class SocialAuthController {
         platform,
         username,
         from: oauthState.from,
-        ...(instagramSync ? { instagramSyncStatus: instagramSync.status } : {}),
       });
     } catch (error: any) {
       const sanitizedError = sanitizeProviderError(error, 'Falha no callback do provedor social.');

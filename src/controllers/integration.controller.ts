@@ -8,10 +8,10 @@ import { AIService } from '../services/ai.service';
 import { TrendScannerService } from '../services/trend-scanner.service';
 import axios from 'axios';
 import { createOAuthState, consumeOAuthState, getOAuthFrontendUrl, oauthBoundaryFailure, assertOAuthIdentity } from '../lib/oauth-state';
-import { INSTAGRAM_METRICS_OAUTH_SCOPE } from '../lib/instagram-oauth';
 import { sanitizeProviderError } from '../utils/provider-error';
 import { assertSocialTokenEncryptionConfigured, decryptSocialToken, encryptSocialToken } from '../utils/social-token-crypto';
 import { enqueueInstagramSync } from '../services/instagram-sync-queue.service';
+import { buildInstagramAuthorizationUrl, completeInstagramOAuth } from '../services/instagram-oauth-core.service';
 
 
 /**
@@ -36,11 +36,11 @@ export const getAuthUrls = async (req: Request, res: Response): Promise<void> =>
     // Escopos mínimos V1: leitura de perfil/mídia e insights.
     const frontendUrl = getOAuthFrontendUrl(req);
     const instagramRedirectUri = `${frontendUrl}/auth/callback/instagram`;
-    const instagramUrl = `https://www.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=${INSTAGRAM_METRICS_OAUTH_SCOPE}&response_type=code&state=${stateInstagram}`;
+    const instagramUrl = buildInstagramAuthorizationUrl(instagramRedirectUri, stateInstagram);
 
     const tiktokUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${process.env.TIKTOK_CLIENT_KEY}&scope=user.info.basic,video.list,video.stats&response_type=code&redirect_uri=${frontendUrl}/auth/callback/tiktok&state=${stateTiktok}`;
 
-    const isInstagramConfigured = Boolean(process.env.INSTAGRAM_CLIENT_ID && process.env.INSTAGRAM_CLIENT_ID !== 'seu_instagram_app_client_id');
+    const isInstagramConfigured = Boolean(process.env.INSTAGRAM_CLIENT_ID && process.env.INSTAGRAM_CLIENT_SECRET && process.env.FRONTEND_URL && process.env.INSTAGRAM_CLIENT_ID !== 'seu_instagram_app_client_id');
     const isTikTokConfigured = Boolean(process.env.TIKTOK_CLIENT_KEY && process.env.TIKTOK_CLIENT_KEY !== 'seu_tiktok_client_key');
 
     res.json({
@@ -64,96 +64,18 @@ export const handleInstagramCallback = async (req: Request, res: Response): Prom
   let isFromOnboarding = false;
   try {
     const decodedState = await consumeOAuthState(req, res, 'instagram', 'link');
-    assertSocialTokenEncryptionConfigured();
     verifiedFrontendUrl = decodedState.frontendUrl;
-    const userId = decodedState.userId!;
     isFromOnboarding = decodedState.from === 'onboarding';
 
-    let accessToken = '';
-    let instagramBusinessId = null;
-    let instagramUsername = null;
-    let instagramFollowers = 0;
-    let instagramProfilePicture = null;
-    let expiresAt: Date | null = null;
-    let instagramSyncStatus: 'sync_pending' | 'syncing' | 'failed_retryable' | null = null;
+    // Compatibility route delegates to the canonical Instagram callback pipeline.
+    const result = await completeInstagramOAuth({ code: String(req.query.code || ''), state: decodedState });
+    const sharedSyncQuery = result.sync ? `&sync=${result.sync.status}` : '';
+    const sharedRedirectUrl = isFromOnboarding
+      ? `${decodedState.frontendUrl}/onboarding?status=success&platform=instagram${sharedSyncQuery}`
+      : `${decodedState.frontendUrl}/dashboard/settings?status=success&platform=instagram${sharedSyncQuery}`;
+    res.redirect(sharedRedirectUrl);
+    return;
 
-    // Instagram API with Instagram Login — fluxo unificado (Creator/Business)
-    // Não usa mais isBusiness — todas as contas profissionais usam o mesmo fluxo
-    const tokenResponse = await InstagramService.exchangeCodeForToken(
-      req.query.code as string,
-      `${decodedState.frontendUrl}/auth/callback/instagram`
-    );
-
-    accessToken = tokenResponse.accessToken;
-    const expiresIn = tokenResponse.expiresIn || 5184000;
-    expiresAt = new Date(Date.now() + expiresIn * 1000);
-    instagramBusinessId = tokenResponse.platformId; // ID do usuário Instagram (Creator)
-    assertOAuthIdentity(accessToken, instagramBusinessId);
-
-    // Do not persist an active connection without a confirmed provider profile.
-    // The outer callback handler returns the existing safe error redirect.
-    const profileData = await InstagramService.fetchProfileData(accessToken);
-    instagramUsername = profileData.username;
-    instagramFollowers = profileData.followers_count || 0;
-    instagramProfilePicture = profileData.profile_picture_url || null;
-
-    const influencer = await prisma.influencerProfile.findUnique({ where: { userId } });
-
-    if (influencer) {
-      const encryptedAccessToken = encryptSocialToken(accessToken, {
-        influencerId: influencer.id,
-        platformName: 'INSTAGRAM',
-        field: 'accessToken',
-      });
-      const savedPlatform = await prisma.socialPlatform.upsert({
-        where: {
-          influencerId_platformName: {
-            influencerId: influencer.id,
-            platformName: 'INSTAGRAM'
-          }
-        },
-        create: {
-          influencerId: influencer.id,
-          platformName: 'INSTAGRAM',
-          platformId: instagramBusinessId,
-          username: instagramUsername,
-          profilePicture: instagramProfilePicture,
-          followersCount: instagramFollowers,
-          accessToken: encryptedAccessToken,
-          expiresAt: expiresAt,
-          isActive: true
-        },
-        update: {
-          platformId: instagramBusinessId,
-          username: instagramUsername,
-          profilePicture: instagramProfilePicture,
-          followersCount: instagramFollowers,
-          accessToken: encryptedAccessToken,
-          expiresAt: expiresAt,
-          isActive: true
-        }
-      });
-      
-      await prisma.influencerProfile.update({
-        where: { id: influencer.id },
-        // A conexão não prova métricas por si só; o sync marca este legado após criar snapshot.
-        data: { verifiedMetrics: false }
-      });
-
-      const enqueueResult = await enqueueInstagramSync({
-        socialPlatformId: savedPlatform.id,
-        influencerId: influencer.id,
-        reason: 'post_oauth',
-        requestedByUserId: userId,
-      });
-      instagramSyncStatus = enqueueResult.status;
-    }
-    
-    const syncQuery = instagramSyncStatus ? `&sync=${instagramSyncStatus}` : '';
-    const redirectUrl = isFromOnboarding
-      ? `${decodedState.frontendUrl}/onboarding?status=success&platform=instagram${syncQuery}`
-      : `${decodedState.frontendUrl}/dashboard/settings?status=success&platform=instagram${syncQuery}`;
-    res.redirect(redirectUrl);
   } catch (error: any) {
     console.error('[INSTAGRAM] Erro no callback:', sanitizeProviderError(error));
     

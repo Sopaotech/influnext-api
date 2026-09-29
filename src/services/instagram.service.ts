@@ -3,7 +3,7 @@ import { prisma } from '../lib/prisma';
 import { AuditorService } from './auditor.service';
 import { sanitizeProviderError } from '../utils/provider-error';
 import { classifyInstagramSyncFailure, InstagramSyncOperationalError } from '../utils/instagram-sync-error';
-import { INSTAGRAM_METRICS_OAUTH_SCOPE } from '../lib/instagram-oauth';
+import { buildInstagramAuthorizationUrl } from '../lib/instagram-oauth';
 
 /**
  * InstagramService — Integração com Instagram API with Instagram Login
@@ -34,20 +34,8 @@ export class InstagramService {
    * Gera a URL de autorização para redirecionar o criador ao Instagram.
    * O usuário autoriza, o Instagram retorna um "code" para a redirectUri.
    */
-  static buildAuthorizationUrl(redirectUri: string): string {
-    const clientId = process.env.INSTAGRAM_CLIENT_ID;
-    if (!clientId) {
-      throw new Error('INSTAGRAM_CLIENT_ID não configurado no .env');
-    }
-
-    const params = new URLSearchParams({
-      client_id: clientId,
-      redirect_uri: redirectUri,
-      scope: INSTAGRAM_METRICS_OAUTH_SCOPE,
-      response_type: 'code',
-    });
-
-    return `https://www.instagram.com/oauth/authorize?${params.toString()}`;
+  static buildAuthorizationUrl(redirectUri: string, state: string): string {
+    return buildInstagramAuthorizationUrl(redirectUri, state);
   }
 
   /**

@@ -30,7 +30,6 @@ import dynamic from 'next/dynamic';
 interface InstagramOnboardingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (mode: 'oauth' | 'simulate', username?: string, followersRange?: string) => void;
 }
 
 interface RateCardItem {
@@ -114,7 +113,7 @@ export default function SettingsPage() {
   
   const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null);
 
-  const handleSimulateSync = async (platform: string, username: string, followersRange?: string) => {
+  const handleSimulateSync = async (platform: 'TIKTOK', username: string, followersRange?: string) => {
     if (!username.trim()) {
       toast.error('Por favor, informe seu nome de usuário.');
       return;
@@ -685,12 +684,6 @@ export default function SettingsPage() {
       <InstagramOnboardingModal 
         isOpen={isIgModalOpen}
         onClose={() => setIsIgModalOpen(false)}
-        onConfirm={async (mode: 'oauth' | 'simulate', username?: string, followersRange?: string) => {
-          if (mode === 'simulate' && username) {
-            await handleSimulateSync('INSTAGRAM', username, followersRange);
-          }
-          setIsIgModalOpen(false);
-        }}
       />
 
       <TikTokOnboardingModal 

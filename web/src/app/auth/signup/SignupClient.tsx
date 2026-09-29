@@ -9,135 +9,57 @@ import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 import { Check } from 'lucide-react';
 
-// ─── Constants ─────────────────────────────────────────────────────────────────
-
-const INFLUENCER_NICHES = [
-  'Moda & Estilo', 'Fitness & Saúde', 'Gastronomia', 'Tech & Gadgets',
-  'Gamer', 'Música', 'Arte & Design', 'Lifestyle', 'Viagem', 'Serviços (Fotógrafos, Editores, etc.)',
-  'Finanças', 'Educação', 'Humor & Entretenimento', 'Esportes',
-  'Beleza & Skincare', 'Negócios & Empreendedorismo', 'Família & Maternidade',
-];
-
-const CAREER_GOALS = [
-  { value: 'close_contracts', label: 'Fechar contratos com marcas' },
-  { value: 'grow_audience', label: 'Crescer minha audiência' },
-  { value: 'monetize', label: 'Monetizar meu conteúdo' },
-  { value: 'build_brand', label: 'Construir minha marca pessoal' },
-];
-
 const COMPANY_SEGMENTS = [
   'Moda & Vestuário', 'Tecnologia', 'Alimentação & Bebidas', 'Saúde & Bem-estar',
   'Beleza & Cosméticos', 'Viagem & Turismo', 'Educação', 'Finanças',
   'Games & Entretenimento', 'Casa & Decoração', 'Esportes', 'Automotivo', 'Outro',
 ];
-
 const EMPLOYEE_RANGES = [
-  { value: '1-10', label: '1 – 10 funcionários (Micro)' },
-  { value: '11-50', label: '11 – 50 funcionários (Pequena)' },
-  { value: '51-200', label: '51 – 200 funcionários (Média)' },
-  { value: '200+', label: '200+ funcionários (Grande)' },
+  ['1-10', '1 – 10 funcionários (Micro)'], ['11-50', '11 – 50 funcionários (Pequena)'],
+  ['51-200', '51 – 200 funcionários (Média)'], ['200+', '200+ funcionários (Grande)'],
 ];
-
 const BUDGET_RANGES = [
-  { value: 'até_2k', label: 'Até R$ 2.000 / mês' },
-  { value: '2k_5k', label: 'R$ 2.000 – R$ 5.000 / mês' },
-  { value: '5k_15k', label: 'R$ 5.000 – R$ 15.000 / mês' },
-  { value: '15k+', label: 'Acima de R$ 15.000 / mês' },
+  ['até_2k', 'Até R$ 2.000 / mês'], ['2k_5k', 'R$ 2.000 – R$ 5.000 / mês'],
+  ['5k_15k', 'R$ 5.000 – R$ 15.000 / mês'], ['15k+', 'Acima de R$ 15.000 / mês'],
 ];
-
 const SALES_GOALS = [
-  { value: 'leads', label: 'Atrair leads qualificados' },
-  { value: 'sales', label: 'Aumentar vendas diretas de produtos/serviços' },
-  { value: 'awareness', label: 'Branding / Reconhecimento e visibilidade' },
-  { value: 'local_clients', label: 'Atrair mais clientes locais/físicos' },
+  ['leads', 'Atrair leads qualificados'], ['sales', 'Aumentar vendas diretas de produtos/serviços'],
+  ['awareness', 'Branding / Reconhecimento e visibilidade'], ['local_clients', 'Atrair mais clientes locais/físicos'],
 ];
-
 const TICKET_RANGES = [
-  { value: 'baixo', label: 'Abaixo de R$ 50' },
-  { value: 'medio', label: 'R$ 50 – R$ 150' },
-  { value: 'alto', label: 'R$ 150 – R$ 500' },
-  { value: 'premium', label: 'Acima de R$ 500' },
+  ['baixo', 'Abaixo de R$ 50'], ['medio', 'R$ 50 – R$ 150'],
+  ['alto', 'R$ 150 – R$ 500'], ['premium', 'Acima de R$ 500'],
 ];
 
-const INSTAGRAM_STANDINGS = [
-  { value: 'fraco', label: 'Fraco (Sem presença/engajamento)' },
-  { value: 'regular', label: 'Regular (Postagens frequentes, pouca conversão)' },
-  { value: 'forte', label: 'Forte (Boa audiência, buscando escala)' },
-  { value: 'inexistente', label: 'Inexistente (Estamos começando do zero)' },
-];
-
-// ─── Stepper ───────────────────────────────────────────────────────────────────
-
-function Stepper({ currentStep, totalSteps }: { currentStep: number; totalSteps: number; isInfluencer: boolean }) {
-  const activeColor = 'border-orange-500 text-[#d96b27] bg-orange-50/50';
-  const doneBg = 'bg-[#d96b27] border-[#d96b27]';
-  const doneLine = 'bg-[#d96b27]';
-
+function Stepper({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) {
   return (
-    <div className="flex items-center gap-2 justify-center mb-8">
-      {Array.from({ length: totalSteps }).map((_, i) => {
-        const stepNum = i + 1;
-        const isDone = stepNum < currentStep;
-        const isActive = stepNum === currentStep;
-        return (
-          <React.Fragment key={i}>
-            <div className={`
-              w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black border transition-all duration-300
-              ${isDone ? `${doneBg} text-white shadow-lg`
-                : isActive ? `${activeColor} shadow-sm`
-                : 'bg-zinc-50 border-zinc-205 text-zinc-400'}
-            `}>
-              {isDone ? <Check className="w-3.5 h-3.5" /> : stepNum}
-            </div>
-            {i < totalSteps - 1 && (
-              <div className={`flex-1 h-px max-w-[40px] transition-all duration-500 ${isDone ? doneLine : 'bg-zinc-150'}`} />
-            )}
-          </React.Fragment>
-        );
+    <div className="mb-8 flex items-center justify-center gap-2" aria-label={`Etapa ${currentStep} de ${totalSteps}`}>
+      {Array.from({ length: totalSteps }, (_, index) => {
+        const number = index + 1;
+        const complete = number < currentStep;
+        return <React.Fragment key={number}>
+          <div className={`flex h-8 w-8 items-center justify-center rounded-full border text-[10px] font-black ${complete ? 'border-orange-600 bg-orange-600 text-white' : number === currentStep ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-zinc-200 text-zinc-400'}`}>
+            {complete ? <Check className="h-3.5 w-3.5" /> : number}
+          </div>
+          {number < totalSteps && <div className={`h-px w-10 ${complete ? 'bg-orange-600' : 'bg-zinc-200'}`} />}
+        </React.Fragment>;
       })}
     </div>
   );
 }
 
-// ─── Main Component ────────────────────────────────────────────────────────────
-
 export default function SignupClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const typeParam = searchParams.get('type') || 'influencer';
-
-  const [userType, setUserType] = useState(typeParam);
-
+  const [userType, setUserType] = useState(searchParams.get('type') || 'influencer');
+  const isInfluencer = userType === 'influencer';
+  const totalSteps = isInfluencer ? 1 : 2;
   const [step, setStep] = useState(1);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const isInfluencer = userType === 'influencer';
-
-  const handleSocialRedirect = async (platform: SocialAuthProvider) => {
-    setError('');
-    setIsLoading(true);
-    try {
-      window.location.href = await getSocialAuthUrl(platform);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Login social indisponível. Use e-mail e senha.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Step 1: Credentials
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-
-  // Step 2: Influencer
-  const [niche, setNiche] = useState('');
-  const [yearsOfCareer, setYearsOfCareer] = useState(0);
-  const [goal, setGoal] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-
-  // Step 2: Company
   const [companyName, setCompanyName] = useState('');
   const [companyCity, setCompanyCity] = useState('');
   const [companyState, setCompanyState] = useState('');
@@ -148,534 +70,121 @@ export default function SignupClient() {
   const [averageTicket, setAverageTicket] = useState('');
   const [instagramPositioning, setInstagramPositioning] = useState('');
 
-  const step1Valid = email.trim() !== '' && password.length >= 8 && password === confirmPassword;
-  const step2InfluencerValid = niche !== '' && (city.trim() !== '' || true); // city optional
-  const step2CompanyValid = companyName.trim().length >= 2;
-
-  // ─── Step 1: Register user ─────────────────────────────────────────────────
-
-  const handleStep1Submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password !== confirmPassword) {
-      setError('As senhas não coincidem.');
-      return;
-    }
+  const handleSocialRedirect = async (platform: SocialAuthProvider) => {
     setError('');
+    setIsLoading(true);
+    try {
+      window.location.assign(await getSocialAuthUrl(platform));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Login social indisponível. Use e-mail e senha.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignup = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError('');
+    if (password !== confirmPassword) { setError('As senhas não coincidem.'); return; }
     setIsLoading(true);
     try {
       const role = isInfluencer ? 'INFLUENCER' : 'COMPANY';
       await api.post('/auth/signup', { email, password, role });
-
-      // Immediately login; the backend establishes the HttpOnly session cookie.
       const loginRes = await api.post<{ user: { role: 'INFLUENCER' | 'COMPANY' | 'ADMIN'; onboardingCompleted: boolean } }>('/auth/login', { email, password });
       storeSessionMetadata(loginRes.data.user);
-
-      if (loginRes.data.user.role === 'INFLUENCER') {
-        router.push('/onboarding');
-      } else {
-        setStep(2);
-      }
+      if (loginRes.data.user.role === 'INFLUENCER') router.push('/onboarding');
+      else setStep(2);
     } catch (err: unknown) {
-      const errObj = err as { response?: { data?: { error?: string; errors?: Record<string, string[]> } }; message?: string };
-      let msg = errObj.response?.data?.error;
-      if (!msg && errObj.response?.data?.errors) {
-        msg = Object.values(errObj.response.data.errors).flat().join(' | ');
-      }
-      setError(msg || errObj.message || 'Erro de conexão');
-    } finally {
-      setIsLoading(false);
-    }
+      const response = err as { response?: { data?: { error?: string; errors?: Record<string, string[]> } }; message?: string };
+      const validation = response.response?.data?.errors;
+      setError(response.response?.data?.error || (validation ? Object.values(validation).flat().join(' | ') : response.message) || 'Não foi possível criar sua conta.');
+    } finally { setIsLoading(false); }
   };
 
-  // ─── Step 2: Complete profile ──────────────────────────────────────────────
-
-  const handleStep2Submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCompanyProfile = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError('');
     setIsLoading(true);
     try {
-      if (isInfluencer) {
-        await api.post('/auth/complete-profile', {
-          niche,
-          yearsOfCareer,
-          goal,
-          city,
-          state,
-        });
-        setStep(3); // Go to Social Connection
-      } else {
-        await api.post('/auth/complete-profile', {
-          companyName,
-          city: companyCity,
-          state: companyState,
-          segment,
-          employeeCount,
-          campaignBudget,
-          salesGoal,
-          averageTicket,
-          instagramPositioning,
-        });
-        router.push('/dashboard/company');
-      }
+      await api.post('/auth/complete-profile', {
+        companyName, city: companyCity, state: companyState, segment, employeeCount,
+        campaignBudget, salesGoal, averageTicket, instagramPositioning,
+      });
+      router.push('/dashboard/company');
     } catch (err: unknown) {
-      const errObj = err as { response?: { data?: { error?: string; errors?: Record<string, string[]> } }; message?: string };
-      let msg = errObj.response?.data?.error;
-      if (!msg && errObj.response?.data?.errors) {
-        msg = Object.values(errObj.response.data.errors).flat().join(' | ');
-      }
-      setError(msg || errObj.message || 'Erro de conexão');
-    } finally {
-      setIsLoading(false);
-    }
+      const response = err as { response?: { data?: { error?: string; errors?: Record<string, string[]> } }; message?: string };
+      const validation = response.response?.data?.errors;
+      setError(response.response?.data?.error || (validation ? Object.values(validation).flat().join(' | ') : response.message) || 'Não foi possível configurar o perfil empresarial.');
+    } finally { setIsLoading(false); }
   };
 
-  const inputClass = "w-full bg-zinc-50 border border-zinc-200 rounded-2xl px-5 py-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-orange-500/50 focus:bg-white focus:ring-1 focus:ring-orange-500/20 transition-all shadow-sm";
-  const selectClass = "w-full bg-zinc-50 border border-zinc-200 rounded-2xl px-5 py-4 text-sm text-zinc-900 focus:outline-none focus:border-orange-500/50 focus:bg-white transition-all appearance-none font-bold";
-  const labelClass = "block text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-2 ml-1";
+  const inputClass = 'w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-900 focus:border-orange-500 focus:outline-none';
+  const labelClass = 'mb-1.5 block text-xs font-bold text-zinc-600';
+  const selectClass = `${inputClass} font-medium`;
+  const buttonClass = 'w-full rounded-xl bg-[#d96b27] px-5 py-4 text-xs font-black uppercase tracking-widest text-white transition hover:bg-[#c65e21] disabled:opacity-50';
 
-  const glowBorder = "from-orange-500/25 via-amber-500/10 to-transparent";
-
-  const buttonAccent = "bg-[#d96b27] hover:bg-[#c65e21] text-white shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20";
-
-  return (
-    <div className="w-full space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 relative z-10">
-
-      <div className="relative">
-        {/* Glow border */}
-        <div className="absolute -inset-px rounded-[2.5rem] bg-gradient-to-b from-orange-500/25 via-amber-500/10 to-transparent pointer-events-none" />
-        
-        <div 
-          className="relative bg-white border border-zinc-200/80 shadow-xl shadow-zinc-150/50 rounded-[2.5rem] p-8 md:p-10 space-y-8 overflow-hidden"
-          style={{ backdropFilter: 'blur(40px)' }}
-        >
-          {/* Inner dynamic glows */}
-          <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-orange-500/5 blur-[60px] pointer-events-none" />
-          <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-amber-600/3 blur-[60px] pointer-events-none" />
-
-          {/* Inner top gradient accent */}
-          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
-
-          {/* Logo + tagline (moved inside card for mobile centering and notch spacing) */}
-          <div className="text-center space-y-3 pt-4 pb-6 border-b border-zinc-100">
-            <Logo size="lg" href="/" className="justify-center" variant="dark" />
-            <div className="flex items-center justify-center gap-2">
-              <div className="h-px w-10 bg-zinc-200" />
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500">
-                Onboarding Experience
-              </p>
-              <div className="h-px w-10 bg-zinc-200" />
-            </div>
-          </div>
-
-          {/* Header */}
-          <div className="space-y-4">
-            <Stepper currentStep={step} totalSteps={3} isInfluencer={isInfluencer} />
-
-            {step === 1 && (
-              <>
-                <div className="flex gap-1 p-1 bg-zinc-50 border border-zinc-200 rounded-2xl mb-4 w-max mx-auto relative z-10">
-                  <button
-                    type="button"
-                    onClick={() => setUserType('influencer')}
-                    className={`px-6 py-2.5 text-[10px] font-black rounded-xl tracking-wider uppercase transition-all ${isInfluencer ? buttonAccent : 'text-zinc-500 hover:text-zinc-700'}`}
-                  >
-                    Influenciador
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setUserType('company')}
-                    className={`px-6 py-2.5 text-[10px] font-black rounded-xl tracking-wider uppercase transition-all ${!isInfluencer ? buttonAccent : 'text-zinc-500 hover:text-zinc-700'}`}
-                  >
-                    Empresa
-                  </button>
-                </div>
-                <div className="text-center space-y-1 relative z-10">
-                  <h1 className="text-2xl font-black text-zinc-900 tracking-tighter">Criar sua conta</h1>
-                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em]">Passo 1 de 3 — Credenciais</p>
-                </div>
-              </>
-            )}
-
-            {step === 2 && (
-              <div className="text-center space-y-1 relative z-10">
-                <h1 className="text-2xl font-black text-zinc-900 tracking-tighter">
-                  {isInfluencer ? 'Estratégia de Carreira' : 'Perfil Estratégico'}
-                </h1>
-                <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em]">
-                  Passo 2 de 3 — {isInfluencer ? 'Construindo seu alicerce' : 'Personalizando sua experiência'}
-                </p>
-              </div>
-            )}
-
-            {step === 3 && (
-              <div className="text-center space-y-1 relative z-10">
-                <h1 className="text-2xl font-black text-zinc-900 tracking-tighter">Potencializando Alcance</h1>
-                <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em]">Passo 3 de 3 — Conecte-se</p>
-              </div>
-            )}
-          </div>
-
-          {error && (
-            <div className="bg-rose-50 border border-rose-200 text-rose-600 p-4 rounded-2xl text-[9px] text-center font-black uppercase tracking-widest animate-in shake relative z-10">
-              {error}
-            </div>
-          )}
-
-          {/* Form Step 1 */}
-          {step === 1 && (
-            <form onSubmit={handleStep1Submit} className="space-y-6 relative z-10">
-              {isInfluencer && (
-                <div className="space-y-4">
-                  <div className="relative flex py-2 items-center">
-                    <div className="flex-grow border-t border-zinc-100"></div>
-                    <span className="flex-shrink mx-4 text-[9px] font-black uppercase text-zinc-400 tracking-[0.2em]">Cadastrar com autorização do provedor</span>
-                    <div className="flex-grow border-t border-zinc-100"></div>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => handleSocialRedirect('google')}
-                      disabled={isLoading}
-                      className="p-4 bg-zinc-50/50 border border-zinc-200/80 rounded-2xl flex items-center justify-center gap-2 font-black text-[9px] uppercase tracking-wider hover:bg-zinc-100/50 hover:border-orange-500/30 transition-all text-zinc-500 hover:text-zinc-800 shadow-sm group"
-                    >
-                      <svg className="w-4 h-4 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.62z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                      </svg>
-                      Google
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleSocialRedirect('instagram')}
-                      disabled={isLoading}
-                      className="p-4 bg-zinc-50/50 border border-zinc-200/80 rounded-2xl flex items-center justify-center gap-2 font-black text-[9px] uppercase tracking-wider hover:bg-zinc-100/50 hover:border-orange-500/30 transition-all text-zinc-500 hover:text-zinc-800 shadow-sm group"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-pink-500 group-hover:scale-110 transition-transform">
-                        <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
-                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                        <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
-                      </svg>
-                      Instagram
-                    </button>
-                    
-                    <button
-                      type="button"
-                      onClick={() => handleSocialRedirect('tiktok')}
-                      disabled={isLoading}
-                      className="p-4 bg-zinc-50/50 border border-zinc-200/80 rounded-2xl flex items-center justify-center gap-2 font-black text-[9px] uppercase tracking-wider hover:bg-zinc-100/50 hover:border-orange-500/30 transition-all text-zinc-500 hover:text-zinc-800 shadow-sm group"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-800 group-hover:scale-110 transition-transform">
-                        <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"></path>
-                      </svg>
-                      TikTok
-                    </button>
-                  </div>
-
-                  <div className="relative flex py-2 items-center">
-                    <div className="flex-grow border-t border-zinc-100"></div>
-                    <span className="flex-shrink mx-4 text-[9px] font-black uppercase text-zinc-400 tracking-[0.2em]">ou via e-mail</span>
-                    <div className="flex-grow border-t border-zinc-100"></div>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <label className={labelClass}>E-mail Profissional</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  placeholder="exemplo@email.com"
-                  className={inputClass}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className={labelClass}>Escolha uma Senha</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  placeholder="Mínimo 8 caracteres"
-                  className={inputClass}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className={labelClass}>Confirme a Senha</label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  placeholder="Repita a senha"
-                  className={inputClass}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={!step1Valid || isLoading}
-                className="w-full h-16 bg-[#d96b27] hover:bg-[#c65e21] disabled:opacity-50 text-white text-[10px] font-black uppercase tracking-[0.4em] rounded-2xl shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20 transition-all active:scale-95"
-              >
-                {isLoading ? 'CONFIGURANDO...' : 'PRÓXIMO PASSO'}
-              </button>
-            </form>
-          )}
-
-          {/* Step 2 Influencer */}
-          {step === 2 && isInfluencer && (
-            <form onSubmit={handleStep2Submit} className="space-y-6 relative z-10">
-              <div className="p-6 bg-orange-50 border border-orange-200/30 rounded-3xl space-y-4">
-                 <p className="text-[10px] font-black uppercase tracking-widest text-[#d96b27] flex items-center gap-2">
-                   <span className="w-1.5 h-1.5 rounded-full bg-[#d96b27] animate-pulse" />
-                   Estratégia AI
-                 </p>
-                 <p className="text-xs font-bold text-zinc-700 leading-relaxed italic">"Incrível! O mercado busca autenticidade. Qual seu nicho dominante e qual seu grande objetivo hoje?"</p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className={labelClass}>Meu nicho é:</label>
-                  <select 
-                    value={niche} 
-                    onChange={(e) => setNiche(e.target.value)} 
-                    required 
-                    className={selectClass}
-                  >
-                    <option value="">Selecione...</option>
-                    {INFLUENCER_NICHES.map(n => <option key={n} value={n}>{n}</option>)}
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                   <label className={labelClass}>Meu objetivo é:</label>
-                   <div className="grid grid-cols-1 gap-2">
-                      {CAREER_GOALS.map(g => (
-                        <button
-                          key={g.value}
-                          type="button"
-                          onClick={() => setGoal(g.value)}
-                          className={`p-5 rounded-2xl border text-left transition-all ${goal === g.value ? 'bg-[#d96b27] text-white border-transparent shadow-lg shadow-orange-500/10' : 'bg-zinc-50 border-zinc-200 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800'}`}
-                        >
-                           <span className="text-[10px] font-black uppercase tracking-widest">{g.label}</span>
-                        </button>
-                      ))}
-                   </div>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={!step2InfluencerValid || isLoading}
-                className="w-full h-16 bg-[#d96b27] hover:bg-[#c65e21] disabled:opacity-50 text-white text-[10px] font-black uppercase tracking-[0.4em] rounded-2xl shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20 transition-all active:scale-95"
-              >
-                {isLoading ? 'GERANDO PERFIL...' : 'FINALIZAR ESTRATÉGIA'}
-              </button>
-            </form>
-          )}
-
-          {/* Step 2 Company */}
-          {step === 2 && !isInfluencer && (
-            <form onSubmit={handleStep2Submit} className="space-y-6 relative z-10">
-              <div className="p-6 bg-orange-50 border border-orange-200/30 rounded-3xl space-y-4">
-                 <p className="text-[10px] font-black uppercase tracking-widest text-[#d96b27] flex items-center gap-2">
-                   <span className="w-1.5 h-1.5 rounded-full bg-[#d96b27] animate-pulse" />
-                   Perfil da Empresa
-                 </p>
-                 <p className="text-xs font-bold text-zinc-700 leading-relaxed italic">"Boas-vindas! Personalize a busca por criadores de conteúdo definindo o perfil da sua empresa."</p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className={labelClass}>Nome da Empresa</label>
-                  <input
-                    type="text"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    required
-                    placeholder="Nome Fantasia"
-                    className={inputClass}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className={labelClass}>Cidade</label>
-                    <input
-                      type="text"
-                      value={companyCity}
-                      onChange={(e) => setCompanyCity(e.target.value)}
-                      placeholder="São Paulo"
-                      className={inputClass}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className={labelClass}>Estado (UF)</label>
-                    <input
-                      type="text"
-                      value={companyState}
-                      onChange={(e) => setCompanyState(e.target.value)}
-                      placeholder="SP"
-                      maxLength={2}
-                      className={inputClass}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className={labelClass}>Segmento de Atuação</label>
-                  <div className="relative">
-                    <select
-                      value={segment}
-                      onChange={(e) => setSegment(e.target.value)}
-                      required
-                      className={selectClass}
-                    >
-                      <option value="">Selecione...</option>
-                      {COMPANY_SEGMENTS.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className={labelClass}>Tamanho da Empresa</label>
-                  <div className="relative">
-                    <select
-                      value={employeeCount}
-                      onChange={(e) => setEmployeeCount(e.target.value)}
-                      required
-                      className={selectClass}
-                    >
-                      <option value="">Selecione...</option>
-                      {EMPLOYEE_RANGES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className={labelClass}>Orçamento de Campanha Planejado</label>
-                  <div className="relative">
-                    <select
-                      value={campaignBudget}
-                      onChange={(e) => setCampaignBudget(e.target.value)}
-                      required
-                      className={selectClass}
-                    >
-                      <option value="">Selecione...</option>
-                      {BUDGET_RANGES.map(b => <option key={b.value} value={b.value}>{b.label}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className={labelClass}>Meta de Vendas/Marketing Principal</label>
-                  <div className="relative">
-                    <select
-                      value={salesGoal}
-                      onChange={(e) => setSalesGoal(e.target.value)}
-                      required
-                      className={selectClass}
-                    >
-                      <option value="">Selecione...</option>
-                      {SALES_GOALS.map(sg => <option key={sg.value} value={sg.value}>{sg.label}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className={labelClass}>Ticket Médio do Produto Principal</label>
-                  <div className="relative">
-                    <select
-                      value={averageTicket}
-                      onChange={(e) => setAverageTicket(e.target.value)}
-                      required
-                      className={selectClass}
-                    >
-                      <option value="">Selecione...</option>
-                      {TICKET_RANGES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className={labelClass}>Posicionamento Instagram Atual</label>
-                  <div className="relative">
-                    <select
-                      value={instagramPositioning}
-                      onChange={(e) => setInstagramPositioning(e.target.value)}
-                      required
-                      className={selectClass}
-                    >
-                      <option value="">Selecione...</option>
-                      {INSTAGRAM_STANDINGS.map(is => <option key={is.value} value={is.value}>{is.label}</option>)}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={!step2CompanyValid || isLoading}
-                className="w-full h-16 bg-[#d96b27] hover:bg-[#c65e21] disabled:opacity-50 text-white text-[10px] font-black uppercase tracking-[0.4em] rounded-2xl shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20 transition-all active:scale-95"
-              >
-                {isLoading ? 'GERANDO PERFIL...' : 'FINALIZAR CADASTRO'}
-              </button>
-            </form>
-          )}
-
-          {/* Step 3 Social Connection */}
-          {step === 3 && (
-            <div className="space-y-6 relative z-10">
-              <div className="p-6 bg-orange-50 border border-orange-200/30 rounded-3xl space-y-4">
-                 <p className="text-[10px] font-black uppercase tracking-widest text-[#d96b27]">Validação de Alcance</p>
-                 <p className="text-xs font-bold text-zinc-700 leading-relaxed italic">Conecte suas redes para validar seu InfluScore. Dados reais aceleram fechamentos.</p>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3">
-                 {['Instagram', 'TikTok', 'YouTube'].map((plat) => (
-                   <button 
-                    key={plat}
-                    className="flex items-center justify-between p-6 bg-zinc-50 border border-zinc-200 rounded-2xl hover:bg-zinc-100 hover:border-orange-500/30 transition-all group"
-                   >
-                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-800">{plat}</span>
-                     <span className="text-[9px] font-black uppercase text-zinc-400 group-hover:text-[#d96b27] transition-colors">Conectar →</span>
-                   </button>
-                 ))}
-              </div>
-
-              <button
-                onClick={() => router.push('/dashboard/influencer')}
-                className="w-full h-16 bg-[#d96b27] hover:bg-[#c65e21] text-white text-[10px] font-black uppercase tracking-[0.4em] rounded-2xl shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20 transition-all active:scale-95"
-              >
-                ACESSAR STUDIO
-              </button>
-            </div>
-          )}
-
-          <div className="pt-4 border-t border-zinc-100 text-center relative z-10 space-y-3">
-            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
-              Já possui conta?{' '}
-              <Link href="/auth/login" className="text-[#d96b27] hover:text-[#c65e21] transition-colors font-black">
-                Fazer Login
-              </Link>
-            </p>
-            <p className="text-[8px] text-zinc-400 leading-relaxed">
-              Ao criar uma conta, você concorda com os nossos{' '}
-              <Link href="/termos" target="_blank" className="text-[#d96b27] font-bold hover:underline">Termos de Uso</Link>
-              {' '}e com a nossa{' '}
-              <Link href="/privacidade" target="_blank" className="text-[#d96b27] font-bold hover:underline">Política de Privacidade</Link>.
-            </p>
-          </div>
+  return <main className="mx-auto w-full max-w-xl px-4 py-8">
+    <section className="space-y-7 rounded-3xl border border-zinc-200 bg-white p-6 shadow-xl md:p-9">
+      <header className="space-y-5 border-b border-zinc-100 pb-6 text-center">
+        <Logo size="lg" href="/" className="justify-center" variant="dark" />
+        <div>
+          <h1 className="text-2xl font-black tracking-tight text-zinc-900">Criar sua conta</h1>
+          <p className="mt-1 text-xs font-bold uppercase tracking-wider text-zinc-500">{isInfluencer ? 'Conta de creator' : `Passo ${step} de ${totalSteps}`}</p>
         </div>
-      </div>
+        <Stepper currentStep={step} totalSteps={totalSteps} />
+        {step === 1 && <div className="mx-auto flex w-max rounded-xl border border-zinc-200 bg-zinc-50 p-1">
+          <button type="button" onClick={() => setUserType('influencer')} aria-pressed={isInfluencer} className={`rounded-lg px-4 py-2 text-xs font-bold ${isInfluencer ? 'bg-orange-600 text-white' : 'text-zinc-600'}`}>Creator</button>
+          <button type="button" onClick={() => setUserType('company')} aria-pressed={!isInfluencer} className={`rounded-lg px-4 py-2 text-xs font-bold ${!isInfluencer ? 'bg-orange-600 text-white' : 'text-zinc-600'}`}>Empresa</button>
+        </div>}
+      </header>
 
-    </div>
-  );
+      {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+
+      {step === 1 && <form onSubmit={handleSignup} className="space-y-5">
+        {isInfluencer && <>
+          <p className="text-center text-[10px] font-bold uppercase tracking-widest text-zinc-400">Continuar com um provedor</p>
+          <div className="grid grid-cols-3 gap-2">
+            {(['instagram', 'google', 'tiktok'] as const).map(platform => <button key={platform} type="button" disabled={isLoading} onClick={() => handleSocialRedirect(platform)} className="rounded-xl border border-zinc-200 px-2 py-3 text-xs font-bold capitalize text-zinc-700 hover:border-orange-400 disabled:opacity-50">
+              {platform === 'instagram' ? 'Continuar com Instagram' : platform === 'google' ? 'Google' : 'TikTok'}
+            </button>)}
+          </div>
+          <p className="text-center text-xs text-zinc-400">ou crie sua conta com e-mail</p>
+        </>}
+        <div><label htmlFor="signup-email" className={labelClass}>E-mail profissional</label><input id="signup-email" type="email" required autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} className={inputClass} /></div>
+        <div><label htmlFor="signup-password" className={labelClass}>Senha (mínimo 8 caracteres)</label><input id="signup-password" type="password" required minLength={8} autoComplete="new-password" value={password} onChange={event => setPassword(event.target.value)} className={inputClass} /></div>
+        <div><label htmlFor="signup-confirm-password" className={labelClass}>Confirme a senha</label><input id="signup-confirm-password" type="password" required autoComplete="new-password" value={confirmPassword} onChange={event => setConfirmPassword(event.target.value)} className={inputClass} /></div>
+        <button type="submit" disabled={isLoading || password.length < 8 || password !== confirmPassword} className={buttonClass}>{isLoading ? 'Criando conta…' : isInfluencer ? 'Criar conta e continuar' : 'Próximo passo'}</button>
+      </form>}
+
+      {step === 2 && !isInfluencer && <form onSubmit={handleCompanyProfile} className="space-y-4">
+        <h2 className="text-center text-lg font-bold text-zinc-800">Perfil da empresa</h2>
+        <div><label htmlFor="company-name" className={labelClass}>Nome da empresa</label><input id="company-name" required minLength={2} value={companyName} onChange={event => setCompanyName(event.target.value)} className={inputClass} /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label htmlFor="company-city" className={labelClass}>Cidade</label><input id="company-city" value={companyCity} onChange={event => setCompanyCity(event.target.value)} className={inputClass} /></div>
+          <div><label htmlFor="company-state" className={labelClass}>Estado (UF)</label><input id="company-state" maxLength={2} value={companyState} onChange={event => setCompanyState(event.target.value)} className={inputClass} /></div>
+        </div>
+        <SelectField id="company-segment" label="Segmento" value={segment} onChange={setSegment} options={COMPANY_SEGMENTS.map(item => [item, item])} className={selectClass} required />
+        <SelectField id="company-size" label="Tamanho da empresa" value={employeeCount} onChange={setEmployeeCount} options={EMPLOYEE_RANGES} className={selectClass} required />
+        <SelectField id="company-budget" label="Orçamento de campanha" value={campaignBudget} onChange={setCampaignBudget} options={BUDGET_RANGES} className={selectClass} required />
+        <SelectField id="company-goal" label="Meta de vendas/marketing" value={salesGoal} onChange={setSalesGoal} options={SALES_GOALS} className={selectClass} required />
+        <SelectField id="company-ticket" label="Ticket médio" value={averageTicket} onChange={setAverageTicket} options={TICKET_RANGES} className={selectClass} required />
+        <SelectField id="company-instagram-positioning" label="Posicionamento Instagram" value={instagramPositioning} onChange={setInstagramPositioning} options={[
+          ['fraco', 'Fraco'], ['regular', 'Regular'], ['forte', 'Forte'], ['inexistente', 'Inexistente'],
+        ]} className={selectClass} required />
+        <button type="submit" disabled={isLoading} className={buttonClass}>{isLoading ? 'Salvando perfil…' : 'Finalizar cadastro empresarial'}</button>
+      </form>}
+
+      <footer className="space-y-3 border-t border-zinc-100 pt-5 text-center">
+        <p className="text-xs text-zinc-500">Já possui conta? <Link href="/auth/login" className="font-bold text-orange-700">Fazer login</Link></p>
+        <p className="text-[10px] text-zinc-400">Ao criar uma conta, você concorda com os <Link href="/termos" target="_blank" className="font-semibold text-orange-700">Termos de Uso</Link> e a <Link href="/privacidade" target="_blank" className="font-semibold text-orange-700">Política de Privacidade</Link>.</p>
+      </footer>
+    </section>
+  </main>;
+}
+
+function SelectField({ id, label, value, onChange, options, className, required }: {
+  id: string; label: string; value: string; onChange: (value: string) => void;
+  options: string[][]; className: string; required?: boolean;
+}) {
+  return <div><label htmlFor={id} className="mb-1.5 block text-xs font-bold text-zinc-600">{label}</label><select id={id} required={required} value={value} onChange={event => onChange(event.target.value)} className={className}><option value="">Selecione…</option>{options.map(([optionValue, optionLabel]) => <option key={optionValue} value={optionValue}>{optionLabel}</option>)}</select></div>;
 }

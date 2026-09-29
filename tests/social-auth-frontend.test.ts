@@ -42,8 +42,14 @@ describe('STEP 1F-B — frontend provider-only authentication', () => {
   it.each(['login/page.tsx', 'signup/SignupClient.tsx'])('wires %s buttons exclusively to provider authorization (source regression)', file => {
     const source = fs.readFileSync(path.resolve(__dirname, '../web/src/app/auth', file), 'utf8');
     expect(source).toContain("from '@/lib/social-auth'");
-    expect(source).toContain('window.location.href = await getSocialAuthUrl(platform)');
-    for (const [provider] of providers) expect(source).toContain(`onClick={() => handleSocialRedirect('${provider}')}`);
+    if (file === 'login/page.tsx') {
+      expect(source).toContain('window.location.href = await getSocialAuthUrl(platform)');
+      for (const [provider] of providers) expect(source).toContain(`onClick={() => handleSocialRedirect('${provider}')}`);
+    } else {
+      expect(source).toContain('window.location.assign(await getSocialAuthUrl(platform))');
+      expect(source).toContain("(['instagram', 'google', 'tiktok'] as const).map(platform");
+      expect(source).toContain('onClick={() => handleSocialRedirect(platform)}');
+    }
     expect(source).not.toContain('socialHandle');
     expect(source).not.toContain('socialModalOpen');
     expect(source).not.toContain('/auth/social-login');
@@ -61,5 +67,18 @@ describe('STEP 1F-B — frontend provider-only authentication', () => {
       }
     }
     inspect(path.resolve(__dirname, '../web/src'));
+  });
+
+  it('keeps Instagram connect production-only and removes the fake signup connection controls', () => {
+    const modal = fs.readFileSync(path.resolve(__dirname, '../web/src/components/InstagramOnboardingModal.tsx'), 'utf8');
+    const signup = fs.readFileSync(path.resolve(__dirname, '../web/src/app/auth/signup/SignupClient.tsx'), 'utf8');
+    expect(modal).not.toMatch(/sandbox|simulad|followersRange|followers range/i);
+    expect(modal).toContain('É necessária uma conta profissional');
+    expect(signup).toContain("router.push('/onboarding')");
+    expect(signup).not.toContain('step === 3');
+    expect(signup).not.toContain('[].map(');
+    expect(signup).not.toContain("['Instagram', 'TikTok', 'YouTube']");
+    expect(signup).not.toContain('INFLUENCER_NICHES');
+    expect(signup).not.toContain('CAREER_GOALS');
   });
 });

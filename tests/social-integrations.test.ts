@@ -68,7 +68,7 @@ describe('Integrações de Redes Sociais Reais (Instagram & TikTok API)', () => 
   describe('InstagramService', () => {
     it('deve gerar a URL de autorização correta para Instagram Login', () => {
       const redirectUri = 'https://influnext.com.br/auth/callback/instagram';
-      const url = InstagramService.buildAuthorizationUrl(redirectUri);
+      const url = InstagramService.buildAuthorizationUrl(redirectUri, 'bound-test-state');
 
       expect(url).toContain('https://www.instagram.com/oauth/authorize');
       expect(url).toContain('client_id=mock_ig_client_id');

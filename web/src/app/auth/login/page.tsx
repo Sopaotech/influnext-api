@@ -214,7 +214,7 @@ export default function LoginPage() {
                     <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
                     <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
                   </svg>
-                  <span className="text-[9px] font-black uppercase tracking-wider text-zinc-600 group-hover:text-zinc-900 transition-colors">Instagram</span>
+                  <span className="text-[9px] font-black uppercase tracking-wider text-zinc-600 group-hover:text-zinc-900 transition-colors">Entrar com Instagram</span>
                 </button>
 
                 <button

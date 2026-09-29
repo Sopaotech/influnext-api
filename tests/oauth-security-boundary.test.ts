@@ -154,6 +154,7 @@ describe('STEP 1F-C — OAuth security boundary', () => {
     expect(session.serialized).toContain('Secure');
     expect(session.serialized).toContain('SameSite=Lax');
     expect(mockPrisma.socialPlatform.upsert).toHaveBeenCalledTimes(1);
+    expect(response.body.accessToken).toBeUndefined();
     const exchange = platform === 'instagram' ? mockExchange : mockPost;
     expect(redisConnection.eval.mock.invocationCallOrder[0]).toBeLessThan(exchange.mock.invocationCallOrder[0]);
   });
@@ -232,6 +233,7 @@ describe('STEP 1F-C — OAuth security boundary', () => {
     expect(response.body.token).toBeUndefined();
     expect(jwt.verify(sessionFrom(response).token, secret)).toMatchObject({ id: user.id, purpose: 'session' });
     expect(mockPrisma.user.create).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.influencerProfile.create).toHaveBeenCalledTimes(1);
     const write = mockPrisma.socialPlatform.upsert.mock.calls[0][0];
     const platformName = platform === 'instagram' ? 'INSTAGRAM' : platform === 'tiktok' ? 'TIKTOK' : 'YOUTUBE';
     expect(write.create).toEqual(expect.objectContaining({ platformId: 'provider-id' }));
@@ -245,6 +247,51 @@ describe('STEP 1F-C — OAuth security boundary', () => {
         influencerId: profile.id, platformName, field: 'refreshToken',
       }).value).toBe('provider-refresh-token');
     }
+  });
+
+  it('Instagram login reuses the owning account without duplicating user or profile', async () => {
+    const response = await callback('instagram', await start('instagram'));
+    expect(response.status).toBe(200);
+    expect(jwt.verify(sessionFrom(response).token, secret)).toMatchObject({ id: user.id, purpose: 'session' });
+    expect(mockPrisma.user.create).not.toHaveBeenCalled();
+    expect(mockPrisma.influencerProfile.create).not.toHaveBeenCalled();
+  });
+
+  it('does not persist Instagram when provider identity lacks a confirmed profile', async () => {
+    mockProfile.mockResolvedValueOnce({ followers_count: 7 });
+    const response = await callback('instagram', await start('instagram'));
+    expect(response.status).toBe(400);
+    expect(mockPrisma.socialPlatform.upsert).not.toHaveBeenCalled();
+    expect(mockPrisma.user.create).not.toHaveBeenCalled();
+    expect(mockPrisma.influencerProfile.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects linking an Instagram identity owned by another creator without reassigning it', async () => {
+    const attempt = await start('instagram', '/v1/integrations/urls');
+    mockPrisma.socialPlatform.findFirst
+      .mockResolvedValueOnce({ influencerId: 'another-profile', influencer: { user: { id: 'another-user' } } })
+      .mockResolvedValueOnce({ influencerId: 'another-profile' });
+
+    const response = await callback('instagram', attempt);
+
+    expect(response.status).toBe(400);
+    expect(mockPrisma.socialPlatform.upsert).not.toHaveBeenCalled();
+    expect(mockPrisma.user.create).not.toHaveBeenCalled();
+    expect(mockPrisma.influencerProfile.create).not.toHaveBeenCalled();
+  });
+
+  it('allows an Instagram identity already linked to the same creator to reconnect idempotently', async () => {
+    const attempt = await start('instagram', '/v1/integrations/urls');
+    mockPrisma.socialPlatform.findFirst
+      .mockResolvedValueOnce({ influencerId: profile.id })
+      .mockResolvedValueOnce({ influencerId: profile.id });
+
+    const response = await callback('instagram', attempt);
+
+    expect(response.status).toBe(200);
+    expect(mockPrisma.socialPlatform.upsert).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.user.create).not.toHaveBeenCalled();
+    expect(mockPrisma.influencerProfile.create).not.toHaveBeenCalled();
   });
 
   it('TikTok link callback preserves the stored refresh token when the provider omits a replacement', async () => {
