@@ -41,7 +41,7 @@ router.post('/rate-card', authenticate, updateRateCard);
 
 // Carteira & Saque PIX
 router.get('/balance', authenticate, getBalance);
-router.post('/withdraw', authenticate, requestWithdraw);
+router.post('/withdraw', developmentOrTestOnly, authenticate, requestWithdraw);
 router.post('/seed-balance', developmentOrTestOnly, authenticate, seedDemoBalance);
 
 export default router;

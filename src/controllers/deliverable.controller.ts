@@ -178,6 +178,28 @@ export const approveWork = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
+    // Considera a entrega atual aprovada para saber se esta ação concluiria o contrato.
+    const isTerminalApproval = deliverable.contract.deliverables.every(
+      d => d.id === id ? true : d.status === 'APPROVED'
+    );
+
+    // Sem confirmação financeira definitiva, a conclusão do contrato é fail-closed em produção.
+    // A leitura/validação acima é necessária para distinguir aprovações intermediárias legítimas.
+    if (process.env.NODE_ENV === 'production' && isTerminalApproval) {
+      res.status(404).json({ error: 'Not found.' });
+      return;
+    }
+
+    const approvalNotification = isTerminalApproval
+      ? {
+          message: `Sua entrega no contrato "${deliverable.contract.title}" foi aprovada! Pagamento Liberado.`,
+          type: 'PAYMENT_RELEASED'
+        }
+      : {
+          message: `Sua entrega no contrato "${deliverable.contract.title}" foi aprovada.`,
+          type: 'SYSTEM'
+        };
+
     // 2. Transação Atômica de Aprovação e Verificação de Conclusão
     await prisma.$transaction(async (tx) => {
       // Aprovar o entregável atual
@@ -186,12 +208,8 @@ export const approveWork = async (req: Request, res: Response): Promise<void> =>
         data: { status: 'APPROVED' }
       });
 
-      // Verificar se todos os entregáveis deste contrato já foram aprovados
-      const allApproved = deliverable.contract.deliverables.every(
-        d => d.id === id ? true : d.status === 'APPROVED'
-      );
-
-      if (allApproved) {
+      // Apenas a aprovação terminal conclui o contrato fora de produção.
+      if (isTerminalApproval) {
         await tx.contract.update({
           where: { id: deliverable.contractId },
           data: { escrowStatus: 'COMPLETED' }
@@ -201,16 +219,15 @@ export const approveWork = async (req: Request, res: Response): Promise<void> =>
       await tx.notification.create({
         data: {
           userId: deliverable.contract.influencer.userId,
-          message: `Sua entrega no contrato "${deliverable.contract.title}" foi aprovada! Pagamento Liberado.`,
-          type: 'PAYMENT_RELEASED'
+          ...approvalNotification
         }
       });
     });
 
     await addNotificationJob(
       deliverable.contract.influencer.userId,
-      `Sua entrega no contrato "${deliverable.contract.title}" foi aprovada! Pagamento Liberado.`,
-      'PAYMENT_RELEASED'
+      approvalNotification.message,
+      approvalNotification.type
     );
 
     res.status(200).json({ message: "Entrega aprovada com sucesso!" });

@@ -73,22 +73,17 @@ export default function DemoPage() {
   ]);
   const [isChatLoading, setIsChatLoading] = useState(false);
 
-  // Inicializar forçando tema escuro para estética Premium e realizar login automático do demo
+  // Inicializar forçando tema escuro para estética Premium.
   useEffect(() => {
     setTheme('dark');
-    autoLoginDemo();
-  }, []);
+  }, [setTheme]);
 
-  const autoLoginDemo = async () => {
+  const refreshDemoState = async () => {
     try {
-      // Login automático; a sessão permanece no cookie HttpOnly.
-      await api.post('/auth/login', {
-        email: 'influencer@demo.influnext.com.br',
-        password: 'Demo@2026!'
-      });
-      fetchDatabaseState();
+      // Atualiza dados apenas quando uma sessão já estiver disponível.
+      await fetchDatabaseState();
     } catch (err) {
-      console.error('Falha no login automático do demo:', err);
+      console.error('Falha ao atualizar estado da demonstração:', err);
       toast.error('Erro ao conectar ao simulador. Rode o script de seed.');
     }
   };
@@ -144,7 +139,7 @@ export default function DemoPage() {
       // Rodamos o seed novamente para limpar contratos e redefinir baseline
       await api.post('/integrations/refresh-tokens-debug'); // Chamamos rota de debug para re-sync (ou reset no controller)
       toast.info('Simulação reiniciada. Limpando dados...');
-      await autoLoginDemo();
+      await refreshDemoState();
       setCurrentStep(1);
       setChatHistory([
         { sender: 'ai', text: 'Olá, sócio! Sou seu Mentor de Crescimento IA. Após concluir o Passo 1 (Conexão do Instagram) e o Passo 2 (Geração de Análise), posso responder a qualquer dúvida sobre sua estratégia de conteúdo!' }
@@ -167,7 +162,7 @@ export default function DemoPage() {
 
       if (res.data.success) {
         toast.success(res.data.message);
-        await fetchDatabaseState();
+        await refreshDemoState();
         setCurrentStep(stepNumber + 1);
 
         // Se gerou análise IA, alimenta o chat

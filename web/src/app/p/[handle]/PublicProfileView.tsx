@@ -19,6 +19,7 @@ export function PublicProfileView({ profile, checkoutStatus }: PublicProfileView
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [selectedRateCard, setSelectedRateCard] = useState<any | null>(null);
+  const instantCheckoutEnabled = process.env.NODE_ENV !== 'production';
 
   const latestMetrics = profile.metricsHistory?.[0] || null;
   const followers = latestMetrics?.followers ?? profile.instagramFollowers ?? null;
@@ -27,6 +28,8 @@ export function PublicProfileView({ profile, checkoutStatus }: PublicProfileView
   const roiPercentage = getPerformancePercentage(profile.avgROI, profile.performanceSampleCount);
 
   React.useEffect(() => {
+    if (!instantCheckoutEnabled) return;
+
     if (checkoutStatus === 'success') {
       toast.success('Pagamento efetuado com sucesso!', {
         description: 'O valor está seguro no Escrow e o influenciador foi notificado.',
@@ -43,9 +46,11 @@ export function PublicProfileView({ profile, checkoutStatus }: PublicProfileView
         duration: 5000,
       });
     }
-  }, [checkoutStatus]);
+  }, [checkoutStatus, instantCheckoutEnabled]);
 
   const handleOpenCheckout = (rateCard?: any) => {
+    if (!instantCheckoutEnabled) return;
+
     setSelectedRateCard(rateCard || null);
     setIsCheckoutModalOpen(true);
   };
@@ -194,7 +199,8 @@ export function PublicProfileView({ profile, checkoutStatus }: PublicProfileView
                           <p className="text-base font-black text-slate-950">R$ {rate.price.toLocaleString('pt-BR')}</p>
                           <button
                             onClick={() => handleOpenCheckout(rate)}
-                            className="px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-md shadow-orange-500/20 active:scale-95"
+                            disabled={!instantCheckoutEnabled}
+                            className="px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-md shadow-orange-500/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             Contratar →
                           </button>
@@ -212,7 +218,8 @@ export function PublicProfileView({ profile, checkoutStatus }: PublicProfileView
         <div className="max-w-[480px] mx-auto">
           <button 
             onClick={() => handleOpenCheckout()}
-            className="w-full h-16 bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 hover:from-orange-500 hover:to-amber-400 text-white font-black text-sm uppercase tracking-wider rounded-[2rem] shadow-xl shadow-orange-500/25 transition-all active:scale-95 flex items-center justify-center gap-3 group"
+            disabled={!instantCheckoutEnabled}
+            className="w-full h-16 bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 hover:from-orange-500 hover:to-amber-400 text-white font-black text-sm uppercase tracking-wider rounded-[2rem] shadow-xl shadow-orange-500/25 transition-all active:scale-95 flex items-center justify-center gap-3 group disabled:cursor-not-allowed disabled:opacity-50"
           >
             <ShieldCheck className="w-5 h-5 text-white" />
             Contratar Publi (SafePay 🛡️)
@@ -232,13 +239,15 @@ export function PublicProfileView({ profile, checkoutStatus }: PublicProfileView
         capturedAt={latestMetrics?.capturedAt}
       />
 
-      <InstantCheckoutModal
-        isOpen={isCheckoutModalOpen}
-        onClose={() => setIsCheckoutModalOpen(false)}
-        handle={profile.handle}
-        selectedRateCard={selectedRateCard}
-        rateCards={profile.rateCards || []}
-      />
+      {instantCheckoutEnabled && (
+        <InstantCheckoutModal
+          isOpen={isCheckoutModalOpen}
+          onClose={() => setIsCheckoutModalOpen(false)}
+          handle={profile.handle}
+          selectedRateCard={selectedRateCard}
+          rateCards={profile.rateCards || []}
+        />
+      )}
 
     </div>
   );

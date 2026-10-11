@@ -16,6 +16,7 @@ import { authorize } from '../middlewares/role.middleware';
 import { UserRole } from '../types/roles';
 import { contractBudgetGuard } from '../middlewares/security.middleware';
 import { sanitizeContactData } from '../middlewares/contact-sanitizer.middleware';
+import { developmentOrTestOnly } from '../middlewares/environment.middleware';
 
 const router = Router();
 
@@ -34,10 +35,10 @@ router.post('/:id/roi-report', authenticate, generateROIReport);
 router.post('/:id/accept', authenticate, authorize([UserRole.INFLUENCER]), acceptContract);
 
 // Liberação de pagamento: ADMIN ou COMPANY
-router.patch('/:id/release', authenticate, authorize([UserRole.ADMIN, UserRole.COMPANY]), releasePayment);
+router.patch('/:id/release', developmentOrTestOnly, authenticate, authorize([UserRole.ADMIN, UserRole.COMPANY]), releasePayment);
 
 // Confirmação manual de pagamento: ADMIN ou COMPANY
-router.post('/:id/pay', authenticate, authorize([UserRole.ADMIN, UserRole.COMPANY]), confirmPayment);
+router.post('/:id/pay', developmentOrTestOnly, authenticate, authorize([UserRole.ADMIN, UserRole.COMPANY]), confirmPayment);
 
 // Cancelamento de contrato e estorno: ADMIN ou COMPANY
 router.post('/:id/cancel', authenticate, authorize([UserRole.ADMIN, UserRole.COMPANY]), cancelAndRefundContract);
