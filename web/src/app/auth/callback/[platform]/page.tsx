@@ -13,6 +13,9 @@ type OAuthResult = {
   from?: string;
 };
 
+type SessionUser = NonNullable<OAuthResult['user']>;
+const SESSION_CONFIRMATION_ERROR_MESSAGE = 'Não foi possível confirmar sua sessão. Volte ao login e tente novamente.';
+
 function SocialCallbackContent() {
   const router = useRouter();
   const params = useParams();
@@ -28,10 +31,18 @@ function SocialCallbackContent() {
   const [verifying, setVerifying] = useState(false);
   const startedAttempt = useRef<string | null>(null);
 
-  const completeSession = useCallback((data: OAuthResult) => {
+  const completeSession = useCallback(async (data: OAuthResult) => {
+    // The callback can succeed before the browser has a usable HttpOnly session.
+    // Resolve 401 locally so the global API interceptor does not redirect mid-callback.
+    const sessionResponse = await api.get<SessionUser>('/auth/me', {
+      validateStatus: (status) => status === 200 || status === 401,
+    });
+    if (sessionResponse.status !== 200 || !sessionResponse.data?.role) {
+      throw new Error(SESSION_CONFIRMATION_ERROR_MESSAGE);
+    }
     if (!data.user) throw new Error('Sessão completa não recebida.');
     setStatus('success');
-    const user = data.user;
+    const user = sessionResponse.data;
     storeSessionMetadata(user);
 
     if (window.opener) {
@@ -79,12 +90,13 @@ function SocialCallbackContent() {
         setStatus('2fa');
         return;
       }
-      setStatus('success');
-      
       if (res.data.user) {
-        completeSession(res.data);
+        await completeSession(res.data);
         return;
       }
+
+      // Linking an integration is not a login flow, so preserve its existing success UX.
+      setStatus('success');
 
       if (window.opener) {
         window.opener.postMessage({ 
@@ -113,15 +125,18 @@ function SocialCallbackContent() {
       const errObj = error as { response?: { data?: { error?: string; message?: string; errorType?: string } } };
       const message = errObj.response?.data?.error || errObj.response?.data?.message || 'Falha ao conectar conta social. Verifique sua conexão ou tente novamente.';
       const errorType = errObj.response?.data?.errorType || 'no_creator_account';
-      setErrorMessage(message);
-      toast.error(message);
+      const displayMessage = error instanceof Error && error.message === SESSION_CONFIRMATION_ERROR_MESSAGE
+        ? error.message
+        : message;
+      setErrorMessage(displayMessage);
+      toast.error(displayMessage);
 
       if (window.opener) {
         window.opener.postMessage({ 
           type: 'social-auth-error', 
           platform, 
           status: 'error', 
-          error: message,
+          error: displayMessage,
           errorType
         }, window.location.origin);
         setTimeout(() => {
@@ -144,9 +159,13 @@ function SocialCallbackContent() {
     setErrorMessage('');
     try {
       const res = await api.post<OAuthResult>('/auth/2fa/verify', { tempToken, code: otpCode });
-      completeSession(res.data);
+      await completeSession(res.data);
       setTempToken('');
-    } catch {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message === SESSION_CONFIRMATION_ERROR_MESSAGE) {
+        setErrorMessage(error.message);
+        return;
+      }
       setErrorMessage('Não foi possível validar o código. Tente novamente ou reinicie o login.');
     } finally { setVerifying(false); }
   };

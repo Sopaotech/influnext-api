@@ -505,4 +505,30 @@ describe('STEP 1F-C — OAuth security boundary', () => {
       expect(fs.readFileSync(path.resolve(__dirname, '../src/controllers', file), 'utf8')).not.toMatch(/state=register_|jwt\.decode/);
     }
   });
+
+  it('confirms an OAuth login session before showing success or redirecting (source regression)', () => {
+    const source = fs.readFileSync(path.resolve(__dirname, '../web/src/app/auth/callback/[platform]/page.tsx'), 'utf8');
+    const loginBranch = source.indexOf('if (res.data.user) {');
+    const sessionConfirmation = source.indexOf("api.get<SessionUser>('/auth/me'");
+    const sessionSuccess = source.indexOf("setStatus('success');", sessionConfirmation);
+    const linkSuccess = source.indexOf("setStatus('success');", loginBranch);
+
+    expect(loginBranch).toBeGreaterThan(-1);
+    expect(sessionConfirmation).toBeGreaterThan(-1);
+    expect(source).toContain('validateStatus: (status) => status === 200 || status === 401');
+    expect(source.indexOf('await completeSession(res.data)', loginBranch)).toBeGreaterThan(loginBranch);
+    expect(sessionSuccess).toBeGreaterThan(sessionConfirmation);
+    expect(sessionSuccess).toBeLessThan(loginBranch);
+    expect(linkSuccess).toBeGreaterThan(loginBranch);
+  });
+
+  it('keeps a /auth/me 401 on the callback as a clear local session error (source regression)', () => {
+    const source = fs.readFileSync(path.resolve(__dirname, '../web/src/app/auth/callback/[platform]/page.tsx'), 'utf8');
+
+    expect(source).toContain("if (sessionResponse.status !== 200 || !sessionResponse.data?.role)");
+    expect(source).toContain('throw new Error(SESSION_CONFIRMATION_ERROR_MESSAGE)');
+    expect(source).toContain("const SESSION_CONFIRMATION_ERROR_MESSAGE = '");
+    expect(source).toContain('setErrorMessage(displayMessage)');
+    expect(source).toContain('toast.error(displayMessage)');
+  });
 });

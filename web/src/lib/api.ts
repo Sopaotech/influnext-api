@@ -1,13 +1,20 @@
 import axios from 'axios';
 import { clearBrowserAuthState } from './auth-browser';
-import { resolveApiBaseUrl } from './api-base-url';
+import { resolveBrowserApiBaseUrl, resolveServerApiBaseUrl } from './api-base-url';
 
-const API_URL = resolveApiBaseUrl(
-  process.env.NEXT_PUBLIC_API_URL,
-  typeof window === 'undefined' ? undefined : window.location.hostname,
-  process.env.NEXT_PUBLIC_ISOLATED_TEST === 'true',
-  typeof window === 'undefined' ? undefined : window.location.origin,
-);
+const isolatedTestMode = process.env.NEXT_PUBLIC_ISOLATED_TEST === 'true';
+const API_URL = typeof window === 'undefined'
+  ? resolveServerApiBaseUrl(
+    process.env.NEXT_PUBLIC_API_URL,
+    isolatedTestMode,
+    process.env.INFLUNEXT_TEST_API_ORIGIN,
+  )
+  : resolveBrowserApiBaseUrl(
+    process.env.NEXT_PUBLIC_API_URL,
+    window.location.hostname,
+    isolatedTestMode,
+    window.location.origin,
+  );
 
 export const api = axios.create({
   baseURL: API_URL,

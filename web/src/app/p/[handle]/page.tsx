@@ -2,7 +2,7 @@ import { Metadata, Viewport } from 'next';
 import { notFound } from 'next/navigation';
 import { PublicProfileView } from './PublicProfileView';
 import type { PublicProfileResponse } from '@/lib/api';
-import { resolveApiBaseUrl } from '@/lib/api-base-url';
+import { resolveServerApiBaseUrl } from '@/lib/api-base-url';
 import { getPerformancePercentage, getPublicProfileTitleSegment, getVerifiedScoreClass } from '@/lib/creator-dashboard-truth';
 
 export const viewport: Viewport = {
@@ -14,10 +14,10 @@ export const viewport: Viewport = {
 };
 
 async function getProfileData(handle: string): Promise<PublicProfileResponse | null> {
-  const apiUrl = resolveApiBaseUrl(
+  const apiUrl = resolveServerApiBaseUrl(
     process.env.NEXT_PUBLIC_API_URL,
-    undefined,
     process.env.NEXT_PUBLIC_ISOLATED_TEST === 'true',
+    process.env.INFLUNEXT_TEST_API_ORIGIN,
   );
   try {
     const res = await fetch(`${apiUrl}/p/${handle}`, {

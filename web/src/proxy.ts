@@ -14,7 +14,7 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Se o usuário tentar entrar no dashboard sem token
-  if ((pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) && !token) {
+  if ((pathname.startsWith('/dashboard') || pathname.startsWith('/admin') || pathname.startsWith('/onboarding')) && !token) {
     return redirectNoCache(new URL('/auth/login', request.url));
   }
 

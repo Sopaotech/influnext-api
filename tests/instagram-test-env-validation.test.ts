@@ -34,6 +34,12 @@ describe('Instagram isolated test environment validation', () => {
     expect(validateInstagramTestEnv(validConfig())).toEqual([]);
   });
 
+  it('accepts a configurable non-production HTTPS API upstream for the frontend rewrite', () => {
+    const config = validConfig();
+    config.INFLUNEXT_TEST_API_ORIGIN = 'https://api-ig-test-host-123.test';
+    expect(validateInstagramTestEnv(config)).toEqual([]);
+  });
+
   it('rejects production database, Redis, and API destinations without echoing values', () => {
     const config = validConfig();
     config.DATABASE_URL = 'postgresql://u:p@prod.example:5432/live';

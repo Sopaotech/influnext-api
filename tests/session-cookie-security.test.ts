@@ -55,7 +55,17 @@ describe('STEP 1E — HttpOnly browser session', () => {
     expect(session.serialized).toContain('SameSite=Lax');
     expect(session.serialized).toContain('Path=/');
     expect(session.serialized).toMatch(/Max-Age=604800/);
+    expect(session.serialized).not.toContain('Domain=');
     expect(jwt.verify(session.token, process.env.JWT_SECRET!)).toMatchObject({ ...user, purpose: 'session' });
+  });
+
+  it('preserves the configured legacy cookie domain when one is explicitly set', async () => {
+    process.env.SESSION_COOKIE_DOMAIN = 'session.example.test';
+    const app = testApp();
+    const session = cookieFrom(await request(app).post('/login'));
+    expect(session.serialized).toContain('Domain=session.example.test');
+    const logout = await request(app).post('/logout').set('Cookie', session.pair).set('Origin', 'https://frontend.example');
+    expect(cookieFrom(logout).serialized).toContain('Domain=session.example.test');
   });
 
   it('keeps local HTTP development functional without weakening production settings', async () => {
@@ -79,6 +89,7 @@ describe('STEP 1E — HttpOnly browser session', () => {
     const response = await request(app).post('/logout').set('Cookie', session.pair).set('Origin', 'https://frontend.example');
     expect(response.status).toBe(204);
     expect(cookieFrom(response).serialized).toMatch(/Expires=Thu, 01 Jan 1970|Max-Age=0/);
+    expect(cookieFrom(response).serialized).not.toContain('Domain=');
   });
 
   it('requires an allowlisted Origin for unsafe cookie-authenticated requests', async () => {
@@ -112,7 +123,14 @@ describe('STEP 1E — HttpOnly browser session', () => {
     const adminSource = fs.readFileSync(path.resolve(__dirname, '../web/src/app/admin/page.tsx'), 'utf8');
     expect(proxySource).toContain("request.cookies.get('influnext_token')");
     expect(proxySource).toContain("'/admin/:path*'");
+    expect(proxySource).toContain("pathname.startsWith('/onboarding')) && !token");
     expect(adminSource).toContain("(await cookies()).get('influnext_token')");
     expect(adminSource).toContain('Cookie: `influnext_token=${encodeURIComponent(session)}`');
+  });
+
+  it('uses the shared browser API client for same-origin logout and clears local metadata', () => {
+    const dashboardSource = fs.readFileSync(path.resolve(__dirname, '../web/src/app/dashboard/layout.tsx'), 'utf8');
+    expect(dashboardSource).toContain("await api.post('/auth/logout')");
+    expect(dashboardSource).toContain('clearBrowserAuthState();');
   });
 });

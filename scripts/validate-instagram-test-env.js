@@ -99,15 +99,20 @@ function validateInstagramTestEnv(values) {
     errors.push('ALLOWED_ORIGINS must contain only the FRONTEND_URL origin');
   }
 
-  let localApiOrigin;
-  try { localApiOrigin = new URL(values.INFLUNEXT_TEST_API_ORIGIN); } catch {
-    errors.push('INFLUNEXT_TEST_API_ORIGIN must be a valid local HTTP origin');
+  let testApiOrigin;
+  try { testApiOrigin = new URL(values.INFLUNEXT_TEST_API_ORIGIN); } catch {
+    errors.push('INFLUNEXT_TEST_API_ORIGIN must be a valid test API origin');
   }
-  if (localApiOrigin && (localApiOrigin.protocol !== 'http:'
-    || !['127.0.0.1', 'localhost'].includes(localApiOrigin.hostname)
-    || localApiOrigin.port !== '4000' || localApiOrigin.pathname !== '/'
-    || localApiOrigin.username || localApiOrigin.password || localApiOrigin.search || localApiOrigin.hash)) {
-    errors.push('INFLUNEXT_TEST_API_ORIGIN must target local API port 4000');
+  if (testApiOrigin) {
+    const hostname = testApiOrigin.hostname.toLowerCase();
+    const isLoopback = ['127.0.0.1', 'localhost'].includes(hostname);
+    const hasUnsafeUrlParts = testApiOrigin.pathname !== '/'
+      || testApiOrigin.username || testApiOrigin.password || testApiOrigin.search || testApiOrigin.hash;
+    const validLoopback = isLoopback && testApiOrigin.protocol === 'http:' && testApiOrigin.port === '4000';
+    const validRemoteTestApi = !isLoopback && testApiOrigin.protocol === 'https:' && !PRODUCTION_HOSTS.has(hostname);
+    if (hasUnsafeUrlParts || (!validLoopback && !validRemoteTestApi)) {
+      errors.push('INFLUNEXT_TEST_API_ORIGIN must target local API port 4000 or a non-production HTTPS test API origin');
+    }
   }
 
   if (!values.INSTAGRAM_CLIENT_ID.trim()) errors.push('INSTAGRAM_CLIENT_ID is required');

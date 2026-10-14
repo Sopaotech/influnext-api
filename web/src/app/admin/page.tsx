@@ -1,15 +1,15 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { resolveApiBaseUrl } from '@/lib/api-base-url';
+import { resolveServerApiBaseUrl } from '@/lib/api-base-url';
 
 async function getAdminStats() {
   try {
     const session = (await cookies()).get('influnext_token')?.value;
     if (!session) return null;
-    const apiUrl = resolveApiBaseUrl(
+    const apiUrl = resolveServerApiBaseUrl(
       process.env.NEXT_PUBLIC_API_URL,
-      undefined,
       process.env.NEXT_PUBLIC_ISOLATED_TEST === 'true',
+      process.env.INFLUNEXT_TEST_API_ORIGIN,
     );
     const res = await fetch(`${apiUrl}/admin/stats`, {
       headers: {

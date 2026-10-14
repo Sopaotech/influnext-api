@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { ShieldCheck, Zap, X, Lock, CheckCircle, ArrowRight, Loader2, Building, Mail, Sparkles } from 'lucide-react';
-import { resolveApiBaseUrl } from '@/lib/api-base-url';
+import { resolveBrowserApiBaseUrl } from '@/lib/api-base-url';
 
 interface RateCardItem {
   id: string;
@@ -60,7 +60,7 @@ export function InstantCheckoutModal({
     setError(null);
 
     try {
-      const apiUrl = resolveApiBaseUrl(
+      const apiUrl = resolveBrowserApiBaseUrl(
         process.env.NEXT_PUBLIC_API_URL,
         typeof window === 'undefined' ? undefined : window.location.hostname,
         process.env.NEXT_PUBLIC_ISOLATED_TEST === 'true',
